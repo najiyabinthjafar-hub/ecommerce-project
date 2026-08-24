@@ -1,8 +1,19 @@
+import Navbar from "../components/Navbar";
+import HeroSection from "../components/HeroSection";
+import CategorySection from "../components/CategorySection";
+import Footer from "../components/Footer";
+
 function Home() {
   return (
     <>
-      <h1>Welcome to Rizo Clothes</h1>
-      <p>Discover our latest collection.</p>
+      <Navbar />
+
+      <main>
+        <HeroSection />
+        <CategorySection />
+      </main>
+
+      <Footer />
     </>
   );
 }

@@ -1,20 +1,26 @@
+import { Link } from "react-router-dom";
+
 function Navbar() {
   return (
-    <nav>
-      <h2>RIZO</h2>
+    <header className="navbar">
+      <Link to="/" className="logo">
+        RIZO
+      </Link>
 
-      <div>
-        <a href="/">Home</a>
-        <a href="/shop">Shop</a>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-      </div>
+      <nav className="nav-links">
+        <Link to="/">Home</Link>
+        <Link to="/shop">Shop</Link>
+        <Link to="/new-arrivals">New Arrivals</Link>
+        <Link to="/about">About</Link>
+        <Link to="/contact">Contact</Link>
+      </nav>
 
-      <div>
-        <a href="/login">Login</a>
-        <a href="/cart">Cart</a>
+      <div className="nav-icons">
+        <button>⌕</button>
+        <Link to="/login">♙</Link>
+        <Link to="/cart">🛒</Link>
       </div>
-    </nav>
+    </header>
   );
 }
 
