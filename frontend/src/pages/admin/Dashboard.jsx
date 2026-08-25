@@ -1,25 +1,17 @@
+import AdminSidebar from "../../components/admin/AdminSidebar";
 import "./Dashboard.css";
 
 function Dashboard() {
   return (
     <div className="admin-dashboard">
 
-      <aside className="sidebar">
-        <h2>Rizo</h2>
+      {/* Admin Sidebar */}
+      <AdminSidebar />
 
-        <nav>
-          <a href="/admin/dashboard">Dashboard</a>
-          <a href="/admin/products">Products</a>
-          <a href="/admin/categories">Categories</a>
-          <a href="#">Orders</a>
-          <a href="#">Customers</a>
-        </nav>
-
-        <button className="logout">Logout</button>
-      </aside>
-
+      {/* Dashboard Content */}
       <main className="dashboard-content">
 
+        {/* Header */}
         <header className="dashboard-header">
           <div>
             <h1>Dashboard</h1>
@@ -29,6 +21,7 @@ function Dashboard() {
           <button className="profile">Nusri</button>
         </header>
 
+        {/* Statistics */}
         <section className="stats">
 
           <div className="card">
@@ -57,6 +50,7 @@ function Dashboard() {
 
         </section>
 
+        {/* Recent Orders */}
         <section className="dashboard-box">
           <h2>Recent Orders</h2>
 

@@ -39,10 +39,12 @@ const products = [
 
 function Products() {
   return (
-    <>
+    <div className="admin-products-page">
+
       <AdminSidebar />
 
-      <div className="admin-page">
+      <main className="admin-page">
+
         <div className="admin-content">
 
           <div className="page-header">
@@ -52,13 +54,13 @@ function Products() {
             </div>
 
             <button
-  className="add-product-btn"
-  onClick={() => {
-    window.location.href = "/admin/products/add";
-  }}
->
-  + Add Product
-</button>
+              className="add-product-btn"
+              onClick={() => {
+                window.location.href = "/admin/products/add";
+              }}
+            >
+              + Add Product
+            </button>
           </div>
 
           <div className="product-card">
@@ -131,11 +133,14 @@ function Products() {
               </table>
 
             </div>
+
           </div>
 
         </div>
-      </div>
-    </>
+
+      </main>
+
+    </div>
   );
 }
 

@@ -1,47 +1,76 @@
-.admin-sidebar {
-  width: 240px;
-  height: 100vh;
-  background: #111111;
-  color: white;
-  position: fixed;
-  left: 0;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 25px 15px;
+* {
   box-sizing: border-box;
 }
 
-.sidebar-logo {
-  font-size: 20px;
-  font-weight: 700;
-  padding: 10px 15px 30px;
-  letter-spacing: 1px;
+.admin-sidebar {
+  width: 240px;
+  min-width: 240px;
+  min-height: 100vh;
+
+  background: #111111;
+  color: #ffffff;
+
+  padding: 32px 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  position: sticky;
+  top: 0;
+
+  flex-shrink: 0;
 }
+
+/* Logo */
+
+.sidebar-logo {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 2px;
+
+  margin: 0 12px 42px;
+  white-space: nowrap;
+}
+
+/* Navigation */
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sidebar-nav a {
-  color: #aaaaaa;
+  color: #bdbdbd;
   text-decoration: none;
+
   padding: 13px 15px;
-  border-radius: 7px;
-  font-size: 15px;
+
+  border-radius: 9px;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition: all 0.2s ease;
 }
 
 .sidebar-nav a:hover {
-  background: #222222;
-  color: white;
+  background: #262626;
+  color: #ffffff;
+
+  transform: translateX(3px);
 }
 
+/* Active navigation */
+
 .sidebar-nav a.active {
-  background: white;
+  background: #ffffff;
   color: #111111;
+
+  font-weight: 600;
 }
+
+/* Bottom section */
 
 .sidebar-bottom {
   margin-top: auto;
@@ -49,10 +78,72 @@
 
 .sidebar-bottom button {
   width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 7px;
-  background: #222222;
-  color: white;
+
+  padding: 12px 15px;
+
+  border: 1px solid #333333;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #d5d5d5;
+
   cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+}
+
+.sidebar-bottom button:hover {
+  background: #ffffff;
+  color: #111111;
+}
+
+/* Tablet */
+
+@media (max-width: 800px) {
+  .admin-sidebar {
+    width: 200px;
+    min-width: 200px;
+
+    padding: 28px 15px;
+  }
+
+  .sidebar-logo {
+    font-size: 21px;
+    margin-bottom: 32px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+  .admin-sidebar {
+    width: 100%;
+    min-width: 100%;
+    min-height: auto;
+
+    position: relative;
+
+    padding: 20px;
+  }
+
+  .sidebar-logo {
+    margin: 0 0 20px;
+    text-align: center;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidebar-nav a {
+    padding: 10px 12px;
+  }
+
+  .sidebar-bottom {
+    margin-top: 20px;
+  }
 }

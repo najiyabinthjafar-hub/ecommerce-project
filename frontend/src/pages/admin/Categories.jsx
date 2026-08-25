@@ -26,44 +26,49 @@ function Categories() {
   );
 
   return (
-    <>
+    <div className="categories-page-wrapper">
+
       <AdminSidebar />
 
       <div className="categories-page">
+
         <div className="categories-content">
 
           {/* Page Header */}
           <div className="categories-header">
+
             <div>
               <h1>Categories</h1>
               <p>Manage your product categories</p>
             </div>
 
             <button
-  className="add-category-btn"
-  onClick={() => {
-    const name = prompt("Enter category name:");
+              className="add-category-btn"
+              onClick={() => {
+                const name = prompt("Enter category name:");
 
-    if (name && name.trim() !== "") {
-      setCategories([
-        ...categories,
-        {
-          id: Date.now(),
-          name: name.trim(),
-          products: 0,
-        },
-      ]);
-    }
-  }}
->
-  + Add Category
-</button>
+                if (name && name.trim() !== "") {
+                  setCategories([
+                    ...categories,
+                    {
+                      id: Date.now(),
+                      name: name.trim(),
+                      products: 0,
+                    },
+                  ]);
+                }
+              }}
+            >
+              + Add Category
+            </button>
+
           </div>
 
           {/* Category Card */}
           <div className="categories-card">
 
             <div className="categories-card-header">
+
               <div>
                 <h2>All Categories</h2>
                 <p>
@@ -78,10 +83,12 @@ function Categories() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="category-search"
               />
+
             </div>
 
             {/* Table */}
             <div className="categories-table-container">
+
               <table className="categories-table">
 
                 <thead>
@@ -95,8 +102,11 @@ function Categories() {
                 </thead>
 
                 <tbody>
+
                   {filteredCategories.length > 0 ? (
+
                     filteredCategories.map((category, index) => (
+
                       <tr key={category.id}>
 
                         <td className="category-number">
@@ -105,11 +115,15 @@ function Categories() {
 
                         <td>
                           <div className="category-name">
+
                             <div className="category-icon">
                               {category.name.charAt(0)}
                             </div>
 
-                            <strong>{category.name}</strong>
+                            <strong>
+                              {category.name}
+                            </strong>
+
                           </div>
                         </td>
 
@@ -126,32 +140,38 @@ function Categories() {
                         </td>
 
                         <td>
+
                           <div className="category-actions">
 
                             <button
-  className="edit-category-btn"
-  onClick={() => {
-    const newName = prompt(
-      "Edit category name:",
-      category.name
-    );
+                              className="edit-category-btn"
+                              onClick={() => {
 
-    if (newName && newName.trim() !== "") {
-      setCategories(
-        categories.map((item) =>
-          item.id === category.id
-            ? {
-                ...item,
-                name: newName.trim(),
-              }
-            : item
-        )
-      );
-    }
-  }}
->
-  Edit
-</button>
+                                const newName = prompt(
+                                  "Edit category name:",
+                                  category.name
+                                );
+
+                                if (
+                                  newName &&
+                                  newName.trim() !== ""
+                                ) {
+                                  setCategories(
+                                    categories.map((item) =>
+                                      item.id === category.id
+                                        ? {
+                                            ...item,
+                                            name: newName.trim(),
+                                          }
+                                        : item
+                                    )
+                                  );
+                                }
+
+                              }}
+                            >
+                              Edit
+                            </button>
 
                             <button
                               className="delete-category-btn"
@@ -163,11 +183,15 @@ function Categories() {
                             </button>
 
                           </div>
+
                         </td>
 
                       </tr>
+
                     ))
+
                   ) : (
+
                     <tr>
                       <td
                         colSpan="5"
@@ -176,17 +200,22 @@ function Categories() {
                         No categories found
                       </td>
                     </tr>
+
                   )}
+
                 </tbody>
 
               </table>
+
             </div>
 
           </div>
 
         </div>
+
       </div>
-    </>
+
+    </div>
   );
 }
 

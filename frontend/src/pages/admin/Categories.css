@@ -1,14 +1,19 @@
-.categories-page {
+.categories-page-wrapper {
   min-height: 100vh;
-  margin-left: 240px;
+  display: flex;
+  background: #f5f6f8;
+}
+
+.categories-page {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
   background: #f5f6f8;
 }
 
 .categories-content {
   padding: 30px;
 }
-
-
 
 .categories-header {
   display: flex;
@@ -30,8 +35,6 @@
   font-size: 14px;
 }
 
-
-
 .add-category-btn {
   background: #111;
   color: white;
@@ -47,16 +50,12 @@
   background: #333;
 }
 
-
-
 .categories-card {
   background: white;
   border-radius: 14px;
   padding: 25px;
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
 }
-
-
 
 .categories-card-header {
   display: flex;
@@ -77,8 +76,6 @@
   font-size: 13px;
 }
 
-
-
 .category-search {
   width: 240px;
   padding: 11px 14px;
@@ -91,8 +88,6 @@
 .category-search:focus {
   border-color: #111;
 }
-
-
 
 .categories-table-container {
   overflow-x: auto;
@@ -119,14 +114,10 @@
   color: #333;
 }
 
-
-
 .category-number {
   color: #888;
   width: 50px;
 }
-
-
 
 .category-name {
   display: flex;
@@ -140,9 +131,11 @@
   border-radius: 8px;
   background: #111;
   color: white;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-weight: 700;
 }
 
@@ -150,13 +143,9 @@
   color: #222;
 }
 
-
-
 .product-count {
   color: #555;
 }
-
-
 
 .category-status {
   display: inline-block;
@@ -167,8 +156,6 @@
   font-size: 12px;
   font-weight: 600;
 }
-
-
 
 .category-actions {
   display: flex;
@@ -202,8 +189,6 @@
 .delete-category-btn:hover {
   background: #ffd5d5;
 }
-
-
 
 .no-category {
   text-align: center;
