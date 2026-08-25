@@ -33,14 +33,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/addresses", addressRoutes);
 
-// Existing Cart routes
 app.use("/api/cart", cartRoutes);
 
-app.use("/api/products", productRoutes);//product routes
+app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
-
 app.use("/api/banners", bannerRoutes);
-
 
 // Server
 const PORT = process.env.PORT || 5000;
