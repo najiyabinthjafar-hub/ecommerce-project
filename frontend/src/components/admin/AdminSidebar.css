@@ -1,0 +1,58 @@
+.admin-sidebar {
+  width: 240px;
+  height: 100vh;
+  background: #111111;
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 25px 15px;
+  box-sizing: border-box;
+}
+
+.sidebar-logo {
+  font-size: 20px;
+  font-weight: 700;
+  padding: 10px 15px 30px;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-nav a {
+  color: #aaaaaa;
+  text-decoration: none;
+  padding: 13px 15px;
+  border-radius: 7px;
+  font-size: 15px;
+}
+
+.sidebar-nav a:hover {
+  background: #222222;
+  color: white;
+}
+
+.sidebar-nav a.active {
+  background: white;
+  color: #111111;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+}
+
+.sidebar-bottom button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 7px;
+  background: #222222;
+  color: white;
+  cursor: pointer;
+}
