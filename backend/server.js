@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const cartRoutes = require("./routes/cartRoutes");
+
 const app = express();
 
 // Middleware
@@ -11,9 +13,12 @@ app.use(express.json());
 // Test route
 app.get("/", (req, res) => {
   res.json({
-    message: "E-Commerce Backend is running"
+    message: "E-Commerce Backend is running",
   });
 });
+
+// Cart routes
+app.use("/api/cart", cartRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
