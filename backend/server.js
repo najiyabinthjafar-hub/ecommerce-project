@@ -5,6 +5,7 @@ require("dotenv").config();
 const connectDB = require("./config/db");
 
 const cartRoutes = require("./routes/cartRoutes");
+const productRoutes = require("./routes/productRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const addressRoutes = require("./routes/addressRoutes");
@@ -32,6 +33,8 @@ app.use("/api/addresses", addressRoutes);
 
 // Existing Cart routes
 app.use("/api/cart", cartRoutes);
+
+app.use("/api/products", productRoutes);//product routes
 
 // Server
 const PORT = process.env.PORT || 5000;
