@@ -9,10 +9,11 @@
   align-items: center;
   background: #f7f7f8;
   padding: 20px;
+  
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
-/* Login Card */
+
 
 .admin-login-card {
   width: 100%;
@@ -24,7 +25,7 @@
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
 }
 
-/* Brand */
+
 
 .login-brand {
   text-align: center;
@@ -45,7 +46,7 @@
   font-size: 13px;
 }
 
-/* Heading */
+
 
 .login-heading {
   margin-bottom: 28px;
@@ -63,7 +64,7 @@
   font-size: 13px;
 }
 
-/* Form */
+
 
 .login-group {
   margin-bottom: 20px;
@@ -95,7 +96,7 @@
   color: #aaaaaa;
 }
 
-/* Options */
+
 
 .login-options {
   display: flex;
@@ -126,7 +127,7 @@
   text-decoration: underline;
 }
 
-/* Login Button */
+
 
 .admin-login-btn {
   width: 100%;
@@ -146,7 +147,7 @@
   transform: translateY(-1px);
 }
 
-/* Mobile */
+
 
 @media (max-width: 500px) {
   .admin-login-card {

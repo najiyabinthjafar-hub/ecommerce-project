@@ -5,13 +5,13 @@ function Dashboard() {
   return (
     <div className="admin-dashboard">
 
-      {/* Admin Sidebar */}
+    
       <AdminSidebar />
 
-      {/* Dashboard Content */}
+     
       <main className="dashboard-content">
 
-        {/* Header */}
+        
         <header className="dashboard-header">
           <div>
             <h1>Dashboard</h1>
@@ -21,7 +21,7 @@ function Dashboard() {
           <button className="profile">Nusri</button>
         </header>
 
-        {/* Statistics */}
+       
         <section className="stats">
 
           <div className="card">
@@ -50,7 +50,7 @@ function Dashboard() {
 
         </section>
 
-        {/* Recent Orders */}
+       
         <section className="dashboard-box">
           <h2>Recent Orders</h2>
 
