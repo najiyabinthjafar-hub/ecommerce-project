@@ -1,0 +1,316 @@
+* {
+  box-sizing: border-box;
+}
+
+.banners-layout {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f6f8;
+}
+
+
+.banners-main {
+  width: 100%;
+  min-height: 100vh;
+  margin-left: 240px;
+  background: #f5f6f8;
+}
+
+.banners-content {
+  width: calc(100% - 240px);
+  min-height: 100vh;
+  padding: 32px 40px;
+}
+
+
+.banners-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.banners-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+}
+
+.banners-header p {
+  margin: 7px 0 0;
+  font-size: 14px;
+  color: #777;
+}
+
+
+.add-banner-btn {
+  border: none;
+  background: #111;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add-banner-btn:hover {
+  background: #333;
+}
+
+
+.banners-card {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 26px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.04);
+}
+
+.banners-card-header {
+  margin-bottom: 24px;
+}
+
+.banners-card-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  color: #111;
+}
+
+.banners-card-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #888;
+}
+
+
+.banners-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+
+.banner-item {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: 0.2s ease;
+}
+
+.banner-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+
+.banner-image {
+  width: 100%;
+  height: 180px;
+  background: #eeeeee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-placeholder {
+  color: #999;
+  font-size: 14px;
+}
+
+
+.banner-info {
+  padding: 18px;
+}
+
+.banner-info h3 {
+  margin: 0 0 7px;
+  font-size: 16px;
+  font-weight: 650;
+  color: #222;
+}
+
+.banner-info p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #888;
+}
+
+
+.banner-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #e8f7ee;
+  color: #16803c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.banner-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.edit-banner-btn,
+.delete-banner-btn {
+  border: none;
+  padding: 8px 13px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-banner-btn {
+  background: #eeeeee;
+  color: #222;
+}
+
+.edit-banner-btn:hover {
+  background: #ddd;
+}
+
+.delete-banner-btn {
+  background: #ffe8e8;
+  color: #d33;
+}
+
+.delete-banner-btn:hover {
+  background: #ffd5d5;
+}
+
+
+
+@media (max-width: 1000px) {
+  .banners-main {
+    margin-left: 200px;
+  }
+
+  .banners-content {
+    width: calc(100% - 200px);
+    padding: 28px;
+  }
+
+  .banners-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+
+@media (max-width: 600px) {
+  .banners-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .banners-content {
+    width: 100%;
+    padding: 20px 16px;
+  }
+
+  .banners-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .banners-header h1 {
+    font-size: 24px;
+  }
+
+  .banners-header p {
+    font-size: 13px;
+  }
+
+  .add-banner-btn {
+    width: 100%;
+  }
+
+  .banners-card {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .banners-card-header {
+    margin-bottom: 18px;
+  }
+
+  .banners-card-header h2 {
+    font-size: 18px;
+  }
+
+  .banners-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .banner-image {
+    height: 160px;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.banners-layout {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.banners-main {
+  width: calc(100% - 240px);
+  max-width: calc(100% - 240px);
+  margin-left: 240px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.banners-content {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .banners-main {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+
+  .banners-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 16px;
+  }
+
+  .banners-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .banner-item {
+    width: 100%;
+    min-width: 0;
+  }
+}
