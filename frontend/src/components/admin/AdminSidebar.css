@@ -35,16 +35,25 @@
 
 
 .sidebar-logo {
-  font-size: 25px;
-  font-weight: 700;
-
-  letter-spacing: 2px;
-
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 12px 42px;
-
-  white-space: nowrap;
 }
 
+.sidebar-logo img {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.sidebar-logo span {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #fff;
+}
 
 
 .sidebar-nav {

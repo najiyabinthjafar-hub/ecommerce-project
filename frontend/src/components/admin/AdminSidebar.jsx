@@ -1,14 +1,18 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import "./AdminSidebar.css";
+import logo from "../../assets/rizo-logo.png";
 
 function AdminSidebar() {
   return (
-    <aside className="admin-sidebar">
+   <aside className="admin-sidebar">
 
-      <div className="sidebar-logo">
-        RIZO ADMIN
-      </div>
+  <div className="sidebar-logo">
+    <img src={logo} alt="RIZO" />
+    <span>RIZO</span>
+  </div>
+
+  
 
       <nav className="sidebar-nav">
 
