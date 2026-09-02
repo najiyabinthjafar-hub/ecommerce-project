@@ -12,6 +12,7 @@ const addressRoutes = require("./routes/addressRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
+const couponRoutes = require("./routes/couponRoutes");
 
 const app = express();
 
@@ -38,8 +39,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/coupons", couponRoutes);
 
-// Server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
