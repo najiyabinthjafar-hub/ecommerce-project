@@ -1,0 +1,159 @@
+
+.login-page {
+  min-height: 75vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 70px 20px;
+  background: #fff;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 460px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin: 0 0 12px;
+}
+
+.login-header h1 {
+  margin: 0 0 14px;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+
+.login-header span {
+  font-size: 13px;
+  color: #777;
+}
+
+.login-form {
+  width: 100%;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 22px;
+}
+
+.login-field label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  margin-bottom: 9px;
+}
+
+.login-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  border: 1px solid #d8d8d8;
+  outline: none;
+  font-size: 13px;
+  background: #fff;
+}
+
+.login-field input:focus {
+  border-color: #111;
+}
+
+.login-field input::placeholder {
+  color: #aaa;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0 25px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #555;
+  cursor: pointer;
+}
+
+.remember-me input {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.forgot-password {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 11px;
+  color: #555;
+  cursor: pointer;
+}
+
+.forgot-password:hover {
+  color: #111;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 17px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.login-btn:hover {
+  background: #333;
+}
+
+.login-register {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 28px;
+  font-size: 12px;
+  color: #777;
+}
+
+.login-register a {
+  color: #111;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.login-register a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .login-page {
+    padding: 50px 20px;
+  }
+
+  .login-header h1 {
+    font-size: 32px;
+  }
+
+  .login-options {
+    gap: 15px;
+  }
+}
+

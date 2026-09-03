@@ -1,31 +1,51 @@
+import "./SummerSection.css";
+
+import summerImage from "../assets/summer.png";
+
 function SummerSection() {
   return (
     <section className="summer-section">
 
+      {/* LEFT IMAGE */}
       <div className="summer-image">
         <img
-          src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1200"
-          alt="Fresh summer collection"
+          src={summerImage}
+          alt="Rizo Hoodies"
         />
       </div>
 
+      {/* RIGHT CONTENT */}
       <div className="summer-content">
-        <p className="summer-label">FRESH FOR SUMMER</p>
 
-        <h2>
-          Style That
-          <br />
-          Moves With You
-        </h2>
+        <h2>Fresh for Summer</h2>
 
         <p className="summer-description">
-          Light, comfortable and effortless pieces
-          designed for your everyday summer style.
+          Fresh styles for the sun-soaked days ahead.
+          Discover lightweight fabrics and vibrant designs.
+          Stay comfortable and stylish all summer long.
         </p>
 
         <button className="summer-button">
-          SHOP NOW →
+          Explore More
         </button>
+
+      </div>
+
+      {/* SLIDER CONTROLS */}
+      <div className="summer-controls">
+
+        <div className="summer-dots">
+          <span className="active"></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div className="summer-arrows">
+          <button>‹</button>
+          <button>›</button>
+        </div>
+
       </div>
 
     </section>

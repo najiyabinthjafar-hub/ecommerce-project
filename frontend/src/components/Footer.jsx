@@ -1,38 +1,29 @@
+import { Link } from "react-router-dom";
+import "./Footer.css";
+
 function Footer() {
   return (
     <footer className="footer">
 
-      <div className="footer-logo">
-        RIZO
-      </div>
+      <div className="footer-top">
 
-      <div className="footer-links">
+        <Link to="/" className="footer-logo">
+          RIZO.
+        </Link>
 
-        <div>
-          <h4>SHOP</h4>
-          <p>Men</p>
-          <p>Women</p>
-          <p>New Arrivals</p>
-        </div>
-
-        <div>
-          <h4>HELP</h4>
-          <p>Contact</p>
-          <p>Shipping</p>
-          <p>Returns</p>
-        </div>
-
-        <div>
-          <h4>FOLLOW</h4>
-          <p>Instagram</p>
-          <p>Facebook</p>
-          <p>Pinterest</p>
+        <div className="footer-links">
+          <Link to="/support">Support Center</Link>
+          <Link to="/invoicing">Invoicing</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/careers">Careers</Link>
+          <Link to="/blog">Blog</Link>
+          <Link to="/faqs">FAQs</Link>
         </div>
 
       </div>
 
       <div className="footer-bottom">
-        © 2026 RIZO. All rights reserved.
+        <p>Copyright © 2026 RIZO. All Rights Reserved.</p>
       </div>
 
     </footer>

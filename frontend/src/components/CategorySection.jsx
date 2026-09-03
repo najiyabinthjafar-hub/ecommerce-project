@@ -1,60 +1,88 @@
-function CategorySection() {
-  const categories = [
-    {
-      name: "T-SHIRTS",
-      image:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600",
-    },
-    {
-      name: "SHIRTS",
-      image:
-        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600",
-    },
-    {
-      name: "WOMEN",
-      image:
-        "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=600",
-    },
-  ];
+import "./CategorySection.css";
+import { Link } from "react-router-dom";
+import tshirtImage from "../assets/cate1.png";
+import shirtImage from "../assets/cate2.png";
+import womenImage from "../assets/cate3.png";
 
+function CategorySection() {
   return (
     <section className="category-section">
+      {/* LEFT CONTENT */}
+      <div className="category-content">
+        <h2>Essentials by Category</h2>
 
-      <div className="section-heading">
-        <p>DISCOVER YOUR STYLE</p>
+        <p className="category-description">
+          Explore our must-have styles—hoodies, sweatshirts, and classic
+          tees—sorted by category for your perfect everyday look.
+        </p>
 
-        <h2>
-          Essentials by Category
-        </h2>
+        <Link to="/category" className="explore-btn">
+  Explore More
+</Link>
 
-        <span>
-          Everything you need for your everyday wardrobe.
-        </span>
-      </div>
+        {/* COUNTDOWN */}
+        <div className="countdown-section">
+          <h3>Hurry, Before It's Too Late!</h3>
 
-      <div className="category-grid">
-
-        {categories.map((category) => (
-          <div className="category-card" key={category.name}>
-
-            <img
-              src={category.image}
-              alt={category.name}
-            />
-
-            <div className="category-overlay">
-              <h3>{category.name}</h3>
-
-              <button>
-                SHOP NOW →
-              </button>
+          <div className="countdown">
+            <div className="time-box">
+              <strong>02</strong>
+              <span>Days</span>
             </div>
 
-          </div>
-        ))}
+            <div className="time-box">
+              <strong>06</strong>
+              <span>Hr</span>
+            </div>
 
+            <div className="time-box">
+              <strong>05</strong>
+              <span>Mins</span>
+            </div>
+
+            <div className="time-box">
+              <strong>30</strong>
+              <span>Sec</span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* RIGHT PRODUCT SLIDER */}
+      <div className="category-slider">
+        <div className="category-products">
+          {/* MAIN PRODUCT */}
+          <div className="category-product main-product">
+            <img src={tshirtImage} alt="T-Shirt" />
+
+            <div className="product-label">T - SHIRT</div>
+          </div>
+
+          {/* SECOND PRODUCT */}
+          <div className="category-product side-product">
+            <img src={shirtImage} alt="Shirt" />
+          </div>
+
+          {/* THIRD PRODUCT */}
+          <div className="category-product side-product">
+            <img src={womenImage} alt="Women Collection" />
+          </div>
+        </div>
+
+        {/* CONTROLS */}
+        <div className="category-controls">
+          <button className="slider-arrow">‹</button>
+
+          <button className="slider-arrow">›</button>
+
+          <div className="slider-dots">
+            <span className="active"></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

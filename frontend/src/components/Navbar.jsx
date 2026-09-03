@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
+import logo from "../assets/logo.png";
+import "./Navbar.css";
 
 function Navbar() {
   return (
     <header className="navbar">
+
       <Link to="/" className="logo">
-        RIZO
+        <img src={logo} alt="Rizo" />
       </Link>
 
       <nav className="nav-links">
@@ -16,10 +19,21 @@ function Navbar() {
       </nav>
 
       <div className="nav-icons">
-        <button>⌕</button>
-        <Link to="/login">♙</Link>
-        <Link to="/cart">🛒</Link>
+
+        <button type="button" aria-label="Search">
+          ⌕
+        </button>
+
+        <Link to="/login" aria-label="Account">
+          ♙
+        </Link>
+
+        <Link to="/cart" aria-label="Cart">
+          🛒
+        </Link>
+
       </div>
+
     </header>
   );
 }

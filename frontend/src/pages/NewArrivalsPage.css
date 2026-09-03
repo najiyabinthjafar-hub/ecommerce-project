@@ -1,0 +1,186 @@
+/* =========================================
+   NEW ARRIVALS PAGE
+========================================= */
+
+.new-arrivals-page {
+  width: 100%;
+  background: #ffffff;
+  color: #111111;
+}
+
+
+/* =========================================
+   HEADING
+========================================= */
+
+.new-arrivals-page-heading {
+  text-align: center;
+  padding: 70px 20px 55px;
+}
+
+.new-arrivals-page-heading .section-label {
+  margin: 0 0 14px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+
+  color: #777777;
+}
+
+.new-arrivals-page-heading h1 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 400;
+
+  letter-spacing: -0.5px;
+}
+
+.new-arrivals-page-description {
+  margin: 14px auto 24px;
+
+  color: #777777;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+
+/* =========================================
+   FASHION BUTTONS
+========================================= */
+
+.fashion-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.fashion-btn {
+  border: none;
+
+  background: #eeeeee;
+
+  padding: 9px 20px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+
+  cursor: pointer;
+}
+
+.fashion-btn.active {
+  background: #111111;
+  color: #ffffff;
+}
+
+
+/* =========================================
+   PRODUCTS SECTION
+========================================= */
+
+.new-arrivals-page-products {
+  width: 88%;
+  max-width: 1250px;
+
+  margin: 0 auto;
+
+  padding-bottom: 80px;
+}
+
+
+/* =========================================
+   PRODUCTS TOP
+========================================= */
+
+.new-arrivals-page-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-bottom: 1px solid #dddddd;
+
+  padding-bottom: 14px;
+  margin-bottom: 25px;
+}
+
+.new-arrivals-page-top h2 {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.new-arrivals-page-top p {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+
+  color: #777777;
+}
+
+
+/* =========================================
+   PRODUCT GRID
+========================================= */
+
+.new-arrivals-page-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 22px;
+
+  align-items: start;
+}
+
+.new-arrivals-page-grid > * {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+
+  .new-arrivals-page-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 650px) {
+
+  .new-arrivals-page-heading {
+    padding: 50px 20px 40px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 28px;
+  }
+
+  .new-arrivals-page-products {
+    width: 92%;
+  }
+
+  .new-arrivals-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
