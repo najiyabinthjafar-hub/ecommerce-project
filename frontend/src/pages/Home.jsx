@@ -1,8 +1,25 @@
+import Navbar from "../components/Navbar";
+import HeroSection from "../components/HeroSection";
+import CategorySection from "../components/CategorySection";
+import SummerSection from "../components/SummerSection";
+import NewArrivals from "../components/NewArrivals";
+import BestSellers from "../components/BestSellers";
+import InstagramSection from "../components/InstagramSection";
+import Newsletter from "../components/Newsletter";
+import Footer from "../components/Footer";
+
 function Home() {
   return (
     <>
-      <h1>Welcome to Rizo Clothes</h1>
-      <p>Discover our latest collection.</p>
+      <Navbar />
+      <HeroSection />
+      <CategorySection />
+      <SummerSection />
+      <NewArrivals />
+      <BestSellers />
+      <InstagramSection />
+      <Newsletter />
+      <Footer />
     </>
   );
 }

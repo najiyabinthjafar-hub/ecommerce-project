@@ -1,0 +1,194 @@
+.new-arrivals {
+  width: 100%;
+  background: #ffffff;
+  padding: 55px 0 75px;
+}
+
+/* =========================
+   HEADING
+========================= */
+
+.new-arrivals-heading {
+  text-align: center;
+  margin-bottom: 58px;
+}
+
+.new-arrivals-heading h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: #111;
+}
+
+.new-arrivals-description {
+  margin: 10px 0 20px;
+  font-size: 8px;
+  line-height: 1.7;
+  color: #777;
+}
+
+/* =========================
+   FASHION BUTTONS
+========================= */
+
+.fashion-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.fashion-btn {
+  border: none;
+  border-radius: 3px;
+  padding: 7px 18px;
+  background: #d8d8d8;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 400;
+  cursor: pointer;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+}
+
+.fashion-btn.active {
+  background: #050505;
+  color: #ffffff;
+}
+
+/* =========================
+   PRODUCTS GRID
+========================= */
+
+.products-grid {
+  width: 88%;
+  max-width: 1150px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  column-gap: 28px;
+  row-gap: 34px;
+}
+
+/* =========================
+   VIEW MORE
+========================= */
+
+.view-more-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 52px;
+}
+
+.view-more-btn {
+  border: none;
+  border-radius: 4px;
+  background: #050505;
+  color: #ffffff;
+
+  padding: 9px 27px;
+
+  font-size: 8px;
+  font-weight: 400;
+
+  cursor: pointer;
+
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+}
+
+.view-more-btn:hover {
+  background: #222;
+}
+
+/* =========================
+   PRODUCT CARD OVERRIDE
+========================= */
+
+.products-grid .product-card {
+  width: 100%;
+  background: #fff;
+}
+
+.products-grid .product-image-wrapper {
+  width: 100%;
+  height: 245px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.products-grid .product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Product name */
+
+.products-grid .product-card h3 {
+  margin-top: 10px;
+  font-size: 9px;
+  font-weight: 400;
+  color: #222;
+}
+
+/* Category */
+
+.products-grid .product-card .category {
+  font-size: 7px;
+  color: #888;
+}
+
+/* Price */
+
+.products-grid .product-card .price {
+  font-size: 8px;
+  color: #222;
+  margin-top: 4px;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .products-grid {
+    width: 90%;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .new-arrivals {
+    padding: 45px 0 60px;
+  }
+
+  .new-arrivals-heading {
+    margin-bottom: 40px;
+  }
+
+  .new-arrivals-heading h2 {
+    font-size: 20px;
+  }
+
+  .products-grid {
+    width: 90%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 12px;
+  }
+
+  .products-grid .product-image-wrapper {
+    height: 190px;
+  }
+
+  .view-more-wrapper {
+    margin-top: 40px;
+  }
+}
