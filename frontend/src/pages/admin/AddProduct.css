@@ -1,0 +1,122 @@
+.add-product-page {
+  min-height: 100vh;
+  margin-left: 240px;
+  background: #f5f6f8;
+}
+
+.add-product-content {
+  padding: 30px;
+}
+
+.add-product-header {
+  margin-bottom: 28px;
+}
+
+.add-product-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #111;
+}
+
+.add-product-header p {
+  margin-top: 7px;
+  color: #777;
+  font-size: 14px;
+}
+
+.add-product-card {
+  max-width: 900px;
+  background: white;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 22px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #111;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cancel-btn,
+.save-product-btn {
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #eee;
+  border: none;
+  color: #333;
+}
+
+.save-product-btn {
+  background: #111;
+  color: white;
+  border: none;
+}
+
+.save-product-btn:hover {
+  background: #333;
+}
+
+@media (max-width: 768px) {
+  .add-product-page {
+    margin-left: 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .add-product-content {
+    padding: 20px;
+  }
+}

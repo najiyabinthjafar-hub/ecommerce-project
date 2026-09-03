@@ -1,0 +1,160 @@
+* {
+  box-sizing: border-box;
+}
+
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f7f7f8;
+  padding: 20px;
+  
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+
+
+.admin-login-card {
+  width: 100%;
+  max-width: 430px;
+  background: #ffffff;
+  padding: 42px;
+  border-radius: 16px;
+  border: 1px solid #eeeeee;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
+}
+
+
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.login-brand h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #111111;
+}
+
+.login-brand p {
+  margin: 7px 0 0;
+  color: #888888;
+  font-size: 13px;
+}
+
+
+
+.login-heading {
+  margin-bottom: 28px;
+}
+
+.login-heading h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #171717;
+}
+
+.login-heading p {
+  margin: 7px 0 0;
+  color: #888888;
+  font-size: 13px;
+}
+
+
+
+.login-group {
+  margin-bottom: 20px;
+}
+
+.login-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.login-group input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.login-group input:focus {
+  border-color: #111111;
+}
+
+.login-group input::placeholder {
+  color: #aaaaaa;
+}
+
+
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0 25px;
+  font-size: 12px;
+}
+
+.login-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #777777;
+}
+
+.login-options input {
+  accent-color: #111111;
+}
+
+.login-options a {
+  color: #333333;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-options a:hover {
+  text-decoration: underline;
+}
+
+
+
+.admin-login-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-login-btn:hover {
+  background: #2a2a2a;
+  transform: translateY(-1px);
+}
+
+
+
+@media (max-width: 500px) {
+  .admin-login-card {
+    padding: 30px 22px;
+  }
+
+  .login-heading h2 {
+    font-size: 22px;
+  }
+}
