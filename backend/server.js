@@ -2,14 +2,17 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const connectDB = require("./config/db");
+
 const cartRoutes = require("./routes/cartRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
 
 app.get("/", (req, res) => {
   res.json({
@@ -17,13 +20,12 @@ app.get("/", (req, res) => {
   });
 });
 
-
 app.use("/api/cart", cartRoutes);
-
-
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/orders", orderRoutes);
 
+connectDB();
 
 const PORT = process.env.PORT || 5000;
 

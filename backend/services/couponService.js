@@ -1,11 +1,11 @@
-const Coupon = require("../models/Coupon");
+const Coupon = require("../models/coupon");
 
 const createCoupon = async (couponData) => {
   const coupon = await Coupon.create(couponData);
   return coupon;
 };
 
-const getAllCoupons = async () => {
+const getCoupons = async () => {
   const coupons = await Coupon.find().sort({ createdAt: -1 });
   return coupons;
 };
@@ -38,7 +38,7 @@ const deleteCoupon = async (couponId) => {
 
 module.exports = {
   createCoupon,
-  getAllCoupons,
+  getCoupons,
   getCouponByCode,
   updateCoupon,
   deleteCoupon,
