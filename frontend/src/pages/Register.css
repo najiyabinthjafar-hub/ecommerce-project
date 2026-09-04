@@ -1,0 +1,147 @@
+
+.register-page {
+  min-height: 75vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 70px 20px;
+  background: #fff;
+}
+
+.register-container {
+  width: 100%;
+  max-width: 520px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.register-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin: 0 0 12px;
+}
+
+.register-header h1 {
+  margin: 0 0 14px;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+
+.register-header span {
+  font-size: 13px;
+  color: #777;
+}
+
+.register-form {
+  width: 100%;
+}
+
+.register-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.register-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 22px;
+}
+
+.register-field label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  margin-bottom: 9px;
+}
+
+.register-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  border: 1px solid #d8d8d8;
+  outline: none;
+  font-size: 13px;
+  background: #fff;
+}
+
+.register-field input:focus {
+  border-color: #111;
+}
+
+.register-field input::placeholder {
+  color: #aaa;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 25px;
+  font-size: 11px;
+  color: #666;
+  cursor: pointer;
+}
+
+.terms-checkbox input {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.register-btn {
+  width: 100%;
+  padding: 17px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.register-btn:hover {
+  background: #333;
+}
+
+.register-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 28px;
+  font-size: 12px;
+  color: #777;
+}
+
+.register-login a {
+  color: #111;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.register-login a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .register-page {
+    padding: 50px 20px;
+  }
+
+  .register-header h1 {
+    font-size: 32px;
+  }
+
+  .register-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
