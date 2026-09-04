@@ -1,0 +1,194 @@
+/* =========================================
+   CATEGORY PAGE
+========================================= */
+
+.category-page {
+  width: 100%;
+
+  background: #ffffff;
+  color: #111111;
+}
+
+
+/* =========================================
+   HEADING
+========================================= */
+
+.category-page-heading {
+  text-align: center;
+
+  padding: 70px 20px 55px;
+}
+
+.category-page-heading .section-label {
+  margin: 0 0 14px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 10px;
+  letter-spacing: 2px;
+
+  color: #777777;
+}
+
+.category-page-heading h1 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 34px;
+  font-weight: 400;
+
+  letter-spacing: -0.5px;
+
+  color: #111111;
+}
+
+.category-page-description {
+  margin: 14px auto 0;
+
+  color: #777777;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+
+/* =========================================
+   PRODUCTS SECTION
+========================================= */
+
+.category-page-products {
+  width: 88%;
+  max-width: 1250px;
+
+  margin: 0 auto;
+
+  padding-bottom: 80px;
+}
+
+
+/* =========================================
+   PRODUCTS TOP
+========================================= */
+
+.category-page-top {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding-bottom: 14px;
+  margin-bottom: 25px;
+
+  border-bottom: 1px solid #dddddd;
+}
+
+.category-page-top h2 {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 18px;
+  font-weight: 500;
+
+  color: #111111;
+}
+
+.category-page-top p {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 11px;
+
+  color: #777777;
+}
+
+
+/* =========================================
+   PRODUCT GRID
+========================================= */
+
+.category-page-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 22px;
+
+  align-items: start;
+}
+
+.category-page-grid > * {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+
+  .category-page-heading {
+    padding: 60px 20px 45px;
+  }
+
+  .category-page-heading h1 {
+    font-size: 31px;
+  }
+
+  .category-page-products {
+    width: 90%;
+  }
+
+  .category-page-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+  }
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 650px) {
+
+  .category-page-heading {
+    padding: 50px 20px 40px;
+  }
+
+  .category-page-heading h1 {
+    font-size: 27px;
+  }
+
+  .category-page-description {
+    font-size: 11px;
+  }
+
+  .category-page-products {
+    width: 92%;
+  }
+
+  .category-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+  }
+
+  .category-page-top h2 {
+    font-size: 16px;
+  }
+
+  .category-page-top p {
+    font-size: 10px;
+  }
+}
