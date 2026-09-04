@@ -1,107 +1,122 @@
-import "./Orders.css";
-import AdminSidebar from "../../components/admin/AdminSidebar";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import "./Orders.css";
 
 function Orders() {
   const navigate = useNavigate();
 
   const orders = [
     {
-      id: "ORD001",
-      customer: "Aisha",
-      date: "Aug 25, 2026",
-      items: 2,
-      total: "₹1,299",
-      status: "Pending",
-    },
-    {
-      id: "ORD002",
-      customer: "Fathima",
-      date: "Aug 24, 2026",
+      id: "#ORD-1001",
+      customer: "Rahul Kumar",
+      date: "02 Sep 2026",
       items: 3,
-      total: "₹2,499",
+      total: 2450,
       status: "Delivered",
     },
     {
-      id: "ORD003",
-      customer: "Sara",
-      date: "Aug 24, 2026",
-      items: 1,
-      total: "₹799",
+      id: "#ORD-1002",
+      customer: "Anjali S",
+      date: "02 Sep 2026",
+      items: 2,
+      total: 1299,
       status: "Processing",
     },
     {
-      id: "ORD004",
-      customer: "Niya",
-      date: "Aug 23, 2026",
-      items: 4,
-      total: "₹3,199",
-      status: "Cancelled",
+      id: "#ORD-1003",
+      customer: "Mohammed Shafi",
+      date: "01 Sep 2026",
+      items: 1,
+      total: 899,
+      status: "Shipped",
     },
     {
-      id: "ORD005",
-      customer: "Hiba",
-      date: "Aug 22, 2026",
+      id: "#ORD-1004",
+      customer: "Fathima N",
+      date: "01 Sep 2026",
+      items: 4,
+      total: 3490,
+      status: "Pending",
+    },
+    {
+      id: "#ORD-1005",
+      customer: "Arun Raj",
+      date: "31 Aug 2026",
       items: 2,
-      total: "₹1,899",
-      status: "Delivered",
+      total: 1750,
+      status: "Cancelled",
     },
   ];
 
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
+    <div className="orders-page">
 
-      <main className="orders-content">
-        <div className="orders-header">
-          <div>
-            <h1>Orders</h1>
-            <p>Manage and track customer orders</p>
-          </div>
+      {/* Page Header */}
+      <div className="orders-header">
+        <div>
+          <h1>Orders</h1>
+          <p>Manage and track customer orders</p>
         </div>
 
-       
-        <div className="order-cards">
-          <div className="order-card">
-            <span>Pending Orders</span>
-            <h2>12</h2>
+        <div className="orders-summary">
+          <div className="summary-item">
+            <span>Total Orders</span>
+            <strong>128</strong>
           </div>
 
-          <div className="order-card">
-            <span>Processing</span>
-            <h2>8</h2>
-          </div>
-
-          <div className="order-card">
-            <span>Delivered</span>
-            <h2>35</h2>
-          </div>
-
-          <div className="order-card">
-            <span>Cancelled</span>
-            <h2>4</h2>
+          <div className="summary-item">
+            <span>Pending</span>
+            <strong>12</strong>
           </div>
         </div>
+      </div>
 
-        
-        <div className="orders-tools">
+      {/* Filter Bar */}
+      <div className="orders-toolbar">
+
+        <div className="orders-search">
+          <i className="bi bi-search"></i>
           <input
             type="text"
-            placeholder="Search by order ID or customer..."
+            placeholder="Search orders or customers..."
           />
+        </div>
 
-          <select>
-            <option>All Status</option>
-            <option>Pending</option>
-            <option>Processing</option>
-            <option>Delivered</option>
-            <option>Cancelled</option>
+        <div className="orders-filters">
+          <select defaultValue="All">
+            <option value="All">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+
+          <select defaultValue="Newest">
+            <option value="Newest">Newest First</option>
+            <option value="Oldest">Oldest First</option>
           </select>
         </div>
 
-        
-        <div className="orders-table-container">
+      </div>
+
+      {/* Orders Card */}
+      <div className="orders-card">
+
+        <div className="orders-card-header">
+          <div>
+            <h2>All Orders</h2>
+            <p>View and manage recent customer orders</p>
+          </div>
+
+          <span className="order-count">
+            {orders.length} Orders
+          </span>
+        </div>
+
+        <div className="orders-table-wrapper">
           <table className="orders-table">
+
             <thead>
               <tr>
                 <th>Order ID</th>
@@ -117,15 +132,36 @@ function Orders() {
             <tbody>
               {orders.map((order) => (
                 <tr key={order.id}>
-                  <td className="order-id">#{order.id}</td>
-                  <td>{order.customer}</td>
+
+                  <td>
+                    <strong className="order-id">
+                      {order.id}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <div className="customer-cell">
+                      <div className="customer-avatar">
+                        {order.customer.charAt(0)}
+                      </div>
+
+                      <span>{order.customer}</span>
+                    </div>
+                  </td>
+
                   <td>{order.date}</td>
+
                   <td>{order.items}</td>
-                  <td className="order-total">{order.total}</td>
+
+                  <td>
+                    <strong>₹{order.total.toLocaleString()}</strong>
+                  </td>
 
                   <td>
                     <span
-                      className={`status ${order.status.toLowerCase()}`}
+                      className={`order-status ${order.status
+                        .toLowerCase()
+                        .replace(" ", "-")}`}
                     >
                       {order.status}
                     </span>
@@ -133,20 +169,24 @@ function Orders() {
 
                   <td>
                     <button
-                      className="view-btn"
+                      className="view-order-btn"
                       onClick={() =>
-                        navigate(`/admin/orders/${order.id}`)
+                        navigate(`/admin/orders/${order.id.replace("#", "")}`)
                       }
                     >
                       View
                     </button>
                   </td>
+
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
-      </main>
+
+      </div>
+
     </div>
   );
 }

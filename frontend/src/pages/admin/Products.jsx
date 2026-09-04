@@ -1,144 +1,210 @@
-import React from "react";
-import AdminSidebar from "../../components/admin/AdminSidebar";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Products.css";
 
-const products = [
-  {
-    id: 1,
-    name: "Classic T-Shirt",
-    category: "Men",
-    price: "₹799",
-    stock: 25,
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Women Handbag",
-    category: "Women",
-    price: "₹1,499",
-    stock: 12,
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Running Shoes",
-    category: "Shoes",
-    price: "₹2,299",
-    stock: 8,
-    status: "Low Stock",
-  },
-  {
-    id: 4,
-    name: "Smart Watch",
-    category: "Electronics",
-    price: "₹3,999",
-    stock: 0,
-    status: "Out of Stock",
-  },
-];
-
 function Products() {
+  const navigate = useNavigate();
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/products")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Products API response:", data);
+
+        const productList = Array.isArray(data)
+          ? data
+          : data.products || [];
+
+        setProducts(productList);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+        setLoading(false);
+      });
+  }, []);
+
   return (
-    <div className="admin-products-page">
+    <div className="products-page">
 
-      <AdminSidebar />
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1>Products</h1>
+          <p>Manage your products and inventory</p>
+        </div>
 
-      <main className="admin-page">
+        <button
+          className="add-product-btn"
+          onClick={() => navigate("/admin/products/add")}
+        >
+          <i className="bi bi-plus-lg"></i>
+          Add Product
+        </button>
+      </div>
 
-        <div className="admin-content">
+      {/* Products Card */}
+      <div className="product-card">
 
-          <div className="page-header">
-            <div>
-              <h1>Products</h1>
-              <p>Manage your products and inventory</p>
-            </div>
-
-            <button
-              className="add-product-btn"
-              onClick={() => {
-                window.location.href = "/admin/products/add";
-              }}
-            >
-              + Add Product
-            </button>
+        <div className="product-top">
+          <div>
+            <h2>All Products</h2>
+            <p>View and manage all products in your store</p>
           </div>
 
-          <div className="product-card">
+          <div className="product-search">
+            <i className="bi bi-search"></i>
 
-            <div className="product-top">
-              <h2>All Products</h2>
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="search-input"
+            />
+          </div>
+        </div>
 
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="search-input"
-              />
-            </div>
+        {/* Products Table */}
+        <div className="table-container">
+          <table>
 
-            <div className="table-container">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+            <tbody>
 
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id}>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="table-message">
+                    <i className="bi bi-arrow-repeat"></i>
+                    Loading products...
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="table-message">
+                    <i className="bi bi-box-seam"></i>
+                    No products found
+                  </td>
+                </tr>
+              ) : (
+                products.map((product) => {
 
+                  const stock =
+                    product.stock ??
+                    product.quantity ??
+                    0;
+
+                  const status =
+                    stock === 0
+                      ? "Out of Stock"
+                      : stock <= 10
+                      ? "Low Stock"
+                      : "Active";
+
+                  return (
+                    <tr
+                      key={
+                        product._id ||
+                        product.id
+                      }
+                    >
+
+                      {/* Product */}
                       <td>
-                        <strong>{product.name}</strong>
+                        <div className="product-name">
+                          <div className="product-icon">
+                            <i className="bi bi-box-seam"></i>
+                          </div>
+
+                          <strong>
+                            {product.name ||
+                              product.productName ||
+                              "-"}
+                          </strong>
+                        </div>
                       </td>
 
-                      <td>{product.category}</td>
+                      {/* Category */}
+                      <td>
+                        {product.category?.name ||
+                          product.category ||
+                          "-"}
+                      </td>
 
-                      <td>{product.price}</td>
+                      {/* Price */}
+                      <td>
+                        ₹{product.price ?? 0}
+                      </td>
 
-                      <td>{product.stock}</td>
+                      {/* Stock */}
+                      <td>
+                        {stock}
+                      </td>
 
+                      {/* Status */}
                       <td>
                         <span
                           className={`status ${
-                            product.status === "Active"
+                            status === "Active"
                               ? "active"
-                              : product.status === "Low Stock"
+                              : status === "Low Stock"
                               ? "low"
                               : "out"
                           }`}
                         >
-                          {product.status}
+                          {status}
                         </span>
                       </td>
 
+                      {/* Actions */}
                       <td>
-                        <button className="edit-btn">
-                          Edit
-                        </button>
+                        <div className="product-actions">
 
-                        <button className="delete-btn">
-                          Delete
-                        </button>
+                          <button
+                            className="edit-btn"
+                            title="Edit product"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+
+                          <button
+                            className="delete-btn"
+                            title="Delete product"
+                          >
+                            <i className="bi bi-trash3"></i>
+                          </button>
+
+                        </div>
                       </td>
 
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  );
+                })
+              )}
 
-            </div>
+            </tbody>
 
-          </div>
-
+          </table>
         </div>
 
-      </main>
+      </div>
 
     </div>
   );

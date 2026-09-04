@@ -14,13 +14,18 @@ import Orders from "./pages/admin/Orders";
 import OrderDetails from "./pages/admin/OrderDetails";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
+import Settings from "./pages/admin/Settings";
+import AdminProfile from "./pages/admin/AdminProfile";
+
+import AdminLayout from "./layouts/AdminLayout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Customer Side */}
+        {/* ================= CUSTOMER SIDE ================= */}
+
         <Route
           path="/"
           element={
@@ -31,30 +36,132 @@ function App() {
           }
         />
 
-        {/* Admin Side */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        {/* ================= ADMIN SIDE ================= */}
 
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-
-        <Route path="/admin/products" element={<Products />} />
-
+        {/* Admin Login - No Sidebar/Navbar */}
         <Route
-          path="/admin/products/add"
-          element={<AddProduct />}
+          path="/admin/login"
+          element={<AdminLogin />}
         />
 
-        <Route path="/admin/categories" element={<Categories />} />
-        <Route path="/admin/banners" element={<Banners />} />
-        <Route path="/admin/customers" element={<Customers />} />
+        {/* Dashboard */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminLayout>
+              <Dashboard />
+            </AdminLayout>
+          }
+        />
 
-        <Route path="/admin/orders" element={<Orders />} />
-        <Route path="/admin/coupons" element={<Coupons />} />
-        <Route path="/admin/inventory" element={<Inventory />} />
+        {/* Products */}
+        <Route
+          path="/admin/products"
+          element={
+            <AdminLayout>
+              <Products />
+            </AdminLayout>
+          }
+        />
 
+        {/* Add Product */}
+        <Route
+          path="/admin/products/add"
+          element={
+            <AdminLayout>
+              <AddProduct />
+            </AdminLayout>
+          }
+        />
 
+        {/* Categories */}
+        <Route
+          path="/admin/categories"
+          element={
+            <AdminLayout>
+              <Categories />
+            </AdminLayout>
+          }
+        />
+
+        {/* Banners */}
+        <Route
+          path="/admin/banners"
+          element={
+            <AdminLayout>
+              <Banners />
+            </AdminLayout>
+          }
+        />
+
+        {/* Customers */}
+        <Route
+          path="/admin/customers"
+          element={
+            <AdminLayout>
+              <Customers />
+            </AdminLayout>
+          }
+        />
+
+        {/* Orders */}
+        <Route
+          path="/admin/orders"
+          element={
+            <AdminLayout>
+              <Orders />
+            </AdminLayout>
+          }
+        />
+
+        {/* Order Details */}
         <Route
           path="/admin/orders/:id"
-          element={<OrderDetails />}
+          element={
+            <AdminLayout>
+              <OrderDetails />
+            </AdminLayout>
+          }
+        />
+
+        {/* Coupons */}
+        <Route
+          path="/admin/coupons"
+          element={
+            <AdminLayout>
+              <Coupons />
+            </AdminLayout>
+          }
+        />
+
+        {/* Inventory */}
+        <Route
+          path="/admin/inventory"
+          element={
+            <AdminLayout>
+              <Inventory />
+            </AdminLayout>
+          }
+        />
+
+        {/* Settings */}
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminLayout>
+              <Settings />
+            </AdminLayout>
+          }
+        />
+
+        {/* Admin Profile */}
+        <Route
+          path="/admin/profile"
+          element={
+            <AdminLayout>
+              <AdminProfile />
+            </AdminLayout>
+          }
         />
 
       </Routes>

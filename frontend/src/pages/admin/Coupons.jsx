@@ -1,172 +1,185 @@
-import AdminSidebar from "../../components/admin/AdminSidebar";
-import "./Coupons.css"; 
+import React from "react";
+import "./Coupons.css";
 
 function Coupons() {
   const coupons = [
     {
       id: 1,
-      code: "SUMMER20",
-      discount: "20%",
-      type: "Percentage",
-      minOrder: "₹1,000",
-      expiry: "30 Aug 2026",
-      status: "Active",
-    },
-    {
-      id: 2,
       code: "WELCOME10",
       discount: "10%",
       type: "Percentage",
       minOrder: "₹500",
-      expiry: "15 Sep 2026",
+      expiry: "30 Sep 2026",
+      status: "Active",
+    },
+    {
+      id: 2,
+      code: "SAVE200",
+      discount: "₹200",
+      type: "Fixed",
+      minOrder: "₹1,000",
+      expiry: "15 Oct 2026",
       status: "Active",
     },
     {
       id: 3,
-      code: "SAVE500",
-      discount: "₹500",
-      type: "Fixed",
-      minOrder: "₹2,000",
-      expiry: "20 Aug 2026",
-      status: "Expired",
-    },
-    {
-      id: 4,
-      code: "NEWUSER",
-      discount: "15%",
+      code: "FESTIVE20",
+      discount: "20%",
       type: "Percentage",
-      minOrder: "₹750",
-      expiry: "30 Sep 2026",
-      status: "Active",
+      minOrder: "₹1,500",
+      expiry: "25 Sep 2026",
+      status: "Expired",
     },
   ];
 
   return (
-    <div className="coupons-layout">
-      <AdminSidebar />
+    <div className="coupons-page">
 
-      <main className="coupons-main">
-        <div className="coupons-content">
-
-          
-          <div className="coupons-header">
-            <div>
-              <h1>Coupons</h1>
-              <p>Manage your store discount coupons</p>
-            </div>
-
-            <button className="add-coupon-btn">
-              + Add Coupon
-            </button>
-          </div>
-
-          <div className="coupon-stats">
-
-            <div className="coupon-stat-card">
-              <span>Total Coupons</span>
-              <strong>24</strong>
-            </div>
-
-            <div className="coupon-stat-card">
-              <span>Active Coupons</span>
-              <strong>18</strong>
-            </div>
-
-            <div className="coupon-stat-card">
-              <span>Expired</span>
-              <strong>6</strong>
-            </div>
-
-            <div className="coupon-stat-card">
-              <span>Used Coupons</span>
-              <strong>142</strong>
-            </div>
-
-          </div>
-
-          
-          <div className="coupons-card">
-
-            <div className="coupons-card-header">
-              <div>
-                <h2>All Coupons</h2>
-                <p>View and manage discount coupons</p>
-              </div>
-
-              <input
-                type="text"
-                placeholder="Search coupons..."
-                className="coupon-search"
-              />
-            </div>
-
-            <div className="coupons-table-container">
-              <table className="coupons-table">
-
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Code</th>
-                    <th>Discount</th>
-                    <th>Type</th>
-                    <th>Min Order</th>
-                    <th>Expiry</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {coupons.map((coupon, index) => (
-                    <tr key={coupon.id}>
-
-                      <td>{index + 1}</td>
-
-                      <td>
-                        <span className="coupon-code">
-                          {coupon.code}
-                        </span>
-                      </td>
-
-                      <td>{coupon.discount}</td>
-
-                      <td>{coupon.type}</td>
-
-                      <td>{coupon.minOrder}</td>
-
-                      <td>{coupon.expiry}</td>
-
-                      <td>
-                        <span
-                          className={`coupon-status ${coupon.status.toLowerCase()}`}
-                        >
-                          {coupon.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="coupon-actions">
-                          <button className="edit-coupon-btn">
-                            Edit
-                          </button>
-
-                          <button className="delete-coupon-btn">
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-
-                    </tr>
-                  ))}
-                </tbody>
-
-              </table>
-            </div>
-
-          </div>
-
+      {/* Page Header */}
+      <div className="coupon-page-header">
+        <div>
+          <h1>Coupons</h1>
+          <p>Create and manage discount coupons</p>
         </div>
-      </main>
+
+        <button className="add-coupon-btn">
+          + Add Coupon
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="coupon-summary">
+
+        <div className="coupon-summary-card">
+          <div className="coupon-icon blue">
+            <i className="bi bi-ticket-perforated"></i>
+          </div>
+          <div>
+            <span>Total Coupons</span>
+            <h2>24</h2>
+          </div>
+        </div>
+
+        <div className="coupon-summary-card">
+          <div className="coupon-icon green">
+            <i className="bi bi-check-circle"></i>
+          </div>
+          <div>
+            <span>Active Coupons</span>
+            <h2>18</h2>
+          </div>
+        </div>
+
+        <div className="coupon-summary-card">
+          <div className="coupon-icon orange">
+            <i className="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <span>Expiring Soon</span>
+            <h2>4</h2>
+          </div>
+        </div>
+
+        <div className="coupon-summary-card">
+          <div className="coupon-icon purple">
+            <i className="bi bi-percent"></i>
+          </div>
+          <div>
+            <span>Total Used</span>
+            <h2>156</h2>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Coupons Table */}
+      <div className="coupons-card">
+
+        <div className="coupons-card-header">
+          <div>
+            <h2>All Coupons</h2>
+            <p>Manage your promotional discounts</p>
+          </div>
+
+          <div className="coupon-actions">
+            <input
+              type="text"
+              placeholder="Search coupons..."
+              className="coupon-search"
+            />
+
+            <select className="coupon-filter">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Expired</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="coupon-table-wrapper">
+          <table className="coupon-table">
+            <thead>
+              <tr>
+                <th>Coupon Code</th>
+                <th>Discount</th>
+                <th>Type</th>
+                <th>Min. Order</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {coupons.map((coupon) => (
+                <tr key={coupon.id}>
+
+                  <td>
+                    <div className="coupon-code">
+                      <i className="bi bi-ticket-perforated"></i>
+                      <strong>{coupon.code}</strong>
+                    </div>
+                  </td>
+
+                  <td className="discount-value">
+                    {coupon.discount}
+                  </td>
+
+                  <td>{coupon.type}</td>
+
+                  <td>{coupon.minOrder}</td>
+
+                  <td>{coupon.expiry}</td>
+
+                  <td>
+                    <span
+                      className={`coupon-status ${
+                        coupon.status === "Active"
+                          ? "coupon-active"
+                          : "coupon-expired"
+                      }`}
+                    >
+                      {coupon.status}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button className="coupon-edit-btn">
+                      <i className="bi bi-pencil"></i>
+                    </button>
+
+                    <button className="coupon-delete-btn">
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
     </div>
   );
 }
