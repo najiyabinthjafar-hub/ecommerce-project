@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 import "./Banners.css";
 
 import rizoBanner1 from "../../assets/Rizo Banner 1.png";
@@ -7,26 +7,28 @@ import rizoBanner2 from "../../assets/Rizo Banner 2.png";
 import rizoBanner3 from "../../assets/Rizo Banner 3.png";
 
 function Banners() {
+  const navigate = useNavigate();
+
   const [banners, setBanners] = useState([
-  {
-    id: 1,
-    title: "Special Offers",
-    image: rizoBanner1,
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "Summer Collections",
-    image: rizoBanner2,
-    status: "Active",
-  },
-  {
-    id: 3,
-    title: "New Arrivals",
-    image: rizoBanner3,
-    status: "Inactive",
-  },
-]);
+    {
+      id: 1,
+      title: "Special Offers",
+      image: rizoBanner1,
+      status: "Active",
+    },
+    {
+      id: 2,
+      title: "Summer Collections",
+      image: rizoBanner2,
+      status: "Active",
+    },
+    {
+      id: 3,
+      title: "New Arrivals",
+      image: rizoBanner3,
+      status: "Inactive",
+    },
+  ]);
 
   const toggleStatus = (id) => {
     setBanners((prev) =>
@@ -58,7 +60,10 @@ function Banners() {
           <p>Manage promotional banners for your store</p>
         </div>
 
-        <button className="add-banner-btn">
+        <button
+          className="add-banner-btn"
+          onClick={() => navigate("/admin/banners/add")}
+        >
           <i className="bi bi-plus-lg"></i>
           Add Banner
         </button>
@@ -134,7 +139,9 @@ function Banners() {
           {banners.length === 0 ? (
             <div className="empty-banners">
               <i className="bi bi-images"></i>
+
               <h3>No banners found</h3>
+
               <p>
                 Add a banner to display promotions on your store.
               </p>
@@ -145,6 +152,7 @@ function Banners() {
 
                 {/* Banner Image */}
                 <div className="banner-image-wrapper">
+
                   <img
                     src={banner.image}
                     alt={banner.title}
@@ -159,6 +167,7 @@ function Banners() {
                   >
                     {banner.status}
                   </span>
+
                 </div>
 
                 {/* Banner Details */}
@@ -204,7 +213,6 @@ function Banners() {
                     </button>
 
                   </div>
-
                 </div>
 
               </div>

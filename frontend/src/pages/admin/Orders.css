@@ -8,10 +8,10 @@
 
 .orders-page {
   width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
+  margin: 0;
   padding: 4px 0 40px;
   color: #171717;
+  background: transparent;
 }
 
 /* =========================
@@ -29,10 +29,10 @@
 
 .orders-header h1 {
   margin: 0;
+  color: #151515;
   font-size: 27px;
   font-weight: 700;
   letter-spacing: -0.4px;
-  color: #151515;
 }
 
 .orders-header p {
@@ -54,12 +54,12 @@
 .summary-item {
   min-width: 115px;
   padding: 10px 15px;
-  background: #ffffff;
-  border: 1px solid #e9e9e9;
-  border-radius: 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
+  background: #ffffff;
+  border: 1px solid #e9e9e9;
+  border-radius: 10px;
 }
 
 .summary-item span {
@@ -103,15 +103,18 @@
   border: 1px solid #dedede;
   border-radius: 8px;
   background: #ffffff;
+  flex-shrink: 1;
 }
 
 .orders-search i {
   color: #999;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .orders-search input {
   width: 100%;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -127,6 +130,7 @@
 .orders-filters {
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .orders-filters select {
@@ -160,6 +164,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 15px;
   padding: 20px 22px;
   border-bottom: 1px solid #eeeeee;
 }
@@ -183,6 +188,7 @@
   color: #666;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* =========================
@@ -191,7 +197,10 @@
 
 .orders-table-wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .orders-table {
@@ -278,6 +287,7 @@
   border-radius: 20px;
   font-size: 10px;
   font-weight: 650;
+  white-space: nowrap;
 }
 
 .order-status::before {
@@ -329,6 +339,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s ease;
+  white-space: nowrap;
 }
 
 .view-order-btn:hover {
@@ -371,10 +382,12 @@
 
   .orders-summary {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .summary-item {
     flex: 1;
+    min-width: 100px;
   }
 
   .orders-toolbar {
@@ -394,6 +407,14 @@
     flex: 1;
     width: 50%;
   }
+
+  .orders-card {
+    overflow: hidden;
+  }
+
+  .orders-table-wrapper {
+    overflow-x: auto;
+  }
 }
 
 /* =========================
@@ -402,10 +423,12 @@
 
 @media (max-width: 600px) {
   .orders-page {
-    padding: 2px 0 25px;
+    width: 100%;
+    padding: 2px 0 35px;
   }
 
   .orders-header {
+    width: 100%;
     margin-bottom: 20px;
   }
 
@@ -418,10 +441,14 @@
   }
 
   .orders-summary {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
   .summary-item {
+    width: 100%;
     min-width: 0;
     padding: 9px 12px;
   }
@@ -435,24 +462,57 @@
   }
 
   .orders-toolbar {
+    width: 100%;
     padding: 12px;
+    margin-bottom: 15px;
     border-radius: 10px;
   }
 
+  .orders-search {
+    width: 100%;
+  }
+
   .orders-filters {
+    width: 100%;
     flex-direction: column;
+    gap: 8px;
   }
 
   .orders-filters select {
     width: 100%;
+    min-width: 0;
+  }
+
+  .orders-card {
+    width: 100%;
+    border-radius: 10px;
   }
 
   .orders-card-header {
-    padding: 17px;
+    padding: 16px;
   }
 
   .orders-card-header h2 {
     font-size: 16px;
+  }
+
+  .orders-card-header p {
+    font-size: 10px;
+  }
+
+  .order-count {
+    font-size: 10px;
+  }
+
+  .orders-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .orders-table {
+    min-width: 800px;
   }
 
   .orders-table th {
@@ -461,5 +521,43 @@
 
   .orders-table td {
     padding: 13px 14px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+  .orders-page {
+    padding: 2px 0 40px;
+  }
+
+  .orders-header h1 {
+    font-size: 21px;
+  }
+
+  .orders-header p {
+    font-size: 11px;
+  }
+
+  .summary-item {
+    padding: 8px 10px;
+  }
+
+  .summary-item strong {
+    font-size: 14px;
+  }
+
+  .orders-toolbar {
+    padding: 10px;
+  }
+
+  .orders-card-header {
+    padding: 14px;
+  }
+
+  .orders-table {
+    min-width: 780px;
   }
 }

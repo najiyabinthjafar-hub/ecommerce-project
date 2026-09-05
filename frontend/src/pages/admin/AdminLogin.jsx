@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/rizo-logo.png";
@@ -9,15 +8,26 @@ function AdminLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError("");
 
-    // Backend API integration will be added later
-    console.log("Admin login:", { email, password });
+    // Basic admin login testing
+    if (email === "admin@test.com" && password === "Admin@123") {
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          email: "admin@test.com",
+          role: "admin",
+        })
+      );
 
-    // Temporary navigation for frontend testing
-    navigate("/admin/dashboard");
+      navigate("/admin/dashboard");
+    } else {
+      setError("Invalid admin email or password");
+    }
   };
 
   return (
@@ -31,6 +41,7 @@ function AdminLogin() {
             alt="RIZO Logo"
             className="rizo-logo"
           />
+
           <h1>RIZO</h1>
           <p>Admin Panel</p>
         </div>
@@ -46,6 +57,7 @@ function AdminLogin() {
 
           <div className="login-group">
             <label>Email Address</label>
+
             <input
               type="email"
               placeholder="Enter your email"
@@ -57,6 +69,7 @@ function AdminLogin() {
 
           <div className="login-group">
             <label>Password</label>
+
             <input
               type="password"
               placeholder="Enter your password"
@@ -66,19 +79,23 @@ function AdminLogin() {
             />
           </div>
 
-          {/* Login Options */}
+          {/* Error */}
+          {error && (
+            <p className="login-error">
+              {error}
+            </p>
+          )}
+
+          {/* Options */}
           <div className="login-options">
             <label>
               <input type="checkbox" />
               Remember me
             </label>
 
-            <a
-              href="#"
-              onClick={(e) => e.preventDefault()}
-            >
+            <span className="forgot-password">
               Forgot Password?
-            </a>
+            </span>
           </div>
 
           {/* Login Button */}
@@ -96,4 +113,3 @@ function AdminLogin() {
 }
 
 export default AdminLogin;
-

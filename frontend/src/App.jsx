@@ -30,6 +30,7 @@ import Settings from "./pages/admin/Settings";
 import AdminProfile from "./pages/admin/AdminProfile";
 
 import AdminLayout from "./layouts/AdminLayout";
+import AddBanner from "./pages/admin/AddBanner";
 
 function App() {
   return (
@@ -104,6 +105,16 @@ function App() {
             </AdminLayout>
           }
         />
+
+        {/* Add Banner */}
+      <Route
+         path="/admin/banners/add"
+         element={
+          <AdminLayout>
+             <AddBanner />
+          </AdminLayout>
+        }
+      />
 
         {/* Customers */}
         <Route

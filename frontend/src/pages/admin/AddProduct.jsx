@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AddProduct.css";
@@ -11,14 +10,29 @@ function AddProduct() {
     category: "",
     price: "",
     stock: "",
-    size: "",
+    size: [],
     description: "",
   });
+
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
   const handleChange = (e) => {
     setProduct({
       ...product,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSizeChange = (size) => {
+    setProduct((prev) => {
+      const alreadySelected = prev.size.includes(size);
+
+      return {
+        ...prev,
+        size: alreadySelected
+          ? prev.size.filter((item) => item !== size)
+          : [...prev.size, size],
+      };
     });
   };
 
@@ -34,7 +48,7 @@ function AddProduct() {
       category: "",
       price: "",
       stock: "",
-      size: "",
+      size: [],
       description: "",
     });
 
@@ -47,14 +61,11 @@ function AddProduct() {
 
         {/* Header */}
         <div className="add-product-header">
-
-          {/* Heading + Subheading */}
           <div className="add-product-heading">
             <h1>Add Product</h1>
             <p>Add a new fashion product to your store</p>
           </div>
 
-          {/* Back Button */}
           <button
             type="button"
             className="back-products-btn"
@@ -63,7 +74,6 @@ function AddProduct() {
             <i className="bi bi-arrow-left"></i>
             Back to Products
           </button>
-
         </div>
 
         {/* Form Card */}
@@ -143,25 +153,35 @@ function AddProduct() {
             {/* Size + Image */}
             <div className="form-row">
 
+              {/* Size Selection */}
               <div className="form-group">
-                <label>Available Size</label>
+                <label>Available Sizes</label>
 
-                <select
-                  name="size"
-                  value={product.size}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select size</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                </select>
+                <div className="size-selection">
+                  {sizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`size-option ${
+                        product.size.includes(size) ? "selected" : ""
+                      }`}
+                      onClick={() => handleSizeChange(size)}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+
+                <small className="size-hint">
+                  {product.size.length === 0
+                    ? "Select one or more sizes"
+                    : `${product.size.length} size${
+                        product.size.length > 1 ? "s" : ""
+                      } selected`}
+                </small>
               </div>
 
+              {/* Product Image */}
               <div className="form-group">
                 <label>Product Image</label>
 
@@ -185,7 +205,6 @@ function AddProduct() {
                 rows="5"
                 required
               />
-
             </div>
 
             {/* Actions */}
@@ -218,4 +237,3 @@ function AddProduct() {
 }
 
 export default AddProduct;
-
