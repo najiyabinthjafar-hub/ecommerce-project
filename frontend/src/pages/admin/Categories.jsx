@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import "./Categories.css";
 
@@ -21,11 +22,9 @@ function Categories() {
 
       const data = await response.json();
 
-      const categoryList = Array.isArray(data)
-        ? data
-        : data.categories || data.data || [];
+      console.log("Categories API response:", data);
 
-      setCategories(categoryList);
+      setCategories(data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     } finally {
@@ -83,8 +82,10 @@ function Categories() {
     }
 
     try {
+      const categoryId = category._id || category.id;
+
       const response = await fetch(
-        `${API_URL}/${category._id || category.id}`,
+        `${API_URL}/${categoryId}`,
         {
           method: "PUT",
           headers: {
@@ -124,8 +125,10 @@ function Categories() {
     }
 
     try {
+      const categoryId = category._id || category.id;
+
       const response = await fetch(
-        `${API_URL}/${category._id || category.id}`,
+        `${API_URL}/${categoryId}`,
         {
           method: "DELETE",
         }
@@ -148,7 +151,7 @@ function Categories() {
     }
   };
 
-  // Search
+  // Search categories
   const filteredCategories = categories.filter((category) =>
     (category.name || "")
       .toLowerCase()
@@ -176,10 +179,10 @@ function Categories() {
       {/* Categories Card */}
       <div className="categories-card">
 
+        {/* Card Header */}
         <div className="categories-card-header">
           <div>
             <h2>All Categories</h2>
-
             <p>
               {categories.length} categories available
             </p>
@@ -194,7 +197,7 @@ function Categories() {
           />
         </div>
 
-        {/* Table */}
+        {/* Categories Table */}
         <div className="categories-table-container">
           <table className="categories-table">
 
@@ -220,21 +223,25 @@ function Categories() {
                   </td>
                 </tr>
               ) : filteredCategories.length > 0 ? (
-                filteredCategories.map((category, index) => (
 
+                filteredCategories.map((category, index) => (
                   <tr
                     key={category._id || category.id}
                   >
 
+                    {/* Number */}
                     <td className="category-number">
                       {index + 1}
                     </td>
 
+                    {/* Category */}
                     <td>
                       <div className="category-name">
 
                         <div className="category-icon">
-                          {(category.name || "?").charAt(0).toUpperCase()}
+                          {(category.name || "?")
+                            .charAt(0)
+                            .toUpperCase()}
                         </div>
 
                         <strong>
@@ -244,6 +251,7 @@ function Categories() {
                       </div>
                     </td>
 
+                    {/* Products */}
                     <td>
                       <span className="product-count">
                         {category.products ||
@@ -253,12 +261,14 @@ function Categories() {
                       </span>
                     </td>
 
+                    {/* Status */}
                     <td>
                       <span className="category-status">
                         Active
                       </span>
                     </td>
 
+                    {/* Actions */}
                     <td>
                       <div className="category-actions">
 
@@ -284,9 +294,10 @@ function Categories() {
                     </td>
 
                   </tr>
-
                 ))
+
               ) : (
+
                 <tr>
                   <td
                     colSpan="5"
@@ -295,16 +306,16 @@ function Categories() {
                     No categories found
                   </td>
                 </tr>
+
               )}
 
             </tbody>
-
           </table>
         </div>
-
       </div>
     </div>
   );
 }
 
 export default Categories;
+

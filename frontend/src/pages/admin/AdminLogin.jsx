@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/rizo-logo.png";
@@ -9,24 +10,49 @@ function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
+    setLoading(true);
 
-    // Basic admin login testing
-    if (email === "admin@test.com" && password === "Admin@123") {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: "admin@test.com",
-          role: "admin",
-        })
-      );
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-      navigate("/admin/dashboard");
-    } else {
-      setError("Invalid admin email or password");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid email or password");
+      }
+
+      // Check admin role
+      if (data.user?.role !== "admin") {
+        throw new Error("You are not authorized as an admin");
+      }
+
+      // Save JWT token
+      localStorage.setItem("token", data.token);
+
+      // Save user details
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Navigate to admin dashboard
+      navigate("/admin/dashboard", { replace: true });
+    } catch (error) {
+      setError(error.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,7 +105,7 @@ function AdminLogin() {
             />
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
             <p className="login-error">
               {error}
@@ -102,8 +128,9 @@ function AdminLogin() {
           <button
             type="submit"
             className="admin-login-btn"
+            disabled={loading}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
 
         </form>
@@ -113,3 +140,4 @@ function AdminLogin() {
 }
 
 export default AdminLogin;
+

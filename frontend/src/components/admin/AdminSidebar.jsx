@@ -1,16 +1,29 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./AdminSidebar.css";
 import logo from "../../assets/rizo-logo.png";
 
 function AdminSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    console.log("Logout clicked");
+
+    // Remove logged-in user data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Go to admin login page
+    navigate("/admin/login", { replace: true });
+  };
+
   return (
     <aside className="admin-sidebar">
 
       {/* Logo */}
       <div className="sidebar-logo">
         <img src={logo} alt="RIZO" />
-        <span>RIZO </span>
+        <span>RIZO</span>
       </div>
 
       {/* Navigation */}
@@ -69,7 +82,11 @@ function AdminSidebar() {
         <div className="sidebar-divider"></div>
 
         {/* Logout */}
-        <button type="button" className="logout-btn">
+        <button
+          type="button"
+          className="logout-btn"
+          onClick={handleLogout}
+        >
           <i className="bi bi-box-arrow-right"></i>
           <span>Logout</span>
         </button>

@@ -31,6 +31,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AddBanner from "./pages/admin/AddBanner";
+import ProtectedRoute from "./components/admin/ProtectedRoute";
 
 function App() {
   return (
@@ -55,6 +56,8 @@ function App() {
 
         {/* Admin Login */}
         <Route path="/admin/login" element={<AdminLogin />} />
+
+        <Route element={<ProtectedRoute />}>
 
         {/* Dashboard */}
         <Route
@@ -185,6 +188,7 @@ function App() {
             </AdminLayout>
           }
         />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
