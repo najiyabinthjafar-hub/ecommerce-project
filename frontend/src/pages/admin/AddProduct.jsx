@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AddProduct.css";
+
+const CATEGORY_API_URL = "http://localhost:5000/api/categories";
 
 function AddProduct() {
   const navigate = useNavigate();
@@ -14,7 +17,38 @@ function AddProduct() {
     description: "",
   });
 
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+
+  // Fetch categories from database
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+
+      const response = await fetch(CATEGORY_API_URL);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+
+      const data = await response.json();
+
+      console.log("Categories:", data);
+
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     setProduct({
@@ -105,13 +139,21 @@ function AddProduct() {
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select category</option>
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="Kids">Kids</option>
-                  <option value="Footwear">Footwear</option>
-                  <option value="Bags">Bags</option>
-                  <option value="Accessories">Accessories</option>
+                  <option value="">
+                    {loadingCategories
+                      ? "Loading categories..."
+                      : "Select category"}
+                  </option>
+
+                  {!loadingCategories &&
+                    categories.map((category) => (
+                      <option
+                        key={category._id || category.id}
+                        value={category._id || category.id}
+                      >
+                        {category.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -230,7 +272,6 @@ function AddProduct() {
 
           </form>
         </div>
-
       </div>
     </div>
   );

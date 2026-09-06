@@ -9,6 +9,16 @@ function Categories() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Generate slug automatically from category name
+  const generateSlug = (name) => {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  };
+
   // Fetch categories
   const fetchCategories = async () => {
     try {
@@ -44,6 +54,9 @@ function Categories() {
       return;
     }
 
+    const trimmedName = name.trim();
+    const slug = generateSlug(trimmedName);
+
     try {
       const response = await fetch(API_URL, {
         method: "POST",
@@ -51,7 +64,8 @@ function Categories() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: name.trim(),
+          name: trimmedName,
+          slug: slug,
         }),
       });
 
@@ -81,6 +95,9 @@ function Categories() {
       return;
     }
 
+    const trimmedName = newName.trim();
+    const slug = generateSlug(trimmedName);
+
     try {
       const categoryId = category._id || category.id;
 
@@ -92,7 +109,8 @@ function Categories() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: newName.trim(),
+            name: trimmedName,
+            slug: slug,
           }),
         }
       );
@@ -105,7 +123,9 @@ function Categories() {
         );
       }
 
-      alert(data.message || "Category updated successfully");
+      alert(
+        data.message || "Category updated successfully"
+      );
 
       fetchCategories();
     } catch (error) {
@@ -142,7 +162,9 @@ function Categories() {
         );
       }
 
-      alert(data.message || "Category deleted successfully");
+      alert(
+        data.message || "Category deleted successfully"
+      );
 
       fetchCategories();
     } catch (error) {
@@ -183,6 +205,7 @@ function Categories() {
         <div className="categories-card-header">
           <div>
             <h2>All Categories</h2>
+
             <p>
               {categories.length} categories available
             </p>
@@ -223,7 +246,6 @@ function Categories() {
                   </td>
                 </tr>
               ) : filteredCategories.length > 0 ? (
-
                 filteredCategories.map((category, index) => (
                   <tr
                     key={category._id || category.id}
@@ -295,9 +317,7 @@ function Categories() {
 
                   </tr>
                 ))
-
               ) : (
-
                 <tr>
                   <td
                     colSpan="5"
@@ -306,12 +326,13 @@ function Categories() {
                     No categories found
                   </td>
                 </tr>
-
               )}
 
             </tbody>
+
           </table>
         </div>
+
       </div>
     </div>
   );

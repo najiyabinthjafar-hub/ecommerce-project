@@ -1,229 +1,258 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Banners.css";
 
-import rizoBanner1 from "../../assets/Rizo Banner 1.png";
-import rizoBanner2 from "../../assets/Rizo Banner 2.png";
-import rizoBanner3 from "../../assets/Rizo Banner 3.png";
+const API_URL = "http://localhost:5000/api/banners";
 
 function Banners() {
   const navigate = useNavigate();
 
-  const [banners, setBanners] = useState([
-    {
-      id: 1,
-      title: "Special Offers",
-      image: rizoBanner1,
-      status: "Active",
-    },
-    {
-      id: 2,
-      title: "Summer Collections",
-      image: rizoBanner2,
-      status: "Active",
-    },
-    {
-      id: 3,
-      title: "New Arrivals",
-      image: rizoBanner3,
-      status: "Inactive",
-    },
-  ]);
+  const [banners, setBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleStatus = (id) => {
-    setBanners((prev) =>
-      prev.map((banner) =>
-        banner.id === id
-          ? {
-              ...banner,
-              status:
-                banner.status === "Active" ? "Inactive" : "Active",
-            }
-          : banner
-      )
-    );
+  // Fetch all banners
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(API_URL);
+
+      const responseText = await response.text();
+
+      console.log("Banner GET status:", response.status);
+      console.log("Banner GET response:", responseText);
+
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `Server returned non-JSON response (${response.status})`
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch banners");
+      }
+
+      setBanners(data.banners || []);
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteBanner = (id) => {
-    setBanners((prev) =>
-      prev.filter((banner) => banner.id !== id)
+  useEffect(() => {
+    fetchBanners();
+  }, []);
+
+  // Delete banner
+  const handleDelete = async (banner) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${banner.title}"?`
     );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${banner._id}`, {
+        method: "DELETE",
+      });
+
+      const responseText = await response.text();
+
+      console.log("Delete status:", response.status);
+      console.log("Delete response:", responseText);
+
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `Server returned non-JSON response (${response.status})`
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete banner");
+      }
+
+      alert(data.message || "Banner deleted successfully!");
+
+      fetchBanners();
+    } catch (error) {
+      console.error("Error deleting banner:", error);
+      alert(error.message);
+    }
+  };
+
+  // Edit banner
+  const handleEdit = (banner) => {
+    navigate(`/admin/banners/edit/${banner._id}`);
   };
 
   return (
     <div className="banners-page">
-
-      {/* Page Header */}
       <div className="banners-header">
         <div>
           <h1>Banners</h1>
-          <p>Manage promotional banners for your store</p>
+          <p>Manage your website banners</p>
         </div>
 
         <button
           className="add-banner-btn"
           onClick={() => navigate("/admin/banners/add")}
         >
-          <i className="bi bi-plus-lg"></i>
-          Add Banner
+          + Add Banner
         </button>
       </div>
 
-      {/* Banner Stats */}
-      <div className="banner-stats">
-
-        <div className="banner-stat-card">
-          <div className="stat-icon blue">
-            <i className="bi bi-images"></i>
-          </div>
-
-          <div>
-            <span>Total Banners</span>
-            <strong>{banners.length}</strong>
-          </div>
-        </div>
-
-        <div className="banner-stat-card">
-          <div className="stat-icon green">
-            <i className="bi bi-check-circle"></i>
-          </div>
-
-          <div>
-            <span>Active</span>
-            <strong>
-              {
-                banners.filter(
-                  (banner) => banner.status === "Active"
-                ).length
-              }
-            </strong>
-          </div>
-        </div>
-
-        <div className="banner-stat-card">
-          <div className="stat-icon gray">
-            <i className="bi bi-pause-circle"></i>
-          </div>
-
-          <div>
-            <span>Inactive</span>
-            <strong>
-              {
-                banners.filter(
-                  (banner) => banner.status === "Inactive"
-                ).length
-              }
-            </strong>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Banner Section */}
       <div className="banners-card">
-
         <div className="banners-card-header">
           <div>
             <h2>All Banners</h2>
-            <p>View and manage your promotional banners</p>
-          </div>
-
-          <div className="banner-count">
-            {banners.length} banners
+            <p>{banners.length} banners available</p>
           </div>
         </div>
 
-        {/* Banner Grid */}
-        <div className="banner-grid">
+        <div className="banners-table-container">
+          <table className="banners-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Banner</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
 
-          {banners.length === 0 ? (
-            <div className="empty-banners">
-              <i className="bi bi-images"></i>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="no-banner">
+                    Loading banners...
+                  </td>
+                </tr>
+              ) : banners.length > 0 ? (
+                banners.map((banner, index) => (
+                  <tr key={banner._id}>
+                    {/* Number */}
+                    <td className="banner-number">
+                      {index + 1}
+                    </td>
 
-              <h3>No banners found</h3>
+                    {/* Image */}
+                    <td>
+                      <div className="banner-image-wrapper">
+                        {banner.image ? (
+                          <img
+                            src={banner.image}
+                            alt={banner.title || "Banner"}
+                            className="banner-image"
+                          />
+                        ) : (
+                          <div className="no-banner-image">
+                            No Image
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
-              <p>
-                Add a banner to display promotions on your store.
-              </p>
-            </div>
-          ) : (
-            banners.map((banner) => (
-              <div className="banner-item" key={banner.id}>
+                    {/* Title + Description */}
+                    <td>
+                      <div className="banner-title">
+                        <strong>
+                          {banner.title}
+                        </strong>
 
-                {/* Banner Image */}
-                <div className="banner-image-wrapper">
+                        {banner.description && (
+                          <span>
+                            {banner.description}
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
-                  <img
-                    src={banner.image}
-                    alt={banner.title}
-                  />
+                    {/* Status */}
+                    <td>
+                      <span
+                        className={`banner-status ${
+                          banner.status === "active"
+                            ? "active"
+                            : "inactive"
+                        }`}
+                      >
+                        {banner.status}
+                      </span>
+                    </td>
 
-                  <span
-                    className={`banner-status ${
-                      banner.status === "Active"
-                        ? "active"
-                        : "inactive"
-                    }`}
+                    {/* Start Date */}
+                    <td>
+                      {banner.startDate
+                        ? new Date(
+                            banner.startDate
+                          ).toLocaleDateString()
+                        : "-"}
+                    </td>
+
+                    {/* End Date */}
+                    <td>
+                      {banner.endDate
+                        ? new Date(
+                            banner.endDate
+                          ).toLocaleDateString()
+                        : "-"}
+                    </td>
+
+                    {/* Actions */}
+                    <td>
+                      <div className="banner-actions">
+                        <button
+                          className="edit-banner-btn"
+                          onClick={() => handleEdit(banner)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          className="delete-banner-btn"
+                          onClick={() =>
+                            handleDelete(banner)
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="no-banner"
                   >
-                    {banner.status}
-                  </span>
-
-                </div>
-
-                {/* Banner Details */}
-                <div className="banner-details">
-
-                  <div>
-                    <h3>{banner.title}</h3>
-                    <p>Banner #{banner.id}</p>
-                  </div>
-
-                  <div className="banner-actions">
-
-                    {/* Toggle Status */}
-                    <button
-                      className="status-btn"
-                      onClick={() => toggleStatus(banner.id)}
-                      title="Change status"
-                    >
-                      <i
-                        className={
-                          banner.status === "Active"
-                            ? "bi bi-pause"
-                            : "bi bi-play"
-                        }
-                      ></i>
-                    </button>
-
-                    {/* Edit */}
-                    <button
-                      className="edit-banner-btn"
-                      title="Edit banner"
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      className="delete-banner-btn"
-                      onClick={() => deleteBanner(banner.id)}
-                      title="Delete banner"
-                    >
-                      <i className="bi bi-trash3"></i>
-                    </button>
-
-                  </div>
-                </div>
-
-              </div>
-            ))
-          )}
-
+                    No banners found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-
     </div>
   );
 }
 
 export default Banners;
+
