@@ -2,6 +2,10 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+
+require("./models/Category");
+require("./models/Product");
+
 const connectDB = require("./config/db");
 
 const cartRoutes = require("./routes/cartRoutes");
@@ -9,6 +13,8 @@ const productRoutes = require("./routes/productRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const addressRoutes = require("./routes/addressRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const bannerRoutes = require("./routes/bannerRoutes");
 
 const app = express();
 
@@ -35,6 +41,10 @@ app.use("/api/addresses", addressRoutes);
 app.use("/api/cart", cartRoutes);
 
 app.use("/api/products", productRoutes);//product routes
+app.use("/api/categories", categoryRoutes);
+
+app.use("/api/banners", bannerRoutes);
+
 
 // Server
 const PORT = process.env.PORT || 5000;
