@@ -12,6 +12,9 @@ const getAllProducts = async ({
   minPrice,
   maxPrice,
   availability,
+   sort,
+   page,
+   limit,
 }) => {
   const query = {};
 
@@ -51,7 +54,50 @@ const getAllProducts = async ({
     query.stock = 0;
   }
 
-  return await Product.find(query).populate("category");
+  // Sorting
+let sortOption = {};
+
+if (sort === "price-low") {
+  sortOption.regularPrice = 1;
+}
+
+if (sort === "price-high") {
+  sortOption.regularPrice = -1;
+}
+
+if (sort === "newest") {
+  sortOption.createdAt = -1;
+}
+
+// Pagination
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // Get products for current page
+  const products = await Product.find(query)
+    .populate("category")
+    .sort(sortOption)
+    .skip(skip)
+    .limit(limitNumber);
+
+  // Count total matching products
+  const totalProducts = await Product.countDocuments(query);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalProducts / limitNumber);
+
+
+ return {
+  products,
+  pagination: {
+    currentPage: pageNumber,
+    limit: limitNumber,
+    totalProducts,
+    totalPages,
+  },
+};
 };
 
 // GET PRODUCT BY ID

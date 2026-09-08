@@ -1,0 +1,107 @@
+.personal-page {
+  min-height: 70vh;
+  padding: 60px 20px;
+  background: #f8f8f8;
+}
+
+.personal-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.personal-container h1 {
+  text-align: center;
+  font-size: 28px;
+  letter-spacing: 2px;
+  margin-bottom: 35px;
+}
+
+.personal-form {
+  background: #ffffff;
+  padding: 35px;
+  border: 1px solid #e5e5e5;
+}
+
+.personal-field {
+  margin-bottom: 22px;
+}
+
+.personal-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.personal-field input {
+  width: 100%;
+  padding: 13px 15px;
+
+  border: 1px solid #dcdcdc;
+  outline: none;
+
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.personal-field input:focus {
+  border-color: #000;
+}
+
+.personal-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.cancel-btn,
+.save-profile-btn {
+  flex: 1;
+  padding: 14px;
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: white;
+  color: black;
+  border: 1px solid black;
+}
+
+.save-profile-btn {
+  background: black;
+  color: white;
+  border: 1px solid black;
+}
+
+.cancel-btn:hover {
+  background: #f2f2f2;
+}
+
+.save-profile-btn:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+  .personal-page {
+    padding: 40px 15px;
+  }
+
+  .personal-form {
+    padding: 25px 20px;
+  }
+
+  .personal-container h1 {
+    font-size: 23px;
+  }
+
+  .personal-buttons {
+    flex-direction: column;
+  }
+}

@@ -1,5 +1,4 @@
-
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -15,6 +14,8 @@ function getOrders() {
 }
 
 function Orders() {
+  const navigate = useNavigate();
+
   const orders = getOrders();
 
   return (
@@ -22,6 +23,14 @@ function Orders() {
       <Navbar />
 
       <main className="orders-page">
+
+        {/* BACK TO PROFILE */}
+        <button
+          className="orders-back-btn"
+          onClick={() => navigate("/profile")}
+        >
+          ← BACK TO PROFILE
+        </button>
 
         <section className="orders-heading">
           <p>YOUR ACCOUNT</p>
@@ -35,7 +44,6 @@ function Orders() {
 
         {orders.length === 0 ? (
           <section className="orders-empty">
-
             <h2>No orders yet</h2>
 
             <p>
@@ -45,7 +53,6 @@ function Orders() {
             <Link to="/shop">
               START SHOPPING
             </Link>
-
           </section>
         ) : (
           <section className="orders-container">
@@ -54,6 +61,7 @@ function Orders() {
               .slice()
               .reverse()
               .map((order) => (
+
                 <article
                   className="order-card"
                   key={order.id}
@@ -90,6 +98,7 @@ function Orders() {
                   <div className="order-products">
 
                     {order.items.map((item) => (
+
                       <div
                         className="order-product"
                         key={`${order.id}-${item.id}-${item.size}`}
@@ -125,6 +134,7 @@ function Orders() {
                         </strong>
 
                       </div>
+
                     ))}
 
                   </div>
@@ -144,15 +154,14 @@ function Orders() {
 
                       <strong>
                         ₹
-                        {order.total.toLocaleString(
-                          "en-IN"
-                        )}
+                        {order.total.toLocaleString("en-IN")}
                       </strong>
                     </div>
 
                   </div>
 
                 </article>
+
               ))}
 
           </section>
@@ -166,4 +175,3 @@ function Orders() {
 }
 
 export default Orders;
-
