@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -6,95 +6,12 @@ import Footer from "../components/Footer";
 
 import "./Shop.css";
 
-import product1 from "../assets/product-1.png";
-import product2 from "../assets/product-2.png";
-import product3 from "../assets/product-3.png";
-import product4 from "../assets/product-4.png";
-import product5 from "../assets/product-5.png";
-import product6 from "../assets/product-6.png";
-import product7 from "../assets/product-7.png";
-import product8 from "../assets/product-8.png";
-
-const products = [
-  {
-    id: 1,
-    name: "White Adrenaline Tee",
-    price: 946,
-    image: product1,
-    available: true,
-    featured: 1,
-    newest: 5,
-  },
-  {
-    id: 2,
-    name: "Black Graphic Tee",
-    price: 1099,
-    image: product2,
-    available: true,
-    featured: 2,
-    newest: 6,
-  },
-  {
-    id: 3,
-    name: "Oversized Graphic Tee",
-    price: 1199,
-    image: product3,
-    available: true,
-    featured: 3,
-    newest: 7,
-  },
-  {
-    id: 4,
-    name: "White Printed Tee",
-    price: 946,
-    image: product4,
-    available: false,
-    featured: 4,
-    newest: 8,
-  },
-  {
-    id: 5,
-    name: "Vintage Graphic Black T-Shirt",
-    price: 1299,
-    image: product5,
-    available: true,
-    featured: 5,
-    newest: 1,
-  },
-  {
-    id: 6,
-    name: "Classic White Graphic T-Shirt",
-    price: 1399,
-    image: product6,
-    available: true,
-    featured: 6,
-    newest: 2,
-  },
-  {
-    id: 7,
-    name: "Eagle Graphic White T-Shirt",
-    price: 1499,
-    image: product7,
-    available: false,
-    featured: 7,
-    newest: 3,
-  },
-  {
-    id: 8,
-    name: "Wings Graphic White T-Shirt",
-    price: 1599,
-    image: product8,
-    available: true,
-    featured: 8,
-    newest: 4,
-  },
-];
-
 function Shop() {
   const [searchParams] = useSearchParams();
 
-  const searchQuery =
-    searchParams.get("search")?.toLowerCase().trim() || "";
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
@@ -102,6 +19,42 @@ function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const productsPerPage = 4;
+
+  const searchQuery =
+    searchParams.get("search")?.toLowerCase().trim() || "";
+
+  // ================= FETCH PRODUCTS =================
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(
+          "http://localhost:5000/api/products"
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch products"
+          );
+        }
+
+        setProducts(data.products || []);
+      } catch (error) {
+        console.error("Product fetch error:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // ================= FILTER PRODUCTS =================
 
   let filteredProducts = [...products];
 
@@ -117,35 +70,47 @@ function Shop() {
 
   if (availability === "available") {
     filteredProducts = filteredProducts.filter(
-      (product) => product.available
+      (product) => product.stock > 0
     );
   }
 
   if (availability === "soldout") {
     filteredProducts = filteredProducts.filter(
-      (product) => !product.available
+      (product) => product.stock === 0
     );
   }
 
   // ================= PRICE =================
 
+  const getPrice = (product) =>
+    product.salePrice || product.regularPrice;
+
   if (priceOrder === "low-high") {
-    filteredProducts.sort((a, b) => a.price - b.price);
+    filteredProducts.sort(
+      (a, b) => getPrice(a) - getPrice(b)
+    );
   }
 
   if (priceOrder === "high-low") {
-    filteredProducts.sort((a, b) => b.price - a.price);
+    filteredProducts.sort(
+      (a, b) => getPrice(b) - getPrice(a)
+    );
   }
 
   // ================= SORT BY =================
 
   if (sortBy === "newest") {
-    filteredProducts.sort((a, b) => b.newest - a.newest);
+    filteredProducts.sort(
+      (a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
   }
 
   if (sortBy === "featured") {
-    filteredProducts.sort(
-      (a, b) => a.featured - b.featured
+    // ഇപ്പോൾ backend-il featured field ഇല്ല
+    // അതുകൊണ്ട് name അടിസ്ഥാനത്തിൽ default sorting
+    filteredProducts.sort((a, b) =>
+      a.name.localeCompare(b.name)
     );
   }
 
@@ -162,6 +127,8 @@ function Shop() {
     startIndex,
     startIndex + productsPerPage
   );
+
+  // ================= HANDLERS =================
 
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
@@ -285,65 +252,107 @@ function Shop() {
 
         </section>
 
+        {/* LOADING */}
+
+        {loading && (
+          <p className="no-products">
+            Loading products...
+          </p>
+        )}
+
+        {/* ERROR */}
+
+        {error && (
+          <p className="no-products">
+            Error: {error}
+          </p>
+        )}
+
         {/* PRODUCTS */}
 
-        <section className="shop-products">
+        {!loading && !error && (
+          <section className="shop-products">
 
-          {currentProducts.length > 0 ? (
+            {currentProducts.length > 0 ? (
 
-            currentProducts.map((product) => (
+              currentProducts.map((product) => {
 
-              <Link
-                to={`/product/${product.id}`}
-                className="shop-product-card"
-                key={product.id}
-              >
+                const price =
+                  product.salePrice ||
+                  product.regularPrice;
 
-                <div className="shop-product-image">
+                const isAvailable =
+                  product.stock > 0;
 
-                  {!product.available && (
-                    <span className="sold-out">
-                      SOLD OUT
-                    </span>
-                  )}
+                const image =
+                  product.images &&
+                  product.images.length > 0
+                    ? product.images[0]
+                    : "";
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                  />
+                return (
 
-                </div>
+                  <Link
+                    to={`/product/${product._id}`}
+                    className="shop-product-card"
+                    key={product._id}
+                  >
 
-                <div className="shop-product-info">
+                    <div className="shop-product-image">
 
-                  <h3>{product.name}</h3>
+                      {!isAvailable && (
+                        <span className="sold-out">
+                          SOLD OUT
+                        </span>
+                      )}
 
-                  <p>
-                    ₹
-                    {product.price.toLocaleString(
-                      "en-IN"
-                    )}
-                  </p>
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={product.name}
+                        />
+                      ) : (
+                        <div className="no-image">
+                          No Image
+                        </div>
+                      )}
 
-                </div>
+                    </div>
 
-              </Link>
+                    <div className="shop-product-info">
 
-            ))
+                      <h3>
+                        {product.name}
+                      </h3>
 
-          ) : (
+                      <p>
+                        ₹
+                        {price.toLocaleString("en-IN")}
+                      </p>
 
-            <p className="no-products">
-              No products found.
-            </p>
+                    </div>
 
-          )}
+                  </Link>
 
-        </section>
+                );
+              })
+
+            ) : (
+
+              <p className="no-products">
+                No products found.
+              </p>
+
+            )}
+
+          </section>
+        )}
 
         {/* PAGINATION */}
 
-        {totalPages > 1 && (
+        {!loading &&
+          !error &&
+          totalPages > 1 && (
 
           <div className="shop-pagination">
 
