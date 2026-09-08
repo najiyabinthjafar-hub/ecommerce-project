@@ -1,46 +1,53 @@
+* {
+  box-sizing: border-box;
+}
+
 /* =========================
-   ADD PRODUCT PAGE
+   ADD BANNER PAGE
 ========================= */
 
-.add-product-page {
+.add-banner-page {
   width: 100%;
   min-height: 100%;
   background: #f6f7f9;
 }
 
-.add-product-content {
+.add-banner-content {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 0 35px;
+  padding: 4px 0 40px;
 }
 
 /* =========================
    HEADER
 ========================= */
 
-.add-product-header {
+.add-banner-header {
+  width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
-.add-product-heading {
+.add-banner-heading {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.add-product-heading h1 {
+.add-banner-heading h1 {
   margin: 0 0 6px;
   color: #151515;
   font-size: 27px;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -0.4px;
 }
 
-.add-product-heading p {
+.add-banner-heading p {
   margin: 0;
   color: #858585;
   font-size: 13px;
@@ -51,15 +58,15 @@
    BACK BUTTON
 ========================= */
 
-.back-products-btn {
+.back-banners-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   padding: 9px 15px;
-  border: 1px solid #111111;
+  border: 1px solid #e3e3e3;
   border-radius: 8px;
-  background-color: #111111;
+  background: #333333;
   color: #ffffff;
   font-family: inherit;
   font-size: 12px;
@@ -68,29 +75,28 @@
   transition: all 0.2s ease;
 }
 
-.back-products-btn i {
+.back-banners-btn i {
   font-size: 13px;
 }
 
-.back-products-btn:hover {
-  background-color: #000000;
-  border-color: #000000;
+.back-banners-btn:hover {
+  background: #111111;
+  border-color: #111111;
   color: #ffffff;
   transform: translateX(-2px);
 }
+
 /* =========================
-   PRODUCT FORM CARD
+   FORM CARD
 ========================= */
 
-.add-product-card {
+.add-banner-card {
   width: 100%;
   padding: 28px;
-
   background: #ffffff;
   border: 1px solid #e8e8e8;
-  border-radius: 12px;
-
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.035);
+  border-radius: 13px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.025);
 }
 
 /* =========================
@@ -114,12 +120,8 @@
 }
 
 .form-group label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
+  display: block;
   margin-bottom: 8px;
-
   color: #333333;
   font-size: 12px;
   font-weight: 600;
@@ -134,23 +136,30 @@
 .form-group textarea {
   width: 100%;
   box-sizing: border-box;
-
-  padding: 11px 13px;
-
   border: 1px solid #dedede;
   border-radius: 8px;
-
+  outline: none;
   background: #ffffff;
   color: #222222;
-
   font-family: inherit;
   font-size: 13px;
-
-  outline: none;
-
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.form-group input,
+.form-group select {
+  height: 42px;
+  padding: 0 13px;
+}
+
+.form-group textarea {
+  min-height: 110px;
+  padding: 11px 13px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .form-group input::placeholder,
@@ -168,11 +177,12 @@
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: #667eea;
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.09);
 }
 
 /* =========================
-   NORMAL SELECT
+   SELECT
 ========================= */
 
 .form-group select {
@@ -180,124 +190,11 @@
 }
 
 /* =========================
-   SIZE SELECTION
-========================= */
-
-.size-selection {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-/* Size Button */
-
-.size-option {
-  min-width: 50px;
-  height: 40px;
-  padding: 0 15px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid #dedede;
-  border-radius: 8px;
-
-  background: #ffffff;
-  color: #444444;
-
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-}
-
-/* Hover */
-
-.size-option:hover {
-  background: #fafafa;
-  border-color: #111111;
-  color: #111111;
-  transform: translateY(-1px);
-}
-
-/* Selected */
-
-.size-option.selected {
-  background: #111111;
-  border-color: #111111;
-  color: #ffffff;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-}
-
-/* Selected Hover */
-
-.size-option.selected:hover {
-  background: #222222;
-  border-color: #222222;
-  color: #ffffff;
-}
-
-/* Click */
-
-.size-option:active {
-  transform: scale(0.97);
-}
-
-/* Focus */
-
-.size-option:focus-visible {
-  outline: 2px solid #111111;
-  outline-offset: 2px;
-}
-
-/* Size Hint */
-
-.size-hint {
-  display: block;
-  margin-top: 9px;
-
-  color: #999999;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 600px) {
-  .size-selection {
-    gap: 8px;
-  }
-
-  .size-option {
-    min-width: 46px;
-    height: 38px;
-    padding: 0 12px;
-    font-size: 11px;
-  }
-}
-/* =========================
-   TEXTAREA
-========================= */
-
-.form-group textarea {
-  min-height: 120px;
-  resize: vertical;
-  line-height: 1.5;
-}
-
-/* =========================
    FILE INPUT
 ========================= */
 
 .form-group input[type="file"] {
+  height: auto;
   padding: 9px;
   cursor: pointer;
   background: #fafafa;
@@ -305,25 +202,27 @@
 
 .form-group input[type="file"]::file-selector-button {
   margin-right: 10px;
-
   padding: 7px 11px;
-
   border: none;
   border-radius: 6px;
-
   background: #eef2ff;
   color: #5866c9;
-
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
-
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .form-group input[type="file"]::file-selector-button:hover {
   background: #e2e7ff;
+}
+
+.form-group small {
+  margin-top: 6px;
+  color: #999999;
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 /* =========================
@@ -335,9 +234,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-
   padding-top: 22px;
-
   border-top: 1px solid #eeeeee;
 }
 
@@ -345,91 +242,81 @@
    BUTTONS
 ========================= */
 
-.cancel-btn,
-.save-product-btn {
+.cancel-banner-btn,
+.save-banner-btn {
   min-width: 115px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-
   padding: 10px 18px;
-
   border-radius: 8px;
-
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-
   cursor: pointer;
-
   transition: all 0.2s ease;
 }
 
 /* =========================
-   CANCEL
+   CANCEL BUTTON
 ========================= */
 
-.cancel-btn {
+.cancel-banner-btn {
   border: 1px solid #e1e1e1;
   background: #f5f5f5;
   color: #444444;
 }
 
-.cancel-btn:hover {
+.cancel-banner-btn:hover {
   background: #e9e9e9;
 }
 
 /* =========================
-   ADD PRODUCT
+   ADD BANNER BUTTON
 ========================= */
 
-.save-product-btn {
+.save-banner-btn {
   border: 1px solid #111111;
   background: #111111;
   color: #ffffff;
 }
 
-.save-product-btn:hover {
+.save-banner-btn:hover {
   background: #333333;
   border-color: #333333;
   transform: translateY(-1px);
 }
 
-.save-product-btn i {
+.save-banner-btn i {
   font-size: 12px;
 }
 
 /* =========================
-   REQUIRED FIELD
+   LAPTOP
 ========================= */
 
-.form-group label span {
-  color: #e05a5a;
+@media (max-width: 1100px) {
+  .add-banner-content {
+    padding-bottom: 30px;
+  }
+
+  .add-banner-card {
+    padding: 24px;
+  }
+
+  .add-banner-heading h1 {
+    font-size: 25px;
+  }
 }
 
 /* =========================
    TABLET
 ========================= */
 
-@media (max-width: 1100px) {
-  .add-product-content {
-    padding-bottom: 30px;
-  }
-
-  .add-product-card {
-    padding: 24px;
-  }
-}
-
-/* =========================
-   SMALL LAPTOP / TABLET
-========================= */
-
 @media (max-width: 800px) {
-  .add-product-heading h1 {
-    font-size: 25px;
+  .add-banner-header {
+    gap: 15px;
   }
 
   .form-row {
@@ -437,7 +324,7 @@
     gap: 0;
   }
 
-  .add-product-card {
+  .add-banner-card {
     padding: 22px;
   }
 }
@@ -447,21 +334,30 @@
 ========================= */
 
 @media (max-width: 600px) {
-  .add-product-header {
+  .add-banner-content {
+    padding: 2px 0 25px;
+  }
+
+  .add-banner-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+    margin-bottom: 20px;
   }
 
-  .add-product-heading h1 {
+  .add-banner-heading h1 {
     font-size: 23px;
   }
 
-  .add-product-heading p {
+  .add-banner-heading p {
     font-size: 12px;
   }
 
-  .add-product-card {
+  .back-banners-btn {
+    padding: 8px 13px;
+  }
+
+  .add-banner-card {
     padding: 20px 17px;
     border-radius: 10px;
   }
@@ -470,17 +366,9 @@
     margin-bottom: 18px;
   }
 
-  /* Mobile Sizes */
-
-  .size-options {
-    gap: 8px;
-  }
-
-  .size-option {
-    min-width: 45px;
-    height: 38px;
-    padding: 0 12px;
-    font-size: 11px;
+  .form-group input,
+  .form-group select {
+    height: 40px;
   }
 
   .form-actions {
@@ -488,8 +376,8 @@
     align-items: stretch;
   }
 
-  .cancel-btn,
-  .save-product-btn {
+  .cancel-banner-btn,
+  .save-banner-btn {
     width: 100%;
   }
 }
@@ -499,33 +387,27 @@
 ========================= */
 
 @media (max-width: 400px) {
-  .add-product-heading h1 {
+  .add-banner-heading h1 {
     font-size: 21px;
   }
 
-  .add-product-heading p {
-    font-size: 12px;
+  .add-banner-heading p {
+    font-size: 11px;
   }
 
-  .add-product-card {
+  .add-banner-card {
     padding: 17px 14px;
   }
 
   .form-group input,
   .form-group select,
   .form-group textarea {
-    padding: 10px 11px;
+    padding-left: 11px;
+    padding-right: 11px;
     font-size: 12px;
   }
 
-  .size-options {
-    gap: 7px;
-  }
-
-  .size-option {
-    min-width: 43px;
-    height: 36px;
-    padding: 0 10px;
+  .back-banners-btn {
     font-size: 11px;
   }
 }

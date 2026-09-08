@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // ================= CUSTOMER PAGES =================
-
 import ProductDetails from "./pages/ProductDetails";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
@@ -23,7 +22,6 @@ import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
 
 // ================= FOOTER PAGES =================
-
 import Support from "./pages/Support";
 import Invoicing from "./pages/Invoicing";
 import Careers from "./pages/Careers";
@@ -31,14 +29,12 @@ import Blog from "./pages/Blog";
 import FAQs from "./pages/FAQs";
 
 // ================= POLICY PAGES =================
-
 import RefundPolicy from "./pages/RefundPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
 // ================= ADMIN PAGES =================
-
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
@@ -50,6 +46,16 @@ import AdminOrders from "./pages/admin/Orders";
 import OrderDetails from "./pages/admin/OrderDetails";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
+import Settings from "./pages/admin/Settings";
+import AdminProfile from "./pages/admin/AdminProfile";
+
+import AddBanner from "./pages/admin/AddBanner";
+import EditBanner from "./pages/admin/EditBanner";
+import EditProduct from "./pages/admin/EditProduct";
+import ViewProduct from "./pages/admin/ViewProduct";
+
+import AdminLayout from "./layouts/AdminLayout";
+import ProtectedRoute from "./components/admin/ProtectedRoute";
 
 function App() {
   return (
@@ -77,7 +83,6 @@ function App() {
 
         <Route path="/register" element={<Register />} />
 
-
         {/* ================= PROFILE ================= */}
 
         <Route path="/profile" element={<Profile />} />
@@ -98,7 +103,6 @@ function App() {
         />
 
         <Route path="/wishlist" element={<Wishlist />} />
-
 
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
@@ -123,7 +127,6 @@ function App() {
           element={<VerifyOtp />}
         />
 
-
         {/* ================= FOOTER PAGES ================= */}
 
         <Route path="/support" element={<Support />} />
@@ -135,7 +138,6 @@ function App() {
         <Route path="/blog" element={<Blog />} />
 
         <Route path="/faqs" element={<FAQs />} />
-
 
         {/* ================= POLICY PAGES ================= */}
 
@@ -159,63 +161,194 @@ function App() {
           element={<TermsOfService />}
         />
 
-
-        {/* ================= ADMIN SIDE ================= */}
+        {/* ================= ADMIN LOGIN ================= */}
 
         <Route
           path="/admin/login"
           element={<AdminLogin />}
         />
 
-        <Route
-          path="/admin/dashboard"
-          element={<Dashboard />}
-        />
+        {/* ================= PROTECTED ADMIN SIDE ================= */}
 
-        <Route
-          path="/admin/products"
-          element={<Products />}
-        />
+        <Route element={<ProtectedRoute />}>
 
-        <Route
-          path="/admin/products/add"
-          element={<AddProduct />}
-        />
+          {/* Dashboard */}
 
-        <Route
-          path="/admin/categories"
-          element={<Categories />}
-        />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            }
+          />
 
-        <Route
-          path="/admin/banners"
-          element={<Banners />}
-        />
+          {/* Products */}
 
-        <Route
-          path="/admin/customers"
-          element={<Customers />}
-        />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminLayout>
+                <Products />
+              </AdminLayout>
+            }
+          />
 
-        <Route
-          path="/admin/orders"
-          element={<AdminOrders />}
-        />
+          {/* Add Product */}
 
-        <Route
-          path="/admin/orders/:id"
-          element={<OrderDetails />}
-        />
+          <Route
+            path="/admin/products/add"
+            element={
+              <AdminLayout>
+                <AddProduct />
+              </AdminLayout>
+            }
+          />
 
-        <Route
-          path="/admin/coupons"
-          element={<Coupons />}
-        />
+          {/* Edit Product */}
 
-        <Route
-          path="/admin/inventory"
-          element={<Inventory />}
-        />
+          <Route
+            path="/admin/products/edit/:id"
+            element={
+              <AdminLayout>
+                <EditProduct />
+              </AdminLayout>
+            }
+          />
+
+          {/* View Product */}
+
+          <Route
+            path="/admin/products/view/:id"
+            element={
+              <AdminLayout>
+                <ViewProduct />
+              </AdminLayout>
+            }
+          />
+
+          {/* Categories */}
+
+          <Route
+            path="/admin/categories"
+            element={
+              <AdminLayout>
+                <Categories />
+              </AdminLayout>
+            }
+          />
+
+          {/* Banners */}
+
+          <Route
+            path="/admin/banners"
+            element={
+              <AdminLayout>
+                <Banners />
+              </AdminLayout>
+            }
+          />
+
+          {/* Add Banner */}
+
+          <Route
+            path="/admin/banners/add"
+            element={
+              <AdminLayout>
+                <AddBanner />
+              </AdminLayout>
+            }
+          />
+
+          {/* Edit Banner */}
+
+          <Route
+            path="/admin/banners/edit/:id"
+            element={
+              <AdminLayout>
+                <EditBanner />
+              </AdminLayout>
+            }
+          />
+
+          {/* Customers */}
+
+          <Route
+            path="/admin/customers"
+            element={
+              <AdminLayout>
+                <Customers />
+              </AdminLayout>
+            }
+          />
+
+          {/* Orders */}
+
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminLayout>
+                <AdminOrders />
+              </AdminLayout>
+            }
+          />
+
+          {/* Order Details */}
+
+          <Route
+            path="/admin/orders/:id"
+            element={
+              <AdminLayout>
+                <OrderDetails />
+              </AdminLayout>
+            }
+          />
+
+          {/* Coupons */}
+
+          <Route
+            path="/admin/coupons"
+            element={
+              <AdminLayout>
+                <Coupons />
+              </AdminLayout>
+            }
+          />
+
+          {/* Inventory */}
+
+          <Route
+            path="/admin/inventory"
+            element={
+              <AdminLayout>
+                <Inventory />
+              </AdminLayout>
+            }
+          />
+
+          {/* Settings */}
+
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminLayout>
+                <Settings />
+              </AdminLayout>
+            }
+          />
+
+          {/* Admin Profile */}
+
+          <Route
+            path="/admin/profile"
+            element={
+              <AdminLayout>
+                <AdminProfile />
+              </AdminLayout>
+            }
+          />
+
+        </Route>
 
       </Routes>
     </BrowserRouter>
