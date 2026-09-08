@@ -4,50 +4,168 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import product1 from "../assets/product-5.png";
-import product2 from "../assets/product-6.png";
-import product3 from "../assets/product-7.png";
-import product4 from "../assets/product-8.png";
+import product1 from "../assets/product-1.png";
+import product2 from "../assets/product-2.png";
+import product3 from "../assets/product-3.png";
+import product4 from "../assets/product-4.png";
+import product5 from "../assets/product-5.png";
+import product6 from "../assets/product-6.png";
+import product7 from "../assets/product-7.png";
+import product8 from "../assets/product-8.png";
+
 import plainShirt from "../assets/whiteshirt.png";
 
 import "./ProductDetails.css";
 
 const products = [
+  // ================= MEN'S FASHION =================
+
   {
     id: 1,
-    name: "Vintage Graphic Black T-Shirt",
-    price: 1299,
+    name: "White Adrenaline Tee",
+    category: "MEN'S FASHION",
+    price: 946,
     image: product1,
-    category: "T-Shirts",
     description:
-      "A timeless graphic t-shirt designed for everyday comfort and effortless style.",
+      "A stylish and comfortable white t-shirt designed for everyday wear.",
   },
   {
     id: 2,
-    name: "Classic White Graphic T-Shirt",
-    price: 1399,
+    name: "Black Graphic Tee",
+    category: "MEN'S FASHION",
+    price: 946,
     image: product2,
-    category: "T-Shirts",
     description:
-      "A clean and classic graphic t-shirt that adds a stylish touch to your everyday look.",
+      "A modern black graphic t-shirt with a bold and stylish design.",
   },
   {
     id: 3,
-    name: "Eagle Graphic White T-Shirt",
-    price: 1499,
+    name: "Oversized Graphic Tee",
+    category: "MEN'S FASHION",
+    price: 946,
     image: product3,
-    category: "T-Shirts",
     description:
-      "A bold eagle graphic t-shirt crafted for a modern and confident streetwear look.",
+      "An oversized graphic t-shirt designed for a comfortable streetwear look.",
   },
   {
     id: 4,
-    name: "Wings Graphic White T-Shirt",
-    price: 1499,
+    name: "White Printed Tee",
+    category: "MEN'S FASHION",
+    price: 946,
     image: product4,
-    category: "T-Shirts",
     description:
-      "A premium graphic t-shirt featuring a distinctive wings design.",
+      "A clean and stylish printed white t-shirt for everyday fashion.",
+  },
+  {
+    id: 5,
+    name: "Classic Black Tee",
+    category: "MEN'S FASHION",
+    price: 946,
+    image: product5,
+    description:
+      "A classic black t-shirt designed for comfort and everyday style.",
+  },
+  {
+    id: 6,
+    name: "Essential White Tee",
+    category: "MEN'S FASHION",
+    price: 946,
+    image: product6,
+    description:
+      "An essential white tee that fits perfectly into your everyday wardrobe.",
+  },
+  {
+    id: 7,
+    name: "Eagle Graphic Tee",
+    category: "MEN'S FASHION",
+    price: 946,
+    image: product7,
+    description:
+      "A bold eagle graphic t-shirt designed for a modern streetwear look.",
+  },
+  {
+    id: 8,
+    name: "Vintage Graphic Tee",
+    category: "MEN'S FASHION",
+    price: 946,
+    image: product8,
+    description:
+      "A stylish vintage graphic t-shirt with a comfortable everyday fit.",
+  },
+
+  // ================= WOMEN'S FASHION =================
+
+  {
+    id: 9,
+    name: "Women's White Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product1,
+    description:
+      "A stylish white collection designed for a comfortable and modern look.",
+  },
+  {
+    id: 10,
+    name: "Women's Black Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product2,
+    description:
+      "A fashionable black collection created for everyday style and comfort.",
+  },
+  {
+    id: 11,
+    name: "Women's Oversized Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product3,
+    description:
+      "An oversized collection designed for a relaxed and stylish appearance.",
+  },
+  {
+    id: 12,
+    name: "Women's Printed Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product4,
+    description:
+      "A beautiful printed collection designed to add style to your wardrobe.",
+  },
+  {
+    id: 13,
+    name: "Women's Classic Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product5,
+    description:
+      "A classic collection that combines comfort and timeless fashion.",
+  },
+  {
+    id: 14,
+    name: "Women's Essential Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product6,
+    description:
+      "An essential collection perfect for everyday comfort and style.",
+  },
+  {
+    id: 15,
+    name: "Women's Eagle Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product7,
+    description:
+      "A bold and stylish graphic collection with a modern fashion look.",
+  },
+  {
+    id: 16,
+    name: "Women's Vintage Collection",
+    category: "WOMEN'S FASHION",
+    price: 946,
+    image: product8,
+    description:
+      "A vintage-inspired collection designed for a unique and fashionable look.",
   },
 ];
 
@@ -55,14 +173,20 @@ function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const product = products.find((item) => item.id === Number(id));
+  const product = products.find(
+    (item) => item.id === Number(id)
+  );
 
   const [selectedImage, setSelectedImage] = useState(
     product ? product.image : ""
   );
 
-  const [selectedColor, setSelectedColor] = useState("White");
-  const [selectedSize, setSelectedSize] = useState("S");
+  const [selectedColor, setSelectedColor] =
+    useState("White");
+
+  const [selectedSize, setSelectedSize] =
+    useState("S");
+
   const [quantity, setQuantity] = useState(1);
 
   if (!product) {
@@ -85,16 +209,13 @@ function ProductDetails() {
   };
 
   const decreaseQuantity = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+    setQuantity((prev) =>
+      prev > 1 ? prev - 1 : 1
+    );
   };
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
-
-    // White is the actual plain shirt asset available.
-    if (color === "White") {
-      setSelectedImage(product.image);
-    }
   };
 
   const handleAddToCart = () => {
@@ -131,7 +252,7 @@ function ProductDetails() {
           image: selectedImage,
           size: selectedSize,
           color: selectedColor,
-          quantity: quantity,
+          quantity,
         },
       ];
     }
@@ -158,7 +279,6 @@ function ProductDetails() {
           {/* LEFT SIDE */}
           <div className="product-gallery">
 
-            {/* MAIN IMAGE */}
             <div className="product-main-image">
               <img
                 src={selectedImage}
@@ -166,9 +286,7 @@ function ProductDetails() {
               />
             </div>
 
-            {/* TWO THUMBNAILS */}
             <div className="product-thumbnails">
-
               <button
                 className={`thumbnail ${
                   selectedImage === product.image
@@ -181,7 +299,7 @@ function ProductDetails() {
               >
                 <img
                   src={product.image}
-                  alt="Product front"
+                  alt={product.name}
                 />
               </button>
 
@@ -200,17 +318,16 @@ function ProductDetails() {
                   alt="Plain shirt"
                 />
               </button>
-
             </div>
           </div>
 
           {/* RIGHT SIDE */}
           <div className="product-details-info">
 
-            <h1>White Adrenaline Tee</h1>
+            <h1>{product.name}</h1>
 
             <div className="product-price">
-              ₹ 984.00
+              ₹ {product.price.toLocaleString("en-IN")}
             </div>
 
             <p className="tax-info">
@@ -221,71 +338,32 @@ function ProductDetails() {
             <div className="color-section">
 
               <div className="color-label">
-                <span>colors</span>
+                <span>COLORS</span>
                 <span>{selectedColor}</span>
               </div>
 
               <div className="color-options">
 
-                <button
-                  className={`color-circle white ${
-                    selectedColor === "White"
-                      ? "color-selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleColorChange("White")
-                  }
-                  aria-label="White"
-                />
-
-                <button
-                  className={`color-circle red ${
-                    selectedColor === "Red"
-                      ? "color-selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleColorChange("Red")
-                  }
-                  aria-label="Red"
-                />
-
-                <button
-                  className={`color-circle blue ${
-                    selectedColor === "Blue"
-                      ? "color-selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleColorChange("Blue")
-                  }
-                  aria-label="Blue"
-                />
-
-                <button
-                  className={`color-circle pink ${
-                    selectedColor === "Pink"
-                      ? "color-selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleColorChange("Pink")
-                  }
-                  aria-label="Pink"
-                />
-
-                <button
-                  className={`color-circle black ${
-                    selectedColor === "Black"
-                      ? "color-selected"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleColorChange("Black")
-                  }
-                  aria-label="Black"
-                />
+                {[
+                  "White",
+                  "Red",
+                  "Blue",
+                  "Pink",
+                  "Black",
+                ].map((color) => (
+                  <button
+                    key={color}
+                    className={`color-circle ${color.toLowerCase()} ${
+                      selectedColor === color
+                        ? "color-selected"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleColorChange(color)
+                    }
+                    aria-label={color}
+                  />
+                ))}
 
               </div>
             </div>
@@ -321,7 +399,7 @@ function ProductDetails() {
               </div>
             </div>
 
-            {/* DESCRIPTION */}
+            {/* ORDER NOTE */}
             <div className="order-note">
               OUR TEES ARE MADE TO ORDER. PLEASE
               DOUBLE-CHECK YOUR SIZE BEFORE PLACING
@@ -332,24 +410,18 @@ function ProductDetails() {
             <div className="quantity-section">
 
               <label>
-                QUANTITY (1 IN CART)
+                QUANTITY ({quantity} IN CART)
               </label>
 
               <div className="quantity-box">
 
-                <button
-                  onClick={decreaseQuantity}
-                  aria-label="Decrease quantity"
-                >
+                <button onClick={decreaseQuantity}>
                   −
                 </button>
 
                 <span>{quantity}</span>
 
-                <button
-                  onClick={increaseQuantity}
-                  aria-label="Increase quantity"
-                >
+                <button onClick={increaseQuantity}>
                   +
                 </button>
 
@@ -375,17 +447,8 @@ function ProductDetails() {
 
             </div>
 
-            {/* DESCRIPTION TEXT */}
             <p className="product-long-description">
-              EVERY RACE IS A BATTLE OF SPEED, POWER,
-              AND DETERMINATION. THE ADRENALINE TEE
-              CAPTURES THIS INTENSITY WITH A STRIKING
-              RACE-OFF EFFECT BETWEEN RAW HORSEPOWER
-              AND MECHANICAL PRECISION. DESIGNED FOR
-              THOSE WHO THRIVE ON THE RUSH, IT
-              SYMBOLIZES THE RELENTLESS PURSUIT OF
-              VICTORY—WHERE INSTINCT MEETS INNOVATION,
-              AND EVERY SECOND COUNTS.
+              {product.description}
             </p>
 
           </div>
@@ -398,34 +461,45 @@ function ProductDetails() {
 
           <div className="related-products-grid">
 
-            {products.map((item) => (
-              <div
-                className="related-product-card"
-                key={item.id}
-                onClick={() =>
-                  navigate(`/product/${item.id}`)
-                }
-              >
+            {products
+              .filter(
+                (item) => item.id !== product.id
+              )
+              .slice(0, 4)
+              .map((item) => (
 
-                <div className="related-image">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                  />
+                <div
+                  className="related-product-card"
+                  key={item.id}
+                  onClick={() =>
+                    navigate(`/product/${item.id}`)
+                  }
+                >
+
+                  <div className="related-image">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                    />
+                  </div>
+
+                  <p>{item.name}</p>
+
+                  <span>
+                    ₹{" "}
+                    {item.price.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
+
                 </div>
 
-                <p>{item.name}</p>
-
-                <span>
-                  ₹ {item.price.toLocaleString("en-IN")}
-                </span>
-
-              </div>
-            ))}
+              ))}
 
           </div>
 
         </section>
+
       </main>
 
       <Footer />

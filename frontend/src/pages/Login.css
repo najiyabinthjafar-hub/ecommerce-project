@@ -4,7 +4,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 70px 20px;
+  padding: 50px 20px;
   background: #fff;
 }
 
@@ -155,5 +155,12 @@
   .login-options {
     gap: 15px;
   }
+}
+
+.login-error-message {
+  color: red;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 15px;
 }
 
