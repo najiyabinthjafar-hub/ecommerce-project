@@ -32,6 +32,9 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import AdminLayout from "./layouts/AdminLayout";
 import AddBanner from "./pages/admin/AddBanner";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import EditProduct from "./pages/admin/EditProduct";
+import ViewProduct from "./pages/admin/ViewProduct";
+import EditBanner from "./pages/admin/EditBanner";
 
 function App() {
   return (
@@ -89,6 +92,25 @@ function App() {
           }
         />
 
+        <Route
+         path="/admin/products/edit/:id"
+         element={
+        <AdminLayout>
+        <EditProduct />
+        </AdminLayout>
+        }
+      />
+
+
+      <Route
+        path="/admin/products/view/:id"
+        element={
+      <AdminLayout>
+      <ViewProduct />
+     </AdminLayout>
+      }
+    />
+
         {/* Categories */}
         <Route
           path="/admin/categories"
@@ -118,6 +140,16 @@ function App() {
           </AdminLayout>
         }
       />
+
+         {/* Edit Banner */}
+      <Route
+      path="/admin/banners/edit/:id"
+      element={
+     <AdminLayout>
+    <EditBanner />
+    </AdminLayout>
+       }
+    />
 
         {/* Customers */}
         <Route

@@ -1,522 +1,595 @@
-* {
-  box-sizing: border-box;
-}
-
-/* =========================
+/* =========================================================
    BANNERS PAGE
-========================= */
+========================================================= */
 
 .banners-page {
   width: 100%;
   max-width: 1500px;
-  margin: 0 auto;
-  padding: 4px 0 40px;
+  padding: 10px 6px 40px;
+  box-sizing: border-box;
   color: #171717;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* =========================================================
+   PAGE HEADER
+========================================================= */
 
 .banners-header {
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 26px;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.banners-header > div {
+  min-width: 0;
 }
 
 .banners-header h1 {
   margin: 0;
-  color: #151515;
   font-size: 27px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -0.6px;
+  color: #111;
 }
 
 .banners-header p {
-  margin: 6px 0 0;
-  color: #858585;
-  font-size: 13px;
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #777;
 }
 
-/* =========================
-   ADD BUTTON
-========================= */
+/* =========================================================
+   ADD BANNER BUTTON
+========================================================= */
 
 .add-banner-btn {
-  height: 40px;
+  height: 38px;
+  padding: 0 15px;
+  border: 1px solid #111;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 17px;
-  border: 1px solid #151515;
-  border-radius: 8px;
-  background: #151515;
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 650;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .add-banner-btn i {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .add-banner-btn:hover {
-  background: #303030;
-  border-color: #303030;
+  background: #292929;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
 
-/* =========================
-   STATS
-========================= */
-
-.banner-stats {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 22px;
+.add-banner-btn:active {
+  transform: translateY(0);
 }
 
-.banner-stat-card {
-  min-height: 82px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 17px 18px;
-  background: #ffffff;
-  border: 1px solid #e8e8e8;
-  border-radius: 11px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.025);
-}
-
-.stat-icon {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-}
-
-.stat-icon i {
-  font-size: 18px;
-}
-
-.stat-icon.blue {
-  background: #edf4ff;
-  color: #3975d3;
-}
-
-.stat-icon.green {
-  background: #ebf8f0;
-  color: #2c9855;
-}
-
-.stat-icon.gray {
-  background: #f1f1f1;
-  color: #777777;
-}
-
-.banner-stat-card span {
-  display: block;
-  margin-bottom: 4px;
-  color: #888888;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.banner-stat-card strong {
-  display: block;
-  color: #171717;
-  font-size: 21px;
-  font-weight: 700;
-}
-
-/* =========================
-   MAIN CARD
-========================= */
+/* =========================================================
+   BANNER CARD
+========================================================= */
 
 .banners-card {
   width: 100%;
-  background: #ffffff;
-  border: 1px solid #e8e8e8;
-  border-radius: 13px;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.025);
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.035);
 }
 
-/* =========================
+/* =========================================================
    CARD HEADER
-========================= */
+========================================================= */
 
 .banners-card-header {
+  min-height: 68px;
+  padding: 15px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 15px;
-  padding: 20px 22px;
+  gap: 18px;
   border-bottom: 1px solid #eeeeee;
+  box-sizing: border-box;
 }
 
 .banners-card-header h2 {
   margin: 0;
-  color: #202020;
-  font-size: 17px;
-  font-weight: 650;
+  font-size: 15px;
+  font-weight: 700;
+  color: #171717;
 }
 
 .banners-card-header p {
-  margin: 4px 0 0;
-  color: #929292;
-  font-size: 11px;
-}
-
-.banner-count {
-  padding: 6px 10px;
-  border-radius: 20px;
-  background: #f5f5f5;
-  color: #666666;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* =========================
-   BANNER GRID
-========================= */
-
-.banner-grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  padding: 22px;
-}
-
-/* =========================
-   BANNER ITEM
-========================= */
-
-.banner-item {
-  min-width: 0;
-  overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #e7e7e7;
-  border-radius: 11px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.banner-item:hover {
-  transform: translateY(-3px);
-  border-color: #dddddd;
-  box-shadow: 0 9px 24px rgba(0, 0, 0, 0.075);
-}
-
-/* =========================
-   BANNER IMAGE
-========================= */
-
-.banner-image-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 180px;
-  overflow: hidden;
-  background: #f3f3f3;
-}
-
-/* Important for assets/images */
-
-.banner-image-wrapper img {
-  width: 100%;
-  height: 100%;
-  display: block;
-
-  /* Keeps complete banner visible */
-  object-fit: cover;
-
-  /* Center image properly */
-  object-position: center;
-
-  transition:
-    transform 0.35s ease,
-    filter 0.25s ease;
-}
-
-.banner-item:hover .banner-image-wrapper img {
-  transform: scale(1.035);
-}
-
-/* =========================
-   IMAGE OVERLAY
-========================= */
-
-.banner-image-wrapper::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.02),
-    rgba(0, 0, 0, 0)
-  );
-}
-
-/* =========================
-   STATUS
-========================= */
-
-.banner-status {
-  position: absolute;
-  top: 11px;
-  right: 11px;
-  z-index: 2;
-
-  padding: 5px 9px;
-
-  border-radius: 20px;
-
+  margin: 3px 0 0;
   font-size: 10px;
-  font-weight: 600;
-
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  color: #999;
 }
 
-.banner-status.active {
-  background: rgba(232, 248, 239, 0.94);
-  color: #21864a;
-}
+/* =========================================================
+   UPLOAD INFO
+========================================================= */
 
-.banner-status.inactive {
-  background: rgba(245, 245, 245, 0.94);
-  color: #777777;
-}
-
-/* =========================
-   DETAILS
-========================= */
-
-.banner-details {
-  min-height: 68px;
-
+.banner-upload-info {
+  margin: 0 18px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-
-  gap: 12px;
-
-  padding: 13px 15px;
-
-  background: #ffffff;
+  gap: 10px;
+  background: #fafafa;
+  border-bottom: 1px solid #eeeeee;
 }
 
-.banner-details h3 {
-  margin: 0 0 4px;
-  color: #242424;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.3;
-}
-
-.banner-details p {
-  margin: 0;
-  color: #999999;
-  font-size: 10px;
-}
-
-/* =========================
-   ACTIONS
-========================= */
-
-.banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.banner-actions button {
-  width: 31px;
-  height: 31px;
-
+.banner-upload-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 0;
-
-  border: 1px solid #e5e5e5;
   border-radius: 7px;
-
-  background: #ffffff;
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
+  background: #f0f0f0;
+  color: #555;
 }
 
-.banner-actions i {
-  font-size: 12px;
+.banner-upload-icon i {
+  font-size: 14px;
 }
 
-.status-btn {
-  color: #555555;
+.banner-upload-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.status-btn:hover {
+.banner-upload-text strong {
+  font-size: 10px;
+  font-weight: 700;
+  color: #333;
+}
+
+.banner-upload-text span {
+  font-size: 9px;
+  color: #999;
+  line-height: 1.4;
+}
+
+.banner-upload-text b {
+  color: #555;
+  font-weight: 700;
+}
+
+.info-separator {
+  margin: 0 5px;
+  color: #c5c5c5;
+}
+
+/* =========================================================
+   TABLE CONTAINER
+========================================================= */
+
+.banners-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.banners-table-container::-webkit-scrollbar {
+  height: 5px;
+}
+
+.banners-table-container::-webkit-scrollbar-track {
   background: #f5f5f5;
-  border-color: #dcdcdc;
 }
+
+.banners-table-container::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.banners-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+.banners-table thead {
+  background: #fafafa;
+}
+
+.banners-table th {
+  height: 37px;
+  padding: 0 13px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #e8e8e8;
+  color: #999;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   TABLE BODY
+========================================================= */
+
+.banners-table tbody tr {
+  height: 70px;
+  transition: background 0.18s ease;
+}
+
+.banners-table tbody tr:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.banners-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.banners-table td {
+  height: 70px;
+  padding: 7px 13px;
+  vertical-align: middle;
+  color: #444;
+  font-size: 10px;
+}
+
+/* =========================================================
+   NUMBER
+========================================================= */
+
+.banner-number {
+  width: 35px;
+  color: #999 !important;
+  font-size: 9px !important;
+  font-weight: 650;
+}
+
+/* =========================================================
+   BANNER IMAGE
+========================================================= */
+
+.banner-image-wrapper {
+  width: 105px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.no-banner-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #aaa;
+  font-size: 8px;
+}
+
+/* =========================================================
+   BANNER TITLE
+========================================================= */
+
+.banner-title {
+  min-width: 180px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.banner-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #222;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.banner-title span {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #999;
+  font-size: 8px;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.banner-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 20px;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.banner-status.active {
+  background: #edf7f0;
+  color: #31804a;
+}
+
+.banner-status.inactive {
+  background: #eeeeee;
+  color: #777;
+}
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.banners-table td:nth-child(5),
+.banners-table td:nth-child(6) {
+  color: #666;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ACTION COLUMN
+========================================================= */
+
+.banners-table th:last-child {
+  text-align: center;
+}
+
+.banners-table td:last-child {
+  width: 105px;
+  min-width: 105px;
+}
+
+/* =========================================================
+   ACTIONS — ALWAYS ONE ROW
+========================================================= */
+
+.banner-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: max-content;
+  margin: 0 auto;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.edit-banner-btn,
+.delete-banner-btn {
+  width: 29px;
+  height: 29px;
+  min-width: 29px;
+  max-width: 29px;
+  flex: 0 0 29px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border-radius: 7px;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+/* =========================================================
+   EDIT
+========================================================= */
 
 .edit-banner-btn {
-  color: #3975d3;
+  border: 1px solid #dedede;
+  background: #fff;
+  color: #444;
 }
 
 .edit-banner-btn:hover {
-  background: #edf4ff;
-  border-color: #d9e7ff;
+  border-color: #222;
+  background: #222;
+  color: #fff;
+  transform: translateY(-1px);
 }
 
+/* =========================================================
+   DELETE
+========================================================= */
+
 .delete-banner-btn {
-  color: #d34c4c;
+  border: 1px solid #ead7d7;
+  background: #fff;
+  color: #b34b4b;
 }
 
 .delete-banner-btn:hover {
-  background: #fff0f0;
-  border-color: #ffdcdc;
+  border-color: #b94b4b;
+  background: #b94b4b;
+  color: #fff;
+  transform: translateY(-1px);
 }
 
-/* =========================
-   EMPTY STATE
-========================= */
+/* =========================================================
+   TABLE MESSAGES
+========================================================= */
 
-.empty-banners {
-  grid-column: 1 / -1;
-
-  padding: 70px 20px;
-
-  text-align: center;
-
-  border: 1px dashed #d8d8d8;
-  border-radius: 10px;
-
-  background: #fcfcfc;
+.no-banner {
+  height: 220px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  color: #888 !important;
+  font-size: 11px !important;
 }
 
-.empty-banners i {
-  font-size: 35px;
-  color: #b5b5b5;
+.no-banner-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #888;
+  font-size: 11px;
 }
 
-.empty-banners h3 {
-  margin: 13px 0 5px;
-  color: #444444;
-  font-size: 15px;
+.no-banner-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  border-radius: 9px;
+  background: #f4f4f4;
+  color: #888;
 }
 
-.empty-banners p {
-  margin: 0;
-  color: #999999;
-  font-size: 12px;
+.no-banner-icon i {
+  font-size: 17px;
 }
 
-/* =========================
-   LAPTOP
-========================= */
+.no-banner-content strong {
+  color: #444;
+  font-size: 11px;
+}
+
+.no-banner-content span {
+  color: #999;
+  font-size: 9px;
+}
+
+/* =========================================================
+   RESPONSIVE — 1100px
+========================================================= */
 
 @media (max-width: 1100px) {
-
   .banners-page {
-    padding-bottom: 30px;
+    padding-left: 7px;
+    padding-right: 7px;
   }
 
-  .banner-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .banners-card-header {
+    padding: 14px 16px;
+  }
+
+  .banners-table th,
+  .banners-table td {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+
+  .banner-upload-info {
+    margin-left: 16px;
+    margin-right: 16px;
   }
 
   .banner-image-wrapper {
-    min-height: 175px;
+    width: 95px;
+    height: 50px;
   }
 }
 
-/* =========================
-   TABLET
-========================= */
+/* =========================================================
+   RESPONSIVE — 800px
+========================================================= */
 
 @media (max-width: 800px) {
+  .banners-header {
+    align-items: flex-start;
+  }
 
   .banners-header h1 {
-    font-size: 25px;
+    font-size: 24px;
   }
 
-  .banner-stats {
-    gap: 12px;
+  .banners-card-header {
+    min-height: 62px;
   }
 
-  .banner-stat-card {
-    padding: 14px;
+  .banner-upload-info {
+    align-items: flex-start;
   }
 
-  .banner-grid {
-    padding: 18px;
-    gap: 15px;
-  }
-
-  .banner-image-wrapper {
-    min-height: 165px;
+  .banner-upload-text span {
+    line-height: 1.5;
   }
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* =========================================================
+   RESPONSIVE — 600px
+========================================================= */
 
 @media (max-width: 600px) {
-
   .banners-page {
-    padding: 2px 0 25px;
+    padding: 5px 5px 28px;
   }
 
   .banners-header {
-    align-items: stretch;
     flex-direction: column;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 15px;
   }
 
   .banners-header h1 {
-    font-size: 23px;
+    font-size: 22px;
   }
 
   .banners-header p {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .add-banner-btn {
     width: 100%;
-  }
-
-  .banner-stats {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .banner-stat-card {
-    min-height: 74px;
+    height: 38px;
   }
 
   .banners-card {
@@ -524,54 +597,78 @@
   }
 
   .banners-card-header {
-    align-items: flex-start;
-    padding: 17px;
-  }
-
-  .banner-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 16px;
-  }
-
-  .banner-image-wrapper {
-    aspect-ratio: 16 / 9;
-    min-height: 0;
-  }
-
-  .banner-details {
     padding: 13px;
+  }
+
+  .banners-card-header h2 {
+    font-size: 14px;
+  }
+
+  .banners-card-header p {
+    font-size: 9px;
+  }
+
+  .banner-upload-info {
+    margin-left: 13px;
+    margin-right: 13px;
+    padding: 9px 10px;
+  }
+
+  .banner-upload-text span {
+    font-size: 8px;
+  }
+
+  .banners-table-container {
+    overflow-x: auto;
+  }
+
+  .banners-table {
+    min-width: 850px;
   }
 }
 
-/* =========================
-   SMALL MOBILE
-========================= */
+/* =========================================================
+   RESPONSIVE — 400px
+========================================================= */
 
 @media (max-width: 400px) {
-
   .banners-header h1 {
-    font-size: 21px;
+    font-size: 20px;
   }
 
-  .banners-card-header {
-    padding: 15px;
+  .banners-card-header h2 {
+    font-size: 13px;
   }
 
-  .banner-grid {
-    padding: 14px;
+  .banner-upload-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .banner-upload-text strong {
+    font-size: 9px;
+  }
+
+  .banner-upload-text span {
+    font-size: 8px;
   }
 
   .banner-image-wrapper {
-    aspect-ratio: 16 / 9;
+    width: 85px;
+    height: 47px;
   }
 
-  .banner-details {
-    padding: 12px;
+  .banner-title {
+    max-width: 210px;
   }
 
-  .banner-actions button {
-    width: 29px;
-    height: 29px;
+  .edit-banner-btn,
+  .delete-banner-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    flex-basis: 28px !important;
   }
 }

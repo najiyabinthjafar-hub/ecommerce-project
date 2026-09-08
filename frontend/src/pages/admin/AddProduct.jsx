@@ -1,28 +1,32 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AddProduct.css";
 
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
 function AddProduct() {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState({
+    sku: "",
     name: "",
     category: "",
-    price: "",
+    regularPrice: "",
+    salePrice: "",
     stock: "",
-    size: [],
+    variants: [],
     description: "",
   });
 
+  const [image, setImage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  // Fetch categories from database
+  // Fetch categories
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
@@ -37,7 +41,11 @@ function AddProduct() {
 
       console.log("Categories:", data);
 
-      setCategories(data.categories || []);
+      const categoryList = Array.isArray(data)
+        ? data
+        : data.categories || data.data || [];
+
+      setCategories(categoryList);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setCategories([]);
@@ -59,34 +67,138 @@ function AddProduct() {
 
   const handleSizeChange = (size) => {
     setProduct((prev) => {
-      const alreadySelected = prev.size.includes(size);
+      const alreadySelected = prev.variants.includes(size);
 
       return {
         ...prev,
-        size: alreadySelected
-          ? prev.size.filter((item) => item !== size)
-          : [...prev.size, size],
+        variants: alreadySelected
+          ? prev.variants.filter((item) => item !== size)
+          : [...prev.variants, size],
       };
     });
   };
 
-  const handleSubmit = (e) => {
+  // Image selection
+  const handleImageChange = (e) => {
+    const selectedImage = e.target.files[0];
+
+    if (selectedImage) {
+      setImage(selectedImage);
+      console.log("Selected image:", selectedImage);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Product:", product);
+    try {
+      setSaving(true);
 
-    alert("Product added successfully!");
+      // Create slug from product name
+      const slug = product.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
 
-    setProduct({
-      name: "",
-      category: "",
-      price: "",
-      stock: "",
-      size: [],
-      description: "",
-    });
+      const productData = {
+        sku: product.sku.trim(),
+        name: product.name.trim(),
+        slug,
+        description: product.description.trim(),
+        category: product.category,
+        regularPrice: Number(product.regularPrice),
+        salePrice:
+          product.salePrice === ""
+            ? null
+            : Number(product.salePrice),
+        stock: Number(product.stock),
+        variants: product.variants,
+        status: "active",
+      };
 
-    navigate("/admin/products");
+      console.log("Sending product:", productData);
+
+      // 1. Create product
+      const response = await fetch(PRODUCT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await response.json();
+
+      console.log("Create product response:", data);
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to add product"
+        );
+      }
+
+      // 2. Upload image
+      if (image && data.product?._id) {
+        const formData = new FormData();
+
+        formData.append("images", image);
+
+        console.log("Uploading image...");
+
+        const imageResponse = await fetch(
+          `${PRODUCT_API_URL}/${data.product._id}/images`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const imageData = await imageResponse.json();
+
+        console.log("Image upload response:", imageData);
+
+        if (!imageResponse.ok) {
+          throw new Error(
+            imageData.message ||
+              "Product added, but image upload failed"
+          );
+        }
+      }
+
+      // Success
+      alert(
+        image
+          ? "Product and image added successfully!"
+          : "Product added successfully!"
+      );
+
+      // Reset form
+      setProduct({
+        sku: "",
+        name: "",
+        category: "",
+        regularPrice: "",
+        salePrice: "",
+        stock: "",
+        variants: [],
+        description: "",
+      });
+
+      setImage(null);
+
+      // Go to products
+      navigate("/admin/products");
+    } catch (error) {
+      console.error("Error adding product:", error);
+
+      alert(
+        error.message ||
+          "Something went wrong while adding the product"
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -97,7 +209,9 @@ function AddProduct() {
         <div className="add-product-header">
           <div className="add-product-heading">
             <h1>Add Product</h1>
-            <p>Add a new fashion product to your store</p>
+            <p>
+              Add a new fashion product to your store
+            </p>
           </div>
 
           <button
@@ -114,8 +228,21 @@ function AddProduct() {
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
 
-            {/* Product Name + Category */}
+            {/* SKU + Product Name */}
             <div className="form-row">
+
+              <div className="form-group">
+                <label>SKU</label>
+
+                <input
+                  type="text"
+                  name="sku"
+                  placeholder="Example: SHIRT-001"
+                  value={product.sku}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
               <div className="form-group">
                 <label>Product Name</label>
@@ -129,6 +256,11 @@ function AddProduct() {
                   required
                 />
               </div>
+
+            </div>
+
+            {/* Category + Stock */}
+            <div className="form-row">
 
               <div className="form-group">
                 <label>Category</label>
@@ -149,31 +281,14 @@ function AddProduct() {
                     categories.map((category) => (
                       <option
                         key={category._id || category.id}
-                        value={category._id || category.id}
+                        value={
+                          category._id || category.id
+                        }
                       >
                         {category.name}
                       </option>
                     ))}
                 </select>
-              </div>
-
-            </div>
-
-            {/* Price + Stock */}
-            <div className="form-row">
-
-              <div className="form-group">
-                <label>Price</label>
-
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="₹ Enter price"
-                  value={product.price}
-                  onChange={handleChange}
-                  min="0"
-                  required
-                />
               </div>
 
               <div className="form-group">
@@ -192,6 +307,38 @@ function AddProduct() {
 
             </div>
 
+            {/* Regular Price + Sale Price */}
+            <div className="form-row">
+
+              <div className="form-group">
+                <label>Regular Price</label>
+
+                <input
+                  type="number"
+                  name="regularPrice"
+                  placeholder="₹ Enter regular price"
+                  value={product.regularPrice}
+                  onChange={handleChange}
+                  min="0"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Sale Price</label>
+
+                <input
+                  type="number"
+                  name="salePrice"
+                  placeholder="₹ Enter sale price (optional)"
+                  value={product.salePrice}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </div>
+
+            </div>
+
             {/* Size + Image */}
             <div className="form-row">
 
@@ -205,9 +352,13 @@ function AddProduct() {
                       key={size}
                       type="button"
                       className={`size-option ${
-                        product.size.includes(size) ? "selected" : ""
+                        product.variants.includes(size)
+                          ? "selected"
+                          : ""
                       }`}
-                      onClick={() => handleSizeChange(size)}
+                      onClick={() =>
+                        handleSizeChange(size)
+                      }
                     >
                       {size}
                     </button>
@@ -215,10 +366,12 @@ function AddProduct() {
                 </div>
 
                 <small className="size-hint">
-                  {product.size.length === 0
+                  {product.variants.length === 0
                     ? "Select one or more sizes"
-                    : `${product.size.length} size${
-                        product.size.length > 1 ? "s" : ""
+                    : `${product.variants.length} size${
+                        product.variants.length > 1
+                          ? "s"
+                          : ""
                       } selected`}
                 </small>
               </div>
@@ -230,7 +383,14 @@ function AddProduct() {
                 <input
                   type="file"
                   accept="image/*"
+                  onChange={handleImageChange}
                 />
+
+                {image && (
+                  <small className="size-hint">
+                    Selected: {image.name}
+                  </small>
+                )}
               </div>
 
             </div>
@@ -255,7 +415,9 @@ function AddProduct() {
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={() => navigate("/admin/products")}
+                onClick={() =>
+                  navigate("/admin/products")
+                }
               >
                 Cancel
               </button>
@@ -263,9 +425,13 @@ function AddProduct() {
               <button
                 type="submit"
                 className="save-product-btn"
+                disabled={saving}
               >
                 <i className="bi bi-plus-lg"></i>
-                Add Product
+
+                {saving
+                  ? "Adding..."
+                  : "Add Product"}
               </button>
 
             </div>

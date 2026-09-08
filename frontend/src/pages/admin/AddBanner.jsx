@@ -19,6 +19,9 @@ function AddBanner() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Maximum image size: 5MB
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
   // Handle text/select/date changes
   const handleChange = (e) => {
     setBanner({
@@ -39,6 +42,16 @@ function AddBanner() {
     // Only allow image files
     if (!selectedImage.type.startsWith("image/")) {
       alert("Please select a valid image file.");
+      e.target.value = "";
+      setImage(null);
+      return;
+    }
+
+    // Maximum file size: 5MB
+    if (selectedImage.size > MAX_IMAGE_SIZE) {
+      alert(
+        "Image size must be 5MB or less. Please choose a smaller image."
+      );
       e.target.value = "";
       setImage(null);
       return;
@@ -66,39 +79,47 @@ function AddBanner() {
       return;
     }
 
+    // Final 5MB validation before upload
+    if (image.size > MAX_IMAGE_SIZE) {
+      alert(
+        "Image size must be 5MB or less. Please choose a smaller image."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const formData = new FormData();
-
-      formData.append("title", banner.title.trim());
-      formData.append("description", banner.description.trim());
-      formData.append("link", banner.link.trim());
-      formData.append("status", banner.status);
-
-      if (banner.startDate) {
-        formData.append("startDate", banner.startDate);
-      }
-
-      if (banner.endDate) {
-        formData.append("endDate", banner.endDate);
-      }
-
-      // Image field
-      formData.append("image", image);
-
-      console.log("Submitting banner...");
+      // ==========================================
+      // STEP 1: CREATE BANNER DETAILS
+      // ==========================================
 
       const response = await fetch(API_URL, {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: banner.title.trim(),
+          description: banner.description.trim(),
+          link: banner.link.trim(),
+          status: banner.status,
+
+          ...(banner.startDate && {
+            startDate: banner.startDate,
+          }),
+
+          ...(banner.endDate && {
+            endDate: banner.endDate,
+          }),
+        }),
       });
 
       // Read response as text first
       const responseText = await response.text();
 
-      console.log("Status:", response.status);
-      console.log("Response:", responseText);
+      console.log("Create Banner Status:", response.status);
+      console.log("Create Banner Response:", responseText);
 
       let data;
 
@@ -111,15 +132,77 @@ function AddBanner() {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to add banner");
+        throw new Error(data.message || "Failed to create banner");
       }
 
-      alert(data.message || "Banner added successfully!");
+      // Get newly created banner ID
+      const bannerId = data.banner?._id;
+
+      if (!bannerId) {
+        throw new Error(
+          "Banner created, but banner ID was not returned."
+        );
+      }
+
+      // ==========================================
+      // STEP 2: UPLOAD BANNER IMAGE
+      // ==========================================
+
+      const formData = new FormData();
+
+      formData.append("image", image);
+
+      const imageResponse = await fetch(
+        `${API_URL}/${bannerId}/image`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      // Read image upload response as text
+      const imageResponseText = await imageResponse.text();
+
+      console.log(
+        "Upload Image Status:",
+        imageResponse.status
+      );
+
+      console.log(
+        "Upload Image Response:",
+        imageResponseText
+      );
+
+      let imageData;
+
+      try {
+        imageData = JSON.parse(imageResponseText);
+      } catch {
+        throw new Error(
+          `Image upload returned non-JSON response (${imageResponse.status})`
+        );
+      }
+
+      if (!imageResponse.ok) {
+        throw new Error(
+          imageData.message ||
+            "Banner created, but image upload failed."
+        );
+      }
+
+      // ==========================================
+      // SUCCESS
+      // ==========================================
+
+      alert("Banner added successfully!");
 
       navigate("/admin/banners");
     } catch (error) {
       console.error("Error adding banner:", error);
-      alert(error.message || "Something went wrong");
+
+      alert(
+        error.message || "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
@@ -127,13 +210,18 @@ function AddBanner() {
 
   return (
     <div className="add-banner-page">
+
       <div className="add-banner-content">
 
         {/* Header */}
         <div className="add-banner-header">
+
           <div className="add-banner-heading">
             <h1>Add Banner</h1>
-            <p>Create a new promotional banner for your store</p>
+
+            <p>
+              Create a new promotional banner for your store
+            </p>
           </div>
 
           <button
@@ -144,14 +232,17 @@ function AddBanner() {
             <i className="bi bi-arrow-left"></i>
             Back to Banners
           </button>
+
         </div>
 
         {/* Form Card */}
         <div className="add-banner-card">
+
           <form onSubmit={handleSubmit}>
 
             {/* Banner Title */}
             <div className="form-group">
+
               <label>Banner Title</label>
 
               <input
@@ -162,10 +253,12 @@ function AddBanner() {
                 onChange={handleChange}
                 required
               />
+
             </div>
 
             {/* Description */}
             <div className="form-group">
+
               <label>Description</label>
 
               <textarea
@@ -176,12 +269,14 @@ function AddBanner() {
                 rows="4"
                 required
               />
+
             </div>
 
             {/* Link + Status */}
             <div className="form-row">
 
               <div className="form-group">
+
                 <label>Banner Link</label>
 
                 <input
@@ -191,9 +286,11 @@ function AddBanner() {
                   value={banner.link}
                   onChange={handleChange}
                 />
+
               </div>
 
               <div className="form-group">
+
                 <label>Status</label>
 
                 <select
@@ -201,9 +298,15 @@ function AddBanner() {
                   value={banner.status}
                   onChange={handleChange}
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="active">
+                    Active
+                  </option>
+
+                  <option value="inactive">
+                    Inactive
+                  </option>
                 </select>
+
               </div>
 
             </div>
@@ -212,6 +315,7 @@ function AddBanner() {
             <div className="form-row">
 
               <div className="form-group">
+
                 <label>Start Date</label>
 
                 <input
@@ -220,9 +324,11 @@ function AddBanner() {
                   value={banner.startDate}
                   onChange={handleChange}
                 />
+
               </div>
 
               <div className="form-group">
+
                 <label>End Date</label>
 
                 <input
@@ -231,12 +337,14 @@ function AddBanner() {
                   value={banner.endDate}
                   onChange={handleChange}
                 />
+
               </div>
 
             </div>
 
             {/* Banner Image */}
             <div className="form-group">
+
               <label>Banner Image</label>
 
               <input
@@ -246,19 +354,37 @@ function AddBanner() {
                 required
               />
 
-              <small>
-                Upload a suitable banner image for your store.
+              {/* Image Guidelines */}
+              <small className="image-upload-note">
+                <i className="bi bi-info-circle"></i>
+
+                Maximum image size: <strong>5MB</strong>
+                {" • "}
+                Only image files are allowed.
               </small>
+
+              {/* Selected Image Size */}
+              {image && (
+                <small className="selected-image-size">
+                  Selected image:{" "}
+                  <strong>
+                    {(image.size / (1024 * 1024)).toFixed(2)} MB
+                  </strong>
+                </small>
+              )}
 
               {/* Image Preview */}
               {image && (
                 <div className="banner-image-preview">
+
                   <img
                     src={URL.createObjectURL(image)}
                     alt="Banner preview"
                   />
+
                 </div>
               )}
+
             </div>
 
             {/* Actions */}
@@ -280,15 +406,19 @@ function AddBanner() {
               >
                 <i className="bi bi-plus-lg"></i>
 
-                {loading ? "Adding..." : "Add Banner"}
+                {loading
+                  ? "Adding..."
+                  : "Add Banner"}
               </button>
 
             </div>
 
           </form>
+
         </div>
 
       </div>
+
     </div>
   );
 }
