@@ -25,20 +25,27 @@ const getProducts = async (req, res, next) => {
       minPrice,
       maxPrice,
       availability,
+        sort,
+         page,
+        limit,
     } = req.query;
 
-    const products = await productService.getAllProducts({
+    const result = await productService.getAllProducts({
       search,
       category,
       minPrice,
       maxPrice,
       availability,
+      sort,
+       page,
+       limit,
     });
 
-    res.status(200).json({
-      success: true,
-      products,
-    });
+res.status(200).json({
+  success: true,
+  products: result.products,
+  pagination: result.pagination,
+});
   } catch (error) {
     next(error);
   }
