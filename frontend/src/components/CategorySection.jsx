@@ -1,10 +1,41 @@
-import "./CategorySection.css";
+import { useEffect, useState } from "react";
+
 import { Link } from "react-router-dom";
-import tshirtImage from "../assets/cate1.png";
-import shirtImage from "../assets/cate2.png";
-import womenImage from "../assets/cate3.png";
+
+import insta1 from "../assets/insta1.png";
+import insta2 from "../assets/insta2.png";
+import insta3 from "../assets/insta3.png";
+import insta4 from "../assets/insta4.png";
+
+import "./CategorySection.css";
+
+const images = [insta1, insta2, insta3, insta4];
 
 function CategorySection() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const nextSlide = () => {
+    setActiveIndex((current) => (current + 1) % images.length);
+  };
+
+  const prevSlide = () => {
+    setActiveIndex((current) => (current - 1 + images.length) % images.length);
+  };
+
+  // Automatic slide
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Current visible images
+  const getImage = (offset) => {
+    return images[(activeIndex + offset) % images.length];
+  };
+
   return (
     <section className="category-section">
       {/* LEFT CONTENT */}
@@ -12,13 +43,21 @@ function CategorySection() {
         <h2>Essentials by Category</h2>
 
         <p className="category-description">
-          Explore our must-have styles—hoodies, sweatshirts, and classic
-          tees—sorted by category for your perfect everyday look.
+          Explore our must-have styles—hoodies, sweatshirts,
+          <br />
+          and classic tees—sorted by category for your perfect
+          <br />
+          everyday look.
         </p>
 
-        <Link to="/category" className="explore-btn">
-  Explore More
-</Link>
+        {/* EXPLORE MORE */}
+        <Link
+          to="/shop"
+          className="explore-btn"
+          onClick={() => window.scrollTo(0, 0)}
+        >
+          Explore More
+        </Link>
 
         {/* COUNTDOWN */}
         <div className="countdown-section">
@@ -48,39 +87,52 @@ function CategorySection() {
         </div>
       </div>
 
-      {/* RIGHT PRODUCT SLIDER */}
+      {/* RIGHT SLIDER */}
       <div className="category-slider">
-        <div className="category-products">
-          {/* MAIN PRODUCT */}
-          <div className="category-product main-product">
-            <img src={tshirtImage} alt="T-Shirt" />
-
-            <div className="product-label">T - SHIRT</div>
+        {/* IMAGES */}
+        <div className="visible-images">
+          <div className="category-image first-image">
+            <img src={getImage(0)} alt="Collection 1" />
           </div>
 
-          {/* SECOND PRODUCT */}
-          <div className="category-product side-product">
-            <img src={shirtImage} alt="Shirt" />
+          <div className="category-image second-image">
+            <img src={getImage(1)} alt="Collection 2" />
           </div>
 
-          {/* THIRD PRODUCT */}
-          <div className="category-product side-product">
-            <img src={womenImage} alt="Women Collection" />
+          <div className="category-image third-image">
+            <img src={getImage(2)} alt="Collection 3" />
           </div>
         </div>
 
-        {/* CONTROLS */}
+        {/* ARROWS */}
         <div className="category-controls">
-          <button className="slider-arrow">‹</button>
+          <div className="category-arrows">
+            <button
+              className="slider-arrow"
+              onClick={prevSlide}
+              aria-label="Previous"
+            >
+              ‹
+            </button>
 
-          <button className="slider-arrow">›</button>
-
-          <div className="slider-dots">
-            <span className="active"></span>
-            <span></span>
-            <span></span>
-            <span></span>
+            <button
+              className="slider-arrow"
+              onClick={nextSlide}
+              aria-label="Next"
+            >
+              ›
+            </button>
           </div>
+        </div>
+
+        {/* DOTS */}
+        <div className="slider-dots">
+          {images.map((_, index) => (
+            <span
+              key={index}
+              className={index === activeIndex ? "active" : ""}
+            ></span>
+          ))}
         </div>
       </div>
     </section>

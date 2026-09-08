@@ -38,139 +38,124 @@
 
 
 /* =========================================
-   INSTAGRAM IMAGE ROW
+   HERO STYLE SLIDER
 ========================================= */
 
-.instagram-grid {
+.instagram-slider {
   width: 100%;
+  height: 330px;
+  position: relative;
+  overflow: hidden;
+}
 
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-
-  gap: 0;
-  margin: 0;
-  padding: 0;
-
-  /*
-    This is important.
-    The middle images are allowed
-    to extend outside their normal row.
-  */
-  align-items: center;
+.instagram-track {
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
 
 /* =========================================
-   EVERY IMAGE BOX
+   COMMON IMAGE
 ========================================= */
 
 .instagram-image {
-  width: 100%;
+  position: absolute;
+  top: 50%;
+
+  width: 14.285%;
   height: 250px;
 
-  margin: 0;
-  padding: 0;
+  transform: translateY(-50%);
 
-  display: block;
+  overflow: hidden;
 
-  overflow: visible;
-
-  line-height: 0;
-}
-
-
-/* =========================================
-   EVERY IMAGE
-========================================= */
-
-.instagram-image img {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  margin: 0;
-  padding: 0;
-  border: 0;
-
-  /*
-    IMPORTANT:
-    No crop.
-    Entire image stays visible.
-  */
-  object-fit: fill;
-
-  vertical-align: top;
-}
-
-
-/* =========================================
-   1, 3, 5, 7
-   SAME SIZE
-========================================= */
-
-.instagram-image:nth-child(1),
-.instagram-image:nth-child(3),
-.instagram-image:nth-child(5),
-.instagram-image:nth-child(7) {
-  height: 250px;
-
-  transform: translateY(0);
-}
-
-
-/* =========================================
-   2, 4, 6
-   SAME SIZE
-
-   Taller than 1,3,5,7
-   Extends equally UP and DOWN
-========================================= */
-
-.instagram-image:nth-child(2),
-.instagram-image:nth-child(4),
-.instagram-image:nth-child(6) {
-  height: 300px;
-
-  transform: translateY(0);
+  transition:
+    left 0.8s ease-in-out,
+    width 0.8s ease-in-out,
+    height 0.8s ease-in-out;
 
   z-index: 2;
 }
 
-
-/* =========================================
-   FORCE ZERO SPACE
-========================================= */
-
-.instagram-grid > * {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.instagram-grid > * img {
-  margin: 0 !important;
-  padding: 0 !important;
+.instagram-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: fill;
 }
 
 
 /* =========================================
-   DESKTOP
+   POSITION 1 - SMALL
 ========================================= */
 
-@media (min-width: 1200px) {
+.image-0 {
+  left: 0%;
+  height: 250px;
+}
 
-  .instagram-image:nth-child(1),
-  .instagram-image:nth-child(3),
-  .instagram-image:nth-child(5),
-  .instagram-image:nth-child(7) {
-    height: 250px;
-  }
 
-  .instagram-image:nth-child(2),
-  .instagram-image:nth-child(4),
-  .instagram-image:nth-child(6) {
-    height: 300px;
-  }
+/* =========================================
+   POSITION 2 - BIG
+========================================= */
+
+.image-1 {
+  left: 14.285%;
+  height: 300px;
+  z-index: 5;
+}
+
+
+/* =========================================
+   POSITION 3 - SMALL
+========================================= */
+
+.image-2 {
+  left: 28.57%;
+  height: 250px;
+}
+
+
+/* =========================================
+   POSITION 4 - BIG
+========================================= */
+
+.image-3 {
+  left: 42.855%;
+  height: 300px;
+  z-index: 5;
+}
+
+
+/* =========================================
+   POSITION 5 - SMALL
+========================================= */
+
+.image-4 {
+  left: 57.14%;
+  height: 250px;
+}
+
+
+/* =========================================
+   POSITION 6 - BIG
+========================================= */
+
+.image-5 {
+  left: 71.425%;
+  height: 300px;
+  z-index: 5;
+}
+
+
+/* =========================================
+   POSITION 7 - SMALL
+========================================= */
+
+.image-6 {
+  left: 85.71%;
+  height: 250px;
 }
 
 
@@ -196,20 +181,21 @@
     font-size: 12px;
   }
 
-  .instagram-image {
+  .instagram-slider {
+    height: 260px;
+  }
+
+  .instagram-image,
+  .image-0,
+  .image-2,
+  .image-4,
+  .image-6 {
     height: 180px;
   }
 
-  .instagram-image:nth-child(1),
-  .instagram-image:nth-child(3),
-  .instagram-image:nth-child(5),
-  .instagram-image:nth-child(7) {
-    height: 180px;
-  }
-
-  .instagram-image:nth-child(2),
-  .instagram-image:nth-child(4),
-  .instagram-image:nth-child(6) {
+  .image-1,
+  .image-3,
+  .image-5 {
     height: 220px;
   }
 }
@@ -238,24 +224,21 @@
     font-size: 11px;
   }
 
-  .instagram-grid {
-    grid-template-columns: repeat(7, 1fr);
+  .instagram-slider {
+    height: 180px;
   }
 
-  .instagram-image {
+  .instagram-image,
+  .image-0,
+  .image-2,
+  .image-4,
+  .image-6 {
     height: 120px;
   }
 
-  .instagram-image:nth-child(1),
-  .instagram-image:nth-child(3),
-  .instagram-image:nth-child(5),
-  .instagram-image:nth-child(7) {
-    height: 120px;
-  }
-
-  .instagram-image:nth-child(2),
-  .instagram-image:nth-child(4),
-  .instagram-image:nth-child(6) {
+  .image-1,
+  .image-3,
+  .image-5 {
     height: 145px;
   }
 }

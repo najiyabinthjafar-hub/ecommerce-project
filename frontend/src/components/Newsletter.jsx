@@ -1,9 +1,31 @@
+import { useState } from "react";
+
 import "./Newsletter.css";
 
 import leftImage from "../assets/newsletter-left.png";
+
 import rightImage from "../assets/newsletter-right.png";
 
 function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      return;
+    }
+
+    setMessage("Successfully subscribed! Thank you ❤️");
+
+    setEmail("");
+
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  };
+
   return (
     <section className="newsletter-section">
 
@@ -25,18 +47,28 @@ function Newsletter() {
 
         <form
           className="newsletter-form"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleSubscribe}
         >
+
           <input
             type="email"
             placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
           <button type="submit">
             Subscribe Now
           </button>
+
         </form>
+
+        {message && (
+          <p className="subscribe-success-message">
+            {message}
+          </p>
+        )}
 
       </div>
 
