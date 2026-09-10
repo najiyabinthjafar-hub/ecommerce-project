@@ -111,7 +111,7 @@ const updateProduct = async (id, productData) => {
     id,
     productData,
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   ).populate("category");
@@ -128,7 +128,7 @@ const updateProductStock = async (id, stock) => {
     id,
     { stock },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   ).populate("category");
