@@ -53,6 +53,7 @@ import AddBanner from "./pages/admin/AddBanner";
 import EditBanner from "./pages/admin/EditBanner";
 import EditProduct from "./pages/admin/EditProduct";
 import ViewProduct from "./pages/admin/ViewProduct";
+import BannerView from "./pages/admin/BannerView";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -270,6 +271,16 @@ function App() {
               </AdminLayout>
             }
           />
+
+
+        <Route
+            path="/admin/banners/view/:id"
+            element={
+          <AdminLayout>
+          <BannerView />
+          </AdminLayout>
+             }
+         />
 
           {/* Customers */}
 
