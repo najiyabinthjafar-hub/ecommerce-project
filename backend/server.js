@@ -2,6 +2,10 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+
+require("./models/Category");
+require("./models/Product");
+
 const connectDB = require("./config/db");
 
 const cartRoutes = require("./routes/cartRoutes");
