@@ -13,25 +13,22 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const adminTestRoutes = require("./routes/adminTestRoutes");
 
 const app = express();
 
-// Database
 connectDB();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check
 app.get("/", (req, res) => {
   res.json({
     message: "E-Commerce Backend is running",
   });
 });
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/addresses", addressRoutes);
@@ -41,6 +38,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminTestRoutes);
 
 const PORT = process.env.PORT || 5000;
