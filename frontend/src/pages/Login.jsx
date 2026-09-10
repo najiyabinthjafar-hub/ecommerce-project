@@ -1,7 +1,9 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Login.css";
@@ -10,9 +12,11 @@ function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
 
   const handleLogin = async (event) => {
@@ -68,7 +72,6 @@ function Login() {
 
       <main className="login-page">
         <section className="login-container">
-
           <div className="login-header">
             <h1>LOGIN</h1>
 
@@ -87,7 +90,6 @@ function Login() {
             className="login-form"
             onSubmit={handleLogin}
           >
-
             <div className="login-field">
               <label htmlFor="email">
                 EMAIL ADDRESS
@@ -123,7 +125,6 @@ function Login() {
             </div>
 
             <div className="login-options">
-
               <label className="remember-me">
                 <input
                   type="checkbox"
@@ -136,10 +137,12 @@ function Login() {
               <button
                 type="button"
                 className="forgot-password"
+                onClick={() =>
+                  navigate("/forgot-password")
+                }
               >
                 Forgot password?
               </button>
-
             </div>
 
             <button
@@ -147,13 +150,13 @@ function Login() {
               className="login-btn"
               disabled={loading}
             >
-              {loading ? "LOGGING IN..." : "LOGIN"}
+              {loading
+                ? "LOGGING IN..."
+                : "LOGIN"}
             </button>
-
           </form>
 
           <div className="login-register">
-
             <span>
               Don't have an account?
             </span>
@@ -161,9 +164,7 @@ function Login() {
             <Link to="/register">
               CREATE ACCOUNT
             </Link>
-
           </div>
-
         </section>
       </main>
 

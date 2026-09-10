@@ -21,6 +21,8 @@ import BestSellersPage from "./pages/BestSellersPage";
 import Category from "./pages/Category";
 import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // ================= FOOTER PAGES =================
 
@@ -55,17 +57,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* ================= CUSTOMER SIDE ================= */}
 
         <Route path="/" element={<Home />} />
 
         <Route path="/shop" element={<Shop />} />
 
-        <Route
-          path="/product/:id"
-          element={<ProductDetails />}
-        />
+        <Route path="/product/:id" element={<ProductDetails />} />
 
         <Route path="/cart" element={<Cart />} />
 
@@ -77,28 +75,21 @@ function App() {
 
         <Route path="/register" element={<Register />} />
 
-
         {/* ================= PROFILE ================= */}
 
         <Route path="/profile" element={<Profile />} />
 
-        <Route
-          path="/profile/personal"
-          element={<PersonalInformation />}
-        />
+        <Route path="/profile/personal" element={<PersonalInformation />} />
 
-        <Route
-          path="/profile/addresses"
-          element={<Addresses />}
-        />
+        <Route path="/profile/addresses" element={<Addresses />} />
 
-        <Route
-          path="/profile/change-password"
-          element={<ChangePassword />}
-        />
+        <Route path="/profile/change-password" element={<ChangePassword />} />
 
         <Route path="/wishlist" element={<Wishlist />} />
 
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
@@ -106,23 +97,13 @@ function App() {
 
         <Route path="/contact" element={<Contact />} />
 
-        <Route
-          path="/new-arrivals"
-          element={<NewArrivalsPage />}
-        />
+        <Route path="/new-arrivals" element={<NewArrivalsPage />} />
 
-        <Route
-          path="/best-sellers"
-          element={<BestSellersPage />}
-        />
+        <Route path="/best-sellers" element={<BestSellersPage />} />
 
         <Route path="/category" element={<Category />} />
 
-        <Route
-          path="/verify-otp"
-          element={<VerifyOtp />}
-        />
-
+        <Route path="/verify-otp" element={<VerifyOtp />} />
 
         {/* ================= FOOTER PAGES ================= */}
 
@@ -136,87 +117,39 @@ function App() {
 
         <Route path="/faqs" element={<FAQs />} />
 
-
         {/* ================= POLICY PAGES ================= */}
 
-        <Route
-          path="/refund-policy"
-          element={<RefundPolicy />}
-        />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
 
-        <Route
-          path="/shipping-policy"
-          element={<ShippingPolicy />}
-        />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
-        <Route
-          path="/privacy-policy"
-          element={<PrivacyPolicy />}
-        />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        <Route
-          path="/terms-of-service"
-          element={<TermsOfService />}
-        />
-
+        <Route path="/terms-of-service" element={<TermsOfService />} />
 
         {/* ================= ADMIN SIDE ================= */}
 
-        <Route
-          path="/admin/login"
-          element={<AdminLogin />}
-        />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
-        <Route
-          path="/admin/dashboard"
-          element={<Dashboard />}
-        />
+        <Route path="/admin/dashboard" element={<Dashboard />} />
 
-        <Route
-          path="/admin/products"
-          element={<Products />}
-        />
+        <Route path="/admin/products" element={<Products />} />
 
-        <Route
-          path="/admin/products/add"
-          element={<AddProduct />}
-        />
+        <Route path="/admin/products/add" element={<AddProduct />} />
 
-        <Route
-          path="/admin/categories"
-          element={<Categories />}
-        />
+        <Route path="/admin/categories" element={<Categories />} />
 
-        <Route
-          path="/admin/banners"
-          element={<Banners />}
-        />
+        <Route path="/admin/banners" element={<Banners />} />
 
-        <Route
-          path="/admin/customers"
-          element={<Customers />}
-        />
+        <Route path="/admin/customers" element={<Customers />} />
 
-        <Route
-          path="/admin/orders"
-          element={<AdminOrders />}
-        />
+        <Route path="/admin/orders" element={<AdminOrders />} />
 
-        <Route
-          path="/admin/orders/:id"
-          element={<OrderDetails />}
-        />
+        <Route path="/admin/orders/:id" element={<OrderDetails />} />
 
-        <Route
-          path="/admin/coupons"
-          element={<Coupons />}
-        />
+        <Route path="/admin/coupons" element={<Coupons />} />
 
-        <Route
-          path="/admin/inventory"
-          element={<Inventory />}
-        />
-
+        <Route path="/admin/inventory" element={<Inventory />} />
       </Routes>
     </BrowserRouter>
   );

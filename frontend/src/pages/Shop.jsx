@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -9,6 +9,9 @@ import "./Shop.css";
 function Shop() {
   const [searchParams] = useSearchParams();
 
+  const searchQuery =
+    searchParams.get("search")?.toLowerCase().trim() || "";
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,12 +19,10 @@ function Shop() {
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const productsPerPage = 4;
-
-  const searchQuery =
-    searchParams.get("search")?.toLowerCase().trim() || "";
 
   // ================= FETCH PRODUCTS =================
 
@@ -29,6 +30,7 @@ function Shop() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const response = await fetch(
           "http://localhost:5000/api/products"
@@ -44,7 +46,7 @@ function Shop() {
 
         setProducts(data.products || []);
       } catch (error) {
-        console.error("Product fetch error:", error);
+        console.error("Product API Error:", error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -62,7 +64,7 @@ function Shop() {
 
   if (searchQuery) {
     filteredProducts = filteredProducts.filter((product) =>
-      product.name.toLowerCase().includes(searchQuery)
+      product.name?.toLowerCase().includes(searchQuery)
     );
   }
 
@@ -72,45 +74,54 @@ function Shop() {
     filteredProducts = filteredProducts.filter(
       (product) => product.stock > 0
     );
-  }
-
-  if (availability === "soldout") {
+  } else if (availability === "soldout") {
     filteredProducts = filteredProducts.filter(
       (product) => product.stock === 0
     );
   }
 
-  // ================= PRICE =================
+  // ================= SORTING =================
 
-  const getPrice = (product) =>
-    product.salePrice || product.regularPrice;
+  // Price sorting has priority when selected
 
   if (priceOrder === "low-high") {
-    filteredProducts.sort(
-      (a, b) => getPrice(a) - getPrice(b)
-    );
-  }
+    filteredProducts.sort((a, b) => {
+      const priceA =
+        a.salePrice !== null && a.salePrice !== undefined
+          ? a.salePrice
+          : a.regularPrice;
 
-  if (priceOrder === "high-low") {
-    filteredProducts.sort(
-      (a, b) => getPrice(b) - getPrice(a)
-    );
-  }
+      const priceB =
+        b.salePrice !== null && b.salePrice !== undefined
+          ? b.salePrice
+          : b.regularPrice;
 
-  // ================= SORT BY =================
+      return priceA - priceB;
+    });
+  } else if (priceOrder === "high-low") {
+    filteredProducts.sort((a, b) => {
+      const priceA =
+        a.salePrice !== null && a.salePrice !== undefined
+          ? a.salePrice
+          : a.regularPrice;
 
-  if (sortBy === "newest") {
+      const priceB =
+        b.salePrice !== null && b.salePrice !== undefined
+          ? b.salePrice
+          : b.regularPrice;
+
+      return priceB - priceA;
+    });
+  } else if (sortBy === "newest") {
     filteredProducts.sort(
       (a, b) =>
         new Date(b.createdAt) - new Date(a.createdAt)
     );
-  }
-
-  if (sortBy === "featured") {
-    // ഇപ്പോൾ backend-il featured field ഇല്ല
-    // അതുകൊണ്ട് name അടിസ്ഥാനത്തിൽ default sorting
-    filteredProducts.sort((a, b) =>
-      a.name.localeCompare(b.name)
+  } else if (sortBy === "featured") {
+    // Currently using oldest products first as featured
+    filteredProducts.sort(
+      (a, b) =>
+        new Date(a.createdAt) - new Date(b.createdAt)
     );
   }
 
@@ -120,8 +131,15 @@ function Shop() {
     filteredProducts.length / productsPerPage
   );
 
+  // Prevent current page from exceeding total pages
+
+  const safeCurrentPage =
+    currentPage > totalPages && totalPages > 0
+      ? totalPages
+      : currentPage;
+
   const startIndex =
-    (currentPage - 1) * productsPerPage;
+    (safeCurrentPage - 1) * productsPerPage;
 
   const currentProducts = filteredProducts.slice(
     startIndex,
@@ -142,6 +160,10 @@ function Shop() {
 
   const handleSortChange = (value) => {
     setSortBy(value);
+
+    // Reset price sorting when using newest/featured
+    setPriceOrder("default");
+
     setCurrentPage(1);
   };
 
@@ -262,7 +284,7 @@ function Shop() {
 
         {/* ERROR */}
 
-        {error && (
+        {!loading && error && (
           <p className="no-products">
             Error: {error}
           </p>
@@ -274,24 +296,19 @@ function Shop() {
           <section className="shop-products">
 
             {currentProducts.length > 0 ? (
-
               currentProducts.map((product) => {
 
-                const price =
-                  product.salePrice ||
-                  product.regularPrice;
+                const productPrice =
+                  product.salePrice !== null &&
+                  product.salePrice !== undefined
+                    ? product.salePrice
+                    : product.regularPrice;
 
-                const isAvailable =
-                  product.stock > 0;
-
-                const image =
-                  product.images &&
-                  product.images.length > 0
-                    ? product.images[0]
-                    : "";
+                const productImage =
+                  product.images?.[0] ||
+                  "https://via.placeholder.com/300";
 
                 return (
-
                   <Link
                     to={`/product/${product._id}`}
                     className="shop-product-card"
@@ -300,49 +317,39 @@ function Shop() {
 
                     <div className="shop-product-image">
 
-                      {!isAvailable && (
+                      {product.stock === 0 && (
                         <span className="sold-out">
                           SOLD OUT
                         </span>
                       )}
 
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={product.name}
-                        />
-                      ) : (
-                        <div className="no-image">
-                          No Image
-                        </div>
-                      )}
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                      />
 
                     </div>
 
                     <div className="shop-product-info">
 
-                      <h3>
-                        {product.name}
-                      </h3>
+                      <h3>{product.name}</h3>
 
                       <p>
                         ₹
-                        {price.toLocaleString("en-IN")}
+                        {Number(
+                          productPrice || 0
+                        ).toLocaleString("en-IN")}
                       </p>
 
                     </div>
 
                   </Link>
-
                 );
               })
-
             ) : (
-
               <p className="no-products">
                 No products found.
               </p>
-
             )}
 
           </section>
@@ -354,56 +361,56 @@ function Shop() {
           !error &&
           totalPages > 1 && (
 
-          <div className="shop-pagination">
+            <div className="shop-pagination">
 
-            <button
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.max(prev - 1, 1)
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.max(prev - 1, 1)
+                  )
+                }
+                disabled={safeCurrentPage === 1}
+              >
+                ←
+              </button>
+
+              {Array.from(
+                { length: totalPages },
+                (_, index) => (
+                  <button
+                    key={index}
+                    className={
+                      safeCurrentPage === index + 1
+                        ? "active"
+                        : ""
+                    }
+                    onClick={() =>
+                      setCurrentPage(index + 1)
+                    }
+                  >
+                    {index + 1}
+                  </button>
                 )
-              }
-              disabled={currentPage === 1}
-            >
-              ←
-            </button>
+              )}
 
-            {Array.from(
-              { length: totalPages },
-              (_, index) => (
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(
+                      prev + 1,
+                      totalPages
+                    )
+                  )
+                }
+                disabled={
+                  safeCurrentPage === totalPages
+                }
+              >
+                →
+              </button>
 
-                <button
-                  key={index}
-                  className={
-                    currentPage === index + 1
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    setCurrentPage(index + 1)
-                  }
-                >
-                  {index + 1}
-                </button>
-
-              )
-            )}
-
-            <button
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(prev + 1, totalPages)
-                )
-              }
-              disabled={
-                currentPage === totalPages
-              }
-            >
-              →
-            </button>
-
-          </div>
-
-        )}
+            </div>
+          )}
 
       </main>
 
