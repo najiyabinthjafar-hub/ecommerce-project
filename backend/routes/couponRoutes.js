@@ -21,4 +21,10 @@ router.get("/all", couponController.getCoupons);
 // Get coupon by code
 router.get("/code/:code", couponController.getCouponByCode);
 
+// Edit / Update coupon
+router.put("/:id", couponController.updateCoupon);
+
+// Delete coupon
+router.delete("/:id", couponController.deleteCoupon);
+
 module.exports = router;
