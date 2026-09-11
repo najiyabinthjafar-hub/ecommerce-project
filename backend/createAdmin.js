@@ -14,33 +14,40 @@ const createAdmin = async () => {
     const email = "admin@test.com";
     const password = "Admin@123";
 
-    const existingAdmin = await User.findOne({ email });
-
-    if (existingAdmin) {
-      console.log("Admin user already exists");
-      console.log("Email:", existingAdmin.email);
-      console.log("Role:", existingAdmin.role);
-      process.exit(0);
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const admin = await User.create({
-      name: "Admin Test",
-      email,
-      phone: "9999999999",
-      password: hashedPassword,
-      role: "admin",
-      isEmailVerified: true,
-      profileCompleted: true,
-      status: "active",
-    });
+    let admin = await User.findOne({ email });
 
-    console.log("Admin created successfully!");
-    console.log("Email:", admin.email);
+    if (admin) {
+      admin.password = hashedPassword;
+      admin.role = "admin";
+      admin.isEmailVerified = true;
+      admin.profileCompleted = true;
+      admin.status = "active";
+
+      await admin.save();
+
+      console.log("Existing user updated to admin successfully!");
+    } else {
+      admin = await User.create({
+        name: "Admin Test",
+        email,
+        phone: "9999999999",
+        password: hashedPassword,
+        role: "admin",
+        isEmailVerified: true,
+        profileCompleted: true,
+        status: "active",
+      });
+
+      console.log("Admin created successfully!");
+    }
+
+    console.log("Email:", email);
     console.log("Password:", password);
     console.log("Role:", admin.role);
 
+    await mongoose.disconnect();
     process.exit(0);
   } catch (error) {
     console.error("Error:", error.message);
