@@ -3,92 +3,208 @@ import { useNavigate } from "react-router-dom";
 import "./Products.css";
 
 const API_URL = "http://localhost:5000/api/products";
+const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+
 const PRODUCTS_PER_PAGE = 10;
 
 function Products() {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [categories, setCategories] = useState([]);
 
-  // =========================
-  // PAGINATION
-  // =========================
+  // Filters
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [availability, setAvailability] = useState("");
+  const [sort, setSort] = useState("");
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
-  // =========================
-  // FETCH PRODUCTS
-  // =========================
-  const fetchProducts = async (page = 1) => {
-    try {
-      setLoading(true);
+  const [loading, setLoading] = useState(false);
 
-      const response = await fetch(
-        `${API_URL}?page=${page}&limit=${PRODUCTS_PER_PAGE}`
-      );
+  // =====================================================
+  // FETCH CATEGORIES
+  // =====================================================
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(CATEGORY_API_URL);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch products");
+        throw new Error("Failed to fetch categories");
       }
 
       const data = await response.json();
 
-      console.log("Products API response:", data);
-
-      const productList = Array.isArray(data)
+      const categoryList = Array.isArray(data)
         ? data
-        : data.products || [];
+        : data.categories || data.data || [];
 
-      setProducts(productList);
+      setCategories(categoryList);
+    } catch (error) {
+      console.error("Category fetch error:", error);
+      setCategories([]);
+    }
+  };
 
-      // Backend pagination response
+  // =====================================================
+  // FETCH PRODUCTS
+  // =====================================================
+
+  const fetchProducts = async (
+    page = 1,
+    filterValues = null
+  ) => {
+    try {
+      setLoading(true);
+
+      const filters = filterValues || {
+        search,
+        category,
+        availability,
+        sort,
+      };
+
+      const params = new URLSearchParams();
+
+      // Search
+      if (filters.search?.trim()) {
+        params.append("search", filters.search.trim());
+      }
+
+      // Category ID
+      if (filters.category) {
+        params.append("category", filters.category);
+      }
+
+      // Availability
+      if (filters.availability) {
+        params.append("availability", filters.availability);
+      }
+
+      // Sorting
+      if (filters.sort) {
+        params.append("sort", filters.sort);
+      }
+
+      // Pagination
+      params.append("page", page);
+      params.append("limit", PRODUCTS_PER_PAGE);
+
+      const url = `${API_URL}?${params.toString()}`;
+
+      console.log("Products API:", url);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch products: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setProducts(data.products || []);
+
       if (data.pagination) {
         setCurrentPage(data.pagination.currentPage || page);
         setTotalPages(data.pagination.totalPages || 1);
         setTotalProducts(data.pagination.totalProducts || 0);
       } else {
-        setCurrentPage(1);
+        setCurrentPage(page);
         setTotalPages(1);
-        setTotalProducts(productList.length);
+        setTotalProducts(
+          Array.isArray(data.products)
+            ? data.products.length
+            : 0
+        );
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Product fetch error:", error);
       setProducts([]);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
   };
 
+  // =====================================================
+  // INITIAL LOAD
+  // =====================================================
+
   useEffect(() => {
-    fetchProducts(1);
+    fetchCategories();
+    fetchProducts(1, {
+      search: "",
+      category: "",
+      availability: "",
+      sort: "",
+    });
   }, []);
 
-  // =========================
-  // PAGE CHANGE
-  // =========================
+  // =====================================================
+  // APPLY FILTERS
+  // =====================================================
+
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+
+    fetchProducts(1, {
+      search,
+      category,
+      availability,
+      sort,
+    });
+  };
+
+  // =====================================================
+  // RESET FILTERS
+  // =====================================================
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setCategory("");
+    setAvailability("");
+    setSort("");
+    setCurrentPage(1);
+
+    fetchProducts(1, {
+      search: "",
+      category: "",
+      availability: "",
+      sort: "",
+    });
+  };
+
+  // =====================================================
+  // PAGINATION
+  // =====================================================
+
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
 
+    setCurrentPage(page);
     fetchProducts(page);
   };
 
-  // =========================
+  // =====================================================
   // DELETE PRODUCT
-  // =========================
-  const handleDelete = async (product) => {
-    const productId = product._id || product.id;
+  // =====================================================
 
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${product.name}"?`
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this product?"
     );
 
-    if (!confirmDelete) return;
+    if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_URL}/${productId}`, {
+      const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
       });
 
@@ -100,469 +216,499 @@ function Products() {
         );
       }
 
-      alert(data.message || "Product deleted successfully");
-
-      // If last product on current page was deleted,
-      // move to previous page if necessary
+      // If deleting the only product on current page
       if (products.length === 1 && currentPage > 1) {
         fetchProducts(currentPage - 1);
       } else {
         fetchProducts(currentPage);
       }
     } catch (error) {
-      console.error("Error deleting product:", error);
-      alert(error.message);
+      console.error("Delete error:", error);
+      alert(error.message || "Failed to delete product");
     }
   };
 
-  // =========================
-  // EDIT PRODUCT
-  // =========================
-  const handleEdit = (product) => {
-    const productId = product._id || product.id;
+  // =====================================================
+  // PRODUCT STATUS
+  // =====================================================
 
-    navigate(`/admin/products/edit/${productId}`);
+  const getProductStatus = (product) => {
+    if (product.status === "inactive") {
+      return {
+        label: "Inactive",
+        className: "status-inactive",
+      };
+    }
+
+    const stock = Number(product.stock || 0);
+
+    if (stock === 0) {
+      return {
+        label: "Out of Stock",
+        className: "status-out",
+      };
+    }
+
+    if (stock <= 10) {
+      return {
+        label: "Low Stock",
+        className: "status-low",
+      };
+    }
+
+    return {
+      label: "Active",
+      className: "status-active",
+    };
   };
 
-  // =========================
-  // VIEW PRODUCT
-  // =========================
-  const handleView = (product) => {
-    const productId = product._id || product.id;
+  // =====================================================
+  // PAGINATION DISPLAY
+  // =====================================================
 
-    navigate(`/admin/products/view/${productId}`);
+  const getPaginationPages = () => {
+    const pages = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+
+      return pages;
+    }
+
+    pages.push(1);
+
+    if (currentPage > 3) {
+      pages.push("...");
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(
+      totalPages - 1,
+      currentPage + 1
+    );
+
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) {
+        pages.push(i);
+      }
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push("...");
+    }
+
+    if (!pages.includes(totalPages)) {
+      pages.push(totalPages);
+    }
+
+    return pages;
   };
 
-  // =========================
-  // SEARCH
-  // =========================
-  const filteredProducts = products.filter((product) =>
-    (product.name || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <div className="products-page">
 
-      {/* =========================
-          PAGE HEADER
-      ========================= */}
-      <div className="page-header">
-        <div className="page-heading">
-          <span className="page-eyebrow">
-            STORE MANAGEMENT
-          </span>
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
+      <div className="products-header">
+        <div>
           <h1>Products</h1>
-
-          <p>
-            Manage your products, pricing and inventory
-          </p>
+          <p>Manage your products and inventory</p>
         </div>
 
         <button
-          type="button"
           className="add-product-btn"
-          onClick={() => navigate("/admin/products/add")}
+          onClick={() =>
+            navigate("/admin/products/add")
+          }
         >
           <i className="bi bi-plus-lg"></i>
-          <span>Add Product</span>
+          Add Product
         </button>
       </div>
 
-      {/* =========================
-          PRODUCT CARD
-      ========================= */}
-      <div className="product-card">
+      {/* =================================================
+          FILTERS
+      ================================================= */}
 
-        {/* =========================
-            CARD TOP
-        ========================= */}
-        <div className="product-top">
+      <div className="products-filters">
 
-          <div className="product-title">
-            <div className="title-icon">
-              <i className="bi bi-box-seam"></i>
-            </div>
+        {/* Search */}
 
-            <div>
-              <h2>All Products</h2>
+        <div className="filter-search">
+          <i className="bi bi-search"></i>
 
-              <p>
-                View and manage everything in your store
-              </p>
-            </div>
-          </div>
-
-          {/* SEARCH */}
-          <div className="product-search">
-            <i className="bi bi-search"></i>
-
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="search-input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="clear-search"
-                onClick={() => setSearch("")}
-                title="Clear search"
-              >
-                <i className="bi bi-x"></i>
-              </button>
-            )}
-          </div>
-
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleApplyFilters();
+              }
+            }}
+          />
         </div>
 
-        {/* =========================
-            PRODUCT COUNT
-        ========================= */}
-        <div className="product-summary">
-          <span>
-            <strong>
-              {search ? filteredProducts.length : totalProducts}
-            </strong>{" "}
-            {(
-              search
-                ? filteredProducts.length
-                : totalProducts
-            ) === 1
-              ? "product"
-              : "products"}{" "}
-            found
-          </span>
-        </div>
+        {/* Category */}
 
-        {/* =========================
-            TABLE
-        ========================= */}
-        <div className="table-container">
+        <select
+          value={category}
+          onChange={(e) =>
+            setCategory(e.target.value)
+          }
+        >
+          <option value="">
+            All Categories
+          </option>
 
-          <table>
+          {categories.map((cat) => (
+            <option
+              key={cat._id}
+              value={cat._id}
+            >
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Availability */}
+
+        <select
+          value={availability}
+          onChange={(e) =>
+            setAvailability(e.target.value)
+          }
+        >
+          <option value="">
+            All Stock
+          </option>
+
+          <option value="in-stock">
+            In Stock
+          </option>
+
+          <option value="out-of-stock">
+            Out of Stock
+          </option>
+        </select>
+
+        {/* Sort */}
+
+        <select
+          value={sort}
+          onChange={(e) =>
+            setSort(e.target.value)
+          }
+        >
+          <option value="">
+            Sort By
+          </option>
+
+          <option value="newest">
+            Newest
+          </option>
+
+          <option value="price-low">
+            Price: Low to High
+          </option>
+
+          <option value="price-high">
+            Price: High to Low
+          </option>
+        </select>
+
+        {/* Apply */}
+
+        <button
+          className="apply-filter-btn"
+          onClick={handleApplyFilters}
+        >
+          Apply
+        </button>
+
+        {/* Reset */}
+
+        <button
+          className="reset-filter-btn"
+          onClick={handleResetFilters}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* =================================================
+          PRODUCT COUNT
+      ================================================= */}
+
+      <div className="products-count">
+        <span>
+          {totalProducts}{" "}
+          {totalProducts === 1
+            ? "product"
+            : "products"}
+        </span>
+      </div>
+
+      {/* =================================================
+          PRODUCTS TABLE
+      ================================================= */}
+
+      <div className="products-table-wrapper">
+
+        {loading ? (
+          <div className="products-loading">
+            <i className="bi bi-arrow-repeat"></i>
+            Loading products...
+          </div>
+        ) : products.length === 0 ? (
+          <div className="products-empty">
+            <i className="bi bi-box-seam"></i>
+
+            <h3>No products found</h3>
+
+            <p>
+              Try changing your search or filters.
+            </p>
+          </div>
+        ) : (
+          <table className="products-table">
 
             <thead>
               <tr>
-                <th>PRODUCT</th>
-                <th>CATEGORY</th>
-                <th>PRICE</th>
-                <th>STOCK</th>
-                <th>STATUS</th>
-                <th className="action-heading">
-                  ACTION
-                </th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
 
-              {/* =========================
-                  LOADING
-              ========================= */}
-              {loading ? (
+              {products.map((product) => {
+                const status =
+                  getProductStatus(product);
 
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="table-message"
-                  >
-                    <div className="loading-content">
-                      <i className="bi bi-arrow-repeat spin"></i>
+                return (
+                  <tr key={product._id}>
 
-                      <span>
-                        Loading products...
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                    {/* PRODUCT */}
 
-              ) : filteredProducts.length === 0 ? (
+                    <td>
+                      <div className="product-info">
 
-                /* =========================
-                   EMPTY
-                ========================= */
+                        <div className="product-icon">
 
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="table-message"
-                  >
-                    <div className="empty-content">
-
-                      <div className="empty-icon">
-                        <i className="bi bi-box-seam"></i>
-                      </div>
-
-                      <strong>
-                        No products found
-                      </strong>
-
-                      <span>
-                        {search
-                          ? "Try searching with another name"
-                          : "Add your first product to get started"}
-                      </span>
-
-                    </div>
-                  </td>
-                </tr>
-
-              ) : (
-
-                /* =========================
-                   PRODUCTS
-                ========================= */
-
-                filteredProducts.map((product) => {
-
-                  const stock = product.stock ?? 0;
-
-                  const status =
-                    product.status === "inactive"
-                      ? "Inactive"
-                      : stock === 0
-                      ? "Out of Stock"
-                      : stock <= 10
-                      ? "Low Stock"
-                      : "Active";
-
-                  const regularPrice =
-                    product.regularPrice ?? 0;
-
-                  const salePrice =
-                    product.salePrice;
-
-                  const statusClass =
-                    status === "Active"
-                      ? "active"
-                      : status === "Low Stock"
-                      ? "low"
-                      : status === "Inactive"
-                      ? "inactive"
-                      : "out";
-
-                  return (
-                    <tr
-                      key={product._id || product.id}
-                    >
-
-                      {/* =========================
-                          PRODUCT
-                      ========================= */}
-                      <td>
-
-                        <div className="product-name">
-
-                          <div className="product-icon">
-
-                            {product.images &&
-                            product.images.length > 0 ? (
-
-                              <img
-                                src={product.images[0]}
-                                alt={
-                                  product.name ||
-                                  "Product"
-                                }
-                              />
-
-                            ) : (
-
-                              <i className="bi bi-box-seam"></i>
-
-                            )}
-
-                          </div>
-
-                          <div className="product-info">
-
-                            <strong>
-                              {product.name || "-"}
-                            </strong>
-
-                            <span>
-                              {product.sku || "Product"}
-                            </span>
-
-                          </div>
+                          {product.images &&
+                          product.images.length > 0 ? (
+                            <img
+                              src={product.images[0]}
+                              alt={
+                                product.name ||
+                                "Product"
+                              }
+                            />
+                          ) : (
+                            <i className="bi bi-image"></i>
+                          )}
 
                         </div>
 
-                      </td>
+                        <div className="product-details">
 
-                      {/* =========================
-                          CATEGORY
-                      ========================= */}
-                      <td>
+                          <span className="product-name">
+                            {product.name ||
+                              "Unnamed Product"}
+                          </span>
 
-                        <span className="category-text">
-                          {product.category?.name ||
-                            product.category ||
-                            "-"}
-                        </span>
+                          <span className="product-sku">
+                            SKU:{" "}
+                            {product.sku || "N/A"}
+                          </span>
 
-                      </td>
+                        </div>
+                      </div>
+                    </td>
 
-                      {/* =========================
-                          PRICE
-                      ========================= */}
-                      <td>
+                    {/* CATEGORY */}
 
-                        {salePrice !== null &&
-                        salePrice !== undefined ? (
+                    <td>
+                      {product.category?.name ||
+                        "Uncategorized"}
+                    </td>
 
-                          <div className="price-wrapper">
+                    {/* PRICE */}
 
-                            <strong className="sale-price">
-                              ₹{salePrice}
-                            </strong>
+                    <td>
+                      <div className="product-price">
+
+                        {product.salePrice &&
+                        Number(product.salePrice) > 0 &&
+                        Number(product.salePrice) <
+                          Number(
+                            product.regularPrice
+                          ) ? (
+                          <>
+                            <span className="sale-price">
+                              ₹
+                              {Number(
+                                product.salePrice
+                              ).toLocaleString()}
+                            </span>
 
                             <span className="regular-price">
-                              ₹{regularPrice}
+                              ₹
+                              {Number(
+                                product.regularPrice
+                              ).toLocaleString()}
                             </span>
-
-                          </div>
-
+                          </>
                         ) : (
-
-                          <strong className="normal-price">
-                            ₹{regularPrice}
-                          </strong>
-
+                          <span className="sale-price">
+                            ₹
+                            {Number(
+                              product.regularPrice || 0
+                            ).toLocaleString()}
+                          </span>
                         )}
 
-                      </td>
+                      </div>
+                    </td>
 
-                      {/* =========================
-                          STOCK
-                      ========================= */}
-                      <td>
+                    {/* STOCK */}
 
-                        <span
-                          className={`stock-value ${
-                            stock === 0
-                              ? "stock-zero"
-                              : stock <= 10
-                              ? "stock-low"
-                              : ""
-                          }`}
+                    <td>
+                      <span
+                        className={
+                          Number(
+                            product.stock || 0
+                          ) <= 10
+                            ? "stock-low"
+                            : "stock-normal"
+                        }
+                      >
+                        {product.stock ?? 0}
+                      </span>
+                    </td>
+
+                    {/* STATUS */}
+
+                    <td>
+                      <span
+                        className={`product-status ${status.className}`}
+                      >
+                        {status.label}
+                      </span>
+                    </td>
+
+                    {/* ACTIONS */}
+
+                    <td>
+                      <div className="product-actions">
+
+                        {/* VIEW */}
+
+                        <button
+                          className="view-btn"
+                          title="View Product"
+                          onClick={() =>
+                            navigate(
+                              `/admin/products/view/${product._id}`
+                            )
+                          }
                         >
-                          {stock}
-                        </span>
+                          <i className="bi bi-eye"></i>
+                        </button>
 
-                      </td>
+                        {/* EDIT */}
 
-                      {/* =========================
-                          STATUS
-                      ========================= */}
-                      <td>
-
-                        <span
-                          className={`status ${statusClass}`}
+                        <button
+                          className="edit-btn"
+                          title="Edit Product"
+                          onClick={() =>
+                            navigate(
+                              `/admin/products/edit/${product._id}`
+                            )
+                          }
                         >
-                          <span className="status-dot"></span>
+                          <i className="bi bi-pencil"></i>
+                        </button>
 
-                          {status}
-                        </span>
+                        {/* DELETE */}
 
-                      </td>
+                        <button
+                          className="delete-btn"
+                          title="Delete Product"
+                          onClick={() =>
+                            handleDelete(
+                              product._id
+                            )
+                          }
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
 
-                      {/* =========================
-                          ACTIONS
-                      ========================= */}
-                      <td className="action-cell">
+                      </div>
+                    </td>
 
-                        <div className="product-actions">
-
-                          {/* VIEW */}
-                          <button
-                            type="button"
-                            className="view-btn"
-                            title="View product"
-                            onClick={() =>
-                              handleView(product)
-                            }
-                          >
-                            <i className="bi bi-eye"></i>
-                          </button>
-
-                          {/* EDIT */}
-                          <button
-                            type="button"
-                            className="edit-btn"
-                            title="Edit product"
-                            onClick={() =>
-                              handleEdit(product)
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
-
-                          {/* DELETE */}
-                          <button
-                            type="button"
-                            className="delete-btn"
-                            title="Delete product"
-                            onClick={() =>
-                              handleDelete(product)
-                            }
-                          >
-                            <i className="bi bi-trash3"></i>
-                          </button>
-
-                        </div>
-
-                      </td>
-
-                    </tr>
-                  );
-                })
-              )}
+                  </tr>
+                );
+              })}
 
             </tbody>
-
           </table>
+        )}
 
-        </div>
+      </div>
 
-        {/* =========================
-            PAGINATION
-        ========================= */}
-        {!loading &&
-          !search &&
-          totalPages > 1 && (
+      {/* =================================================
+          PAGINATION
+      ================================================= */}
 
-            <div className="products-pagination">
+      {totalPages > 1 && (
+        <div className="products-pagination">
 
-              {/* PREVIOUS */}
-              <button
-                type="button"
-                className="pagination-btn pagination-arrow"
-                onClick={() =>
-                  handlePageChange(currentPage - 1)
-                }
-                disabled={currentPage === 1}
-                title="Previous page"
-              >
-                <i className="bi bi-chevron-left"></i>
-              </button>
+          {/* PREVIOUS */}
 
-              {/* PAGE NUMBERS */}
-              {Array.from(
-                { length: totalPages },
-                (_, index) => index + 1
-              ).map((page) => (
+          <button
+            className="pagination-btn"
+            disabled={currentPage === 1}
+            onClick={() =>
+              handlePageChange(
+                currentPage - 1
+              )
+            }
+          >
+            <i className="bi bi-chevron-left"></i>
+          </button>
 
+          {/* PAGE NUMBERS */}
+
+          {getPaginationPages().map(
+            (page, index) =>
+              page === "..." ? (
+                <span
+                  key={`dots-${index}`}
+                  className="pagination-dots"
+                >
+                  ...
+                </span>
+              ) : (
                 <button
-                  type="button"
                   key={page}
-                  className={`pagination-btn pagination-number ${
+                  className={`pagination-btn ${
                     currentPage === page
                       ? "active"
                       : ""
@@ -573,29 +719,27 @@ function Products() {
                 >
                   {page}
                 </button>
-
-              ))}
-
-              {/* NEXT */}
-              <button
-                type="button"
-                className="pagination-btn pagination-arrow"
-                onClick={() =>
-                  handlePageChange(currentPage + 1)
-                }
-                disabled={
-                  currentPage === totalPages
-                }
-                title="Next page"
-              >
-                <i className="bi bi-chevron-right"></i>
-              </button>
-
-            </div>
-
+              )
           )}
 
-      </div>
+          {/* NEXT */}
+
+          <button
+            className="pagination-btn"
+            disabled={
+              currentPage === totalPages
+            }
+            onClick={() =>
+              handlePageChange(
+                currentPage + 1
+              )
+            }
+          >
+            <i className="bi bi-chevron-right"></i>
+          </button>
+
+        </div>
+      )}
 
     </div>
   );

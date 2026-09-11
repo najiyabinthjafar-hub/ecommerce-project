@@ -47,7 +47,6 @@ function ViewProduct() {
 
   /* =========================================================
      PRODUCT STATUS
-     Same logic as Products page
   ========================================================= */
 
   const getProductStatus = () => {
@@ -219,7 +218,7 @@ function ViewProduct() {
             onClick={handleBack}
           >
             <i className="bi bi-arrow-left"></i>
-            Back to Product
+            Back to Products
           </button>
 
           <button
@@ -233,7 +232,6 @@ function ViewProduct() {
 
         </div>
       </div>
-
 
       {/* =====================================================
           MAIN PRODUCT CARD
@@ -253,6 +251,13 @@ function ViewProduct() {
               <img
                 src={images[selectedImage] || images[0]}
                 alt={product.name || "Product"}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  display: "block",
+                }}
               />
             ) : (
               <div className="no-product-image">
@@ -262,7 +267,6 @@ function ViewProduct() {
             )}
 
           </div>
-
 
           {/* =================================================
               THUMBNAILS
@@ -285,6 +289,13 @@ function ViewProduct() {
                   <img
                     src={image}
                     alt={`${product.name} ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      objectPosition: "center",
+                      display: "block",
+                    }}
                   />
                 </button>
               ))}
@@ -293,7 +304,6 @@ function ViewProduct() {
           )}
 
         </div>
-
 
         {/* ===================================================
             PRODUCT INFORMATION
@@ -326,7 +336,6 @@ function ViewProduct() {
 
             </div>
 
-
             {/* =================================================
                 STATUS
             ================================================= */}
@@ -339,7 +348,6 @@ function ViewProduct() {
             </span>
 
           </div>
-
 
           {/* =================================================
               PRICE
@@ -365,7 +373,6 @@ function ViewProduct() {
 
           </div>
 
-
           {/* =================================================
               INFO GRID
           ================================================= */}
@@ -390,7 +397,6 @@ function ViewProduct() {
 
             </div>
 
-
             {/* CATEGORY */}
 
             <div className="info-box">
@@ -411,7 +417,6 @@ function ViewProduct() {
 
           </div>
 
-
           {/* =================================================
               SIZES / VARIANTS
           ================================================= */}
@@ -422,6 +427,7 @@ function ViewProduct() {
 
             {Array.isArray(product.variants) &&
             product.variants.length > 0 ? (
+
               <div className="view-size-list">
 
                 {product.variants.map(
@@ -436,14 +442,16 @@ function ViewProduct() {
                 )}
 
               </div>
+
             ) : (
+
               <p className="muted-text">
                 No sizes or variants available.
               </p>
+
             )}
 
           </div>
-
 
           {/* =================================================
               DESCRIPTION
@@ -454,17 +462,20 @@ function ViewProduct() {
             <h3>Description</h3>
 
             {product.description ? (
+
               <p className="product-description">
                 {product.description}
               </p>
+
             ) : (
+
               <p className="muted-text">
                 No description available.
               </p>
+
             )}
 
           </div>
-
 
           {/* =================================================
               PRODUCT META
@@ -472,16 +483,22 @@ function ViewProduct() {
 
           <div className="product-meta">
 
+            {/* PRODUCT ID */}
+
             <div>
+
               <span>Product ID</span>
 
               <strong title={product._id}>
                 {product._id || "N/A"}
               </strong>
+
             </div>
 
+            {/* STATUS */}
 
             <div>
+
               <span>Status</span>
 
               <strong>
@@ -489,32 +506,37 @@ function ViewProduct() {
                   ? "Inactive"
                   : "Active"}
               </strong>
+
             </div>
 
+            {/* CREATED */}
 
             <div>
+
               <span>Created</span>
 
               <strong>
                 {formatDate(product.createdAt)}
               </strong>
+
             </div>
 
+            {/* UPDATED */}
 
             <div>
+
               <span>Last Updated</span>
 
               <strong>
                 {formatDate(product.updatedAt)}
               </strong>
+
             </div>
 
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }
