@@ -1,0 +1,122 @@
+.verify-otp-page {
+  min-height: 70vh;
+  padding: 70px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.verify-otp-container {
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.verify-otp-header {
+  margin-bottom: 35px;
+}
+
+.verify-otp-header p {
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #777;
+}
+
+.verify-otp-header h1 {
+  margin-bottom: 15px;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.verify-otp-header span {
+  font-size: 13px;
+  color: #777;
+}
+
+.otp-email {
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.verify-otp-form {
+  text-align: left;
+}
+
+.verify-otp-field {
+  margin-bottom: 20px;
+}
+
+.verify-otp-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.verify-otp-field input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  outline: none;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+.verify-otp-field input:focus {
+  border-color: #222;
+}
+
+.verify-otp-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  background: #111;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.verify-otp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resend-otp {
+  margin-top: 25px;
+  font-size: 13px;
+}
+
+.resend-otp button {
+  border: none;
+  background: transparent;
+  margin-left: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.back-login {
+  margin-top: 25px;
+}
+
+.back-login a {
+  font-size: 12px;
+  color: #111;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.otp-success-message {
+  margin-bottom: 15px;
+  color: green;
+  font-size: 13px;
+}
+
+.otp-error-message {
+  margin-bottom: 15px;
+  color: red;
+  font-size: 13px;
+}

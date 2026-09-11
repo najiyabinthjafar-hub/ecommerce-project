@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -9,11 +9,80 @@ import "./Register.css";
 function Register() {
   const navigate = useNavigate();
 
-  const handleRegister = (event) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleRegister = async (event) => {
     event.preventDefault();
 
-    // Backend API later connect cheyyam
-    navigate("/login");
+    setError("");
+
+    // Password check
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Combine first name + last name
+      const fullName = `${formData.firstName} ${formData.lastName}`;
+
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: fullName,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      // Save email for OTP verification
+      localStorage.setItem(
+        "registerEmail",
+        formData.email
+      );
+
+      // Go to OTP page
+      navigate("/verify-otp");
+
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -21,11 +90,12 @@ function Register() {
       <Navbar />
 
       <main className="register-page">
-
         <section className="register-container">
 
           <div className="register-header">
-            <p className="register-label">CREATE YOUR ACCOUNT</p>
+            <p className="register-label">
+              CREATE YOUR ACCOUNT
+            </p>
 
             <h1>REGISTER</h1>
 
@@ -34,10 +104,18 @@ function Register() {
             </span>
           </div>
 
+          {error && (
+            <p className="register-error-message">
+              {error}
+            </p>
+          )}
+
           <form
             className="register-form"
             onSubmit={handleRegister}
           >
+
+            {/* FIRST NAME + LAST NAME */}
 
             <div className="register-row">
 
@@ -51,6 +129,8 @@ function Register() {
                   name="firstName"
                   type="text"
                   placeholder="First name"
+                  value={formData.firstName}
+                  onChange={handleChange}
                   required
                 />
               </div>
@@ -65,11 +145,15 @@ function Register() {
                   name="lastName"
                   type="text"
                   placeholder="Last name"
+                  value={formData.lastName}
+                  onChange={handleChange}
                   required
                 />
               </div>
 
             </div>
+
+            {/* EMAIL */}
 
             <div className="register-field">
               <label htmlFor="email">
@@ -81,9 +165,13 @@ function Register() {
                 name="email"
                 type="email"
                 placeholder="Enter your email address"
+                value={formData.email}
+                onChange={handleChange}
                 required
               />
             </div>
+
+            {/* PHONE */}
 
             <div className="register-field">
               <label htmlFor="phone">
@@ -95,9 +183,13 @@ function Register() {
                 name="phone"
                 type="tel"
                 placeholder="Enter your phone number"
+                value={formData.phone}
+                onChange={handleChange}
                 required
               />
             </div>
+
+            {/* PASSWORD */}
 
             <div className="register-field">
               <label htmlFor="password">
@@ -109,9 +201,13 @@ function Register() {
                 name="password"
                 type="password"
                 placeholder="Create a password"
+                value={formData.password}
+                onChange={handleChange}
                 required
               />
             </div>
+
+            {/* CONFIRM PASSWORD */}
 
             <div className="register-field">
               <label htmlFor="confirmPassword">
@@ -123,9 +219,13 @@ function Register() {
                 name="confirmPassword"
                 type="password"
                 placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 required
               />
             </div>
+
+            {/* TERMS */}
 
             <label className="terms-checkbox">
               <input
@@ -138,17 +238,21 @@ function Register() {
               </span>
             </label>
 
+            {/* BUTTON */}
+
             <button
               type="submit"
               className="register-btn"
+              disabled={loading}
             >
-              CREATE ACCOUNT
+              {loading
+                ? "CREATING ACCOUNT..."
+                : "CREATE ACCOUNT"}
             </button>
 
           </form>
 
           <div className="register-login">
-
             <span>
               Already have an account?
             </span>
@@ -156,11 +260,9 @@ function Register() {
             <Link to="/login">
               LOGIN
             </Link>
-
           </div>
 
         </section>
-
       </main>
 
       <Footer />
@@ -169,4 +271,3 @@ function Register() {
 }
 
 export default Register;
-

@@ -1,0 +1,111 @@
+.profile-page {
+  min-height: 70vh;
+  padding: 50px 20px;
+}
+
+.profile-container {
+  max-width: 700px;
+  margin: auto;
+}
+
+.profile-container > h1 {
+  text-align: center;
+  font-size: 30px;
+  letter-spacing: 3px;
+  margin-bottom: 35px;
+}
+
+.profile-user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #ddd;
+}
+
+.profile-avatar {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #111;
+  color: white;
+  font-size: 25px;
+}
+
+.profile-user h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.profile-user p {
+  margin: 0;
+  color: #777;
+}
+
+.profile-menu {
+  margin-top: 20px;
+}
+
+.profile-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding: 18px 5px;
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+
+  background: transparent;
+  color: #111;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-icon {
+  font-size: 20px;
+}
+
+.profile-item div {
+  flex: 1;
+}
+
+.profile-item h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.profile-item p {
+  margin: 0;
+  font-size: 13px;
+  color: #777;
+}
+
+.arrow {
+  font-size: 20px;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 30px;
+  padding: 14px;
+
+  border: 1px solid #111;
+  background: #111;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: white;
+  color: #111;
+}

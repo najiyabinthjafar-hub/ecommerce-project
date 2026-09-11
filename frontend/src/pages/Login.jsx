@@ -1,7 +1,9 @@
+import { useState } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Login.css";
@@ -9,11 +11,59 @@ import "./Login.css";
 function Login() {
   const navigate = useNavigate();
 
-  const handleLogin = (event) => {
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState("");
+
+  const handleLogin = async (event) => {
     event.preventDefault();
 
-    // Backend API later connect cheyyam
-    navigate("/");
+    setError("");
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Save token and user details
+      localStorage.setItem("token", data.token);
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      // Go to home page
+      navigate("/");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -21,12 +71,8 @@ function Login() {
       <Navbar />
 
       <main className="login-page">
-
         <section className="login-container">
-
           <div className="login-header">
-            <p className="login-label">WELCOME BACK</p>
-
             <h1>LOGIN</h1>
 
             <span>
@@ -34,11 +80,16 @@ function Login() {
             </span>
           </div>
 
+          {error && (
+            <p className="login-error-message">
+              {error}
+            </p>
+          )}
+
           <form
             className="login-form"
             onSubmit={handleLogin}
           >
-
             <div className="login-field">
               <label htmlFor="email">
                 EMAIL ADDRESS
@@ -49,6 +100,8 @@ function Login() {
                 name="email"
                 type="email"
                 placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -63,12 +116,15 @@ function Login() {
                 name="password"
                 type="password"
                 placeholder="Enter your password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 required
               />
             </div>
 
             <div className="login-options">
-
               <label className="remember-me">
                 <input
                   type="checkbox"
@@ -81,23 +137,26 @@ function Login() {
               <button
                 type="button"
                 className="forgot-password"
+                onClick={() =>
+                  navigate("/forgot-password")
+                }
               >
                 Forgot password?
               </button>
-
             </div>
 
             <button
               type="submit"
               className="login-btn"
+              disabled={loading}
             >
-              LOGIN
+              {loading
+                ? "LOGGING IN..."
+                : "LOGIN"}
             </button>
-
           </form>
 
           <div className="login-register">
-
             <span>
               Don't have an account?
             </span>
@@ -105,11 +164,8 @@ function Login() {
             <Link to="/register">
               CREATE ACCOUNT
             </Link>
-
           </div>
-
         </section>
-
       </main>
 
       <Footer />
@@ -118,4 +174,3 @@ function Login() {
 }
 
 export default Login;
-

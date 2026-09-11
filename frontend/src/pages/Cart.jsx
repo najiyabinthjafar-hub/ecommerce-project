@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Cart.css";
 
 function getCartItems() {
@@ -33,7 +31,6 @@ function Cart() {
     );
 
     saveCart(updatedCart);
-
     window.location.reload();
   };
 
@@ -52,7 +49,6 @@ function Cart() {
       .filter((item) => item.quantity > 0);
 
     saveCart(updatedCart);
-
     window.location.reload();
   };
 
@@ -60,27 +56,20 @@ function Cart() {
     const cart = getCartItems();
 
     const updatedCart = cart.filter(
-      (item) =>
-        !(item.id === id && item.size === size)
+      (item) => !(item.id === id && item.size === size)
     );
 
     saveCart(updatedCart);
-
     window.location.reload();
   };
 
   const subtotal = cartItems.reduce(
-    (total, item) =>
-      total + item.price * item.quantity,
+    (total, item) => total + item.price * item.quantity,
     0
   );
 
   const delivery =
-    subtotal === 0
-      ? 0
-      : subtotal >= 999
-      ? 0
-      : 99;
+    subtotal === 0 ? 0 : subtotal >= 999 ? 0 : 99;
 
   const total = subtotal + delivery;
 
@@ -89,178 +78,149 @@ function Cart() {
       <Navbar />
 
       <main className="cart-page">
+        <div className="cart-wrapper">
 
-        <section className="cart-heading">
-          <p>YOUR BAG</p>
+          {/* CART TOP */}
+          <div className="cart-top">
+            <h1>Your cart</h1>
 
-          <h1>SHOPPING CART</h1>
-
-          <span>
-            Review your selected items before checkout.
-          </span>
-        </section>
-
-        {cartItems.length === 0 ? (
-          <div className="empty-cart">
-            <h2>Your cart is empty</h2>
-
-            <p>
-              Looks like you haven't added anything yet.
-            </p>
-
-            <Link
-              to="/shop"
-              className="continue-shopping"
-            >
-              ← CONTINUE SHOPPING
+            <Link to="/shop" className="continue-shopping">
+              Continue shopping
             </Link>
           </div>
-        ) : (
-          <section className="cart-container">
 
-            <div className="cart-items">
+          {cartItems.length === 0 ? (
+            <div className="empty-cart">
+              <h2>Your cart is empty</h2>
 
-              <div className="cart-items-header">
+              <p>
+                Looks like you haven't added anything yet.
+              </p>
+
+              
+            </div>
+          ) : (
+            <>
+              {/* TABLE HEADER */}
+              <div className="cart-header">
                 <span>PRODUCT</span>
-                <span>PRICE</span>
+
                 <span>QUANTITY</span>
+
                 <span>TOTAL</span>
               </div>
 
-              {cartItems.map((item) => (
-                <div
-                  className="cart-item"
-                  key={`${item.id}-${item.size}`}
-                >
+              {/* PRODUCTS */}
+              <div className="cart-products">
+                {cartItems.map((item) => (
+                  <div
+                    className="cart-item"
+                    key={`${item.id}-${item.size}`}
+                  >
+                    {/* PRODUCT */}
+                    <div className="cart-product">
+                      <div className="cart-product-image">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                        />
+                      </div>
 
-                  <div className="cart-product">
+                      <div className="cart-product-info">
+                        <h3>{item.name}</h3>
 
-                    <div className="cart-product-image">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                      />
+                        <p>₹{item.price.toLocaleString("en-IN")}</p>
+
+                        <p>Size: {item.size}</p>
+                      </div>
                     </div>
 
-                    <div className="cart-product-info">
-                      <h3>{item.name}</h3>
+                    {/* QUANTITY */}
+                    <div className="cart-quantity-area">
+                      <div className="cart-quantity">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            decreaseQuantity(
+                              item.id,
+                              item.size
+                            )
+                          }
+                        >
+                          −
+                        </button>
 
-                      <p>
-                        Size: {item.size}
-                      </p>
+                        <span>{item.quantity}</span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            increaseQuantity(
+                              item.id,
+                              item.size
+                            )
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
 
                       <button
                         className="remove-btn"
+                        type="button"
                         onClick={() =>
                           removeItem(
                             item.id,
                             item.size
                           )
                         }
+                        aria-label="Remove item"
                       >
-                        REMOVE
+                        🗑
                       </button>
                     </div>
 
+                    {/* TOTAL */}
+                    <p className="cart-total">
+                      ₹
+                      {(
+                        item.price * item.quantity
+                      ).toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* BOTTOM AREA */}
+              <div className="cart-bottom">
+
+                <aside className="cart-summary">
+
+                  <div className="summary-total">
+                    <span>Estimated total</span>
+
+                    <strong>
+                      ₹{total.toLocaleString("en-IN")}
+                    </strong>
                   </div>
 
-                  <p className="cart-price">
-                    ₹{item.price.toLocaleString("en-IN")}
+                  <p className="summary-note">
+                    Taxes included. Discounts and shipping
+                    calculated at checkout.
                   </p>
 
-                  <div className="cart-quantity">
+                  <Link
+                    to="/checkout"
+                    className="checkout-btn"
+                  >
+                    Check Out
+                  </Link>
 
-                    <button
-                      onClick={() =>
-                        decreaseQuantity(
-                          item.id,
-                          item.size
-                        )
-                      }
-                    >
-                      −
-                    </button>
-
-                    <span>
-                      {item.quantity}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        increaseQuantity(
-                          item.id,
-                          item.size
-                        )
-                      }
-                    >
-                      +
-                    </button>
-
-                  </div>
-
-                  <p className="cart-total">
-                    ₹
-                    {(
-                      item.price * item.quantity
-                    ).toLocaleString("en-IN")}
-                  </p>
-
-                </div>
-              ))}
-
-              <Link
-                to="/shop"
-                className="continue-shopping"
-              >
-                ← CONTINUE SHOPPING
-              </Link>
-
-            </div>
-
-            <aside className="cart-summary">
-
-              <h2>ORDER SUMMARY</h2>
-
-              <div className="summary-row">
-                <span>SUBTOTAL</span>
-
-                <span>
-                  ₹{subtotal.toLocaleString("en-IN")}
-                </span>
+                </aside>
               </div>
-
-              <div className="summary-row">
-                <span>DELIVERY</span>
-
-                <span>
-                  {delivery === 0
-                    ? "FREE"
-                    : `₹${delivery}`}
-                </span>
-              </div>
-
-              <div className="summary-divider"></div>
-
-              <div className="summary-total">
-                <span>TOTAL</span>
-
-                <strong>
-                  ₹{total.toLocaleString("en-IN")}
-                </strong>
-              </div>
-
-              <Link
-                to="/checkout"
-                className="checkout-btn"
-              >
-                PROCEED TO CHECKOUT
-              </Link>
-
-            </aside>
-
-          </section>
-        )}
-
+            </>
+          )}
+        </div>
       </main>
 
       <Footer />
@@ -269,4 +229,3 @@ function Cart() {
 }
 
 export default Cart;
-
