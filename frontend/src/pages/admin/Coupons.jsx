@@ -8,13 +8,14 @@ function Coupons() {
   const navigate = useNavigate();
 
   const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  // =========================
-  // FETCH COUPONS
-  // =========================
+  /* =========================
+     FETCH COUPONS
+  ========================= */
+
   const fetchCoupons = async () => {
     try {
       setLoading(true);
@@ -38,83 +39,50 @@ function Coupons() {
     fetchCoupons();
   }, []);
 
-  // =========================
-  // COUPON STATUS
-  // =========================
+  /* =========================
+     GET STATUS
+  ========================= */
+
   const getCouponStatus = (coupon) => {
-    if (!coupon.expiryDate) {
-      return {
-        label: coupon.isActive ? "Active" : "Inactive",
-        className: coupon.isActive ? "active" : "inactive",
-      };
+    if (coupon.expiryDate) {
+      const expiryDate = new Date(coupon.expiryDate);
+
+      if (expiryDate < new Date()) {
+        return "Expired";
+      }
     }
 
-    const today = new Date();
-    const expiryDate = new Date(coupon.expiryDate);
-
-    if (expiryDate < today) {
-      return {
-        label: "Expired",
-        className: "expired",
-      };
-    }
-
-    if (coupon.isActive) {
-      return {
-        label: "Active",
-        className: "active",
-      };
-    }
-
-    return {
-      label: "Inactive",
-      className: "inactive",
-    };
+    return coupon.isActive ? "Active" : "Inactive";
   };
 
-  // =========================
-  // FORMAT DISCOUNT
-  // =========================
+  /* =========================
+     FORMAT DISCOUNT
+  ========================= */
+
   const formatDiscount = (coupon) => {
     if (coupon.discountType === "percentage") {
       return `${coupon.discountValue}%`;
     }
 
-    return `₹${Number(coupon.discountValue || 0).toLocaleString("en-IN")}`;
+    return `₹${Number(
+      coupon.discountValue || 0
+    ).toLocaleString("en-IN")}`;
   };
 
-  // =========================
-  // FORMAT DATE
-  // =========================
+  /* =========================
+     FORMAT DATE
+  ========================= */
+
   const formatDate = (date) => {
     if (!date) return "-";
 
     return new Date(date).toLocaleDateString("en-GB");
   };
 
-  // =========================
-  // EXPIRING SOON
-  // =========================
-  const isExpiringSoon = (coupon) => {
-    if (!coupon.expiryDate) return false;
+  /* =========================
+     FILTER COUPONS
+  ========================= */
 
-    const today = new Date();
-    const expiryDate = new Date(coupon.expiryDate);
-
-    const difference =
-      (expiryDate.getTime() - today.getTime()) /
-      (1000 * 60 * 60 * 24);
-
-    return (
-      coupon.isActive &&
-      difference >= 0 &&
-      difference <= 7
-    );
-  };
-
-  // =========================
-  // FILTER COUPONS
-  // =========================
   const filteredCoupons = coupons.filter((coupon) => {
     const status = getCouponStatus(coupon);
 
@@ -124,43 +92,55 @@ function Coupons() {
 
     const matchesStatus =
       statusFilter === "all" ||
-      status.className === statusFilter;
+      status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
 
-  // =========================
-  // SUMMARY
-  // =========================
+  /* =========================
+     SUMMARY
+  ========================= */
+
   const totalCoupons = coupons.length;
 
   const activeCoupons = coupons.filter(
-    (coupon) => getCouponStatus(coupon).className === "active"
+    (coupon) => getCouponStatus(coupon) === "Active"
   ).length;
 
-  const expiringSoon = coupons.filter(isExpiringSoon).length;
+  const expiringSoon = coupons.filter((coupon) => {
+    if (!coupon.expiryDate) return false;
+
+    const today = new Date();
+    const expiry = new Date(coupon.expiryDate);
+
+    const difference =
+      (expiry - today) / (1000 * 60 * 60 * 24);
+
+    return difference >= 0 && difference <= 7;
+  }).length;
 
   const totalUsed = coupons.reduce(
-    (total, coupon) => total + Number(coupon.usedCount || 0),
+    (total, coupon) =>
+      total + Number(coupon.usedCount || 0),
     0
   );
 
-  // =========================
-  // DELETE
-  // =========================
-  const handleDelete = () => {
+  /* =========================
+     DELETE
+  ========================= */
+
+  const handleDelete = (coupon) => {
     alert(
-      "Delete coupon API is not available in the current backend routes."
+      `Delete API is not available yet for ${coupon.code}`
     );
   };
 
-  // =========================
-  // EDIT
-  // =========================
-  const handleEdit = () => {
-    alert(
-      "Update coupon API is not available in the current backend routes."
-    );
+  /* =========================
+     EDIT
+  ========================= */
+
+  const handleEdit = (coupon) => {
+    navigate(`/admin/coupons/edit/${coupon._id}`);
   };
 
   return (
@@ -169,10 +149,14 @@ function Coupons() {
       {/* =========================
           HEADER
       ========================= */}
+
       <div className="coupons-header">
         <div>
           <h1>Coupons</h1>
-          <p>Create and manage discount coupons</p>
+
+          <p>
+            Manage discount coupons and promotions
+          </p>
         </div>
 
         <button
@@ -185,10 +169,14 @@ function Coupons() {
         </button>
       </div>
 
+
       {/* =========================
           SUMMARY CARDS
       ========================= */}
+
       <div className="coupon-summary">
+
+        {/* Total Coupons */}
 
         <div className="coupon-summary-card">
           <div className="coupon-summary-icon">
@@ -197,9 +185,12 @@ function Coupons() {
 
           <div>
             <span>Total Coupons</span>
-            <strong>{totalCoupons}</strong>
+            <h3>{totalCoupons}</h3>
           </div>
         </div>
+
+
+        {/* Active Coupons */}
 
         <div className="coupon-summary-card">
           <div className="coupon-summary-icon">
@@ -207,10 +198,13 @@ function Coupons() {
           </div>
 
           <div>
-            <span>Active</span>
-            <strong>{activeCoupons}</strong>
+            <span>Active Coupons</span>
+            <h3>{activeCoupons}</h3>
           </div>
         </div>
+
+
+        {/* Expiring Soon */}
 
         <div className="coupon-summary-card">
           <div className="coupon-summary-icon">
@@ -219,97 +213,131 @@ function Coupons() {
 
           <div>
             <span>Expiring Soon</span>
-            <strong>{expiringSoon}</strong>
+            <h3>{expiringSoon}</h3>
           </div>
         </div>
 
+
+        {/* Total Used */}
+
         <div className="coupon-summary-card">
           <div className="coupon-summary-icon">
-            <i className="bi bi-people"></i>
+            <i className="bi bi-graph-up"></i>
           </div>
 
           <div>
             <span>Total Used</span>
-            <strong>{totalUsed}</strong>
+            <h3>{totalUsed}</h3>
           </div>
         </div>
 
       </div>
 
+
       {/* =========================
-          COUPONS CARD
+          MAIN CARD
       ========================= */}
-      <div className="coupons-card">
+
+      <div className="coupons-table-card">
+
+        {/* =========================
+            CARD HEADER
+        ========================= */}
 
         <div className="coupons-card-header">
 
           <div>
             <h2>All Coupons</h2>
+
             <p>
-              {filteredCoupons.length} coupon
-              {filteredCoupons.length !== 1 ? "s" : ""}
+              Manage and monitor your discount coupons
             </p>
           </div>
 
-          <div className="coupon-filters">
 
-            {/* SEARCH */}
+          {/* =========================
+              SEARCH + FILTER
+          ========================= */}
+
+          <div className="coupon-filter-bar">
+
             <div className="coupon-search">
               <i className="bi bi-search"></i>
 
               <input
                 type="text"
-                placeholder="Search coupon..."
+                placeholder="Search coupon code..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            {/* STATUS */}
-            <select
-              className="coupon-status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="expired">Expired</option>
-            </select>
+
+            <div className="coupon-status-filter">
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value)
+                }
+              >
+                <option value="all">
+                  All Status
+                </option>
+
+                <option value="active">
+                  Active
+                </option>
+
+                <option value="inactive">
+                  Inactive
+                </option>
+
+                <option value="expired">
+                  Expired
+                </option>
+              </select>
+            </div>
 
           </div>
 
         </div>
 
+
         {/* =========================
-            TABLE
+            TABLE / LOADING / EMPTY
         ========================= */}
-        <div className="coupons-table-wrapper">
 
-          {loading ? (
-            <div className="coupon-loading">
-              Loading coupons...
-            </div>
-          ) : filteredCoupons.length === 0 ? (
-            <div className="coupon-empty">
+        {loading ? (
 
-              <i className="bi bi-ticket-perforated"></i>
+          <div className="coupon-loading">
+            Loading coupons...
+          </div>
 
-              <h3>
-                {coupons.length === 0
-                  ? "No coupons found"
-                  : "No matching coupons"}
-              </h3>
+        ) : filteredCoupons.length === 0 ? (
 
-              <p>
-                {coupons.length === 0
-                  ? "There are no coupons available yet."
-                  : "Try changing your search or status filter."}
-              </p>
+          <div className="coupon-empty">
 
-            </div>
-          ) : (
+            <i className="bi bi-ticket-perforated"></i>
+
+            <h3>
+              No Coupons Found
+            </h3>
+
+            <p>
+              No coupons match your search or filter.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="table-responsive">
+
             <table className="coupons-table">
+
+              {/* =========================
+                  TABLE HEADER
+              ========================= */}
 
               <thead>
                 <tr>
@@ -317,7 +345,7 @@ function Coupons() {
                   <th>Coupon Code</th>
                   <th>Discount</th>
                   <th>Type</th>
-                  <th>Min. Purchase</th>
+                  <th>Min Purchase</th>
                   <th>Expiry Date</th>
                   <th>Used</th>
                   <th>Status</th>
@@ -325,116 +353,161 @@ function Coupons() {
                 </tr>
               </thead>
 
+
+              {/* =========================
+                  TABLE BODY
+              ========================= */}
+
               <tbody>
 
-                {filteredCoupons.map((coupon, index) => {
+                {filteredCoupons.map(
+                  (coupon, index) => {
 
-                  const status = getCouponStatus(coupon);
+                    const status =
+                      getCouponStatus(coupon);
 
-                  return (
-                    <tr key={coupon._id || coupon.code}>
+                    return (
+                      <tr key={coupon._id}>
 
-                      <td>{index + 1}</td>
+                        {/* NUMBER */}
 
-                      <td>
-                        <span className="coupon-code">
-                          {coupon.code}
-                        </span>
-                      </td>
+                        <td>
+                          {index + 1}
+                        </td>
 
-                      <td>
-                        <strong>
-                          {formatDiscount(coupon)}
-                        </strong>
-                      </td>
 
-                      <td>
-                        {coupon.discountType === "percentage"
-                          ? "Percentage"
-                          : "Fixed"}
-                      </td>
+                        {/* COUPON CODE */}
 
-                      <td>
-                        ₹
-                        {Number(
-                          coupon.minimumPurchase || 0
-                        ).toLocaleString("en-IN")}
-                      </td>
+                        <td>
+                          <div className="coupon-code">
+                            {coupon.code}
+                          </div>
+                        </td>
 
-                      <td>
-                        {formatDate(coupon.expiryDate)}
-                      </td>
 
-                      <td>
-                        {coupon.usedCount || 0}
-                        {coupon.usageLimit !== null &&
-                        coupon.usageLimit !== undefined
-                          ? ` / ${coupon.usageLimit}`
-                          : ""}
-                      </td>
+                        {/* DISCOUNT */}
 
-                      <td>
-                        <span
-                          className={`coupon-status ${status.className}`}
-                        >
-                          <span className="status-dot"></span>
-                          {status.label}
-                        </span>
-                      </td>
+                        <td>
+                          <strong>
+                            {formatDiscount(coupon)}
+                          </strong>
+                        </td>
 
-                      <td>
 
-                        <div className="coupon-actions">
+                        {/* TYPE */}
 
-                          <button
-                            type="button"
-                            className="view-coupon-btn"
-                            title="View coupon"
-                            onClick={() =>
-                              alert(
-                                `Coupon: ${coupon.code}`
-                              )
-                            }
+                        <td>
+                          {coupon.discountType ===
+                          "percentage"
+                            ? "Percentage"
+                            : "Fixed"}
+                        </td>
+
+
+                        {/* MIN PURCHASE */}
+
+                        <td>
+                          ₹
+                          {Number(
+                            coupon.minimumPurchase || 0
+                          ).toLocaleString("en-IN")}
+                        </td>
+
+
+                        {/* EXPIRY DATE */}
+
+                        <td>
+                          {formatDate(
+                            coupon.expiryDate
+                          )}
+                        </td>
+
+
+                        {/* USED */}
+
+                        <td>
+                          {coupon.usedCount || 0}
+                        </td>
+
+
+                        {/* STATUS */}
+
+                        <td>
+                          <span
+                            className={`coupon-status ${status.toLowerCase()}`}
                           >
-                            <i className="bi bi-eye"></i>
-                          </button>
+                            <span className="status-dot"></span>
 
-                          <button
-                            type="button"
-                            className="edit-coupon-btn"
-                            title="Edit coupon"
-                            onClick={() =>
-                              handleEdit(coupon)
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
+                            {status}
+                          </span>
+                        </td>
 
-                          <button
-                            type="button"
-                            className="delete-coupon-btn"
-                            title="Delete coupon"
-                            onClick={() =>
-                              handleDelete(coupon)
-                            }
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
 
-                        </div>
+                        {/* ACTIONS */}
 
-                      </td>
+                        <td>
 
-                    </tr>
-                  );
-                })}
+                          <div className="coupon-actions">
+
+                            {/* VIEW */}
+
+                            <button
+                              type="button"
+                              className="view-coupon-btn"
+                              title="View coupon"
+                              onClick={() =>
+                                navigate(
+                                  `/admin/coupons/view/${coupon._id}`
+                                )
+                              }
+                            >
+                              <i className="bi bi-eye"></i>
+                            </button>
+
+
+                            {/* EDIT */}
+
+                            <button
+                              type="button"
+                              className="edit-coupon-btn"
+                              title="Edit coupon"
+                              onClick={() =>
+                                handleEdit(coupon)
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+
+
+                            {/* DELETE */}
+
+                            <button
+                              type="button"
+                              className="delete-coupon-btn"
+                              title="Delete coupon"
+                              onClick={() =>
+                                handleDelete(coupon)
+                              }
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )}
 
               </tbody>
 
             </table>
-          )}
 
-        </div>
+          </div>
+
+        )}
 
       </div>
 

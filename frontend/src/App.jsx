@@ -57,6 +57,7 @@ import EditProduct from "./pages/admin/EditProduct";
 import ViewProduct from "./pages/admin/ViewProduct";
 import BannerView from "./pages/admin/BannerView";
 import AddCoupon from "./pages/admin/AddCoupon";
+import ViewCoupon from "./pages/admin/ViewCoupon";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -332,6 +333,15 @@ function App() {
               </AdminLayout>
             }
           />
+              {/* View Coupon */}
+<Route
+  path="/admin/coupons/view/:id"
+  element={
+    <AdminLayout>
+      <ViewCoupon />
+    </AdminLayout>
+  }
+/>
 
           {/* Inventory */}
           <Route
