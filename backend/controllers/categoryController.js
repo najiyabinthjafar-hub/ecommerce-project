@@ -108,10 +108,40 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+const getCategoryTree = async (req, res, next) => {
+  try {
+    const categories = await categoryService.getCategoryTree();
+
+    res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+const getActiveCategories = async (req, res, next) => {
+  try {
+    const categories = await categoryService.getActiveCategories();
+
+    res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCategories,
   createCategory,
+  getActiveCategories,
     getCategoryById,
+    getCategoryTree,
     updateCategory,
     deleteCategory,
 };
