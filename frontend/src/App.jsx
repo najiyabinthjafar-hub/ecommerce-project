@@ -53,6 +53,8 @@ import AddBanner from "./pages/admin/AddBanner";
 import EditBanner from "./pages/admin/EditBanner";
 import EditProduct from "./pages/admin/EditProduct";
 import ViewProduct from "./pages/admin/ViewProduct";
+import BannerView from "./pages/admin/BannerView";
+import AddCoupon from "./pages/admin/AddCoupon";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -271,6 +273,16 @@ function App() {
             }
           />
 
+
+        <Route
+            path="/admin/banners/view/:id"
+            element={
+          <AdminLayout>
+          <BannerView />
+          </AdminLayout>
+             }
+         />
+
           {/* Customers */}
 
           <Route
@@ -314,6 +326,14 @@ function App() {
               </AdminLayout>
             }
           />
+          <Route
+             path="/admin/coupons/add"
+             element={
+          <AdminLayout>
+         <AddCoupon />
+         </AdminLayout>
+         }
+      />
 
           {/* Inventory */}
 

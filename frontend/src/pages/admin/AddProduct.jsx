@@ -19,14 +19,16 @@ function AddProduct() {
     description: "",
   });
 
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  // Fetch categories
+  // =========================
+  // FETCH CATEGORIES
+  // =========================
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
@@ -58,6 +60,9 @@ function AddProduct() {
     fetchCategories();
   }, []);
 
+  // =========================
+  // HANDLE INPUT CHANGE
+  // =========================
   const handleChange = (e) => {
     setProduct({
       ...product,
@@ -65,6 +70,9 @@ function AddProduct() {
     });
   };
 
+  // =========================
+  // SIZE SELECTION
+  // =========================
   const handleSizeChange = (size) => {
     setProduct((prev) => {
       const alreadySelected = prev.variants.includes(size);
@@ -78,18 +86,53 @@ function AddProduct() {
     });
   };
 
-  // Image selection
+  // =========================
+  // IMAGE SELECTION
+  // =========================
   const handleImageChange = (e) => {
-    const selectedImage = e.target.files[0];
+    const selectedImages = Array.from(e.target.files);
 
-    if (selectedImage) {
-      setImage(selectedImage);
-      console.log("Selected image:", selectedImage);
+    // No new files selected
+    if (selectedImages.length === 0) {
+      return;
     }
+
+    // Existing + new images should not exceed 5
+    if (images.length + selectedImages.length > 5) {
+      alert("You can select a maximum of 5 images.");
+      e.target.value = "";
+      return;
+    }
+
+    // IMPORTANT:
+    // Add new images to existing images
+    // instead of replacing them
+    setImages((prev) => [...prev, ...selectedImages]);
+
+    // Clear input so user can select more images again
+    e.target.value = "";
   };
 
+  // =========================
+  // REMOVE IMAGE
+  // =========================
+  const handleRemoveImage = (index) => {
+    setImages((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
+
+  // =========================
+  // SUBMIT PRODUCT
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // IMAGE REQUIRED
+    if (images.length === 0) {
+      alert("Please add at least one product image.");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -107,19 +150,26 @@ function AddProduct() {
         slug,
         description: product.description.trim(),
         category: product.category,
+
         regularPrice: Number(product.regularPrice),
+
         salePrice:
           product.salePrice === ""
             ? null
             : Number(product.salePrice),
+
         stock: Number(product.stock),
+
         variants: product.variants,
+
         status: "active",
       };
 
       console.log("Sending product:", productData);
 
-      // 1. Create product
+      // =========================
+      // 1. CREATE PRODUCT
+      // =========================
       const response = await fetch(PRODUCT_API_URL, {
         method: "POST",
         headers: {
@@ -138,13 +188,17 @@ function AddProduct() {
         );
       }
 
-      // 2. Upload image
-      if (image && data.product?._id) {
+      // =========================
+      // 2. UPLOAD PRODUCT IMAGES
+      // =========================
+      if (data.product?._id && images.length > 0) {
         const formData = new FormData();
 
-        formData.append("images", image);
+        images.forEach((image) => {
+          formData.append("images", image);
+        });
 
-        console.log("Uploading image...");
+        console.log("Uploading images...");
 
         const imageResponse = await fetch(
           `${PRODUCT_API_URL}/${data.product._id}/images`,
@@ -156,7 +210,10 @@ function AddProduct() {
 
         const imageData = await imageResponse.json();
 
-        console.log("Image upload response:", imageData);
+        console.log(
+          "Image upload response:",
+          imageData
+        );
 
         if (!imageResponse.ok) {
           throw new Error(
@@ -166,14 +223,12 @@ function AddProduct() {
         }
       }
 
-      // Success
-      alert(
-        image
-          ? "Product and image added successfully!"
-          : "Product added successfully!"
-      );
+      // =========================
+      // SUCCESS
+      // =========================
+      alert("Product and images added successfully!");
 
-      // Reset form
+      // Reset product
       setProduct({
         sku: "",
         name: "",
@@ -185,12 +240,16 @@ function AddProduct() {
         description: "",
       });
 
-      setImage(null);
+      // Reset images
+      setImages([]);
 
-      // Go to products
+      // Go back to products
       navigate("/admin/products");
     } catch (error) {
-      console.error("Error adding product:", error);
+      console.error(
+        "Error adding product:",
+        error
+      );
 
       alert(
         error.message ||
@@ -205,7 +264,9 @@ function AddProduct() {
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* Header */}
+        {/* =========================
+            HEADER
+        ========================= */}
         <div className="add-product-header">
           <div className="add-product-heading">
             <h1>Add Product</h1>
@@ -217,18 +278,24 @@ function AddProduct() {
           <button
             type="button"
             className="back-products-btn"
-            onClick={() => navigate("/admin/products")}
+            onClick={() =>
+              navigate("/admin/products")
+            }
           >
             <i className="bi bi-arrow-left"></i>
             Back to Products
           </button>
         </div>
 
-        {/* Form Card */}
+        {/* =========================
+            FORM CARD
+        ========================= */}
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
 
-            {/* SKU + Product Name */}
+            {/* =========================
+                SKU + PRODUCT NAME
+            ========================= */}
             <div className="form-row">
 
               <div className="form-group">
@@ -259,7 +326,9 @@ function AddProduct() {
 
             </div>
 
-            {/* Category + Stock */}
+            {/* =========================
+                CATEGORY + STOCK
+            ========================= */}
             <div className="form-row">
 
               <div className="form-group">
@@ -280,9 +349,13 @@ function AddProduct() {
                   {!loadingCategories &&
                     categories.map((category) => (
                       <option
-                        key={category._id || category.id}
+                        key={
+                          category._id ||
+                          category.id
+                        }
                         value={
-                          category._id || category.id
+                          category._id ||
+                          category.id
                         }
                       >
                         {category.name}
@@ -307,7 +380,9 @@ function AddProduct() {
 
             </div>
 
-            {/* Regular Price + Sale Price */}
+            {/* =========================
+                REGULAR PRICE + SALE PRICE
+            ========================= */}
             <div className="form-row">
 
               <div className="form-group">
@@ -339,10 +414,11 @@ function AddProduct() {
 
             </div>
 
-            {/* Size + Image */}
+            {/* =========================
+                SIZE SELECTION
+            ========================= */}
             <div className="form-row">
 
-              {/* Size Selection */}
               <div className="form-group">
                 <label>Available Sizes</label>
 
@@ -376,27 +452,80 @@ function AddProduct() {
                 </small>
               </div>
 
-              {/* Product Image */}
-              <div className="form-group">
-                <label>Product Image</label>
+            </div>
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
+            {/* =========================
+                PRODUCT IMAGES
+            ========================= */}
+            <div className="form-group product-image-full">
 
-                {image && (
-                  <small className="size-hint">
-                    Selected: {image.name}
-                  </small>
-                )}
-              </div>
+              <label>
+                Product Images <span>*</span>
+              </label>
+
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                required
+                onChange={handleImageChange}
+              />
+
+              <small className="size-hint">
+                Select at least 1 image, up to 5 images.
+              </small>
+
+              {/* IMAGE PREVIEW */}
+              {images.length > 0 && (
+                <div className="product-image-preview">
+
+                  {images.map((image, index) => (
+                    <div
+                      className="preview-image-box"
+                      key={`${image.name}-${index}`}
+                    >
+
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Product preview ${
+                          index + 1
+                        }`}
+                      />
+
+                      <button
+                        type="button"
+                        className="remove-preview-btn"
+                        onClick={() =>
+                          handleRemoveImage(index)
+                        }
+                        title="Remove image"
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+
+                    </div>
+                  ))}
+
+                </div>
+              )}
+
+              {images.length > 0 && (
+                <small className="size-hint">
+                  {images.length} image
+                  {images.length > 1
+                    ? "s"
+                    : ""}{" "}
+                  selected
+                </small>
+              )}
 
             </div>
 
-            {/* Description */}
+            {/* =========================
+                DESCRIPTION
+            ========================= */}
             <div className="form-group">
+
               <label>Description</label>
 
               <textarea
@@ -407,9 +536,12 @@ function AddProduct() {
                 rows="5"
                 required
               />
+
             </div>
 
-            {/* Actions */}
+            {/* =========================
+                ACTION BUTTONS
+            ========================= */}
             <div className="form-actions">
 
               <button
