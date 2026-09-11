@@ -14,6 +14,9 @@ router.post(
 // GET ALL
 router.get("/", bannerController.getBanners);
 
+// GET ACTIVE BANNERS
+router.get("/active", bannerController.getActiveBanners);
+
 // GET SINGLE
 router.get("/:id", bannerController.getBanner);
 
