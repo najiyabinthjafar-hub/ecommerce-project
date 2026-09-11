@@ -1,22 +1,85 @@
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import logo from "../../assets/rizo-logo.png";
 import "./AdminLogin.css";
 
 function AdminLogin() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid email or password");
+      }
+
+      // Check admin role
+      if (data.user?.role !== "admin") {
+        throw new Error("You are not authorized as an admin");
+      }
+
+      // Save JWT token
+      localStorage.setItem("token", data.token);
+
+      // Save user details
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Navigate to admin dashboard
+      navigate("/admin/dashboard", { replace: true });
+    } catch (error) {
+      setError(error.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="admin-login-page">
-
       <div className="admin-login-card">
 
+        {/* Logo */}
         <div className="login-brand">
+          <img
+            src={logo}
+            alt="RIZO Logo"
+            className="rizo-logo"
+          />
+
           <h1>RIZO</h1>
           <p>Admin Panel</p>
         </div>
 
+        {/* Heading */}
         <div className="login-heading">
           <h2>Welcome Back</h2>
           <p>Login to manage your store</p>
         </div>
 
-        <form>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit}>
 
           <div className="login-group">
             <label>Email Address</label>
@@ -24,6 +87,9 @@ function AdminLogin() {
             <input
               type="email"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
@@ -33,31 +99,45 @@ function AdminLogin() {
             <input
               type="password"
               placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <p className="login-error">
+              {error}
+            </p>
+          )}
+
+          {/* Options */}
           <div className="login-options">
             <label>
               <input type="checkbox" />
               Remember me
             </label>
 
-            <a href="#">Forgot Password?</a>
+            <span className="forgot-password">
+              Forgot Password?
+            </span>
           </div>
 
+          {/* Login Button */}
           <button
             type="submit"
             className="admin-login-btn"
+            disabled={loading}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
 
         </form>
-
       </div>
-
     </div>
   );
 }
 
 export default AdminLogin;
+

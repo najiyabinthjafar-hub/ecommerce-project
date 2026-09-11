@@ -1,114 +1,584 @@
+/* =========================
+   ADD PRODUCT PAGE
+========================= */
+
 .add-product-page {
-  min-height: 100vh;
-  margin-left: 240px;
-  background: #f5f6f8;
+  width: 100%;
+  min-height: 100%;
+  background: #f6f7f9;
+  color: #171717;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  box-sizing: border-box;
 }
 
 .add-product-content {
-  padding: 30px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4px 0 35px;
+  box-sizing: border-box;
 }
+
+/* =========================
+   HEADER
+========================= */
 
 .add-product-header {
-  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
 }
 
-.add-product-header h1 {
+.add-product-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.add-product-heading h1 {
+  margin: 0 0 6px;
+  color: #151515;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+}
+
+.add-product-heading p {
   margin: 0;
-  font-size: 28px;
-  color: #111;
+  color: #777777;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
-.add-product-header p {
-  margin-top: 7px;
-  color: #777;
-  font-size: 14px;
+/* =========================
+   BACK TO PRODUCTS BUTTON
+========================= */
+
+.back-products-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-width: 145px;
+  height: 40px;
+  padding: 0 15px;
+
+  border: 1px solid #111111;
+  border-radius: 8px;
+
+  background: #111111;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
+
+.back-products-btn i {
+  font-size: 13px;
+}
+
+.back-products-btn:hover {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+.back-products-btn:active {
+  transform: translateX(0);
+}
+
+/* =========================
+   PRODUCT FORM CARD
+========================= */
 
 .add-product-card {
-  max-width: 900px;
-  background: white;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  padding: 26px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.035);
 }
+
+/* =========================
+   FORM ROW
+========================= */
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
+
+/* =========================
+   FORM GROUP
+========================= */
 
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 22px;
+  margin-bottom: 19px;
 }
 
 .form-group label {
-  margin-bottom: 8px;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  margin-bottom: 7px;
+
+  color: #333333;
+  font-size: 11px;
   font-weight: 600;
-  color: #333;
+  line-height: 1.4;
 }
+
+/* =========================
+   INPUT / SELECT / TEXTAREA
+========================= */
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #222222;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+
   outline: none;
-  font-size: 14px;
-  background: white;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #aaaaaa;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: #cfcfcf;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #111;
+  border-color: #777777;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.045);
 }
 
-.form-group textarea {
-  resize: vertical;
-}
+/* =========================
+   SELECT
+========================= */
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.cancel-btn,
-.save-product-btn {
-  padding: 12px 22px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+.form-group select {
   cursor: pointer;
 }
 
-.cancel-btn {
-  background: #eee;
-  border: none;
-  color: #333;
+/* =========================
+   SIZE SELECTION
+========================= */
+
+.size-selection {
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-top: 2px;
 }
 
-.save-product-btn {
-  background: #111;
-  color: white;
+.size-option {
+  min-width: 47px;
+  height: 38px;
+
+  padding: 0 13px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #444444;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.size-option:hover {
+  background: #fafafa;
+  border-color: #111111;
+  color: #111111;
+  transform: translateY(-1px);
+}
+
+.size-option.selected {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.size-option.selected:hover {
+  background: #222222;
+  border-color: #222222;
+  color: #ffffff;
+}
+
+.size-option:active {
+  transform: scale(0.97);
+}
+
+.size-option:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+/* =========================
+   SIZE HINT
+========================= */
+
+.size-hint {
+  display: block;
+
+  margin-top: 8px;
+
+  color: #999999;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* =========================
+   TEXTAREA
+========================= */
+
+.form-group textarea {
+  min-height: 115px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* =========================
+   FILE INPUT
+========================= */
+
+.form-group input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 8px;
+
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.form-group input[type="file"]::file-selector-button {
+  margin-right: 9px;
+
+  padding: 6px 10px;
+
   border: none;
+  border-radius: 6px;
+
+  background: #f0f0f0;
+  color: #333333;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+  background: #e6e6e6;
+  color: #111111;
+}
+
+/* =========================
+   PRODUCT IMAGE SECTION
+========================= */
+
+.product-image-full {
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+.product-image-full input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* =========================
+   PRODUCT IMAGE PREVIEW
+========================= */
+
+.product-image-preview {
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+
+  margin-top: 14px;
+}
+
+.preview-image-box {
+  position: relative;
+
+  width: 132px;
+  height: 168px;
+
+  border: 1px solid #e5e5e5;
+  border-radius: 9px;
+
+  background: #f8f8f8;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-image-box img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center;
+
+  display: block;
+}
+
+/* =========================
+   REMOVE IMAGE BUTTON
+========================= */
+
+.remove-preview-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+
+  width: 27px;
+  height: 27px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.96);
+  color: #222222;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.remove-preview-btn:hover {
+  background: #111111;
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+/* =========================
+   FORM ACTIONS
+========================= */
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding-top: 21px;
+
+  border-top: 1px solid #eeeeee;
+}
+
+/* =========================
+   CANCEL + ADD PRODUCT
+   EXACT SAME SIZE
+========================= */
+
+.cancel-btn,
+.save-product-btn {
+  flex: 0 0 128px;
+
+  width: 128px;
+  min-width: 128px;
+  max-width: 128px;
+
+  height: 40px;
+
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 0;
+  margin: 0;
+
+  border-radius: 7px;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* =========================
+   CANCEL BUTTON
+========================= */
+
+.cancel-btn {
+  border: 1px solid #dddddd;
+  background: #f7f7f7;
+  color: #444444;
+}
+
+.cancel-btn:hover {
+  background: #ededed;
+  border-color: #d2d2d2;
+  color: #222222;
+}
+
+/* =========================
+   ADD PRODUCT BUTTON
+========================= */
+
+.save-product-btn {
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
 }
 
 .save-product-btn:hover {
-  background: #333;
+  background: #2a2a2a;
+  border-color: #2a2a2a;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
-@media (max-width: 768px) {
-  .add-product-page {
-    margin-left: 0;
+.save-product-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+
+  transform: none;
+  box-shadow: none;
+}
+
+.save-product-btn i {
+  font-size: 11px;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 1100px) {
+  .add-product-content {
+    padding-bottom: 30px;
+  }
+
+  .add-product-card {
+    padding: 24px;
+  }
+
+  .form-row {
+    gap: 17px;
+  }
+}
+
+/* =========================
+   SMALL LAPTOP / TABLET
+========================= */
+
+@media (max-width: 800px) {
+  .add-product-heading h1 {
+    font-size: 24px;
   }
 
   .form-row {
@@ -116,7 +586,165 @@
     gap: 0;
   }
 
+  .add-product-card {
+    padding: 22px;
+  }
+
+  .product-image-full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .add-product-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .add-product-heading h1 {
+    font-size: 22px;
+  }
+
+  .add-product-heading p {
+    font-size: 12px;
+  }
+
+  .back-products-btn {
+    min-width: 140px;
+    height: 38px;
+  }
+
+  .add-product-card {
+    padding: 19px 16px;
+    border-radius: 9px;
+  }
+
+  .form-group {
+    margin-bottom: 17px;
+  }
+
+  .form-group label {
+    font-size: 11px;
+  }
+
+  /* Mobile Sizes */
+
+  .size-selection {
+    gap: 7px;
+  }
+
+  .size-option {
+    min-width: 44px;
+    height: 36px;
+
+    padding: 0 11px;
+
+    font-size: 10px;
+  }
+
+  /* Mobile Image Preview */
+
+  .product-image-full {
+    grid-column: 1 / -1;
+  }
+
+  .product-image-preview {
+    gap: 10px;
+  }
+
+  .preview-image-box {
+    width: 112px;
+    height: 145px;
+  }
+
+  /* Mobile Action Buttons */
+
+  .form-actions {
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .cancel-btn,
+  .save-product-btn {
+    flex: 0 0 120px;
+
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+
+    height: 40px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
   .add-product-content {
-    padding: 20px;
+    padding-bottom: 25px;
+  }
+
+  .add-product-heading h1 {
+    font-size: 21px;
+  }
+
+  .add-product-heading p {
+    font-size: 11px;
+  }
+
+  .add-product-card {
+    padding: 17px 14px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+
+  .size-selection {
+    gap: 6px;
+  }
+
+  .size-option {
+    min-width: 42px;
+    height: 35px;
+
+    padding: 0 9px;
+
+    font-size: 10px;
+  }
+
+  .preview-image-box {
+    width: 102px;
+    height: 135px;
+  }
+
+  .remove-preview-btn {
+    width: 25px;
+    height: 25px;
+    font-size: 13px;
+  }
+
+  /* Exact same size on small screens */
+
+  .cancel-btn,
+  .save-product-btn {
+    flex: 0 0 116px;
+
+    width: 116px;
+    min-width: 116px;
+    max-width: 116px;
+
+    height: 39px;
   }
 }

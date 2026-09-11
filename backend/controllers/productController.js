@@ -72,6 +72,21 @@ const getProduct = async (req, res, next) => {
   }
 };
 
+
+// GET ACTIVE PRODUCTS
+const getActiveProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getActiveProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // UPDATE PRODUCT
 const updateProduct = async (req, res, next) => {
   try {
@@ -221,6 +236,7 @@ const updateProductStock = async (req, res, next) => {
 module.exports = {
   createProduct,
   getProducts,
+  getActiveProducts,
   getProduct,
   updateProduct,
   deleteProduct,
