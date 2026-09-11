@@ -16,6 +16,14 @@ function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("wishlist")) || [];
+    } catch {
+      return [];
+    }
+  });
+
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
@@ -33,7 +41,7 @@ function Shop() {
         setError("");
 
         const response = await fetch(
-          "http://localhost:5000/api/products"
+          "http://localhost:5000/api/products?limit=100"
         );
 
         const data = await response.json();
@@ -55,6 +63,36 @@ function Shop() {
 
     fetchProducts();
   }, []);
+
+  // ================= WISHLIST =================
+
+  const handleWishlist = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const productId = product._id || product.id;
+
+    const isWishlisted = wishlist.some(
+      (item) => (item._id || item.id) === productId
+    );
+
+    let updatedWishlist;
+
+    if (isWishlisted) {
+      updatedWishlist = wishlist.filter(
+        (item) => (item._id || item.id) !== productId
+      );
+    } else {
+      updatedWishlist = [...wishlist, product];
+    }
+
+    setWishlist(updatedWishlist);
+
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify(updatedWishlist)
+    );
+  };
 
   // ================= FILTER PRODUCTS =================
 
@@ -81,8 +119,6 @@ function Shop() {
   }
 
   // ================= SORTING =================
-
-  // Price sorting has priority when selected
 
   if (priceOrder === "low-high") {
     filteredProducts.sort((a, b) => {
@@ -118,7 +154,6 @@ function Shop() {
         new Date(b.createdAt) - new Date(a.createdAt)
     );
   } else if (sortBy === "featured") {
-    // Currently using oldest products first as featured
     filteredProducts.sort(
       (a, b) =>
         new Date(a.createdAt) - new Date(b.createdAt)
@@ -130,8 +165,6 @@ function Shop() {
   const totalPages = Math.ceil(
     filteredProducts.length / productsPerPage
   );
-
-  // Prevent current page from exceeding total pages
 
   const safeCurrentPage =
     currentPage > totalPages && totalPages > 0
@@ -160,10 +193,7 @@ function Shop() {
 
   const handleSortChange = (value) => {
     setSortBy(value);
-
-    // Reset price sorting when using newest/featured
     setPriceOrder("default");
-
     setCurrentPage(1);
   };
 
@@ -173,7 +203,7 @@ function Shop() {
 
       <main className="shop-page">
 
-        {/* HEADING */}
+        {/* ================= HEADING ================= */}
 
         <section className="shop-heading">
           <h1>SHOP</h1>
@@ -186,12 +216,13 @@ function Shop() {
           )}
         </section>
 
-        {/* FILTER BAR */}
+        {/* ================= FILTER BAR ================= */}
 
         <section className="shop-filter-bar">
 
-          <div className="filter-left">
+          {/* LEFT SIDE */}
 
+          <div className="filter-left">
             <span className="filter-title">
               FILTER
             </span>
@@ -237,7 +268,6 @@ function Shop() {
                 HIGH TO LOW
               </option>
             </select>
-
           </div>
 
           {/* RIGHT SIDE */}
@@ -245,7 +275,6 @@ function Shop() {
           <div className="filter-right">
 
             <div className="sort-by">
-
               <span>SORT BY:</span>
 
               <select
@@ -261,20 +290,16 @@ function Shop() {
                 <option value="featured">
                   FEATURED
                 </option>
-
               </select>
-
             </div>
 
             <span className="product-count">
               {filteredProducts.length} PRODUCTS
             </span>
-
           </div>
-
         </section>
 
-        {/* LOADING */}
+        {/* ================= LOADING ================= */}
 
         {loading && (
           <p className="no-products">
@@ -282,7 +307,7 @@ function Shop() {
           </p>
         )}
 
-        {/* ERROR */}
+        {/* ================= ERROR ================= */}
 
         {!loading && error && (
           <p className="no-products">
@@ -290,32 +315,60 @@ function Shop() {
           </p>
         )}
 
-        {/* PRODUCTS */}
+        {/* ================= PRODUCTS ================= */}
 
         {!loading && !error && (
           <section className="shop-products">
 
             {currentProducts.length > 0 ? (
+
               currentProducts.map((product) => {
+                const productId =
+                  product._id || product.id;
 
                 const productPrice =
                   product.salePrice !== null &&
                   product.salePrice !== undefined
                     ? product.salePrice
-                    : product.regularPrice;
+                    : product.regularPrice ||
+                      product.price;
 
                 const productImage =
                   product.images?.[0] ||
+                  product.image ||
                   "https://via.placeholder.com/300";
+
+                const isWishlisted = wishlist.some(
+                  (item) =>
+                    (item._id || item.id) ===
+                    productId
+                );
 
                 return (
                   <Link
-                    to={`/product/${product._id}`}
+                    to={`/product/${productId}`}
                     className="shop-product-card"
-                    key={product._id}
+                    key={productId}
                   >
-
                     <div className="shop-product-image">
+
+                      {/* WISHLIST BUTTON */}
+
+                      <button
+                        className={`shop-wishlist-btn ${
+                          isWishlisted
+                            ? "active-wishlist"
+                            : ""
+                        }`}
+                        onClick={(e) =>
+                          handleWishlist(e, product)
+                        }
+                        aria-label="Add to wishlist"
+                      >
+                        {isWishlisted ? "♥" : "♡"}
+                      </button>
+
+                      {/* SOLD OUT */}
 
                       {product.stock === 0 && (
                         <span className="sold-out">
@@ -327,11 +380,9 @@ function Shop() {
                         src={productImage}
                         alt={product.name}
                       />
-
                     </div>
 
                     <div className="shop-product-info">
-
                       <h3>{product.name}</h3>
 
                       <p>
@@ -340,22 +391,22 @@ function Shop() {
                           productPrice || 0
                         ).toLocaleString("en-IN")}
                       </p>
-
                     </div>
-
                   </Link>
                 );
               })
+
             ) : (
+
               <p className="no-products">
                 No products found.
               </p>
-            )}
 
+            )}
           </section>
         )}
 
-        {/* PAGINATION */}
+        {/* ================= PAGINATION ================= */}
 
         {!loading &&
           !error &&

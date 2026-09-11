@@ -14,12 +14,79 @@ const images = [insta1, insta2, insta3, insta4];
 function CategorySection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // ================= COUNTDOWN =================
+
+  const [timeLeft, setTimeLeft] = useState({
+    days: 2,
+    hours: 6,
+    minutes: 5,
+    seconds: 30,
+  });
+
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setTimeLeft((currentTime) => {
+        let { days, hours, minutes, seconds } = currentTime;
+
+        // Countdown finished
+        if (
+          days === 0 &&
+          hours === 0 &&
+          minutes === 0 &&
+          seconds === 0
+        ) {
+          clearInterval(countdownTimer);
+          return currentTime;
+        }
+
+        if (seconds > 0) {
+          seconds--;
+        } else {
+          seconds = 59;
+
+          if (minutes > 0) {
+            minutes--;
+          } else {
+            minutes = 59;
+
+            if (hours > 0) {
+              hours--;
+            } else {
+              hours = 23;
+
+              if (days > 0) {
+                days--;
+              }
+            }
+          }
+        }
+
+        return {
+          days,
+          hours,
+          minutes,
+          seconds,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownTimer);
+  }, []);
+
+  const formatTime = (time) => {
+    return String(time).padStart(2, "0");
+  };
+
+  // ================= SLIDER =================
+
   const nextSlide = () => {
     setActiveIndex((current) => (current + 1) % images.length);
   };
 
   const prevSlide = () => {
-    setActiveIndex((current) => (current - 1 + images.length) % images.length);
+    setActiveIndex(
+      (current) => (current - 1 + images.length) % images.length
+    );
   };
 
   // Automatic slide
@@ -65,22 +132,22 @@ function CategorySection() {
 
           <div className="countdown">
             <div className="time-box">
-              <strong>02</strong>
+              <strong>{formatTime(timeLeft.days)}</strong>
               <span>Days</span>
             </div>
 
             <div className="time-box">
-              <strong>06</strong>
+              <strong>{formatTime(timeLeft.hours)}</strong>
               <span>Hr</span>
             </div>
 
             <div className="time-box">
-              <strong>05</strong>
+              <strong>{formatTime(timeLeft.minutes)}</strong>
               <span>Mins</span>
             </div>
 
             <div className="time-box">
-              <strong>30</strong>
+              <strong>{formatTime(timeLeft.seconds)}</strong>
               <span>Sec</span>
             </div>
           </div>

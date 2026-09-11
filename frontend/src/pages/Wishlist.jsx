@@ -1,7 +1,9 @@
 import { useState } from "react";
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Wishlist.css";
@@ -13,6 +15,8 @@ function Wishlist() {
   // Profile page-il ninn vannal mathram true
   const showBackToProfile = location.state?.fromProfile === true;
 
+  // ================= WISHLIST =================
+
   const [wishlist, setWishlist] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("wishlist")) || [];
@@ -21,10 +25,14 @@ function Wishlist() {
     }
   });
 
-  const removeFromWishlist = (id) => {
-    const updatedWishlist = wishlist.filter(
-      (product) => product.id !== id
-    );
+  // ================= REMOVE FROM WISHLIST =================
+
+  const removeFromWishlist = (productId) => {
+    const updatedWishlist = wishlist.filter((product) => {
+      const id = product._id || product.id;
+
+      return id !== productId;
+    });
 
     setWishlist(updatedWishlist);
 
@@ -34,42 +42,56 @@ function Wishlist() {
     );
   };
 
+  // ================= ADD TO CART =================
+
   const addToCart = (product) => {
-    const cart =
-      JSON.parse(localStorage.getItem("cart")) || [];
+    try {
+      const cart =
+        JSON.parse(localStorage.getItem("cart")) || [];
 
-    const existingProduct = cart.find(
-      (item) => item.id === product.id
-    );
+      const productId = product._id || product.id;
 
-    let updatedCart;
+      const existingProduct = cart.find((item) => {
+        const itemId = item._id || item.id;
 
-    if (existingProduct) {
-      updatedCart = cart.map((item) =>
-        item.id === product.id
-          ? {
+        return itemId === productId;
+      });
+
+      let updatedCart;
+
+      if (existingProduct) {
+        updatedCart = cart.map((item) => {
+          const itemId = item._id || item.id;
+
+          if (itemId === productId) {
+            return {
               ...item,
-              quantity: item.quantity + 1,
-            }
-          : item
+              quantity: (item.quantity || 1) + 1,
+            };
+          }
+
+          return item;
+        });
+      } else {
+        updatedCart = [
+          ...cart,
+          {
+            ...product,
+            quantity: 1,
+            size: product.size || "M",
+          },
+        ];
+      }
+
+      localStorage.setItem(
+        "cart",
+        JSON.stringify(updatedCart)
       );
-    } else {
-      updatedCart = [
-        ...cart,
-        {
-          ...product,
-          quantity: 1,
-          size: product.size || "M",
-        },
-      ];
+
+      alert(`${product.name} added to cart!`);
+    } catch (error) {
+      console.error("Cart Error:", error);
     }
-
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(updatedCart)
-    );
-
-    alert(`${product.name} added to cart!`);
   };
 
   return (
@@ -79,7 +101,8 @@ function Wishlist() {
       <main className="wishlist-page">
         <div className="wishlist-container">
 
-          {/* Show only when coming from Profile */}
+          {/* BACK TO PROFILE */}
+
           {showBackToProfile && (
             <button
               className="wishlist-back-btn"
@@ -89,8 +112,9 @@ function Wishlist() {
             </button>
           )}
 
-          <section className="wishlist-heading">
+          {/* HEADING */}
 
+          <section className="wishlist-heading">
             <h1>MY WISHLIST</h1>
 
             <span>
@@ -98,8 +122,11 @@ function Wishlist() {
             </span>
           </section>
 
+          {/* EMPTY WISHLIST */}
+
           {wishlist.length === 0 ? (
             <section className="wishlist-empty">
+
               <div className="empty-heart">♡</div>
 
               <h2>Your wishlist is empty</h2>
@@ -112,56 +139,100 @@ function Wishlist() {
               <Link to="/shop">
                 START SHOPPING
               </Link>
+
             </section>
           ) : (
+
+            /* WISHLIST PRODUCTS */
+
             <section className="wishlist-products">
-              {wishlist.map((product) => (
-                <article
-                  className="wishlist-card"
-                  key={product.id}
-                >
-                  <Link
-                    to={`/product/${product.id}`}
-                    className="wishlist-image"
+
+              {wishlist.map((product) => {
+                // ================= PRODUCT ID =================
+
+                const productId =
+                  product._id || product.id;
+
+                // ================= PRODUCT IMAGE =================
+
+                const productImage =
+                  product.images?.[0] ||
+                  product.image ||
+                  "https://via.placeholder.com/300";
+
+                // ================= PRODUCT PRICE =================
+
+                const productPrice =
+                  product.salePrice !== null &&
+                  product.salePrice !== undefined
+                    ? product.salePrice
+                    : product.regularPrice || product.price || 0;
+
+                return (
+                  <article
+                    className="wishlist-card"
+                    key={productId}
                   >
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                    />
-                  </Link>
 
-                  <div className="wishlist-info">
-                    <h3>{product.name}</h3>
+                    {/* PRODUCT IMAGE */}
 
-                    <p>
-                      ₹
-                      {product.price.toLocaleString(
-                        "en-IN"
-                      )}
-                    </p>
-                  </div>
-
-                  <div className="wishlist-actions">
-                    <button
-                      className="wishlist-cart-btn"
-                      onClick={() => addToCart(product)}
+                    <Link
+                      to={`/product/${productId}`}
+                      className="wishlist-image"
                     >
-                      ADD TO CART
-                    </button>
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                      />
+                    </Link>
 
-                    <button
-                      className="wishlist-remove-btn"
-                      onClick={() =>
-                        removeFromWishlist(product.id)
-                      }
-                    >
-                      REMOVE
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    {/* PRODUCT INFO */}
+
+                    <div className="wishlist-info">
+
+                      <h3>{product.name}</h3>
+
+                      <p>
+                        ₹{" "}
+                        {Number(productPrice).toLocaleString(
+                          "en-IN"
+                        )}
+                        /-
+                      </p>
+
+                    </div>
+
+                    {/* ACTIONS */}
+
+                    <div className="wishlist-actions">
+
+                      <button
+                        className="wishlist-cart-btn"
+                        onClick={() =>
+                          addToCart(product)
+                        }
+                      >
+                        ADD TO CART
+                      </button>
+
+                      <button
+                        className="wishlist-remove-btn"
+                        onClick={() =>
+                          removeFromWishlist(productId)
+                        }
+                      >
+                        REMOVE
+                      </button>
+
+                    </div>
+
+                  </article>
+                );
+              })}
+
             </section>
           )}
+
         </div>
       </main>
 

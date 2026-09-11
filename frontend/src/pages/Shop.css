@@ -30,6 +30,12 @@
   color: #222222;
 }
 
+.search-result-text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #666666;
+}
+
 
 /* =========================================
    FILTER BAR
@@ -48,7 +54,7 @@
 
 
 /* =========================================
-   FILTER LEFT
+   LEFT FILTER SECTION
 ========================================= */
 
 .filter-left {
@@ -66,58 +72,112 @@
 
 
 /* =========================================
-   SELECT COMMON STYLE
+   AVAILABILITY + PRICE SELECT
 ========================================= */
 
-.filter-left select,
-.sort-container select {
+.filter-left select {
   width: auto;
-  min-width: auto;
-  max-width: 145px;
-
-  border: none;
-  outline: none;
-  background: transparent;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
 
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
+  font-weight: 400;
   letter-spacing: 0.5px;
   color: #555555;
 
   cursor: pointer;
 
-  padding: 0;
+  padding: 0 18px 0 0 !important;
   margin: 0;
+
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='5' viewBox='0 0 7 5'%3E%3Cpath d='M1 1L3.5 3.5L6 1' fill='none' stroke='%23555' stroke-width='1'/%3E%3C/svg%3E") !important;
+
+  background-repeat: no-repeat !important;
+  background-position: right center !important;
+  background-size: 7px 5px !important;
 }
 
 
 /* =========================================
-   FILTER RIGHT
+   RIGHT FILTER SECTION
 ========================================= */
 
 .filter-right {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 28px;
 }
 
-.sort-container {
+
+/* =========================================
+   SORT BY
+========================================= */
+
+.sort-by {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
-.sort-container span {
+.sort-by span {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
+  font-weight: 400;
   letter-spacing: 0.5px;
   color: #555555;
 }
 
+
+/* =========================================
+   SORT BY SELECT
+   SAME STYLE AS PRICE
+========================================= */
+
+.sort-by select {
+  width: auto;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  color: #555555;
+
+  cursor: pointer;
+
+  padding: 0 18px 0 0 !important;
+  margin: 0;
+
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='5' viewBox='0 0 7 5'%3E%3Cpath d='M1 1L3.5 3.5L6 1' fill='none' stroke='%23555' stroke-width='1'/%3E%3C/svg%3E") !important;
+
+  background-repeat: no-repeat !important;
+  background-position: right center !important;
+  background-size: 7px 5px !important;
+}
+
+
+/* =========================================
+   PRODUCT COUNT
+========================================= */
+
 .product-count {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.7px;
   color: #555555;
 }
 
@@ -148,7 +208,7 @@
 
 
 /* =========================================
-   IMAGE
+   PRODUCT IMAGE
 ========================================= */
 
 .shop-product-image {
@@ -173,7 +233,7 @@
 
 
 /* =========================================
-   OUT OF STOCK
+   SOLD OUT
 ========================================= */
 
 .out-of-stock,
@@ -183,7 +243,6 @@
   left: 12px;
   padding: 6px 9px;
   background: #ffffff;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 7px;
   letter-spacing: 1px;
@@ -224,7 +283,6 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 70px 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   color: #888888;
@@ -249,7 +307,6 @@
   padding: 0;
   border: none;
   background: transparent;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 11px;
   color: #999999;
@@ -356,4 +413,37 @@
   .shop-product-info p {
     font-size: 10px;
   }
+}
+
+/* ================= WISHLIST ================= */
+
+.shop-wishlist-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  background: #ffffff;
+
+  font-size: 22px;
+  line-height: 1;
+
+  color: #222;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-wishlist-btn:hover {
+  transform: scale(1.08);
+}
+
+.shop-wishlist-btn.active-wishlist {
+  color: #e63946;
 }

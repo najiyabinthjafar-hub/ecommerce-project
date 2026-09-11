@@ -1,14 +1,24 @@
 const bcrypt = require("bcryptjs");
 
 const User = require("../models/User");
+
 const generateOtp = require("../utils/generateOtp");
+
 const generateToken = require("../utils/generateToken");
+
 const {
   sendOtpEmail,
   sendResetOtpEmail,
 } = require("./emailService");
 
-const registerUser = async ({ name, email, phone, password }) => {
+// ================= REGISTER USER =================
+
+const registerUser = async ({
+  name,
+  email,
+  phone,
+  password,
+}) => {
   const existingEmail = await User.findOne({ email });
 
   if (existingEmail) {
@@ -42,6 +52,8 @@ const registerUser = async ({ name, email, phone, password }) => {
     message: "Registration successful. OTP sent to your email.",
   };
 };
+
+// ================= VERIFY EMAIL OTP =================
 
 const verifyEmailOtp = async (email, otp) => {
   const user = await User.findOne({ email });
@@ -85,6 +97,8 @@ const verifyEmailOtp = async (email, otp) => {
   };
 };
 
+// ================= RESEND OTP =================
+
 const resendOtp = async (email) => {
   const user = await User.findOne({ email });
 
@@ -99,7 +113,9 @@ const resendOtp = async (email) => {
   const otp = generateOtp();
 
   user.otp = otp;
-  user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  user.otpExpiresAt = new Date(
+    Date.now() + 10 * 60 * 1000
+  );
   user.otpAttempts = 0;
 
   await user.save();
@@ -110,6 +126,8 @@ const resendOtp = async (email) => {
     message: "New OTP sent successfully",
   };
 };
+
+// ================= LOGIN USER =================
 
 const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email });
@@ -126,7 +144,10 @@ const loginUser = async ({ email, password }) => {
     throw new Error("Your account is blocked");
   }
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
+  const passwordMatch = await bcrypt.compare(
+    password,
+    user.password
+  );
 
   if (!passwordMatch) {
     throw new Error("Invalid email or password");
@@ -136,6 +157,7 @@ const loginUser = async ({ email, password }) => {
 
   return {
     token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -147,6 +169,8 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
+// ================= FORGOT PASSWORD =================
+
 const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
 
@@ -157,7 +181,12 @@ const forgotPassword = async (email) => {
   const otp = generateOtp();
 
   user.resetOtp = otp;
-  user.otpExpiresAt = new Date(Date.now() + 1 * 60 * 1000);
+
+  // IMPORTANT FIX
+  user.resetOtpExpiresAt = new Date(
+    Date.now() + 10 * 60 * 1000
+  );
+
   await user.save();
 
   await sendResetOtpEmail(email, otp);
@@ -167,7 +196,13 @@ const forgotPassword = async (email) => {
   };
 };
 
-const resetPassword = async ({ email, otp, newPassword }) => {
+// ================= RESET PASSWORD =================
+
+const resetPassword = async ({
+  email,
+  otp,
+  newPassword,
+}) => {
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -186,9 +221,14 @@ const resetPassword = async ({ email, otp, newPassword }) => {
     throw new Error("Invalid reset OTP");
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    10
+  );
 
   user.password = hashedPassword;
+
+  // Clear reset OTP after successful password reset
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
 

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-
 import { useNavigate, Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./Profile.css";
@@ -12,9 +10,7 @@ function Profile() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
   // ================= GET PROFILE =================
@@ -23,6 +19,7 @@ function Profile() {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
 
+      // եթե token ഇല്ലെങ്കിൽ login page-ലേക്ക് പോകുക
       if (!token) {
         navigate("/login");
         return;
@@ -36,10 +33,8 @@ function Profile() {
           "http://localhost:5000/api/users/profile",
           {
             method: "GET",
-
             headers: {
               "Content-Type": "application/json",
-
               Authorization: `Bearer ${token}`,
             },
           }
@@ -53,19 +48,18 @@ function Profile() {
           );
         }
 
-        // Depending on backend response format
+        // Backend response-ൽ user ഉണ്ടെങ്കിൽ അത് ഉപയോഗിക്കും
         const profileData = data.user || data;
 
         setUser(profileData);
 
-        // Update localStorage with latest details
+        // Latest user details localStorage-ലും update ചെയ്യുക
         localStorage.setItem(
           "user",
           JSON.stringify(profileData)
         );
       } catch (error) {
         console.error("Profile API Error:", error);
-
         setError(error.message);
       } finally {
         setLoading(false);
@@ -79,7 +73,6 @@ function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-
     localStorage.removeItem("user");
 
     navigate("/login");
@@ -137,7 +130,6 @@ function Profile() {
                 >
                   <div>
                     <h3>Personal Information</h3>
-
                     <p>Manage your account details</p>
                   </div>
                 </Link>
@@ -150,7 +142,6 @@ function Profile() {
                 >
                   <div>
                     <h3>My Orders</h3>
-
                     <p>View your orders</p>
                   </div>
                 </Link>
@@ -163,10 +154,7 @@ function Profile() {
                 >
                   <div>
                     <h3>My Wishlist</h3>
-
-                    <p>
-                      View your favourite products
-                    </p>
+                    <p>View your favourite products</p>
                   </div>
                 </Link>
 
@@ -178,10 +166,7 @@ function Profile() {
                 >
                   <div>
                     <h3>My Addresses</h3>
-
-                    <p>
-                      Manage delivery addresses
-                    </p>
+                    <p>Manage delivery addresses</p>
                   </div>
                 </Link>
 
@@ -193,10 +178,10 @@ function Profile() {
                 >
                   <div>
                     <h3>Change Password</h3>
-
                     <p>Update your password</p>
                   </div>
                 </Link>
+
               </div>
 
               {/* LOGOUT */}
