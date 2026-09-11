@@ -169,10 +169,24 @@ const uploadBannerImage = async (req, res, next) => {
     next(error);
   }
 };
+// GET ACTIVE BANNERS
+const getActiveBanners = async (req, res, next) => {
+  try {
+    const banners = await bannerService.getActiveBanners();
+
+    res.status(200).json({
+      success: true,
+      banners,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   createBanner,
   getBanners,
+  getActiveBanners,
   getBanner,
   updateBanner,
   uploadBannerImage,

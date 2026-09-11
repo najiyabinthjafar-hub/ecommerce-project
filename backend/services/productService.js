@@ -12,9 +12,9 @@ const getAllProducts = async ({
   minPrice,
   maxPrice,
   availability,
-   sort,
-   page,
-   limit,
+  sort,
+  page,
+  limit,
 }) => {
   const query = {};
 
@@ -55,49 +55,52 @@ const getAllProducts = async ({
   }
 
   // Sorting
-let sortOption = {};
+  let sortOption = {};
 
-if (sort === "price-low") {
-  sortOption.regularPrice = 1;
-}
+  if (sort === "price-low") {
+    sortOption.regularPrice = 1;
+  }
 
-if (sort === "price-high") {
-  sortOption.regularPrice = -1;
-}
+  if (sort === "price-high") {
+    sortOption.regularPrice = -1;
+  }
 
-if (sort === "newest") {
-  sortOption.createdAt = -1;
-}
+  if (sort === "newest") {
+    sortOption.createdAt = -1;
+  }
 
-// Pagination
+  // Pagination
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
 
   const skip = (pageNumber - 1) * limitNumber;
 
-  // Get products for current page
   const products = await Product.find(query)
     .populate("category")
     .sort(sortOption)
     .skip(skip)
     .limit(limitNumber);
 
-  // Count total matching products
   const totalProducts = await Product.countDocuments(query);
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalProducts / limitNumber);
 
-
- return {
-  products,
-  pagination: {
-    currentPage: pageNumber,
-    limit: limitNumber,
-    totalProducts,
-    totalPages,
-  },
+  return {
+    products,
+    pagination: {
+      currentPage: pageNumber,
+      limit: limitNumber,
+      totalProducts,
+      totalPages,
+    },
+  };
 };
+
+// GET ACTIVE PRODUCTS
+const getActiveProducts = async () => {
+  return await Product.find({
+    status: "active",
+  }).populate("category");
 };
 
 // GET PRODUCT BY ID
@@ -134,11 +137,36 @@ const updateProductStock = async (id, stock) => {
   ).populate("category");
 };
 
+// REDUCE PRODUCT STOCK
+const reduceProductStock = async (id, quantity) => {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new Error("Quantity must be a positive integer");
+  }
+
+  const product = await Product.findOneAndUpdate(
+    {
+      _id: id,
+      stock: { $gte: quantity },
+    },
+    {
+      $inc: { stock: -quantity },
+    },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    }
+  );
+
+  return product;
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
+  getActiveProducts,
   getProductById,
   updateProduct,
   deleteProduct,
   updateProductStock,
+  reduceProductStock,
 };
