@@ -67,6 +67,8 @@ const getPaymentById = async (req, res) => {
 };
 
 const updatePaymentStatus = async (req, res) => {
+  console.log("PAYMENT CONTROLLER CALLED");
+
   try {
     const payment = await paymentService.updatePaymentStatus(
       req.params.id,
@@ -87,9 +89,11 @@ const updatePaymentStatus = async (req, res) => {
       payment,
     });
   } catch (error) {
+    console.error("Payment update error:", error);
+
     res.status(500).json({
       success: false,
-      message: "Failed to update payment status",
+      message: "Failed to update payment",
       error: error.message,
     });
   }
