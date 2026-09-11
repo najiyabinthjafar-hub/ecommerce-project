@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+
 const {
   sendOtpEmail,
   sendResetOtpEmail,
@@ -103,6 +104,11 @@ const resendOtp = async (email) => {
   user.otpAttempts = 0;
 
   await user.save();
+
+  // Temporary debugging
+  console.log("OTP email:", email);
+  console.log("EMAIL_USER loaded:", !!process.env.EMAIL_USER);
+  console.log("EMAIL_PASS loaded:", !!process.env.EMAIL_PASS);
 
   await sendOtpEmail(email, otp);
 
