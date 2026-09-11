@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect } = require("../middleware/authMiddleware");
 
 const {
   getWishlist,
@@ -9,16 +10,19 @@ const {
 
 const router = express.Router();
 
-// Get user's wishlist
-router.get("/", getWishlist);
+router.get("/", protect, (req, res, next) => {
+  console.log("WISHLIST GET ROUTE HIT");
+  next();
+}, getWishlist);
 
-// Add product to wishlist
-router.post("/add", addToWishlist);
+router.post("/add", protect, (req, res, next) => {
+  console.log("WISHLIST ADD ROUTE HIT");
+  console.log("USER FROM ROUTE:", req.user);
+  next();
+}, addToWishlist);
 
-// Remove product from wishlist
-router.delete("/remove/:productId", removeFromWishlist);
+router.delete("/remove/:productId", protect, removeFromWishlist);
 
-// Clear entire wishlist
-router.delete("/clear", clearWishlist);
+router.delete("/clear", protect, clearWishlist);
 
 module.exports = router;
