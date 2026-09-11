@@ -94,9 +94,27 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+const getBestSellingProducts = async (req, res) => {
+  try {
+    const products = await orderService.getBestSellingProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get best selling products",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrders,
   getOrderById,
+  getBestSellingProducts,
   updateOrderStatus,
 };
