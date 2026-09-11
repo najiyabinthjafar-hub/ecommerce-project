@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import insta1 from "../assets/insta1.png";
 import insta2 from "../assets/insta2.png";
@@ -13,6 +14,8 @@ const images = [insta1, insta2, insta3, insta4, insta7];
 function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(2);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveIndex((current) => (current + 1) % images.length);
@@ -25,8 +28,19 @@ function HeroSection() {
     setActiveIndex((current) => (current + 1) % images.length);
   };
 
+  // NEW COLLECTION CLICK
+  const handleNewCollection = () => {
+    navigate("/new-arrivals");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   const getPosition = (index) => {
     const total = images.length;
+
     let position = index - activeIndex;
 
     if (position > Math.floor(total / 2)) {
@@ -53,6 +67,7 @@ function HeroSection() {
       <div className="hero-slider">
         {images.map((image, index) => {
           const position = getPosition(index);
+
           const isActive = position === 0;
 
           return (
@@ -70,7 +85,7 @@ function HeroSection() {
               {isActive && (
                 <button
                   className="new-collection"
-                  onClick={nextSlide}
+                  onClick={handleNewCollection}
                 >
                   NEW COLLECTION
                 </button>

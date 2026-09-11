@@ -20,6 +20,8 @@ import BestSellersPage from "./pages/BestSellersPage";
 import Category from "./pages/Category";
 import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // ================= FOOTER PAGES =================
 import Support from "./pages/Support";
@@ -70,10 +72,7 @@ function App() {
 
         <Route path="/shop" element={<Shop />} />
 
-        <Route
-          path="/product/:id"
-          element={<ProductDetails />}
-        />
+        <Route path="/product/:id" element={<ProductDetails />} />
 
         <Route path="/cart" element={<Cart />} />
 
@@ -105,6 +104,16 @@ function App() {
         />
 
         <Route path="/wishlist" element={<Wishlist />} />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
 
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
@@ -175,7 +184,6 @@ function App() {
         <Route element={<ProtectedRoute />}>
 
           {/* Dashboard */}
-
           <Route
             path="/admin/dashboard"
             element={
@@ -186,7 +194,6 @@ function App() {
           />
 
           {/* Products */}
-
           <Route
             path="/admin/products"
             element={
@@ -197,7 +204,6 @@ function App() {
           />
 
           {/* Add Product */}
-
           <Route
             path="/admin/products/add"
             element={
@@ -208,7 +214,6 @@ function App() {
           />
 
           {/* Edit Product */}
-
           <Route
             path="/admin/products/edit/:id"
             element={
@@ -219,7 +224,6 @@ function App() {
           />
 
           {/* View Product */}
-
           <Route
             path="/admin/products/view/:id"
             element={
@@ -230,7 +234,6 @@ function App() {
           />
 
           {/* Categories */}
-
           <Route
             path="/admin/categories"
             element={
@@ -241,7 +244,6 @@ function App() {
           />
 
           {/* Banners */}
-
           <Route
             path="/admin/banners"
             element={
@@ -252,7 +254,6 @@ function App() {
           />
 
           {/* Add Banner */}
-
           <Route
             path="/admin/banners/add"
             element={
@@ -263,7 +264,6 @@ function App() {
           />
 
           {/* Edit Banner */}
-
           <Route
             path="/admin/banners/edit/:id"
             element={
@@ -273,18 +273,17 @@ function App() {
             }
           />
 
-
-        <Route
+          {/* View Banner */}
+          <Route
             path="/admin/banners/view/:id"
             element={
-          <AdminLayout>
-          <BannerView />
-          </AdminLayout>
-             }
-         />
+              <AdminLayout>
+                <BannerView />
+              </AdminLayout>
+            }
+          />
 
           {/* Customers */}
-
           <Route
             path="/admin/customers"
             element={
@@ -295,7 +294,6 @@ function App() {
           />
 
           {/* Orders */}
-
           <Route
             path="/admin/orders"
             element={
@@ -306,7 +304,6 @@ function App() {
           />
 
           {/* Order Details */}
-
           <Route
             path="/admin/orders/:id"
             element={
@@ -317,7 +314,6 @@ function App() {
           />
 
           {/* Coupons */}
-
           <Route
             path="/admin/coupons"
             element={
@@ -326,17 +322,18 @@ function App() {
               </AdminLayout>
             }
           />
+
+          {/* Add Coupon */}
           <Route
-             path="/admin/coupons/add"
-             element={
-          <AdminLayout>
-         <AddCoupon />
-         </AdminLayout>
-         }
-      />
+            path="/admin/coupons/add"
+            element={
+              <AdminLayout>
+                <AddCoupon />
+              </AdminLayout>
+            }
+          />
 
           {/* Inventory */}
-
           <Route
             path="/admin/inventory"
             element={
@@ -347,7 +344,6 @@ function App() {
           />
 
           {/* Settings */}
-
           <Route
             path="/admin/settings"
             element={
@@ -358,7 +354,6 @@ function App() {
           />
 
           {/* Admin Profile */}
-
           <Route
             path="/admin/profile"
             element={

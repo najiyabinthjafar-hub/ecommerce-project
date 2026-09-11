@@ -1,140 +1,93 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ProductCard from "./ProductCard";
+
 import "./NewArrivals.css";
 
 function NewArrivals() {
-  const [activeFashion, setActiveFashion] = useState("MEN'S FASHION");
+  const [activeFashion, setActiveFashion] =
+    useState("MEN'S FASHION");
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const products = [
-    // ================= MEN'S FASHION =================
+  // ================= FETCH PRODUCTS =================
 
-    {
-      id: 1,
-      name: "White Adrenaline Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-1.png",
-    },
-    {
-      id: 2,
-      name: "Black Graphic Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-2.png",
-    },
-    {
-      id: 3,
-      name: "Oversized Graphic Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-3.png",
-    },
-    {
-      id: 4,
-      name: "White Printed Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-4.png",
-    },
-    {
-      id: 5,
-      name: "Classic Black Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-5.png",
-    },
-    {
-      id: 6,
-      name: "Essential White Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-6.png",
-    },
-    {
-      id: 7,
-      name: "Eagle Graphic Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-7.png",
-    },
-    {
-      id: 8,
-      name: "Vintage Graphic Tee",
-      category: "MEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-8.png",
-    },
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    // ================= WOMEN'S FASHION =================
+        const response = await fetch(
+          "http://localhost:5000/api/products?limit=100"
+        );
 
-    {
-      id: 9,
-      name: "Women's White Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-1.png",
-    },
-    {
-      id: 10,
-      name: "Women's Black Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-2.png",
-    },
-    {
-      id: 11,
-      name: "Women's Oversized Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-3.png",
-    },
-    {
-      id: 12,
-      name: "Women's Printed Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-4.png",
-    },
-    {
-      id: 13,
-      name: "Women's Classic Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-5.png",
-    },
-    {
-      id: 14,
-      name: "Women's Essential Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-6.png",
-    },
-    {
-      id: 15,
-      name: "Women's Eagle Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-7.png",
-    },
-    {
-      id: 16,
-      name: "Women's Vintage Collection",
-      category: "WOMEN'S FASHION",
-      price: 946,
-      image: "/src/assets/product-8.png",
-    },
-  ];
+        const data = await response.json();
 
-  const filteredProducts = products.filter(
-    (product) => product.category === activeFashion
-  );
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch products"
+          );
+        }
+
+        setProducts(data.products || []);
+      } catch (error) {
+        console.error(
+          "New Arrivals API Error:",
+          error
+        );
+
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // ================= CATEGORY FILTER =================
+
+  const filteredProducts = products
+    .filter((product) => {
+      if (!product.category) return false;
+
+      if (typeof product.category === "object") {
+        const categoryName =
+          product.category.name
+            ?.replace(/[’‘]/g, "'")
+            .toUpperCase();
+
+        const selectedCategory =
+          activeFashion
+            .replace(/[’‘]/g, "'")
+            .toUpperCase();
+
+        return categoryName === selectedCategory;
+      }
+
+      return false;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt) -
+        new Date(a.createdAt)
+    )
+    .slice(0, 4);
+
+  // ================= VIEW MORE =================
 
   const handleViewMore = () => {
-    navigate("/new-arrivals");
+    navigate("/new-arrivals", {
+      state: {
+        activeFashion: activeFashion,
+      },
+    });
 
     setTimeout(() => {
       window.scrollTo({
@@ -146,8 +99,12 @@ function NewArrivals() {
   };
 
   return (
-    <section className="new-arrivals" id="new-arrivals">
-      {/* Heading */}
+    <section
+      className="new-arrivals"
+      id="new-arrivals"
+    >
+      {/* ================= HEADING ================= */}
+
       <div className="new-arrivals-heading">
         <h2>New Arrivals</h2>
 
@@ -157,47 +114,84 @@ function NewArrivals() {
           From bold basics to fresh fits — just landed.
         </p>
 
-        {/* Fashion Buttons */}
+        {/* ================= FASHION BUTTONS ================= */}
+
         <div className="fashion-buttons">
           <button
             className={`fashion-btn ${
-              activeFashion === "MEN'S FASHION" ? "active" : ""
+              activeFashion === "MEN'S FASHION"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setActiveFashion("MEN'S FASHION")}
+            onClick={() =>
+              setActiveFashion("MEN'S FASHION")
+            }
           >
             Men's Fashion
           </button>
 
           <button
             className={`fashion-btn ${
-              activeFashion === "WOMEN'S FASHION" ? "active" : ""
+              activeFashion === "WOMEN'S FASHION"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setActiveFashion("WOMEN'S FASHION")}
+            onClick={() =>
+              setActiveFashion("WOMEN'S FASHION")
+            }
           >
             Women's Fashion
           </button>
         </div>
       </div>
 
-      {/* Products */}
-      <div className="products-grid">
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-          />
-        ))}
-      </div>
+      {/* ================= LOADING ================= */}
 
-      {/* View More */}
-      <div className="view-more-wrapper">
-        <button
-          className="view-more-btn"
-          onClick={handleViewMore}
-        >
-          View More
-        </button>
-      </div>
+      {loading && (
+        <p className="new-arrivals-message">
+          Loading products...
+        </p>
+      )}
+
+      {/* ================= ERROR ================= */}
+
+      {!loading && error && (
+        <p className="new-arrivals-message">
+          Error: {error}
+        </p>
+      )}
+
+      {/* ================= PRODUCTS ================= */}
+
+      {!loading && !error && (
+        <>
+          <div className="products-grid">
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                />
+              ))
+            ) : (
+              <p className="new-arrivals-message">
+                No products found.
+              </p>
+            )}
+          </div>
+
+          {/* ================= VIEW MORE ================= */}
+
+          <div className="view-more-wrapper">
+            <button
+              className="view-more-btn"
+              onClick={handleViewMore}
+            >
+              View More
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
