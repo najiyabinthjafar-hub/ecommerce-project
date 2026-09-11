@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Products.css";
 
 const API_URL = "http://localhost:5000/api/products";
+const PRODUCTS_PER_PAGE = 10;
 
 function Products() {
   const navigate = useNavigate();
@@ -12,13 +13,22 @@ function Products() {
   const [search, setSearch] = useState("");
 
   // =========================
+  // PAGINATION
+  // =========================
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+
+  // =========================
   // FETCH PRODUCTS
   // =========================
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = 1) => {
     try {
       setLoading(true);
 
-      const response = await fetch(API_URL);
+      const response = await fetch(
+        `${API_URL}?page=${page}&limit=${PRODUCTS_PER_PAGE}`
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch products");
@@ -33,16 +43,37 @@ function Products() {
         : data.products || [];
 
       setProducts(productList);
+
+      // Backend pagination response
+      if (data.pagination) {
+        setCurrentPage(data.pagination.currentPage || page);
+        setTotalPages(data.pagination.totalPages || 1);
+        setTotalProducts(data.pagination.totalProducts || 0);
+      } else {
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalProducts(productList.length);
+      }
     } catch (error) {
       console.error("Error fetching products:", error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1);
   }, []);
+
+  // =========================
+  // PAGE CHANGE
+  // =========================
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+
+    fetchProducts(page);
+  };
 
   // =========================
   // DELETE PRODUCT
@@ -71,7 +102,13 @@ function Products() {
 
       alert(data.message || "Product deleted successfully");
 
-      fetchProducts();
+      // If last product on current page was deleted,
+      // move to previous page if necessary
+      if (products.length === 1 && currentPage > 1) {
+        fetchProducts(currentPage - 1);
+      } else {
+        fetchProducts(currentPage);
+      }
     } catch (error) {
       console.error("Error deleting product:", error);
       alert(error.message);
@@ -112,9 +149,7 @@ function Products() {
           PAGE HEADER
       ========================= */}
       <div className="page-header">
-
         <div className="page-heading">
-
           <span className="page-eyebrow">
             STORE MANAGEMENT
           </span>
@@ -124,7 +159,6 @@ function Products() {
           <p>
             Manage your products, pricing and inventory
           </p>
-
         </div>
 
         <button
@@ -135,9 +169,7 @@ function Products() {
           <i className="bi bi-plus-lg"></i>
           <span>Add Product</span>
         </button>
-
       </div>
-
 
       {/* =========================
           PRODUCT CARD
@@ -150,7 +182,6 @@ function Products() {
         <div className="product-top">
 
           <div className="product-title">
-
             <div className="title-icon">
               <i className="bi bi-box-seam"></i>
             </div>
@@ -162,13 +193,10 @@ function Products() {
                 View and manage everything in your store
               </p>
             </div>
-
           </div>
-
 
           {/* SEARCH */}
           <div className="product-search">
-
             <i className="bi bi-search"></i>
 
             <input
@@ -189,27 +217,28 @@ function Products() {
                 <i className="bi bi-x"></i>
               </button>
             )}
-
           </div>
 
         </div>
-
 
         {/* =========================
             PRODUCT COUNT
         ========================= */}
         <div className="product-summary">
-
           <span>
-            <strong>{filteredProducts.length}</strong>{" "}
-            {filteredProducts.length === 1
+            <strong>
+              {search ? filteredProducts.length : totalProducts}
+            </strong>{" "}
+            {(
+              search
+                ? filteredProducts.length
+                : totalProducts
+            ) === 1
               ? "product"
               : "products"}{" "}
             found
           </span>
-
         </div>
-
 
         {/* =========================
             TABLE
@@ -219,7 +248,6 @@ function Products() {
           <table>
 
             <thead>
-
               <tr>
                 <th>PRODUCT</th>
                 <th>CATEGORY</th>
@@ -230,9 +258,7 @@ function Products() {
                   ACTION
                 </th>
               </tr>
-
             </thead>
-
 
             <tbody>
 
@@ -242,24 +268,18 @@ function Products() {
               {loading ? (
 
                 <tr>
-
                   <td
                     colSpan="6"
                     className="table-message"
                   >
-
                     <div className="loading-content">
-
                       <i className="bi bi-arrow-repeat spin"></i>
 
                       <span>
                         Loading products...
                       </span>
-
                     </div>
-
                   </td>
-
                 </tr>
 
               ) : filteredProducts.length === 0 ? (
@@ -269,12 +289,10 @@ function Products() {
                 ========================= */
 
                 <tr>
-
                   <td
                     colSpan="6"
                     className="table-message"
                   >
-
                     <div className="empty-content">
 
                       <div className="empty-icon">
@@ -292,9 +310,7 @@ function Products() {
                       </span>
 
                     </div>
-
                   </td>
-
                 </tr>
 
               ) : (
@@ -332,7 +348,6 @@ function Products() {
                       : "out";
 
                   return (
-
                     <tr
                       key={product._id || product.id}
                     >
@@ -351,7 +366,10 @@ function Products() {
 
                               <img
                                 src={product.images[0]}
-                                alt={product.name || "Product"}
+                                alt={
+                                  product.name ||
+                                  "Product"
+                                }
                               />
 
                             ) : (
@@ -361,7 +379,6 @@ function Products() {
                             )}
 
                           </div>
-
 
                           <div className="product-info">
 
@@ -379,22 +396,18 @@ function Products() {
 
                       </td>
 
-
                       {/* =========================
                           CATEGORY
                       ========================= */}
                       <td>
 
                         <span className="category-text">
-
                           {product.category?.name ||
                             product.category ||
                             "-"}
-
                         </span>
 
                       </td>
-
 
                       {/* =========================
                           PRICE
@@ -426,7 +439,6 @@ function Products() {
 
                       </td>
 
-
                       {/* =========================
                           STOCK
                       ========================= */}
@@ -446,7 +458,6 @@ function Products() {
 
                       </td>
 
-
                       {/* =========================
                           STATUS
                       ========================= */}
@@ -455,15 +466,12 @@ function Products() {
                         <span
                           className={`status ${statusClass}`}
                         >
-
                           <span className="status-dot"></span>
 
                           {status}
-
                         </span>
 
                       </td>
-
 
                       {/* =========================
                           ACTIONS
@@ -484,7 +492,6 @@ function Products() {
                             <i className="bi bi-eye"></i>
                           </button>
 
-
                           {/* EDIT */}
                           <button
                             type="button"
@@ -496,7 +503,6 @@ function Products() {
                           >
                             <i className="bi bi-pencil"></i>
                           </button>
-
 
                           {/* DELETE */}
                           <button
@@ -515,11 +521,8 @@ function Products() {
                       </td>
 
                     </tr>
-
                   );
-
                 })
-
               )}
 
             </tbody>
@@ -527,6 +530,70 @@ function Products() {
           </table>
 
         </div>
+
+        {/* =========================
+            PAGINATION
+        ========================= */}
+        {!loading &&
+          !search &&
+          totalPages > 1 && (
+
+            <div className="products-pagination">
+
+              {/* PREVIOUS */}
+              <button
+                type="button"
+                className="pagination-btn pagination-arrow"
+                onClick={() =>
+                  handlePageChange(currentPage - 1)
+                }
+                disabled={currentPage === 1}
+                title="Previous page"
+              >
+                <i className="bi bi-chevron-left"></i>
+              </button>
+
+              {/* PAGE NUMBERS */}
+              {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+              ).map((page) => (
+
+                <button
+                  type="button"
+                  key={page}
+                  className={`pagination-btn pagination-number ${
+                    currentPage === page
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    handlePageChange(page)
+                  }
+                >
+                  {page}
+                </button>
+
+              ))}
+
+              {/* NEXT */}
+              <button
+                type="button"
+                className="pagination-btn pagination-arrow"
+                onClick={() =>
+                  handlePageChange(currentPage + 1)
+                }
+                disabled={
+                  currentPage === totalPages
+                }
+                title="Next page"
+              >
+                <i className="bi bi-chevron-right"></i>
+              </button>
+
+            </div>
+
+          )}
 
       </div>
 
