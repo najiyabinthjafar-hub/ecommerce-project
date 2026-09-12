@@ -26,53 +26,85 @@ function AddProduct() {
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  // =========================
-  // FETCH CATEGORIES
-  // =========================
-  const fetchCategories = async () => {
-    try {
-      setLoadingCategories(true);
-
-      const response = await fetch(CATEGORY_API_URL);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
-
-      const data = await response.json();
-
-      console.log("Categories:", data);
-
-      const categoryList = Array.isArray(data)
-        ? data
-        : data.categories || data.data || [];
-
-      setCategories(categoryList);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setCategories([]);
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
+  /* =========================
+     FETCH CATEGORIES
+  ========================= */
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+
+        const response = await fetch(CATEGORY_API_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+          setCategories(data);
+        } else if (Array.isArray(data.categories)) {
+          setCategories(data.categories);
+        } else if (Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else {
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        alert("Failed to load categories.");
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
     fetchCategories();
   }, []);
 
-  // =========================
-  // HANDLE INPUT CHANGE
-  // =========================
-  const handleChange = (e) => {
-    setProduct({
-      ...product,
-      [e.target.name]: e.target.value,
+  /* =========================
+     MAIN CATEGORIES
+  ========================= */
+
+  const mainCategories = categories.filter(
+    (category) => !category.parent
+  );
+
+  /* =========================
+     GET SUBCATEGORIES
+  ========================= */
+
+  const getSubcategories = (mainCategoryId) => {
+    return categories.filter((subcategory) => {
+      if (!subcategory.parent) return false;
+
+      const parentId =
+        typeof subcategory.parent === "object"
+          ? subcategory.parent?._id
+          : subcategory.parent;
+
+      return parentId === mainCategoryId;
     });
   };
 
-  // =========================
-  // SIZE SELECTION
-  // =========================
+  /* =========================
+     HANDLE INPUT
+  ========================= */
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setProduct((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  /* =========================
+     SIZE SELECTION
+  ========================= */
+
   const handleSizeChange = (size) => {
     setProduct((prev) => {
       const alreadySelected = prev.variants.includes(size);
@@ -86,90 +118,114 @@ function AddProduct() {
     });
   };
 
-  // =========================
-  // IMAGE SELECTION
-  // =========================
+  /* =========================
+     IMAGE SELECTION
+  ========================= */
+
   const handleImageChange = (e) => {
-    const selectedImages = Array.from(e.target.files);
+    const selectedFiles = Array.from(e.target.files);
 
-    // No new files selected
-    if (selectedImages.length === 0) {
-      return;
-    }
+    if (!selectedFiles.length) return;
 
-    // Existing + new images should not exceed 5
-    if (images.length + selectedImages.length > 5) {
-      alert("You can select a maximum of 5 images.");
+    const remainingSlots = 5 - images.length;
+
+    if (remainingSlots <= 0) {
+      alert("You can upload a maximum of 5 images.");
       e.target.value = "";
       return;
     }
 
-    // IMPORTANT:
-    // Add new images to existing images
-    // instead of replacing them
-    setImages((prev) => [...prev, ...selectedImages]);
+    const filesToAdd = selectedFiles.slice(0, remainingSlots);
 
-    // Clear input so user can select more images again
+    if (selectedFiles.length > remainingSlots) {
+      alert(`Only ${remainingSlots} more image(s) can be added.`);
+    }
+
+    setImages((prev) => [...prev, ...filesToAdd]);
+
     e.target.value = "";
   };
 
-  // =========================
-  // REMOVE IMAGE
-  // =========================
-  const handleRemoveImage = (index) => {
+  /* =========================
+     REMOVE IMAGE
+  ========================= */
+
+  const removeImage = (index) => {
     setImages((prev) =>
-      prev.filter((_, i) => i !== index)
+      prev.filter((_, imageIndex) => imageIndex !== index)
     );
   };
 
-  // =========================
-  // SUBMIT PRODUCT
-  // =========================
+  /* =========================
+     GENERATE SLUG
+  ========================= */
+
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  };
+
+  /* =========================
+     SUBMIT PRODUCT
+  ========================= */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // IMAGE REQUIRED
+    if (!product.name.trim()) {
+      alert("Please enter product name.");
+      return;
+    }
+
+    if (!product.category) {
+      alert("Please select a category.");
+      return;
+    }
+
+    if (product.regularPrice === "") {
+      alert("Please enter regular price.");
+      return;
+    }
+
+    if (product.stock === "") {
+      alert("Please enter stock.");
+      return;
+    }
+
     if (images.length === 0) {
-      alert("Please add at least one product image.");
+      alert("Please select at least one product image.");
       return;
     }
 
     try {
       setSaving(true);
 
-      // Create slug from product name
-      const slug = product.name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+      /* =========================
+         PRODUCT DATA
+      ========================= */
 
       const productData = {
         sku: product.sku.trim(),
         name: product.name.trim(),
-        slug,
-        description: product.description.trim(),
+        slug: generateSlug(product.name),
         category: product.category,
-
         regularPrice: Number(product.regularPrice),
-
         salePrice:
           product.salePrice === ""
-            ? null
+            ? 0
             : Number(product.salePrice),
-
         stock: Number(product.stock),
-
         variants: product.variants,
-
-        status: "active",
+        description: product.description.trim(),
       };
 
-      console.log("Sending product:", productData);
+      /* =========================
+         CREATE PRODUCT
+      ========================= */
 
-      // =========================
-      // 1. CREATE PRODUCT
-      // =========================
       const response = await fetch(PRODUCT_API_URL, {
         method: "POST",
         headers: {
@@ -180,55 +236,53 @@ function AddProduct() {
 
       const data = await response.json();
 
-      console.log("Create product response:", data);
-
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to add product"
+          data.message || "Failed to create product"
         );
       }
 
-      // =========================
-      // 2. UPLOAD PRODUCT IMAGES
-      // =========================
-      if (data.product?._id && images.length > 0) {
-        const formData = new FormData();
+      const createdProduct = data.product || data.data || data;
 
-        images.forEach((image) => {
-          formData.append("images", image);
-        });
-
-        console.log("Uploading images...");
-
-        const imageResponse = await fetch(
-          `${PRODUCT_API_URL}/${data.product._id}/images`,
-          {
-            method: "POST",
-            body: formData,
-          }
+      if (!createdProduct?._id) {
+        throw new Error(
+          "Product created, but product ID was not returned."
         );
+      }
 
-        const imageData = await imageResponse.json();
+      /* =========================
+         UPLOAD PRODUCT IMAGES
+      ========================= */
 
-        console.log(
-          "Image upload response:",
-          imageData
-        );
+      const imageFormData = new FormData();
 
-        if (!imageResponse.ok) {
-          throw new Error(
-            imageData.message ||
-              "Product added, but image upload failed"
-          );
+      images.forEach((image) => {
+        imageFormData.append("images", image);
+      });
+
+      const imageResponse = await fetch(
+        `${PRODUCT_API_URL}/${createdProduct._id}/images`,
+        {
+          method: "POST",
+          body: imageFormData,
         }
+      );
+
+      const imageData = await imageResponse.json();
+
+      if (!imageResponse.ok) {
+        throw new Error(
+          imageData.message ||
+            "Product created, but image upload failed."
+        );
       }
 
-      // =========================
-      // SUCCESS
-      // =========================
-      alert("Product and images added successfully!");
+      alert("Product added successfully!");
 
-      // Reset product
+      /* =========================
+         RESET FORM
+      ========================= */
+
       setProduct({
         sku: "",
         name: "",
@@ -240,25 +294,32 @@ function AddProduct() {
         description: "",
       });
 
-      // Reset images
       setImages([]);
 
-      // Go back to products
       navigate("/admin/products");
     } catch (error) {
-      console.error(
-        "Error adding product:",
-        error
-      );
+      console.error("Add product error:", error);
 
       alert(
         error.message ||
-          "Something went wrong while adding the product"
+          "Something went wrong while adding the product."
       );
     } finally {
       setSaving(false);
     }
   };
+
+  /* =========================
+     CANCEL
+  ========================= */
+
+  const handleCancel = () => {
+    navigate("/admin/products");
+  };
+
+  /* =========================
+     JSX
+  ========================= */
 
   return (
     <div className="add-product-page">
@@ -267,20 +328,19 @@ function AddProduct() {
         {/* =========================
             HEADER
         ========================= */}
+
         <div className="add-product-header">
           <div className="add-product-heading">
             <h1>Add Product</h1>
             <p>
-              Add a new fashion product to your store
+              Create a new product and add it to your store.
             </p>
           </div>
 
           <button
             type="button"
             className="back-products-btn"
-            onClick={() =>
-              navigate("/admin/products")
-            }
+            onClick={handleCancel}
           >
             <i className="bi bi-arrow-left"></i>
             Back to Products
@@ -290,51 +350,67 @@ function AddProduct() {
         {/* =========================
             FORM CARD
         ========================= */}
+
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
 
             {/* =========================
-                SKU + PRODUCT NAME
+                ROW 1
             ========================= */}
+
             <div className="form-row">
 
+              {/* SKU */}
+
               <div className="form-group">
-                <label>SKU</label>
+                <label htmlFor="sku">
+                  SKU
+                </label>
 
                 <input
                   type="text"
+                  id="sku"
                   name="sku"
-                  placeholder="Example: SHIRT-001"
                   value={product.sku}
                   onChange={handleChange}
-                  required
+                  placeholder="Enter SKU"
                 />
               </div>
 
+              {/* PRODUCT NAME */}
+
               <div className="form-group">
-                <label>Product Name</label>
+                <label htmlFor="name">
+                  Product Name
+                </label>
 
                 <input
                   type="text"
+                  id="name"
                   name="name"
-                  placeholder="Example: Cotton Casual Shirt"
                   value={product.name}
                   onChange={handleChange}
+                  placeholder="Enter product name"
                   required
                 />
               </div>
-
             </div>
 
             {/* =========================
-                CATEGORY + STOCK
+                ROW 2
             ========================= */}
+
             <div className="form-row">
 
+              {/* CATEGORY */}
+
               <div className="form-group">
-                <label>Category</label>
+                <label htmlFor="category">
+                  Category
+                </label>
 
                 <select
+                  id="category"
                   name="category"
                   value={product.category}
                   onChange={handleChange}
@@ -347,209 +423,235 @@ function AddProduct() {
                   </option>
 
                   {!loadingCategories &&
-                    categories.map((category) => (
-                      <option
-                        key={
-                          category._id ||
-                          category.id
-                        }
-                        value={
-                          category._id ||
-                          category.id
-                        }
-                      >
-                        {category.name}
-                      </option>
-                    ))}
+                    mainCategories.map((mainCategory) => {
+                      const mainCategoryId =
+                        mainCategory._id ||
+                        mainCategory.id;
+
+                      const subcategories =
+                        getSubcategories(mainCategoryId);
+
+                      return (
+                        <React.Fragment
+                          key={mainCategoryId}
+                        >
+                          {/* MAIN CATEGORY */}
+
+                          <option value={mainCategoryId}>
+                            ✦ {mainCategory.name}
+                          </option>
+
+                          {/* SUBCATEGORIES */}
+
+                          {subcategories.map(
+                            (subcategory) => {
+                              const subcategoryId =
+                                subcategory._id ||
+                                subcategory.id;
+
+                              return (
+                                <option
+                                  key={subcategoryId}
+                                  value={subcategoryId}
+                                >
+                                  {"     ↳ "}
+                                  {subcategory.name}
+                                </option>
+                              );
+                            }
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label>Stock</label>
-
-                <input
-                  type="number"
-                  name="stock"
-                  placeholder="Enter stock quantity"
-                  value={product.stock}
-                  onChange={handleChange}
-                  min="0"
-                  required
-                />
-              </div>
-
-            </div>
-
-            {/* =========================
-                REGULAR PRICE + SALE PRICE
-            ========================= */}
-            <div className="form-row">
-
-              <div className="form-group">
-                <label>Regular Price</label>
-
-                <input
-                  type="number"
-                  name="regularPrice"
-                  placeholder="₹ Enter regular price"
-                  value={product.regularPrice}
-                  onChange={handleChange}
-                  min="0"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Sale Price</label>
-
-                <input
-                  type="number"
-                  name="salePrice"
-                  placeholder="₹ Enter sale price (optional)"
-                  value={product.salePrice}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </div>
-
-            </div>
-
-            {/* =========================
-                SIZE SELECTION
-            ========================= */}
-            <div className="form-row">
-
-              <div className="form-group">
-                <label>Available Sizes</label>
-
-                <div className="size-selection">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      className={`size-option ${
-                        product.variants.includes(size)
-                          ? "selected"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        handleSizeChange(size)
-                      }
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
 
                 <small className="size-hint">
-                  {product.variants.length === 0
-                    ? "Select one or more sizes"
-                    : `${product.variants.length} size${
-                        product.variants.length > 1
-                          ? "s"
-                          : ""
-                      } selected`}
+                  Select a main category or subcategory
                 </small>
               </div>
 
+              {/* STOCK */}
+
+              <div className="form-group">
+                <label htmlFor="stock">
+                  Stock
+                </label>
+
+                <input
+                  type="number"
+                  id="stock"
+                  name="stock"
+                  value={product.stock}
+                  onChange={handleChange}
+                  placeholder="Enter stock quantity"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* =========================
+                ROW 3
+            ========================= */}
+
+            <div className="form-row">
+
+              {/* REGULAR PRICE */}
+
+              <div className="form-group">
+                <label htmlFor="regularPrice">
+                  Regular Price
+                </label>
+
+                <input
+                  type="number"
+                  id="regularPrice"
+                  name="regularPrice"
+                  value={product.regularPrice}
+                  onChange={handleChange}
+                  placeholder="Enter regular price"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+
+              {/* SALE PRICE */}
+
+              <div className="form-group">
+                <label htmlFor="salePrice">
+                  Sale Price
+                </label>
+
+                <input
+                  type="number"
+                  id="salePrice"
+                  name="salePrice"
+                  value={product.salePrice}
+                  onChange={handleChange}
+                  placeholder="Enter sale price"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            {/* =========================
+                SIZES
+            ========================= */}
+
+            <div className="form-group">
+              <label>
+                Sizes
+              </label>
+
+              <div className="size-selection">
+                {sizes.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    className={`size-option ${
+                      product.variants.includes(size)
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleSizeChange(size)
+                    }
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+
+              <small className="size-hint">
+                Select the available sizes
+              </small>
             </div>
 
             {/* =========================
                 PRODUCT IMAGES
             ========================= */}
-            <div className="form-group product-image-full">
 
-              <label>
-                Product Images <span>*</span>
+            <div className="form-group product-image-full">
+              <label htmlFor="images">
+                Product Images
               </label>
 
               <input
                 type="file"
+                id="images"
+                name="images"
                 accept="image/*"
                 multiple
-                required
                 onChange={handleImageChange}
+                required={images.length === 0}
               />
 
               <small className="size-hint">
-                Select at least 1 image, up to 5 images.
+                You can upload up to 5 images.
               </small>
 
               {/* IMAGE PREVIEW */}
+
               {images.length > 0 && (
                 <div className="product-image-preview">
-
                   {images.map((image, index) => (
                     <div
                       className="preview-image-box"
                       key={`${image.name}-${index}`}
                     >
-
                       <img
                         src={URL.createObjectURL(image)}
-                        alt={`Product preview ${
-                          index + 1
-                        }`}
+                        alt={`Product ${index + 1}`}
                       />
 
                       <button
                         type="button"
                         className="remove-preview-btn"
                         onClick={() =>
-                          handleRemoveImage(index)
+                          removeImage(index)
                         }
-                        title="Remove image"
+                        aria-label="Remove image"
                       >
                         <i className="bi bi-x"></i>
                       </button>
-
                     </div>
                   ))}
-
                 </div>
               )}
-
-              {images.length > 0 && (
-                <small className="size-hint">
-                  {images.length} image
-                  {images.length > 1
-                    ? "s"
-                    : ""}{" "}
-                  selected
-                </small>
-              )}
-
             </div>
 
             {/* =========================
                 DESCRIPTION
             ========================= */}
-            <div className="form-group">
 
-              <label>Description</label>
+            <div className="form-group">
+              <label htmlFor="description">
+                Description
+              </label>
 
               <textarea
+                id="description"
                 name="description"
-                placeholder="Describe the product..."
                 value={product.description}
                 onChange={handleChange}
+                placeholder="Enter product description"
                 rows="5"
-                required
-              />
-
+              ></textarea>
             </div>
 
             {/* =========================
-                ACTION BUTTONS
+                ACTIONS
             ========================= */}
+
             <div className="form-actions">
 
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={() =>
-                  navigate("/admin/products")
-                }
+                onClick={handleCancel}
+                disabled={saving}
               >
                 Cancel
               </button>
@@ -559,15 +661,20 @@ function AddProduct() {
                 className="save-product-btn"
                 disabled={saving}
               >
-                <i className="bi bi-plus-lg"></i>
-
-                {saving
-                  ? "Adding..."
-                  : "Add Product"}
+                {saving ? (
+                  <>
+                    <i className="bi bi-arrow-repeat"></i>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-plus-lg"></i>
+                    Add Product
+                  </>
+                )}
               </button>
 
             </div>
-
           </form>
         </div>
       </div>

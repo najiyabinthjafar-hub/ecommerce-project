@@ -119,9 +119,13 @@ function AdminLogin() {
               Remember me
             </label>
 
-            <span className="forgot-password">
-              Forgot Password?
-            </span>
+            <button
+  type="button"
+  className="forgot-password"
+  onClick={() => navigate("/admin/forgot-password")}
+>
+  Forgot Password?
+</button>
           </div>
 
           {/* Login Button */}

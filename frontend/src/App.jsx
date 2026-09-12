@@ -38,6 +38,8 @@ import TermsOfService from "./pages/TermsOfService";
 
 // ================= ADMIN PAGES =================
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminForgotPassword from "./pages/admin/ForgotPassword/ForgotPassword";
+import AdminResetPassword from "./pages/admin/ForgotPassword/ResetPassword";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
 import Categories from "./pages/admin/Categories";
@@ -179,6 +181,15 @@ function App() {
           path="/admin/login"
           element={<AdminLogin />}
         />
+         <Route
+  path="/admin/forgot-password"
+  element={<AdminForgotPassword />}
+/>
+
+<Route
+  path="/admin/reset-password"
+  element={<AdminResetPassword />}
+/>
 
         {/* ================= PROTECTED ADMIN SIDE ================= */}
 
