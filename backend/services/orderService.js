@@ -2,12 +2,23 @@ const Order = require("../models/Order");
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
+
   return order;
 };
 
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
+    .sort({ createdAt: -1 });
+
+  return orders;
+};
+
+// Get all customers' orders
+const getAllOrders = async () => {
+  const orders = await Order.find()
+    .populate("items.product")
+    .populate("user", "-password")
     .sort({ createdAt: -1 });
 
   return orders;
@@ -21,7 +32,10 @@ const getOrderById = async (orderId) => {
   return order;
 };
 
-const updateOrderStatus = async (orderId, orderStatus) => {
+const updateOrderStatus = async (
+  orderId,
+  orderStatus
+) => {
   const order = await Order.findByIdAndUpdate(
     orderId,
     { orderStatus },
@@ -34,9 +48,69 @@ const updateOrderStatus = async (orderId, orderStatus) => {
   return order;
 };
 
+const getBestSellingProducts = async () => {
+  const bestSellers = await Order.aggregate([
+    {
+      $match: {
+        paymentStatus: "PAID",
+        orderStatus: {
+          $nin: ["CANCELLED"],
+        },
+      },
+    },
+
+    {
+      $unwind: "$items",
+    },
+
+    {
+      $group: {
+        _id: "$items.product",
+        totalSold: {
+          $sum: "$items.quantity",
+        },
+      },
+    },
+
+    {
+      $sort: {
+        totalSold: -1,
+      },
+    },
+
+    {
+      $limit: 10,
+    },
+
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+
+    {
+      $unwind: "$product",
+    },
+
+    {
+      $project: {
+        _id: 0,
+        product: 1,
+        totalSold: 1,
+      },
+    },
+  ]);
+
+  return bestSellers;
+};
 module.exports = {
   createOrder,
   getOrdersByUser,
+  getAllOrders,
   getOrderById,
   updateOrderStatus,
+  getBestSellingProducts,
 };

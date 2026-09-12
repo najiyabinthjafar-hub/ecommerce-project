@@ -9,10 +9,15 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+
 import Profile from "./pages/Profile";
 import PersonalInformation from "./pages/PersonalInformation";
 import Addresses from "./pages/Addresses";
 import ChangePassword from "./pages/ChangePassword";
+
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NewArrivalsPage from "./pages/NewArrivalsPage";
@@ -20,8 +25,6 @@ import BestSellersPage from "./pages/BestSellersPage";
 import Category from "./pages/Category";
 import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 
 // ================= FOOTER PAGES =================
 import Support from "./pages/Support";
@@ -68,7 +71,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* ================= CUSTOMER SIDE ================= */}
 
         <Route path="/" element={<Home />} />
@@ -106,7 +108,7 @@ function App() {
           element={<ChangePassword />}
         />
 
-        <Route path="/wishlist" element={<Wishlist />} />
+        {/* ================= AUTH ================= */}
 
         <Route
           path="/forgot-password"
@@ -117,6 +119,8 @@ function App() {
           path="/reset-password"
           element={<ResetPassword />}
         />
+
+        <Route path="/verify-otp" element={<VerifyOtp />} />
 
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
@@ -136,10 +140,7 @@ function App() {
 
         <Route path="/category" element={<Category />} />
 
-        <Route
-          path="/verify-otp"
-          element={<VerifyOtp />}
-        />
+        <Route path="/wishlist" element={<Wishlist />} />
 
         {/* ================= FOOTER PAGES ================= */}
 
@@ -344,15 +345,16 @@ function App() {
               </AdminLayout>
             }
           />
-              {/* View Coupon */}
-<Route
-  path="/admin/coupons/view/:id"
-  element={
-    <AdminLayout>
-      <ViewCoupon />
-    </AdminLayout>
-  }
-/>
+
+          {/* View Coupon */}
+          <Route
+            path="/admin/coupons/view/:id"
+            element={
+              <AdminLayout>
+                <ViewCoupon />
+              </AdminLayout>
+            }
+          />
 
           {/* Inventory */}
           <Route
@@ -385,7 +387,6 @@ function App() {
           />
 
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
