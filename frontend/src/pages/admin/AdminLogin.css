@@ -1,238 +1,297 @@
+/* =========================================
+   ADMIN LOGIN PAGE
+   All styles are scoped to admin login
+========================================= */
 
-* {
+.admin-login-page,
+.admin-login-page * {
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-}
-
-body {
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  background: #f5f6f8;
-  overflow: hidden;
-}
-
-/* =========================
-   ADMIN LOGIN PAGE
-========================= */
-
 .admin-login-page {
   width: 100%;
-  height: 100vh;
   min-height: 100vh;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 16px;
+
   background: #f5f6f8;
-  overflow: hidden;
+
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
-/* =========================
+/* =========================================
    LOGIN CARD
-========================= */
+========================================= */
 
 .admin-login-card {
   width: 100%;
   max-width: 380px;
+
   padding: 26px 28px;
+
   background: #ffffff;
+
   border: 1px solid #e7e8eb;
   border-radius: 14px;
+
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.055),
     0 2px 6px rgba(0, 0, 0, 0.025);
 }
 
-/* =========================
+/* =========================================
    BRAND
-========================= */
+========================================= */
 
-.login-brand {
+.admin-login-page .login-brand {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.rizo-logo {
+.admin-login-page .rizo-logo {
   width: 42px;
   height: 42px;
+
   display: block;
+
   margin: 0 auto 7px;
+
   object-fit: contain;
 }
 
-.login-brand h1 {
+.admin-login-page .login-brand h1 {
   margin: 0;
+
   color: #111111;
+
   font-size: 24px;
   font-weight: 750;
+
   letter-spacing: 3px;
   line-height: 1.2;
 }
 
-.login-brand p {
+.admin-login-page .login-brand p {
   margin: 4px 0 0;
+
   color: #8a8a8a;
+
   font-size: 11px;
   line-height: 1.4;
 }
 
-/* =========================
+/* =========================================
    LOGIN HEADING
-========================= */
+========================================= */
 
-.login-heading {
+.admin-login-page .login-heading {
   margin-bottom: 17px;
   text-align: center;
 }
 
-.login-heading h2 {
+.admin-login-page .login-heading h2 {
   margin: 0;
+
   color: #171717;
+
   font-size: 19px;
   font-weight: 700;
+
   line-height: 1.3;
 }
 
-.login-heading p {
+.admin-login-page .login-heading p {
   margin: 4px 0 0;
+
   color: #888888;
+
   font-size: 11.5px;
   line-height: 1.45;
 }
-/* =========================
-   FORM
-========================= */
 
-.login-group {
+/* =========================================
+   FORM
+========================================= */
+
+.admin-login-page .login-group {
   margin-bottom: 13px;
 }
 
-.login-group label {
+.admin-login-page .login-group label {
   display: block;
+
   margin-bottom: 6px;
+
   color: #333333;
+
   font-size: 11.5px;
   font-weight: 650;
 }
 
-.login-group input {
+.admin-login-page .login-group input {
   width: 100%;
   height: 40px;
+
   padding: 0 12px;
+
   border: 1px solid #dcdde1;
   border-radius: 7px;
+
   outline: none;
+
   background: #ffffff;
   color: #222222;
+
   font-family: inherit;
   font-size: 12.5px;
+
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
+    box-shadow 0.2s ease;
 }
 
-.login-group input::placeholder {
+.admin-login-page .login-group input::placeholder {
   color: #aaaaaa;
 }
 
-.login-group input:hover {
+.admin-login-page .login-group input:hover {
   border-color: #c9c9c9;
 }
 
-.login-group input:focus {
+.admin-login-page .login-group input:focus {
   border-color: #111111;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(17, 17, 17, 0.06);
 }
 
-/* =========================
-   LOGIN OPTIONS
-========================= */
+/* =========================================
+   ERROR
+========================================= */
 
-.login-options {
+.admin-login-page .login-error {
+  margin: 0 0 12px;
+
+  padding: 9px 10px;
+
+  background: #fff1f1;
+  color: #d32f2f;
+
+  border-radius: 6px;
+
+  font-size: 11px;
+}
+
+/* =========================================
+   LOGIN OPTIONS
+========================================= */
+
+.admin-login-page .login-options {
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   margin: 3px 0 16px;
+
   font-size: 10.5px;
 }
 
-.login-options label {
+.admin-login-page .login-options label {
   display: flex;
+
   align-items: center;
+
   gap: 5px;
+
   margin: 0;
+
   color: #777777;
+
   cursor: pointer;
 }
 
-.login-options input {
+.admin-login-page .login-options input {
   width: 12px;
   height: 12px;
+
   margin: 0;
+
   accent-color: #111111;
+
   cursor: pointer;
 }
 
-.login-options a {
+.admin-login-page .forgot-password {
   color: #333333;
+
   font-weight: 600;
-  text-decoration: none;
+
+  cursor: pointer;
 }
 
-.login-options a:hover {
-  color: #000000;
-  text-decoration: underline;
-}
-
-/* =========================
+/* =========================================
    LOGIN BUTTON
-========================= */
+========================================= */
 
-.admin-login-btn {
+.admin-login-page .admin-login-btn {
   width: 100%;
   height: 40px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border: none;
   border-radius: 7px;
+
   background: #111111;
   color: #ffffff;
+
   font-family: inherit;
+
   font-size: 12.5px;
   font-weight: 650;
+
   cursor: pointer;
+
   transition:
     background 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-.admin-login-btn:hover {
+.admin-login-page .admin-login-btn:hover {
   background: #292929;
+
   transform: translateY(-1px);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.13);
+
+  box-shadow:
+    0 5px 12px
+    rgba(0, 0, 0, 0.13);
 }
 
-.admin-login-btn:active {
-  transform: translateY(0);
+.admin-login-page .admin-login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.admin-login-page .admin-login-btn:disabled:hover {
+  transform: none;
   box-shadow: none;
 }
 
-/* =========================
+/* =========================================
    TABLET
-========================= */
+========================================= */
 
 @media (max-width: 600px) {
+
   .admin-login-page {
     padding: 14px;
   }
@@ -242,106 +301,86 @@ body {
     padding: 24px 23px;
   }
 
-  .login-brand {
+  .admin-login-page .login-brand {
     margin-bottom: 18px;
   }
 
-  .rizo-logo {
+  .admin-login-page .rizo-logo {
     width: 40px;
     height: 40px;
   }
 
-  .login-brand h1 {
+  .admin-login-page .login-brand h1 {
     font-size: 22px;
     letter-spacing: 2.5px;
   }
 
-  .login-heading h2 {
+  .admin-login-page .login-heading h2 {
     font-size: 18px;
   }
 }
 
-/* =========================
+/* =========================================
    MOBILE
-========================= */
+========================================= */
 
 @media (max-width: 480px) {
+
   .admin-login-page {
     padding: 12px;
   }
 
   .admin-login-card {
     max-width: 350px;
+
     padding: 22px 19px;
+
     border-radius: 12px;
   }
 
-  .login-brand {
+  .admin-login-page .login-brand {
     margin-bottom: 17px;
   }
 
-  .rizo-logo {
+  .admin-login-page .rizo-logo {
     width: 38px;
     height: 38px;
   }
 
-  .login-brand h1 {
+  .admin-login-page .login-brand h1 {
     font-size: 21px;
     letter-spacing: 2.3px;
   }
 
-  .login-brand p {
+  .admin-login-page .login-brand p {
     font-size: 10px;
   }
 
-  .login-heading {
+  .admin-login-page .login-heading {
     margin-bottom: 15px;
   }
 
-  .login-heading h2 {
+  .admin-login-page .login-heading h2 {
     font-size: 17px;
   }
 
-  .login-heading p {
+  .admin-login-page .login-heading p {
     font-size: 10.5px;
   }
 
-  .login-group {
+  .admin-login-page .login-group {
     margin-bottom: 12px;
   }
 
-  .login-group input {
+  .admin-login-page .login-group input {
     height: 39px;
   }
 
-  .login-options {
+  .admin-login-page .login-options {
     margin-bottom: 14px;
   }
 
-  .admin-login-btn {
+  .admin-login-page .admin-login-btn {
     height: 39px;
   }
 }
-
-/* =========================
-   SMALL MOBILE
-========================= */
-
-@media (max-width: 360px) {
-  .admin-login-card {
-    padding: 20px 17px;
-  }
-
-  .login-brand {
-    margin-bottom: 15px;
-  }
-
-  .login-heading {
-    margin-bottom: 13px;
-  }
-
-  .login-options {
-    font-size: 10px;
-  }
-}
-

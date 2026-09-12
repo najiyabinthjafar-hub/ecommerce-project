@@ -6,77 +6,105 @@ import ProductCard from "./ProductCard";
 import "./NewArrivals.css";
 
 function NewArrivals() {
-  const [activeFashion, setActiveFashion] =
-    useState("MEN'S FASHION");
+  const [activeFashion, setActiveFashion] = useState("MEN'S FASHION");
 
   const [products, setProducts] = useState([]);
+  const [categoryTree, setCategoryTree] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // ================= FETCH PRODUCTS =================
+  // ================= FETCH CATEGORIES + PRODUCTS =================
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          "http://localhost:5000/api/products?limit=100"
-        );
+        const [categoryResponse, productResponse] = await Promise.all([
+          fetch("http://localhost:5000/api/categories/tree"),
+          fetch("http://localhost:5000/api/products?limit=100"),
+        ]);
 
-        const data = await response.json();
+        const categoryData = await categoryResponse.json();
+        const productData = await productResponse.json();
 
-        if (!response.ok) {
+        if (!categoryResponse.ok) {
           throw new Error(
-            data.message || "Failed to fetch products"
+            categoryData.message || "Failed to fetch categories"
           );
         }
 
-        setProducts(data.products || []);
-      } catch (error) {
-        console.error(
-          "New Arrivals API Error:",
-          error
-        );
+        if (!productResponse.ok) {
+          throw new Error(
+            productData.message || "Failed to fetch products"
+          );
+        }
 
+        setCategoryTree(categoryData.categories || []);
+        setProducts(productData.products || []);
+      } catch (error) {
+        console.error("New Arrivals API Error:", error);
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
-  // ================= CATEGORY FILTER =================
+  // ================= FIND SELECTED PARENT CATEGORY =================
+
+  const selectedCategory = categoryTree.find((category) => {
+    const categoryName = category.name
+      ?.toLowerCase()
+      .replace(/[’']/g, "");
+
+    if (activeFashion === "MEN'S FASHION") {
+      return (
+        categoryName === "mens fashion" ||
+        category.slug === "mens-fashion" ||
+        category.slug === "men-s-fashion"
+      );
+    }
+
+    return (
+      categoryName === "womens fashion" ||
+      category.slug === "womens-fashion" ||
+      category.slug === "women-s-fashion"
+    );
+  });
+
+  // ================= FILTER PRODUCTS =================
 
   const filteredProducts = products
     .filter((product) => {
-      if (!product.category) return false;
-
-      if (typeof product.category === "object") {
-        const categoryName =
-          product.category.name
-            ?.replace(/[’‘]/g, "'")
-            .toUpperCase();
-
-        const selectedCategory =
-          activeFashion
-            .replace(/[’‘]/g, "'")
-            .toUpperCase();
-
-        return categoryName === selectedCategory;
+      // Only active products
+      if (!product.category || product.status !== "active") {
+        return false;
       }
 
-      return false;
+      // Selected category ഇല്ലെങ്കിൽ
+      if (!selectedCategory) {
+        return false;
+      }
+
+      // Product category parent ID
+      const parentId =
+        product.category.parent?._id ||
+        product.category.parent;
+
+      return (
+        String(parentId) === String(selectedCategory._id)
+      );
     })
     .sort(
       (a, b) =>
-        new Date(b.createdAt) -
-        new Date(a.createdAt)
+        new Date(b.createdAt) - new Date(a.createdAt)
     )
     .slice(0, 4);
 
@@ -89,13 +117,10 @@ function NewArrivals() {
       },
     });
 
-    setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "smooth",
-      });
-    }, 100);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -182,14 +207,16 @@ function NewArrivals() {
 
           {/* ================= VIEW MORE ================= */}
 
-          <div className="view-more-wrapper">
-            <button
-              className="view-more-btn"
-              onClick={handleViewMore}
-            >
-              View More
-            </button>
-          </div>
+          {filteredProducts.length > 0 && (
+            <div className="view-more-wrapper">
+              <button
+                className="view-more-btn"
+                onClick={handleViewMore}
+              >
+                View More
+              </button>
+            </div>
+          )}
         </>
       )}
     </section>

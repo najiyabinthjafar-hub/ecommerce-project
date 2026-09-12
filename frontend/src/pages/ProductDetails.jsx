@@ -19,6 +19,8 @@ function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [addingToCart, setAddingToCart] = useState(false);
+
   // ================= FETCH SINGLE PRODUCT =================
 
   useEffect(() => {
@@ -46,6 +48,11 @@ function ProductDetails() {
           setSelectedImage(data.product.images[0]);
         }
 
+        // ആദ്യത്തെ variant default ആയി select ചെയ്യുന്നു
+        if (data.product.variants?.length > 0) {
+          setSelectedSize(data.product.variants[0]);
+        }
+
         setQuantity(1);
       } catch (error) {
         console.error("Product API Error:", error);
@@ -65,7 +72,6 @@ function ProductDetails() {
 
     const fetchRelatedProducts = async () => {
       try {
-        // എല്ലാ products-ഉം fetch ചെയ്യുന്നു
         const response = await fetch(
           "http://localhost:5000/api/products?limit=100"
         );
@@ -80,7 +86,6 @@ function ProductDetails() {
 
         const products = data.products || [];
 
-        // നിലവിലെ product category ID
         const currentCategoryId =
           typeof product.category === "object"
             ? product.category._id
@@ -89,15 +94,16 @@ function ProductDetails() {
         const related = products
           .filter((item) => {
             // നിലവിലെ product ഒഴിവാക്കുക
-            if (item._id === id) return false;
+            if (String(item._id) === String(id)) {
+              return false;
+            }
 
-            // ഓരോ product-ന്റെയും category ID
             const itemCategoryId =
               typeof item.category === "object"
                 ? item.category._id
                 : item.category;
 
-            // SAME CATEGORY മാത്രം
+            // Same category products മാത്രം
             return (
               String(itemCategoryId) ===
               String(currentCategoryId)
@@ -185,63 +191,81 @@ function ProductDetails() {
 
   // ================= ADD TO CART =================
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product.stock === 0) {
       alert(
         "This product is currently out of stock."
       );
+
       return;
     }
 
-    const existingCart =
-      JSON.parse(localStorage.getItem("cart")) ||
-      [];
+    // LOGIN TOKEN
+    const token = localStorage.getItem("token");
 
-    const existingItem = existingCart.find(
-      (item) =>
-        item.id === product._id &&
-        item.size === selectedSize
-    );
+    // User login ചെയ്തിട്ടില്ലെങ്കിൽ
+    if (!token) {
+      alert("Please login to add products to your cart.");
 
-    let updatedCart;
+      navigate("/login");
 
-    if (existingItem) {
-      updatedCart = existingCart.map((item) =>
-        item.id === product._id &&
-        item.size === selectedSize
-          ? {
-              ...item,
-              quantity:
-                item.quantity + quantity,
-            }
-          : item
-      );
-    } else {
-      updatedCart = [
-        ...existingCart,
-        {
-          id: product._id,
-          name: product.name,
-          price: productPrice,
-          image: selectedImage,
-          size: selectedSize,
-          quantity,
-        },
-      ];
+      return;
     }
 
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(updatedCart)
-    );
+    try {
+      setAddingToCart(true);
 
-    navigate("/cart");
+      const response = await fetch(
+        "http://localhost:5000/api/cart/add",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            productId: product._id,
+            quantity: quantity,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to add product to cart"
+        );
+      }
+
+      console.log("Cart Response:", data);
+
+      alert("Product added to cart successfully!");
+
+      navigate("/cart");
+    } catch (error) {
+      console.error("Add To Cart Error:", error);
+
+      alert(
+        error.message ||
+          "Something went wrong while adding the product to cart."
+      );
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   // ================= BUY NOW =================
 
-  const handleBuyNow = () => {
-    handleAddToCart();
+  const handleBuyNow = async () => {
+    if (product.stock === 0) {
+      return;
+    }
+
+    await handleAddToCart();
   };
 
   return (
@@ -254,6 +278,8 @@ function ProductDetails() {
           {/* ================= LEFT SIDE ================= */}
 
           <div className="product-gallery">
+
+            {/* MAIN IMAGE */}
 
             <div className="product-main-image">
               {selectedImage ? (
@@ -270,7 +296,6 @@ function ProductDetails() {
 
             {product.images?.length > 0 && (
               <div className="product-thumbnails">
-
                 {product.images.map(
                   (image, index) => (
                     <button
@@ -293,10 +318,8 @@ function ProductDetails() {
                     </button>
                   )
                 )}
-
               </div>
             )}
-
           </div>
 
           {/* ================= RIGHT SIDE ================= */}
@@ -304,6 +327,8 @@ function ProductDetails() {
           <div className="product-details-info">
 
             <h1>{product.name}</h1>
+
+            {/* PRICE */}
 
             <div className="product-price">
               ₹{" "}
@@ -328,7 +353,6 @@ function ProductDetails() {
                 </div>
 
                 <div className="size-options">
-
                   {product.variants.map((size) => (
                     <button
                       key={size}
@@ -344,7 +368,6 @@ function ProductDetails() {
                       {size}
                     </button>
                   ))}
-
                 </div>
 
               </div>
@@ -382,7 +405,6 @@ function ProductDetails() {
                   </button>
 
                 </div>
-
               </div>
             )}
 
@@ -393,9 +415,14 @@ function ProductDetails() {
               <button
                 className="add-cart-btn"
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={
+                  product.stock === 0 ||
+                  addingToCart
+                }
               >
-                {product.stock === 0
+                {addingToCart
+                  ? "ADDING..."
+                  : product.stock === 0
                   ? "OUT OF STOCK"
                   : "ADD TO CART"}
               </button>
@@ -403,7 +430,10 @@ function ProductDetails() {
               <button
                 className="buy-now-btn"
                 onClick={handleBuyNow}
-                disabled={product.stock === 0}
+                disabled={
+                  product.stock === 0 ||
+                  addingToCart
+                }
               >
                 BUY IT NOW
               </button>
@@ -417,7 +447,6 @@ function ProductDetails() {
             </p>
 
           </div>
-
         </div>
 
         {/* ================= RELATED PRODUCTS ================= */}
@@ -430,6 +459,7 @@ function ProductDetails() {
             <div className="related-products-grid">
 
               {relatedProducts.map((item) => {
+
                 const relatedPrice =
                   item.salePrice !== null &&
                   item.salePrice !== undefined

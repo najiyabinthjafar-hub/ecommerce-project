@@ -1,192 +1,287 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
 import "./Orders.css";
+import AdminSidebar from "../../components/admin/AdminSidebar";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api";
 
 function Orders() {
   const navigate = useNavigate();
 
-  const orders = [
-    {
-      id: "#ORD-1001",
-      customer: "Rahul Kumar",
-      date: "02 Sep 2026",
-      items: 3,
-      total: 2450,
-      status: "Delivered",
-    },
-    {
-      id: "#ORD-1002",
-      customer: "Anjali S",
-      date: "02 Sep 2026",
-      items: 2,
-      total: 1299,
-      status: "Processing",
-    },
-    {
-      id: "#ORD-1003",
-      customer: "Mohammed Shafi",
-      date: "01 Sep 2026",
-      items: 1,
-      total: 899,
-      status: "Shipped",
-    },
-    {
-      id: "#ORD-1004",
-      customer: "Fathima N",
-      date: "01 Sep 2026",
-      items: 4,
-      total: 3490,
-      status: "Pending",
-    },
-    {
-      id: "#ORD-1005",
-      customer: "Arun Raj",
-      date: "31 Aug 2026",
-      items: 2,
-      total: 1750,
-      status: "Cancelled",
-    },
-  ];
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await axios.get(
+          `${API_URL}/orders/all`
+        );
+
+        setOrders(response.data?.orders || []);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to load orders."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
+
+    return (
+      status.charAt(0).toUpperCase() +
+      status.slice(1).toLowerCase()
+    );
+  };
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const customerName =
+        order.user?.name ||
+        order.user?.fullName ||
+        order.user?.email ||
+        "";
+
+      const orderId = order._id || "";
+
+      const matchesSearch =
+        orderId
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        customerName
+          .toLowerCase()
+          .includes(search.toLowerCase());
+
+      const orderStatus = formatStatus(
+        order.orderStatus
+      );
+
+      const matchesStatus =
+        statusFilter === "All Status" ||
+        orderStatus === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, search, statusFilter]);
+
+  const pendingOrders = orders.filter(
+    (order) =>
+      String(order.orderStatus).toLowerCase() ===
+      "pending"
+  ).length;
+
+  const processingOrders = orders.filter(
+    (order) =>
+      String(order.orderStatus).toLowerCase() ===
+        "processing" ||
+      String(order.orderStatus).toLowerCase() ===
+        "confirmed"
+  ).length;
+
+  const deliveredOrders = orders.filter(
+    (order) =>
+      String(order.orderStatus).toLowerCase() ===
+      "delivered"
+  ).length;
+
+  const cancelledOrders = orders.filter(
+    (order) =>
+      String(order.orderStatus).toLowerCase() ===
+      "cancelled"
+  ).length;
 
   return (
-    <div className="orders-page">
+    <div className="admin-layout">
+      <AdminSidebar />
 
-      {/* Page Header */}
-      <div className="orders-header">
-        <div>
-          <h1>Orders</h1>
-          <p>Manage and track customer orders</p>
-        </div>
-
-        <div className="orders-summary">
-          <div className="summary-item">
-            <span>Total Orders</span>
-            <strong>128</strong>
-          </div>
-
-          <div className="summary-item">
-            <span>Pending</span>
-            <strong>12</strong>
+      <main className="orders-content">
+        <div className="orders-header">
+          <div>
+            <h1>Orders</h1>
+            <p>Manage and track customer orders</p>
           </div>
         </div>
-      </div>
 
-      {/* Filter Bar */}
-      <div className="orders-toolbar">
+        <div className="order-cards">
+          <div className="order-card">
+            <span>Pending Orders</span>
+            <h2>{pendingOrders}</h2>
+          </div>
 
-        <div className="orders-search">
-          <i className="bi bi-search"></i>
+          <div className="order-card">
+            <span>Processing</span>
+            <h2>{processingOrders}</h2>
+          </div>
+
+          <div className="order-card">
+            <span>Delivered</span>
+            <h2>{deliveredOrders}</h2>
+          </div>
+
+          <div className="order-card">
+            <span>Cancelled</span>
+            <h2>{cancelledOrders}</h2>
+          </div>
+        </div>
+
+        <div className="orders-tools">
           <input
             type="text"
-            placeholder="Search orders or customers..."
+            placeholder="Search by order ID or customer..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
           />
-        </div>
 
-        <div className="orders-filters">
-          <select defaultValue="All">
-            <option value="All">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Processing">Processing</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-
-          <select defaultValue="Newest">
-            <option value="Newest">Newest First</option>
-            <option value="Oldest">Oldest First</option>
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value)
+            }
+          >
+            <option>All Status</option>
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Confirmed</option>
+            <option>Delivered</option>
+            <option>Cancelled</option>
           </select>
         </div>
 
-      </div>
+        {error && (
+          <p
+            style={{
+              color: "red",
+              margin: "20px 0",
+            }}
+          >
+            {error}
+          </p>
+        )}
 
-      {/* Orders Card */}
-      <div className="orders-card">
-
-        <div className="orders-card-header">
-          <div>
-            <h2>All Orders</h2>
-            <p>View and manage recent customer orders</p>
-          </div>
-
-          <span className="order-count">
-            {orders.length} Orders
-          </span>
-        </div>
-
-        <div className="orders-table-wrapper">
-          <table className="orders-table">
-
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Date</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-
-                  <td>
-                    <strong className="order-id">
-                      {order.id}
-                    </strong>
-                  </td>
-
-                  <td>
-                    <div className="customer-cell">
-                      <div className="customer-avatar">
-                        {order.customer.charAt(0)}
-                      </div>
-
-                      <span>{order.customer}</span>
-                    </div>
-                  </td>
-
-                  <td>{order.date}</td>
-
-                  <td>{order.items}</td>
-
-                  <td>
-                    <strong>₹{order.total.toLocaleString()}</strong>
-                  </td>
-
-                  <td>
-                    <span
-                      className={`order-status ${order.status
-                        .toLowerCase()
-                        .replace(" ", "-")}`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button
-                      className="view-order-btn"
-                      onClick={() =>
-                        navigate(`/admin/orders/${order.id.replace("#", "")}`)
-                      }
-                    >
-                      View
-                    </button>
-                  </td>
-
+        <div className="orders-table-container">
+          {loading ? (
+            <p style={{ padding: "20px" }}>
+              Loading orders...
+            </p>
+          ) : filteredOrders.length === 0 ? (
+            <p style={{ padding: "20px" }}>
+              No orders found.
+            </p>
+          ) : (
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
 
-          </table>
+              <tbody>
+                {filteredOrders.map((order) => {
+                  const customerName =
+                    order.user?.name ||
+                    order.user?.fullName ||
+                    order.user?.email ||
+                    "Unknown Customer";
+
+                  const orderDate = order.createdAt
+                    ? new Date(
+                        order.createdAt
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "-";
+
+                  const itemCount =
+                    order.items?.reduce(
+                      (total, item) =>
+                        total +
+                        Number(item.quantity || 0),
+                      0
+                    ) || 0;
+
+                  const total =
+                    order.finalAmount ??
+                    order.totalAmount ??
+                    order.total ??
+                    0;
+
+                  const status = formatStatus(
+                    order.orderStatus
+                  );
+
+                  return (
+                    <tr key={order._id}>
+                      <td className="order-id">
+                        #{order._id?.slice(-6)}
+                      </td>
+
+                      <td>{customerName}</td>
+
+                      <td>{orderDate}</td>
+
+                      <td>{itemCount}</td>
+
+                      <td className="order-total">
+                        ₹
+                        {Number(total).toLocaleString(
+                          "en-IN"
+                        )}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`status ${status.toLowerCase()}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+
+                      <td>
+                        <button
+                          className="view-btn"
+                          onClick={() =>
+                            navigate(
+                              `/admin/orders/${order._id}`
+                            )
+                          }
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
-
-      </div>
-
+      </main>
     </div>
   );
 }

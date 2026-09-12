@@ -1,11 +1,13 @@
 const Product = require("../models/Product");
 
-// CREATE PRODUCT
+// ================= CREATE PRODUCT =================
+
 const createProduct = async (productData) => {
   return await Product.create(productData);
 };
 
-// GET ALL PRODUCTS / SEARCH / FILTER / SORT / PAGINATION
+// ================= GET ALL PRODUCTS / SEARCH / FILTER / SORT / PAGINATION =================
+
 const getAllProducts = async ({
   search,
   category,
@@ -18,7 +20,8 @@ const getAllProducts = async ({
 }) => {
   const query = {};
 
-  // Search filter
+  // ================= SEARCH FILTER =================
+
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -27,12 +30,14 @@ const getAllProducts = async ({
     ];
   }
 
-  // Category filter
+  // ================= CATEGORY FILTER =================
+
   if (category) {
     query.category = category;
   }
 
-  // Price filter
+  // ================= PRICE FILTER =================
+
   if (minPrice !== undefined || maxPrice !== undefined) {
     query.regularPrice = {};
 
@@ -45,7 +50,8 @@ const getAllProducts = async ({
     }
   }
 
-  // Availability filter
+  // ================= AVAILABILITY FILTER =================
+
   if (availability === "in-stock") {
     query.stock = { $gt: 0 };
   }
@@ -54,7 +60,8 @@ const getAllProducts = async ({
     query.stock = 0;
   }
 
-  // Sorting
+  // ================= SORTING =================
+
   let sortOption = {};
 
   if (sort === "price-low") {
@@ -69,23 +76,27 @@ const getAllProducts = async ({
     sortOption.createdAt = -1;
   }
 
-  // Pagination
+  // ================= PAGINATION =================
+
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
 
   const skip = (pageNumber - 1) * limitNumber;
 
-  // Get products for current page
   const products = await Product.find(query)
-    .populate("category")
+    .populate({
+      path: "category",
+      populate: {
+        path: "parent",
+        select: "name slug",
+      },
+    })
     .sort(sortOption)
     .skip(skip)
     .limit(limitNumber);
 
-  // Count total matching products
   const totalProducts = await Product.countDocuments(query);
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalProducts / limitNumber);
 
   return {
@@ -99,11 +110,18 @@ const getAllProducts = async ({
   };
 };
 
-// GET ACTIVE PRODUCTS
+// ================= GET ACTIVE PRODUCTS =================
+
 const getActiveProducts = async () => {
   return await Product.find({
     status: "active",
-  }).populate("category");
+  }).populate({
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 };
 
 // GET BEST SELLER PRODUCTS
@@ -115,28 +133,41 @@ const getBestSellerProducts = async () => {
 };
 
 // GET PRODUCT BY ID
+// ================= GET PRODUCT BY ID =================
+
 const getProductById = async (id) => {
-  return await Product.findById(id).populate("category");
+  return await Product.findById(id).populate({
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 };
 
-// UPDATE PRODUCT
+// ================= UPDATE PRODUCT =================
+
 const updateProduct = async (id, productData) => {
-  return await Product.findByIdAndUpdate(
-    id,
-    productData,
-    {
-      returnDocument: "after",
-      runValidators: true,
-    }
-  ).populate("category");
+  return await Product.findByIdAndUpdate(id, productData, {
+    returnDocument: "after",
+    runValidators: true,
+  }).populate({
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 };
 
-// DELETE PRODUCT
+// ================= DELETE PRODUCT =================
+
 const deleteProduct = async (id) => {
   return await Product.findByIdAndDelete(id);
 };
 
-// UPDATE PRODUCT STOCK
+// ================= UPDATE PRODUCT STOCK =================
+
 const updateProductStock = async (id, stock) => {
   return await Product.findByIdAndUpdate(
     id,
@@ -145,10 +176,17 @@ const updateProductStock = async (id, stock) => {
       returnDocument: "after",
       runValidators: true,
     }
-  ).populate("category");
+  ).populate({
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 };
 
-// REDUCE PRODUCT STOCK
+// ================= REDUCE PRODUCT STOCK =================
+
 const reduceProductStock = async (id, quantity) => {
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new Error("Quantity must be a positive integer");

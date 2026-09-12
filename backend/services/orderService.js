@@ -2,12 +2,23 @@ const Order = require("../models/Order");
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
+
   return order;
 };
 
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
+    .sort({ createdAt: -1 });
+
+  return orders;
+};
+
+// Get all customers' orders
+const getAllOrders = async () => {
+  const orders = await Order.find()
+    .populate("items.product")
+    .populate("user", "-password")
     .sort({ createdAt: -1 });
 
   return orders;
@@ -21,7 +32,10 @@ const getOrderById = async (orderId) => {
   return order;
 };
 
-const updateOrderStatus = async (orderId, orderStatus) => {
+const updateOrderStatus = async (
+  orderId,
+  orderStatus
+) => {
   const order = await Order.findByIdAndUpdate(
     orderId,
     { orderStatus },
@@ -95,6 +109,7 @@ const getBestSellingProducts = async () => {
 module.exports = {
   createOrder,
   getOrdersByUser,
+  getAllOrders,
   getOrderById,
   updateOrderStatus,
   getBestSellingProducts,

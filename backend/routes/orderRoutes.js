@@ -18,6 +18,10 @@ router.get("/best-sellers", orderController.getBestSellingProducts);
 
 router.get("/", orderController.getOrders);
 
+// ALL ORDERS
+router.get("/all", orderController.getAllOrders);
+
+// SINGLE ORDER
 router.get("/:id", orderController.getOrderById);
 
 router.put("/:id/status", orderController.updateOrderStatus);
