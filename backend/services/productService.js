@@ -124,6 +124,15 @@ const getActiveProducts = async () => {
   });
 };
 
+// GET BEST SELLER PRODUCTS
+const getBestSellerProducts = async () => {
+  return await Product.find({
+    isBestSeller: true,
+    status: "active",
+  }).populate("category");
+};
+
+// GET PRODUCT BY ID
 // ================= GET PRODUCT BY ID =================
 
 const getProductById = async (id) => {
@@ -204,6 +213,7 @@ module.exports = {
   createProduct,
   getAllProducts,
   getActiveProducts,
+  getBestSellerProducts,
   getProductById,
   updateProduct,
   deleteProduct,
