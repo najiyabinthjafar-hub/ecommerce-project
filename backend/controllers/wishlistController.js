@@ -2,6 +2,8 @@ const wishlistService = require("../services/wishlistService");
 
 const getWishlist = async (req, res) => {
   try {
+    console.log("WISHLIST REQ USER:", req.user);
+
     const userId = req.user.id;
 
     const wishlist = await wishlistService.getWishlist(userId);
@@ -14,6 +16,8 @@ const getWishlist = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Get wishlist error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -23,6 +27,8 @@ const getWishlist = async (req, res) => {
 
 const addToWishlist = async (req, res) => {
   try {
+    console.log("WISHLIST REQ USER:", req.user);
+
     const userId = req.user.id;
     const { productId } = req.body;
 
@@ -44,6 +50,8 @@ const addToWishlist = async (req, res) => {
       wishlist,
     });
   } catch (error) {
+    console.error("Add wishlist error:", error);
+
     res.status(400).json({
       success: false,
       message: error.message,
@@ -53,6 +61,8 @@ const addToWishlist = async (req, res) => {
 
 const removeFromWishlist = async (req, res) => {
   try {
+    console.log("WISHLIST REQ USER:", req.user);
+
     const userId = req.user.id;
     const { productId } = req.params;
 
@@ -67,6 +77,8 @@ const removeFromWishlist = async (req, res) => {
       wishlist,
     });
   } catch (error) {
+    console.error("Remove wishlist error:", error);
+
     res.status(400).json({
       success: false,
       message: error.message,
@@ -76,6 +88,8 @@ const removeFromWishlist = async (req, res) => {
 
 const clearWishlist = async (req, res) => {
   try {
+    console.log("WISHLIST REQ USER:", req.user);
+
     const userId = req.user.id;
 
     const wishlist = await wishlistService.clearWishlist(userId);
@@ -86,6 +100,8 @@ const clearWishlist = async (req, res) => {
       wishlist,
     });
   } catch (error) {
+    console.error("Clear wishlist error:", error);
+
     res.status(400).json({
       success: false,
       message: error.message,

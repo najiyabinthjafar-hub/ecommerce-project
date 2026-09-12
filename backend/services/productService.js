@@ -5,7 +5,7 @@ const createProduct = async (productData) => {
   return await Product.create(productData);
 };
 
-// GET ALL PRODUCTS / SEARCH / FILTER
+// GET ALL PRODUCTS / SEARCH / FILTER / SORT / PAGINATION
 const getAllProducts = async ({
   search,
   category,
@@ -75,14 +75,17 @@ const getAllProducts = async ({
 
   const skip = (pageNumber - 1) * limitNumber;
 
+  // Get products for current page
   const products = await Product.find(query)
     .populate("category")
     .sort(sortOption)
     .skip(skip)
     .limit(limitNumber);
 
+  // Count total matching products
   const totalProducts = await Product.countDocuments(query);
 
+  // Calculate total pages
   const totalPages = Math.ceil(totalProducts / limitNumber);
 
   return {

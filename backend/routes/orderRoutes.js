@@ -1,0 +1,25 @@
+const express = require("express");
+
+const orderController = require("../controllers/orderController");
+
+const router = express.Router();
+
+router.get("/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Order routes working",
+  });
+});
+
+router.post("/", orderController.createOrder);
+
+// Get best selling products
+router.get("/best-sellers", orderController.getBestSellingProducts);
+
+router.get("/", orderController.getOrders);
+
+router.get("/:id", orderController.getOrderById);
+
+router.put("/:id/status", orderController.updateOrderStatus);
+
+module.exports = router;

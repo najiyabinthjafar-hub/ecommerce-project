@@ -1,52 +1,65 @@
-const express = require("express");
-const cors = require("cors");
 require("dotenv").config();
 
+const express = require("express");
+const cors = require("cors");
 
 require("./models/Category");
 require("./models/Product");
 
 const connectDB = require("./config/db");
 
-const cartRoutes = require("./routes/cartRoutes");
-const productRoutes = require("./routes/productRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const addressRoutes = require("./routes/addressRoutes");
+const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
+const cartRoutes = require("./routes/cartRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 const adminTestRoutes = require("./routes/adminTestRoutes");
 
 const app = express();
 
-// Database
+// DATABASE
 connectDB();
 
-// Middleware
-app.use(cors());
+// CORS
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// MIDDLEWARE
 app.use(express.json());
 
-// Health check
+// TEST ROUTE
 app.get("/", (req, res) => {
   res.json({
-    message: "E-Commerce Backend is running",
+    success: true,
+    message: "E-Commerce API is running",
   });
 });
 
-// Routes
+// API ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/addresses", addressRoutes);
-app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
+app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminTestRoutes);
 
+// SERVER
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
