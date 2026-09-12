@@ -41,7 +41,7 @@ const registerUser = async ({
     phone,
     password: hashedPassword,
     otp,
-    otpExpiresAt: new Date(Date.now() + 1 * 60 * 1000),
+    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
     otpAttempts: 0,
   });
 
@@ -113,9 +113,11 @@ const resendOtp = async (email) => {
   const otp = generateOtp();
 
   user.otp = otp;
+
   user.otpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
+
   user.otpAttempts = 0;
 
   await user.save();
@@ -187,7 +189,6 @@ const forgotPassword = async (email) => {
 
   user.resetOtp = otp;
 
-  // IMPORTANT FIX
   user.resetOtpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
@@ -233,7 +234,6 @@ const resetPassword = async ({
 
   user.password = hashedPassword;
 
-  // Clear reset OTP after successful password reset
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
 

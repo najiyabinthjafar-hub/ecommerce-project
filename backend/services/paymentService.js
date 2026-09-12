@@ -1,10 +1,15 @@
 const Payment = require("../models/Payment");
 const Order = require("../models/Order");
 
+// ================= CREATE PAYMENT =================
+
 const createPayment = async (paymentData) => {
   const payment = await Payment.create(paymentData);
+
   return payment;
 };
+
+// ================= GET PAYMENTS BY USER =================
 
 const getPaymentsByUser = async (userId) => {
   const payments = await Payment.find({ user: userId })
@@ -14,6 +19,8 @@ const getPaymentsByUser = async (userId) => {
   return payments;
 };
 
+// ================= GET PAYMENT BY ID =================
+
 const getPaymentById = async (paymentId) => {
   const payment = await Payment.findById(paymentId)
     .populate("order")
@@ -21,6 +28,8 @@ const getPaymentById = async (paymentId) => {
 
   return payment;
 };
+
+// ================= UPDATE PAYMENT STATUS =================
 
 const updatePaymentStatus = async (
   paymentId,
