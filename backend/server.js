@@ -3,6 +3,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+require("./models/Category");
+require("./models/Product");
+
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -16,17 +19,14 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const adminTestRoutes = require("./routes/adminTestRoutes");
 
 const app = express();
 
-// ===============================
 // DATABASE
-// ===============================
 connectDB();
 
-// ===============================
 // CORS
-// ===============================
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -34,14 +34,10 @@ app.use(
   })
 );
 
-// ===============================
 // MIDDLEWARE
-// ===============================
 app.use(express.json());
 
-// ===============================
 // TEST ROUTE
-// ===============================
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -49,35 +45,21 @@ app.get("/", (req, res) => {
   });
 });
 
-// ===============================
 // API ROUTES
-// ===============================
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/users", userRoutes);
-
 app.use("/api/addresses", addressRoutes);
-
 app.use("/api/products", productRoutes);
-
 app.use("/api/categories", categoryRoutes);
-
 app.use("/api/banners", bannerRoutes);
-
 app.use("/api/cart", cartRoutes);
-
 app.use("/api/wishlist", wishlistRoutes);
-
 app.use("/api/coupons", couponRoutes);
-
 app.use("/api/orders", orderRoutes);
-
 app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminTestRoutes);
 
-// ===============================
 // SERVER
-// ===============================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

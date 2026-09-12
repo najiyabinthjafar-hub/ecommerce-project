@@ -1,152 +1,209 @@
-
-import AdminSidebar from "../../components/admin/AdminSidebar";
+import React, { useState } from "react";
 import "./Inventory.css";
 
 function Inventory() {
+  const [search, setSearch] = useState("");
+
   const inventory = [
     {
       id: 1,
       product: "Classic T-Shirt",
-      sku: "TSH-001",
+      category: "Men",
       stock: 45,
+      price: "₹899",
       status: "In Stock",
     },
     {
       id: 2,
-      product: "Casual Shirt",
-      sku: "SHT-002",
-      stock: 18,
+      product: "Denim Jacket",
+      category: "Women",
+      stock: 8,
+      price: "₹1,999",
       status: "Low Stock",
     },
     {
       id: 3,
-      product: "Denim Jeans",
-      sku: "JNS-003",
+      product: "Running Shoes",
+      category: "Footwear",
       stock: 0,
+      price: "₹2,499",
       status: "Out of Stock",
     },
     {
       id: 4,
-      product: "Cotton Kurti",
-      sku: "KRT-004",
-      stock: 32,
+      product: "Cotton Hoodie",
+      category: "Men",
+      stock: 25,
+      price: "₹1,299",
+      status: "In Stock",
+    },
+    {
+      id: 5,
+      product: "Handbag",
+      category: "Accessories",
+      stock: 12,
+      price: "₹1,599",
       status: "In Stock",
     },
   ];
 
+  const filteredInventory = inventory.filter((item) =>
+    item.product.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="inventory-layout">
-      <AdminSidebar />
+    <div className="inventory-page">
 
-      <main className="inventory-main">
-        <div className="inventory-content">
-
-          <div className="inventory-header">
-            <div>
-              <h1>Inventory</h1>
-              <p>Manage your product stock</p>
-            </div>
-          </div>
-
-          <div className="inventory-stats">
-
-            <div className="inventory-stat-card">
-              <span>Total Products</span>
-              <strong>250</strong>
-            </div>
-
-            <div className="inventory-stat-card">
-              <span>In Stock</span>
-              <strong>218</strong>
-            </div>
-
-            <div className="inventory-stat-card">
-              <span>Low Stock</span>
-              <strong>20</strong>
-            </div>
-
-            <div className="inventory-stat-card">
-              <span>Out of Stock</span>
-              <strong>12</strong>
-            </div>
-
-          </div>
-
-          <div className="inventory-card">
-
-            <div className="inventory-card-header">
-              <div>
-                <h2>Stock Overview</h2>
-                <p>View and manage product inventory</p>
-              </div>
-
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="inventory-search"
-              />
-            </div>
-
-            <div className="inventory-table-container">
-              <table className="inventory-table">
-
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Product</th>
-                    <th>SKU</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {inventory.map((item, index) => (
-                    <tr key={item.id}>
-
-                      <td>{index + 1}</td>
-
-                      <td className="inventory-product">
-                        {item.product}
-                      </td>
-
-                      <td>{item.sku}</td>
-
-                      <td className="inventory-stock">
-                        {item.stock}
-                      </td>
-
-                      <td>
-                        <span
-                          className={`inventory-status ${item.status
-                            .toLowerCase()
-                            .replaceAll(" ", "-")}`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        <button className="update-stock-btn">
-                          Update
-                        </button>
-                      </td>
-
-                    </tr>
-                  ))}
-                </tbody>
-
-              </table>
-            </div>
-
-          </div>
-
+      {/* Page Header */}
+      <div className="inventory-header">
+        <div>
+          <h1>Inventory</h1>
+          <p>Monitor and manage your product stock</p>
         </div>
-      </main>
+
+        <button className="inventory-btn">
+          + Update Stock
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="inventory-stats">
+
+        <div className="inventory-stat-card">
+          <div className="inventory-stat-icon products-icon">
+            <i className="bi bi-box-seam"></i>
+          </div>
+
+          <div>
+            <span>Total Products</span>
+            <h2>120</h2>
+          </div>
+        </div>
+
+        <div className="inventory-stat-card">
+          <div className="inventory-stat-icon stock-icon">
+            <i className="bi bi-check-circle"></i>
+          </div>
+
+          <div>
+            <span>In Stock</span>
+            <h2>96</h2>
+          </div>
+        </div>
+
+        <div className="inventory-stat-card">
+          <div className="inventory-stat-icon low-icon">
+            <i className="bi bi-exclamation-circle"></i>
+          </div>
+
+          <div>
+            <span>Low Stock</span>
+            <h2>18</h2>
+          </div>
+        </div>
+
+        <div className="inventory-stat-card">
+          <div className="inventory-stat-icon out-icon">
+            <i className="bi bi-x-circle"></i>
+          </div>
+
+          <div>
+            <span>Out of Stock</span>
+            <h2>6</h2>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Inventory Table */}
+      <div className="inventory-card">
+
+        <div className="inventory-card-header">
+          <div>
+            <h2>Stock Overview</h2>
+            <p>Current stock information of all products</p>
+          </div>
+
+          <div className="inventory-search">
+            <i className="bi bi-search"></i>
+
+            <input
+              type="text"
+              placeholder="Search product..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="inventory-table-wrapper">
+          <table className="inventory-table">
+
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredInventory.map((item) => (
+                <tr key={item.id}>
+
+                  <td>
+                    <div className="inventory-product">
+                      <div className="product-placeholder">
+                        <i className="bi bi-box"></i>
+                      </div>
+
+                      <strong>{item.product}</strong>
+                    </div>
+                  </td>
+
+                  <td>{item.category}</td>
+
+                  <td>{item.price}</td>
+
+                  <td>
+                    <strong>{item.stock}</strong>
+                  </td>
+
+                  <td>
+                    <span
+                      className={`inventory-status ${
+                        item.status === "In Stock"
+                          ? "in-stock"
+                          : item.status === "Low Stock"
+                          ? "low-stock"
+                          : "out-stock"
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button className="inventory-edit-btn">
+                      <i className="bi bi-pencil"></i>
+                      Edit
+                    </button>
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
+        </div>
+
+      </div>
+
     </div>
   );
 }
 
 export default Inventory;
-

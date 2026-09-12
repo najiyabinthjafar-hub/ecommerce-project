@@ -5,13 +5,16 @@ const createProduct = async (productData) => {
   return await Product.create(productData);
 };
 
-// GET ALL PRODUCTS / SEARCH / FILTER
+// GET ALL PRODUCTS / SEARCH / FILTER / SORT / PAGINATION
 const getAllProducts = async ({
   search,
   category,
   minPrice,
   maxPrice,
   availability,
+  sort,
+  page,
+  limit,
 }) => {
   const query = {};
 
@@ -51,7 +54,56 @@ const getAllProducts = async ({
     query.stock = 0;
   }
 
-  return await Product.find(query).populate("category");
+  // Sorting
+  let sortOption = {};
+
+  if (sort === "price-low") {
+    sortOption.regularPrice = 1;
+  }
+
+  if (sort === "price-high") {
+    sortOption.regularPrice = -1;
+  }
+
+  if (sort === "newest") {
+    sortOption.createdAt = -1;
+  }
+
+  // Pagination
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // Get products for current page
+  const products = await Product.find(query)
+    .populate("category")
+    .sort(sortOption)
+    .skip(skip)
+    .limit(limitNumber);
+
+  // Count total matching products
+  const totalProducts = await Product.countDocuments(query);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalProducts / limitNumber);
+
+  return {
+    products,
+    pagination: {
+      currentPage: pageNumber,
+      limit: limitNumber,
+      totalProducts,
+      totalPages,
+    },
+  };
+};
+
+// GET ACTIVE PRODUCTS
+const getActiveProducts = async () => {
+  return await Product.find({
+    status: "active",
+  }).populate("category");
 };
 
 // GET PRODUCT BY ID
@@ -65,7 +117,7 @@ const updateProduct = async (id, productData) => {
     id,
     productData,
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   ).populate("category");
@@ -82,17 +134,42 @@ const updateProductStock = async (id, stock) => {
     id,
     { stock },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   ).populate("category");
 };
 
+// REDUCE PRODUCT STOCK
+const reduceProductStock = async (id, quantity) => {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new Error("Quantity must be a positive integer");
+  }
+
+  const product = await Product.findOneAndUpdate(
+    {
+      _id: id,
+      stock: { $gte: quantity },
+    },
+    {
+      $inc: { stock: -quantity },
+    },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    }
+  );
+
+  return product;
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
+  getActiveProducts,
   getProductById,
   updateProduct,
   deleteProduct,
   updateProductStock,
+  reduceProductStock,
 };

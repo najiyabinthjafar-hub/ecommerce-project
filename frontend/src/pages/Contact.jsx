@@ -1,11 +1,71 @@
+import { useState } from "react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Contact.css";
 
 function Contact() {
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    comment: "",
+  });
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Message sent successfully!");
+
+    setMessage("");
+    setError("");
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5000/api/contact",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to send message"
+        );
+      }
+
+      setMessage("Message sent successfully! Մենք will contact you soon.");
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        comment: "",
+      });
+
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -14,38 +74,73 @@ function Contact() {
 
       <main className="contact-page">
         <section className="contact-section">
+
           <h1>Contact</h1>
 
-          <form className="contact-form" onSubmit={handleSubmit}>
+          {message && (
+            <p className="contact-success">
+              {message}
+            </p>
+          )}
+
+          {error && (
+            <p className="contact-error">
+              {error}
+            </p>
+          )}
+
+          <form
+            className="contact-form"
+            onSubmit={handleSubmit}
+          >
+
             <div className="contact-row">
+
               <input
                 type="text"
                 placeholder="NAME"
                 name="name"
+                value={formData.name}
+                onChange={handleChange}
               />
 
               <input
                 type="email"
                 placeholder="EMAIL *"
                 name="email"
+                value={formData.email}
+                onChange={handleChange}
                 required
               />
+
             </div>
 
             <input
               type="tel"
               placeholder="PHONE NUMBER"
               name="phone"
+              value={formData.phone}
+              onChange={handleChange}
             />
 
             <textarea
               placeholder="COMMENT"
               name="comment"
               rows="6"
-            ></textarea>
+              value={formData.comment}
+              onChange={handleChange}
+              required
+            />
 
-            <button type="submit">SEND</button>
+            <button
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "SENDING..." : "SEND"}
+            </button>
+
           </form>
+
         </section>
       </main>
 

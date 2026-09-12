@@ -1,39 +1,406 @@
+/* ============================
+   HERO
+============================ */
+
 .hero {
   position: relative;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  background: #000;
+  height: 590px;
+
+  background: #080c1b;
   overflow: hidden;
 }
 
-.rizo-banner {
-  display: block;
-  width: 100%;
-  height: auto;
+
+/* ============================
+   LOGO
+============================ */
+
+.hero-logo {
+  position: absolute;
+  top: 20px;
+  left: 28px;
+
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+
+  z-index: 30;
 }
 
-.hero-collection-link {
+
+/* ============================
+   BACKGROUND CIRCLE
+   Circle clearly visible
+============================ */
+
+.hero-circle {
   position: absolute;
+
+  width: 500px;
+  height: 500px;
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+
   left: 50%;
-  top: 72%;
+  top: 48%;
+
+  transform: translate(-50%, -50%);
+
+  z-index: 1;
+  pointer-events: none;
+}
+
+
+/* ============================
+   MIDDLE CONNECTING LINE
+
+   Images-ന്റെ centreil കാണുന്ന
+   horizontal line
+============================ */
+
+.middle-line {
+  position: absolute;
+  width: 1050px; /* കുറച്ച് കൂടി നീളം */
+  height: 1px;
+
+  left: 50%;
+  top: 48%;
 
   transform: translateX(-50%);
 
-  width: 240px;
-  height: 55px;
-
-  padding: 0;
-  border: none;
-  background: transparent;
-
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.28);
+  z-index: 2;
 }
 
-@media (max-width: 768px) {
-  .hero-collection-link {
-    width: 180px;
-    height: 45px;
-    top: 72%;
+/* ============================
+   SLIDER
+============================ */
+
+.hero-slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  z-index: 10;
+}
+
+
+/* ============================
+   COMMON IMAGE
+============================ */
+
+.hero-slide {
+  position: absolute;
+
+  top: 48%;
+  transform: translateY(-50%);
+
+  transition:
+    left 0.7s ease,
+    width 0.7s ease,
+    height 0.7s ease,
+    opacity 0.7s ease;
+}
+
+
+.hero-slide img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  display: block;
+}
+
+
+/* ============================
+   FAR LEFT
+============================ */
+
+.position--2 {
+  width: 145px;
+  height: 200px;
+
+  left: 0%;
+
+  z-index: 4;
+}
+
+
+/* ============================
+   LEFT IMAGE
+============================ */
+
+.position--1 {
+  width: 270px;
+  height: 250px;
+
+  left: calc(50% - 405px);
+
+  z-index: 7;
+}
+
+
+/* ============================
+   CENTER IMAGE
+
+   Reduced size so circle
+   stays clearly visible
+============================ */
+
+.position-0,
+.hero-slide.active {
+  width: 300px;
+  height: 390px;
+
+  left: 50%;
+  top: 48%;
+
+  transform: translate(-50%, -50%);
+
+  z-index: 15;
+}
+
+
+/* ============================
+   RIGHT IMAGE
+
+   Attached to center
+============================ */
+
+.position-1 {
+  width: 270px;
+  height: 250px;
+
+  left: calc(50% + 150px);
+
+  z-index: 8;
+}
+
+
+/* ============================
+   FAR RIGHT
+============================ */
+
+.position-2 {
+  width: 145px;
+  height: 200px;
+
+  right: 0%;
+  left: auto;
+
+  z-index: 4;
+}
+
+
+/* ============================
+   NEW COLLECTION
+============================ */
+
+.new-collection {
+  position: absolute;
+
+  left: 50%;
+  bottom: -13px;
+
+  transform: translateX(-50%);
+
+  width: 160px;
+  height: 29px;
+
+  border: none;
+  border-radius: 30px;
+
+  background: white;
+  color: #555;
+
+  font-size: 8px;
+
+  cursor: pointer;
+
+  z-index: 30;
+}
+
+
+/* ============================
+   ARROW
+
+   Original Figma:
+   right image-ന്റെ TOP RIGHT
+   edge-ൽ attached
+============================ */
+
+.hero-next {
+  position: absolute;
+
+  left: calc(50% + 390px);
+  top: calc(48% - 155px); /* കൂടുതൽ മുകളിലേക്ക് */
+
+  width: 32px;
+  height: 32px;
+
+  border: none;
+  background: #fff;
+  color: #555;
+
+  font-size: 17px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  z-index: 30;
+}
+
+
+/* ============================
+   BOTTOM FIGMA LINE
+============================ */
+
+.hero-lines {
+  position: absolute;
+  left: calc(50% - 370px);
+  top: calc(48% + 170px);
+  z-index: 20;
+}
+
+.hero-lines span {
+  display: block;
+
+  width: 190px;
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.5);
+}
+
+
+/* ============================
+   TABLET
+============================ */
+
+@media (max-width: 1000px) {
+
+  .hero {
+    height: 540px;
+  }
+
+  .hero-circle {
+    width: 400px;
+    height: 400px;
+  }
+
+  .middle-line {
+    width: 760px;
+  }
+
+  .position--2 {
+    width: 100px;
+    height: 150px;
+  }
+
+  .position--1 {
+    width: 190px;
+    height: 220px;
+
+    left: calc(50% - 300px);
+  }
+
+  .position-0,
+  .hero-slide.active {
+    width: 240px;
+    height: 330px;
+  }
+
+  .position-1 {
+    width: 190px;
+    height: 220px;
+
+    left: calc(50% + 120px);
+  }
+
+  .position-2 {
+    width: 100px;
+    height: 150px;
+  }
+
+  .hero-next {
+    left: calc(50% + 275px);
+    top: calc(48% - 110px);
+  }
+
+  .hero-lines {
+    left: calc(50% - 310px);
+  }
+}
+
+
+/* ============================
+   MOBILE
+============================ */
+
+@media (max-width: 600px) {
+
+  .hero {
+    height: 430px;
+  }
+
+  .hero-circle {
+    width: 280px;
+    height: 280px;
+  }
+
+  .middle-line {
+    width: 100%;
+  }
+
+  .position--2 {
+    width: 65px;
+    height: 100px;
+    left: -20px;
+  }
+
+  .position--1 {
+    width: 115px;
+    height: 155px;
+
+    left: calc(50% - 180px);
+  }
+
+  .position-0,
+  .hero-slide.active {
+    width: 175px;
+    height: 250px;
+  }
+
+  .position-1 {
+    width: 115px;
+    height: 155px;
+
+    left: calc(50% + 87px);
+  }
+
+  .position-2 {
+    width: 65px;
+    height: 100px;
+    right: -20px;
+  }
+
+  .hero-next {
+    left: calc(50% + 175px);
+    top: calc(48% - 78px);
+
+    width: 28px;
+    height: 28px;
+  }
+
+  .hero-lines {
+    left: calc(50% - 170px);
+    bottom: 65px;
+  }
+
+  .hero-lines span {
+    width: 120px;
   }
 }

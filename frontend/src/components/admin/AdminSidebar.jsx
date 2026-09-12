@@ -1,34 +1,48 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./AdminSidebar.css";
 import logo from "../../assets/rizo-logo.png";
 
 function AdminSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    console.log("Logout clicked");
+
+    // Remove logged-in user data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Go to admin login page
+    navigate("/admin/login", { replace: true });
+  };
+
   return (
-   <aside className="admin-sidebar">
+    <aside className="admin-sidebar">
 
-  <div className="sidebar-logo">
-    <img src={logo} alt="RIZO" />
-    <span>RIZO</span>
-  </div>
+      {/* Logo */}
+      <div className="sidebar-logo">
+        <img src={logo} alt="RIZO" />
+        <span>RIZO</span>
+      </div>
 
-  
-
+      {/* Navigation */}
       <nav className="sidebar-nav">
 
         <NavLink to="/admin/dashboard">
           <i className="bi bi-house-door"></i>
-           <span>Dashboard</span>
+          <span>Dashboard</span>
         </NavLink>
 
         <NavLink to="/admin/products">
           <i className="bi bi-box-seam"></i>
           <span>Products</span>
         </NavLink>
+
         <NavLink to="/admin/inventory">
-         <i className="bi bi-boxes"></i>
-         <span>Inventory</span>
-          </NavLink>
+          <i className="bi bi-boxes"></i>
+          <span>Inventory</span>
+        </NavLink>
 
         <NavLink to="/admin/categories">
           <i className="bi bi-grid"></i>
@@ -55,13 +69,28 @@ function AdminSidebar() {
           <span>Orders</span>
         </NavLink>
 
+        <NavLink to="/admin/settings">
+          <i className="bi bi-gear"></i>
+          <span>Settings</span>
+        </NavLink>
+
       </nav>
 
+      {/* Bottom Section */}
       <div className="sidebar-bottom">
-        <button>
+
+        <div className="sidebar-divider"></div>
+
+        {/* Logout */}
+        <button
+          type="button"
+          className="logout-btn"
+          onClick={handleLogout}
+        >
           <i className="bi bi-box-arrow-right"></i>
           <span>Logout</span>
         </button>
+
       </div>
 
     </aside>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -9,15 +10,20 @@ import "./Login.css";
 function Login() {
   const navigate = useNavigate();
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
-    const formData = new FormData(event.target);
-
-    const email = formData.get("email");
-    const password = formData.get("password");
+    setError("");
 
     try {
+      setLoading(true);
+
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         {
@@ -26,25 +32,40 @@ function Login() {
         }
       );
 
-      console.log("Login response:", response.data);
+      console.log(
+        "Login response:",
+        response.data
+      );
 
-      const { token, user } = response.data;
+      const { token, user } =
+        response.data;
 
       // Check token
       if (!token) {
-        alert("Login failed: Token not received.");
+        setError(
+          "Login failed: Token not received."
+        );
         return;
       }
 
       // Save JWT token
-      localStorage.setItem("token", token);
+      localStorage.setItem(
+        "token",
+        token
+      );
 
       // Save user details
       if (user) {
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem(
+          "user",
+          JSON.stringify(user)
+        );
 
         if (user._id) {
-          localStorage.setItem("userId", user._id);
+          localStorage.setItem(
+            "userId",
+            user._id
+          );
         }
       }
 
@@ -52,14 +73,19 @@ function Login() {
 
       // Go to home page
       navigate("/");
+
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(
+        "Login error:",
+        error
+      );
 
-      const message =
+      setError(
         error.response?.data?.message ||
-        "Login failed. Please check your email and password.";
-
-      alert(message);
+          "Login failed. Please check your email and password."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,10 +98,13 @@ function Login() {
       <Navbar />
 
       <main className="login-page">
+
         <section className="login-container">
 
-          {/* Header */}
+          {/* HEADER */}
+
           <div className="login-header">
+
             <p className="login-label">
               WELCOME BACK
             </p>
@@ -85,18 +114,31 @@ function Login() {
             </h1>
 
             <span>
-              Sign in to continue shopping with us.
+              Sign in to continue
+              shopping with us.
             </span>
+
           </div>
 
-          {/* Login Form */}
+          {/* ERROR */}
+
+          {error && (
+            <p className="login-error-message">
+              {error}
+            </p>
+          )}
+
+          {/* LOGIN FORM */}
+
           <form
             className="login-form"
             onSubmit={handleLogin}
           >
 
-            {/* Email */}
+            {/* EMAIL */}
+
             <div className="login-field">
+
               <label htmlFor="email">
                 EMAIL ADDRESS
               </label>
@@ -106,12 +148,21 @@ function Login() {
                 name="email"
                 type="email"
                 placeholder="Enter your email address"
+                value={email}
+                onChange={(event) =>
+                  setEmail(
+                    event.target.value
+                  )
+                }
                 required
               />
+
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
+
             <div className="login-field">
+
               <label htmlFor="password">
                 PASSWORD
               </label>
@@ -121,14 +172,23 @@ function Login() {
                 name="password"
                 type="password"
                 placeholder="Enter your password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(
+                    event.target.value
+                  )
+                }
                 required
               />
+
             </div>
 
-            {/* Remember Me + Forgot Password */}
+            {/* REMEMBER + FORGOT */}
+
             <div className="login-options">
 
               <label className="remember-me">
+
                 <input
                   type="checkbox"
                   name="remember"
@@ -137,30 +197,39 @@ function Login() {
                 <span>
                   Remember me
                 </span>
+
               </label>
 
               <button
                 type="button"
                 className="forgot-password"
-                onClick={handleForgotPassword}
+                onClick={
+                  handleForgotPassword
+                }
               >
                 Forgot password?
               </button>
 
             </div>
 
-            {/* Login Button */}
+            {/* LOGIN BUTTON */}
+
             <button
               type="submit"
               className="login-btn"
+              disabled={loading}
             >
-              LOGIN
+              {loading
+                ? "LOGGING IN..."
+                : "LOGIN"}
             </button>
 
           </form>
 
-          {/* Register */}
+          {/* REGISTER */}
+
           <div className="login-register">
+
             <span>
               Don't have an account?
             </span>
@@ -168,9 +237,11 @@ function Login() {
             <Link to="/register">
               CREATE ACCOUNT
             </Link>
+
           </div>
 
         </section>
+
       </main>
 
       <Footer />

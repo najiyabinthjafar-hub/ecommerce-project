@@ -2,15 +2,19 @@
   box-sizing: border-box;
 }
 
+
+/* =========================
+   ADMIN SIDEBAR
+========================= */
 .admin-sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 250px;
+  min-width: 250px;
   height: 100vh;
 
   background: #111111;
   color: #ffffff;
 
-  padding: 32px 18px;
+  padding: 18px 15px;
 
   display: flex;
   flex-direction: column;
@@ -23,65 +27,78 @@
 
   overflow-y: auto;
   overflow-x: hidden;
-
-  
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-.admin-sidebar::-webkit-scrollbar {
-  display: none;
-}
-
+/* =========================
+   LOGO
+========================= */
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 12px 42px;
+
+  gap: 9px;
+
+  padding: 0 10px 16px;
+  margin-bottom: 12px;
+
+  border-bottom: 1px solid #2b2b2b;
 }
 
 .sidebar-logo img {
-  width: 35px;
-  height: 35px;
+  width: 34px;
+  height: 34px;
+
   object-fit: contain;
+
+  /* Black logo to white */
   filter: brightness(0) invert(1);
+
+  flex-shrink: 0;
 }
 
 .sidebar-logo span {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: 2px;
-  color: #fff;
+
+  letter-spacing: 1.3px;
+
+  color: #ffffff;
+
+  white-space: nowrap;
 }
 
+
+/* =========================
+   NAVIGATION
+========================= */
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+
+  gap: 2px;
 }
 
 .sidebar-nav a {
   display: flex;
   align-items: center;
 
-  gap: 12px;
+  gap: 11px;
 
   color: #bdbdbd;
+
   text-decoration: none;
 
-  padding: 13px 15px;
+  padding: 9px 13px;
 
-  border-radius: 9px;
+  border-radius: 8px;
 
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 
   transition: all 0.2s ease;
 }
-
-
 
 .sidebar-nav a i {
   width: 20px;
@@ -90,30 +107,32 @@
   align-items: center;
   justify-content: center;
 
-  font-size: 16px;
+  font-size: 15px;
 
   flex-shrink: 0;
 }
-
-
 
 .sidebar-nav a span {
   white-space: nowrap;
 }
 
 
+/* Hover */
 
 .sidebar-nav a:hover {
   background: #262626;
+
   color: #ffffff;
 
-  transform: translateX(3px);
+  transform: translateX(2px);
 }
 
 
+/* Active */
 
 .sidebar-nav a.active {
   background: #ffffff;
+
   color: #111111;
 
   font-weight: 600;
@@ -124,82 +143,347 @@
 }
 
 
+/* =========================
+   BOTTOM SECTION
+========================= */
 
 .sidebar-bottom {
   margin-top: auto;
+
+  padding-top: 8px;
 }
 
-.sidebar-bottom button {
-  width: 100%;
 
+/* =========================
+   SETTINGS
+========================= */
+
+.sidebar-settings {
   display: flex;
   align-items: center;
+  gap: 11px;
 
-  gap: 12px;
+  color: #bdbdbd;
+  text-decoration: none;
 
-  padding: 12px 15px;
+  padding: 10px 13px;
 
-  border: 1px solid #333333;
-  border-radius: 9px;
+  margin-bottom: 10px;
 
-  background: transparent;
-  color: #d5d5d5;
+  border-radius: 8px;
 
-  cursor: pointer;
-
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-
-  transition: all 0.2s ease;
+  margin-bottom: 10px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 15px;
 }
 
-.sidebar-bottom button i {
+
+.sidebar-settings i {
   width: 20px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 16px;
-
-  flex-shrink: 0;
+  font-size: 15px;
 }
 
-.sidebar-bottom button span {
-  white-space: nowrap;
+.sidebar-settings:hover {
+  background: #262626;
+
+  color: #ffffff;
 }
 
-.sidebar-bottom button:hover {
+.sidebar-settings.active {
   background: #ffffff;
+
   color: #111111;
 }
 
 
+/* =========================
+   DIVIDER
+========================= */
 
-@media (max-width: 800px) {
+.sidebar-divider {
+  height: 1px;
+
+  background: #2b2b2b;
+
+  margin: 0 6px 8px;
+}
+
+
+/* =========================
+   ADMIN PROFILE
+========================= */
+
+.admin-profile {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 7px;
+
+  margin-bottom: 7px;
+
+  border: 1px solid #303030;
+
+  border-radius: 9px;
+
+  background: #151515;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.admin-profile:hover {
+  background: #1d1d1d;
+
+  border-color: #444444;
+}
+
+
+/* Avatar */
+
+.admin-avatar {
+  width: 34px;
+  height: 34px;
+
+  min-width: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  color: #111111;
+
+  border-radius: 50%;
+}
+
+.admin-avatar i {
+  font-size: 18px;
+}
+
+
+/* Admin details */
+
+.admin-info {
+  display: flex;
+  flex-direction: column;
+
+  flex: 1;
+
+  min-width: 0;
+}
+
+.admin-name {
+  color: #ffffff;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+.admin-role {
+  color: #999999;
+
+  font-size: 10px;
+
+  margin-top: 2px;
+}
+
+
+/* Arrow */
+
+.admin-arrow {
+  color: #aaaaaa;
+
+  font-size: 11px;
+}
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+.logout-btn {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 8px 13px;
+
+  border: 1px solid #333333;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #d5d5d5;
+
+  cursor: pointer;
+
+  font-size: 13px;
+
+  font-weight: 500;
+
+  text-align: left;
+
+  transition: all 0.2s ease;
+}
+
+.logout-btn i {
+  width: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 15px;
+}
+
+.logout-btn span {
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #ffffff;
+
+  color: #111111;
+}
+
+
+/* =========================
+   SHORT HEIGHT SCREEN
+========================= */
+
+@media (max-height: 750px) and (min-width: 601px) {
 
   .admin-sidebar {
-    width: 200px;
-    min-width: 200px;
-
-    padding: 28px 15px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 
   .sidebar-logo {
-    font-size: 21px;
-    margin-bottom: 32px;
+    padding-bottom: 10px;
+    margin-bottom: 7px;
+  }
+
+  .sidebar-logo img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .sidebar-logo span {
+    font-size: 17px;
+  }
+
+  .sidebar-nav {
+    gap: 1px;
   }
 
   .sidebar-nav a {
-    padding: 12px 13px;
+    padding: 7px 12px;
+
+    font-size: 12px;
   }
 
   .sidebar-nav a i {
-    font-size: 15px;
+    font-size: 14px;
+  }
+
+  .sidebar-settings {
+    padding: 7px 12px;
+
+    margin-bottom: 5px;
+
+    font-size: 12px;
+  }
+
+  .sidebar-divider {
+    margin-bottom: 6px;
+  }
+
+  .admin-profile {
+    padding: 6px;
+
+    margin-bottom: 5px;
+  }
+
+  .admin-avatar {
+    width: 30px;
+    height: 30px;
+
+    min-width: 30px;
+  }
+
+  .admin-avatar i {
+    font-size: 16px;
+  }
+
+  .admin-name {
+    font-size: 11px;
+  }
+
+  .admin-role {
+    font-size: 9px;
+  }
+
+  .logout-btn {
+    padding: 7px 12px;
+
+    font-size: 12px;
   }
 }
 
 
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 800px) and (min-width: 601px) {
+
+  .admin-sidebar {
+    width: 220px;
+    min-width: 220px;
+
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sidebar-logo span {
+    font-size: 17px;
+  }
+
+  .sidebar-nav a {
+    padding: 8px 10px;
+
+    font-size: 12px;
+  }
+
+  .sidebar-nav a i {
+    font-size: 14px;
+  }
+}
+
+
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 600px) {
 
@@ -212,38 +496,103 @@
 
     position: relative;
 
-    padding: 20px;
+    padding: 18px;
   }
+
+
+  /* Logo */
 
   .sidebar-logo {
-    margin: 0 0 20px;
+    justify-content: center;
 
-    text-align: center;
+    padding-bottom: 15px;
+
+    margin-bottom: 14px;
   }
+
+
+  /* Navigation */
 
   .sidebar-nav {
     flex-direction: row;
+
     flex-wrap: wrap;
 
-    gap: 6px;
+    justify-content: center;
+
+    gap: 5px;
   }
 
   .sidebar-nav a {
-    padding: 10px 12px;
+    padding: 8px 10px;
 
-    gap: 8px;
+    gap: 7px;
+
+    font-size: 12px;
   }
 
   .sidebar-nav a i {
-    font-size: 14px;
     width: auto;
+
+    font-size: 13px;
   }
+
+
+  /* Bottom */
 
   .sidebar-bottom {
-    margin-top: 20px;
+    margin-top: 15px;
+
+    padding-top: 10px;
   }
 
-  .sidebar-bottom button {
+
+  /* Settings */
+
+  .sidebar-settings {
     justify-content: center;
+  }
+
+
+  /* Profile */
+
+  .admin-profile {
+    max-width: 280px;
+
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+
+  /* Logout */
+
+  .logout-btn {
+    justify-content: center;
+  }
+}
+
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+
+  .admin-sidebar {
+    padding: 15px 10px;
+  }
+
+  .sidebar-logo span {
+    font-size: 16px;
+  }
+
+  .sidebar-nav a {
+    padding: 7px 8px;
+
+    font-size: 11px;
+  }
+
+  .sidebar-settings {
+    font-size: 11px;
   }
 }

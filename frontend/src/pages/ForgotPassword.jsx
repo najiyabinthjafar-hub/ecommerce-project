@@ -1,39 +1,62 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import "./Login.css";
+import "./ForgotPassword.css";
 
 function ForgotPassword() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event) => {
+  const handleForgotPassword = async (event) => {
     event.preventDefault();
 
-    setMessage("");
     setError("");
-    setLoading(true);
+    setMessage("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const response = await axios.post(
         "http://localhost:5000/api/auth/forgot-password",
         {
-          email,
+          email: email.trim(),
         }
       );
 
       setMessage(
         response.data?.message ||
-          "Password reset link sent successfully."
+          "OTP sent to your email."
       );
+
+      // Save email for Reset Password page
+      localStorage.setItem(
+        "forgotPasswordEmail",
+        email.trim()
+      );
+
+      // Go to reset password page
+      setTimeout(() => {
+        navigate("/reset-password");
+      }, 1200);
+
     } catch (error) {
-      console.error("Forgot password error:", error);
+      console.error(
+        "Forgot password error:",
+        error
+      );
 
       setError(
         error.response?.data?.message ||
@@ -48,28 +71,55 @@ function ForgotPassword() {
     <>
       <Navbar />
 
-      <main className="login-page">
-        <section className="login-container">
+      <main className="forgot-password-page">
 
-          <div className="login-header">
-            <p className="login-label">
-              RESET PASSWORD
+        <section className="forgot-password-container">
+
+          {/* HEADER */}
+
+          <div className="forgot-password-header">
+
+            <p>
+              PASSWORD RECOVERY
             </p>
 
             <h1>
-              FORGOT PASSWORD
+              FORGOT PASSWORD?
             </h1>
 
             <span>
-              Enter your email address to reset your password.
+              Enter your email address and we
+              will send you an OTP to reset
+              your password.
             </span>
+
           </div>
 
+          {/* SUCCESS MESSAGE */}
+
+          {message && (
+            <p className="forgot-success-message">
+              {message}
+            </p>
+          )}
+
+          {/* ERROR MESSAGE */}
+
+          {error && (
+            <p className="forgot-error-message">
+              {error}
+            </p>
+          )}
+
+          {/* FORM */}
+
           <form
-            className="login-form"
-            onSubmit={handleSubmit}
+            className="forgot-password-form"
+            onSubmit={handleForgotPassword}
           >
-            <div className="login-field">
+
+            <div className="forgot-password-field">
+
               <label htmlFor="email">
                 EMAIL ADDRESS
               </label>
@@ -85,52 +135,33 @@ function ForgotPassword() {
                 }
                 required
               />
+
             </div>
-
-            {message && (
-              <p
-                style={{
-                  color: "green",
-                  marginTop: "10px",
-                }}
-              >
-                {message}
-              </p>
-            )}
-
-            {error && (
-              <p
-                style={{
-                  color: "red",
-                  marginTop: "10px",
-                }}
-              >
-                {error}
-              </p>
-            )}
 
             <button
               type="submit"
-              className="login-btn"
+              className="forgot-password-btn"
               disabled={loading}
             >
               {loading
                 ? "SENDING..."
-                : "SEND RESET LINK"}
+                : "SEND RESET OTP"}
             </button>
+
           </form>
 
-          <div className="login-register">
-            <span>
-              Remember your password?
-            </span>
+          {/* BACK TO LOGIN */}
+
+          <div className="forgot-back-login">
 
             <Link to="/login">
-              BACK TO LOGIN
+              ← BACK TO LOGIN
             </Link>
+
           </div>
 
         </section>
+
       </main>
 
       <Footer />

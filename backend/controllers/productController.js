@@ -25,20 +25,27 @@ const getProducts = async (req, res, next) => {
       minPrice,
       maxPrice,
       availability,
+        sort,
+         page,
+        limit,
     } = req.query;
 
-    const products = await productService.getAllProducts({
+    const result = await productService.getAllProducts({
       search,
       category,
       minPrice,
       maxPrice,
       availability,
+      sort,
+       page,
+       limit,
     });
 
-    res.status(200).json({
-      success: true,
-      products,
-    });
+res.status(200).json({
+  success: true,
+  products: result.products,
+  pagination: result.pagination,
+});
   } catch (error) {
     next(error);
   }
@@ -59,6 +66,21 @@ const getProduct = async (req, res, next) => {
     res.status(200).json({
       success: true,
       product,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// GET ACTIVE PRODUCTS
+const getActiveProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getActiveProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
     });
   } catch (error) {
     next(error);
@@ -214,6 +236,7 @@ const updateProductStock = async (req, res, next) => {
 module.exports = {
   createProduct,
   getProducts,
+  getActiveProducts,
   getProduct,
   updateProduct,
   deleteProduct,

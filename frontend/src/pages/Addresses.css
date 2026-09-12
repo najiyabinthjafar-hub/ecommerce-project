@@ -1,0 +1,154 @@
+.addresses-page {
+  min-height: 70vh;
+  padding: 60px 20px;
+  background: #f8f8f8;
+}
+
+.addresses-container {
+  max-width: 800px;
+  margin: auto;
+}
+
+.addresses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.addresses-header h1 {
+  font-size: 28px;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.back-btn,
+.add-address-btn {
+  padding: 10px 15px;
+  border: 1px solid black;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.add-address-btn {
+  background: black;
+  color: white;
+}
+
+/* FORM */
+
+.address-form {
+  background: white;
+  padding: 30px;
+  margin-bottom: 30px;
+  border: 1px solid #e5e5e5;
+
+  display: grid;
+  gap: 15px;
+}
+
+.address-form input,
+.address-form textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.address-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.address-form-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.address-form-buttons button {
+  flex: 1;
+  padding: 13px;
+  border: none;
+  background: black;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.address-form-buttons .cancel-address-btn {
+  background: white;
+  color: black;
+  border: 1px solid black;
+}
+
+/* ADDRESS LIST */
+
+.addresses-list {
+  display: grid;
+  gap: 15px;
+}
+
+.address-card {
+  background: white;
+  padding: 25px;
+  border: 1px solid #e5e5e5;
+}
+
+.address-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.address-card p {
+  margin: 6px 0;
+  color: #555;
+}
+
+.delete-address-btn {
+  margin-top: 15px;
+  padding: 10px 18px;
+  background: white;
+  border: 1px solid #cc0000;
+  color: #cc0000;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.no-address {
+  background: white;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid #e5e5e5;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .addresses-page {
+    padding: 40px 15px;
+  }
+
+  .addresses-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .addresses-header h1 {
+    font-size: 23px;
+  }
+}
+
+.address-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.edit-address-btn,
+.delete-address-btn {
+  padding: 10px 18px;
+  border: none;
+  cursor: pointer;
+}
