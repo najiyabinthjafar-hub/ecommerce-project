@@ -19,6 +19,8 @@ const register = async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
@@ -39,6 +41,8 @@ const verifyOtp = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
+    console.error("VERIFY OTP ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
@@ -59,6 +63,8 @@ const resendOtp = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
+    console.error("RESEND OTP ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
@@ -82,6 +88,8 @@ const login = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
+
     res.status(401).json({
       message: error.message,
     });
@@ -98,10 +106,16 @@ const forgotPassword = async (req, res) => {
       });
     }
 
+    console.log("Forgot password request received for:", email);
+
     const result = await authService.forgotPassword(email);
+
+    console.log("Forgot password successful");
 
     res.status(200).json(result);
   } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
@@ -126,6 +140,8 @@ const resetPassword = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });

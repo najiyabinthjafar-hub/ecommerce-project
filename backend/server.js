@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
+
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -14,38 +16,68 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-const checkoutRoutes = require("./routes/checkoutRoutes");
 
 const app = express();
 
-// Connect MongoDB
+// ===============================
+// DATABASE
+// ===============================
 connectDB();
 
-// Middleware
+// ===============================
+// CORS
+// ===============================
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// ===============================
+// MIDDLEWARE
+// ===============================
 app.use(express.json());
 
-// Test route
+// ===============================
+// TEST ROUTE
+// ===============================
 app.get("/", (req, res) => {
   res.json({
-    message: "E-Commerce Backend API is running",
+    success: true,
+    message: "E-Commerce API is running",
   });
 });
 
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/addresses", addressRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/banners", bannerRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/coupons", couponRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/checkout", checkoutRoutes);
+// ===============================
+// API ROUTES
+// ===============================
 
-// Server
+app.use("/api/auth", authRoutes);
+
+app.use("/api/users", userRoutes);
+
+app.use("/api/addresses", addressRoutes);
+
+app.use("/api/products", productRoutes);
+
+app.use("/api/categories", categoryRoutes);
+
+app.use("/api/banners", bannerRoutes);
+
+app.use("/api/cart", cartRoutes);
+
+app.use("/api/wishlist", wishlistRoutes);
+
+app.use("/api/coupons", couponRoutes);
+
+app.use("/api/orders", orderRoutes);
+
+app.use("/api/payments", paymentRoutes);
+
+// ===============================
+// SERVER
+// ===============================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

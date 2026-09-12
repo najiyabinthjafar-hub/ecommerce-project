@@ -1,77 +1,129 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 import "./Cart.css";
 
-function getCartItems() {
-  try {
-    return JSON.parse(localStorage.getItem("cart")) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveCart(cart) {
-  localStorage.setItem("cart", JSON.stringify(cart));
-}
+const API_URL = "http://localhost:5000/api";
 
 function Cart() {
-  const cartItems = getCartItems();
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const increaseQuantity = (id, size) => {
-    const cart = getCartItems();
+  const token = localStorage.getItem("token");
 
-    const updatedCart = cart.map((item) =>
-      item.id === id && item.size === size
-        ? {
-            ...item,
-            quantity: item.quantity + 1,
-          }
-        : item
-    );
-
-    saveCart(updatedCart);
-
-    window.location.reload();
+  const authConfig = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
 
-  const decreaseQuantity = (id, size) => {
-    const cart = getCartItems();
+  const fetchCart = async () => {
+    try {
+      setLoading(true);
 
-    const updatedCart = cart
-      .map((item) =>
-        item.id === id && item.size === size
-          ? {
-              ...item,
-              quantity: item.quantity - 1,
-            }
-          : item
-      )
-      .filter((item) => item.quantity > 0);
+      const response = await axios.get(
+        `${API_URL}/cart`,
+        authConfig
+      );
 
-    saveCart(updatedCart);
+      setCartItems(response.data.cart?.items || []);
+    } catch (error) {
+      console.error("GET CART ERROR:", error);
 
-    window.location.reload();
+      if (error.response?.status === 401) {
+        alert("Please login to view your cart.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeItem = (id, size) => {
-    const cart = getCartItems();
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-    const updatedCart = cart.filter(
-      (item) =>
-        !(item.id === id && item.size === size)
+    fetchCart();
+  }, []);
+
+  const updateQuantity = async (productId, quantity) => {
+    try {
+      await axios.put(
+        `${API_URL}/cart/update/${productId}`,
+        {
+          quantity,
+        },
+        authConfig
+      );
+
+      fetchCart();
+    } catch (error) {
+      console.error("UPDATE CART ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to update cart"
+      );
+    }
+  };
+
+  const increaseQuantity = (productId, currentQuantity) => {
+    updateQuantity(
+      productId,
+      currentQuantity + 1
     );
+  };
 
-    saveCart(updatedCart);
+  const decreaseQuantity = (
+    productId,
+    currentQuantity
+  ) => {
+    if (currentQuantity <= 1) {
+      removeItem(productId);
+      return;
+    }
 
-    window.location.reload();
+    updateQuantity(
+      productId,
+      currentQuantity - 1
+    );
+  };
+
+  const removeItem = async (productId) => {
+    try {
+      await axios.delete(
+        `${API_URL}/cart/remove/${productId}`,
+        authConfig
+      );
+
+      fetchCart();
+    } catch (error) {
+      console.error("REMOVE CART ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to remove product"
+      );
+    }
   };
 
   const subtotal = cartItems.reduce(
-    (total, item) =>
-      total + item.price * item.quantity,
+    (total, item) => {
+      const price =
+        item.product?.salePrice ??
+        item.product?.price ??
+        0;
+
+      return (
+        total +
+        price * item.quantity
+      );
+    },
     0
   );
 
@@ -83,6 +135,61 @@ function Cart() {
       : 99;
 
   const total = subtotal + delivery;
+
+  if (!token) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="cart-page">
+          <section className="cart-heading">
+            <p>YOUR BAG</p>
+            <h1>SHOPPING CART</h1>
+            <span>
+              Please login to view your cart.
+            </span>
+          </section>
+
+          <div className="empty-cart">
+            <h2>Please Login</h2>
+
+            <p>
+              Login to view and manage your cart.
+            </p>
+
+            <Link
+              to="/login"
+              className="continue-shopping"
+            >
+              LOGIN
+            </Link>
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="cart-page">
+          <section className="cart-heading">
+            <p>YOUR BAG</p>
+            <h1>SHOPPING CART</h1>
+            <span>
+              Loading your cart...
+            </span>
+          </section>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -127,86 +234,111 @@ function Cart() {
                 <span>TOTAL</span>
               </div>
 
-              {cartItems.map((item) => (
-                <div
-                  className="cart-item"
-                  key={`${item.id}-${item.size}`}
-                >
+              {cartItems.map((item) => {
+                const product = item.product;
 
-                  <div className="cart-product">
+                const productId =
+                  product?._id;
 
-                    <div className="cart-product-image">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                      />
+                const price =
+                  product?.salePrice ??
+                  product?.price ??
+                  0;
+
+                return (
+                  <div
+                    className="cart-item"
+                    key={productId}
+                  >
+
+                    <div className="cart-product">
+
+                      <div className="cart-product-image">
+                        <img
+                          src={
+                            product?.image ||
+                            product?.images?.[0] ||
+                            "/placeholder.png"
+                          }
+                          alt={
+                            product?.name ||
+                            "Product"
+                          }
+                        />
+                      </div>
+
+                      <div className="cart-product-info">
+
+                        <h3>
+                          {product?.name ||
+                            "Product"}
+                        </h3>
+
+                        <button
+                          className="remove-btn"
+                          onClick={() =>
+                            removeItem(
+                              productId
+                            )
+                          }
+                        >
+                          REMOVE
+                        </button>
+
+                      </div>
+
                     </div>
 
-                    <div className="cart-product-info">
-                      <h3>{item.name}</h3>
+                    <p className="cart-price">
+                      ₹
+                      {price.toLocaleString(
+                        "en-IN"
+                      )}
+                    </p>
 
-                      <p>
-                        Size: {item.size}
-                      </p>
+                    <div className="cart-quantity">
 
                       <button
-                        className="remove-btn"
                         onClick={() =>
-                          removeItem(
-                            item.id,
-                            item.size
+                          decreaseQuantity(
+                            productId,
+                            item.quantity
                           )
                         }
                       >
-                        REMOVE
+                        −
                       </button>
+
+                      <span>
+                        {item.quantity}
+                      </span>
+
+                      <button
+                        onClick={() =>
+                          increaseQuantity(
+                            productId,
+                            item.quantity
+                          )
+                        }
+                      >
+                        +
+                      </button>
+
                     </div>
 
-                  </div>
-
-                  <p className="cart-price">
-                    ₹{item.price.toLocaleString("en-IN")}
-                  </p>
-
-                  <div className="cart-quantity">
-
-                    <button
-                      onClick={() =>
-                        decreaseQuantity(
-                          item.id,
-                          item.size
-                        )
-                      }
-                    >
-                      −
-                    </button>
-
-                    <span>
-                      {item.quantity}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        increaseQuantity(
-                          item.id,
-                          item.size
-                        )
-                      }
-                    >
-                      +
-                    </button>
+                    <p className="cart-total">
+                      ₹
+                      {(
+                        price *
+                        item.quantity
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </p>
 
                   </div>
-
-                  <p className="cart-total">
-                    ₹
-                    {(
-                      item.price * item.quantity
-                    ).toLocaleString("en-IN")}
-                  </p>
-
-                </div>
-              ))}
+                );
+              })}
 
               <Link
                 to="/shop"
@@ -225,7 +357,10 @@ function Cart() {
                 <span>SUBTOTAL</span>
 
                 <span>
-                  ₹{subtotal.toLocaleString("en-IN")}
+                  ₹
+                  {subtotal.toLocaleString(
+                    "en-IN"
+                  )}
                 </span>
               </div>
 
@@ -245,7 +380,10 @@ function Cart() {
                 <span>TOTAL</span>
 
                 <strong>
-                  ₹{total.toLocaleString("en-IN")}
+                  ₹
+                  {total.toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
               </div>
 
@@ -269,4 +407,3 @@ function Cart() {
 }
 
 export default Cart;
-
