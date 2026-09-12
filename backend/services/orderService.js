@@ -34,9 +34,68 @@ const updateOrderStatus = async (orderId, orderStatus) => {
   return order;
 };
 
+const getBestSellingProducts = async () => {
+  const bestSellers = await Order.aggregate([
+    {
+      $match: {
+        paymentStatus: "PAID",
+        orderStatus: {
+          $nin: ["CANCELLED"],
+        },
+      },
+    },
+
+    {
+      $unwind: "$items",
+    },
+
+    {
+      $group: {
+        _id: "$items.product",
+        totalSold: {
+          $sum: "$items.quantity",
+        },
+      },
+    },
+
+    {
+      $sort: {
+        totalSold: -1,
+      },
+    },
+
+    {
+      $limit: 10,
+    },
+
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+
+    {
+      $unwind: "$product",
+    },
+
+    {
+      $project: {
+        _id: 0,
+        product: 1,
+        totalSold: 1,
+      },
+    },
+  ]);
+
+  return bestSellers;
+};
 module.exports = {
   createOrder,
   getOrdersByUser,
   getOrderById,
   updateOrderStatus,
+  getBestSellingProducts,
 };

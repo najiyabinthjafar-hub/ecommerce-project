@@ -13,6 +13,9 @@ router.get("/test", (req, res) => {
 
 router.post("/", orderController.createOrder);
 
+// Get best selling products
+router.get("/best-sellers", orderController.getBestSellingProducts);
+
 router.get("/", orderController.getOrders);
 
 router.get("/:id", orderController.getOrderById);
