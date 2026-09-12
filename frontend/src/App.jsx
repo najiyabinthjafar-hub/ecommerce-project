@@ -65,3 +65,308 @@ import ViewCoupon from "./pages/admin/ViewCoupon";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* ================= CUSTOMER SIDE ================= */}
+
+        <Route path="/" element={<Home />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* ================= PROFILE ================= */}
+
+        <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/profile/personal"
+          element={<PersonalInformation />}
+        />
+        <Route
+          path="/profile/addresses"
+          element={<Addresses />}
+        />
+        <Route
+          path="/profile/change-password"
+          element={<ChangePassword />}
+        />
+
+        {/* ================= AUTH ================= */}
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+
+        <Route
+          path="/verify-otp"
+          element={<VerifyOtp />}
+        />
+
+        {/* ================= OTHER CUSTOMER PAGES ================= */}
+
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+
+        <Route
+          path="/new-arrivals"
+          element={<NewArrivalsPage />}
+        />
+
+        <Route
+          path="/best-sellers"
+          element={<BestSellersPage />}
+        />
+
+        <Route
+          path="/category/:slug"
+          element={<Category />}
+        />
+
+        <Route
+          path="/category/:slug/:subcategorySlug"
+          element={<Category />}
+        />
+
+        <Route
+          path="/categories"
+          element={<CategoriesPage />}
+        />
+
+        <Route
+          path="/wishlist"
+          element={<Wishlist />}
+        />
+
+        {/* ================= FOOTER PAGES ================= */}
+
+        <Route path="/support" element={<Support />} />
+        <Route path="/invoicing" element={<Invoicing />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/faqs" element={<FAQs />} />
+
+        {/* ================= POLICY PAGES ================= */}
+
+        <Route
+          path="/refund-policy"
+          element={<RefundPolicy />}
+        />
+
+        <Route
+          path="/shipping-policy"
+          element={<ShippingPolicy />}
+        />
+
+        <Route
+          path="/privacy-policy"
+          element={<PrivacyPolicy />}
+        />
+
+        <Route
+          path="/terms-of-service"
+          element={<TermsOfService />}
+        />
+
+        {/* ================= ADMIN LOGIN ================= */}
+
+        <Route
+          path="/admin/login"
+          element={<AdminLogin />}
+        />
+
+        {/* ================= PROTECTED ADMIN SIDE ================= */}
+
+        <Route element={<ProtectedRoute />}>
+
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/products"
+            element={
+              <AdminLayout>
+                <Products />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/products/add"
+            element={
+              <AdminLayout>
+                <AddProduct />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/products/edit/:id"
+            element={
+              <AdminLayout>
+                <EditProduct />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/products/view/:id"
+            element={
+              <AdminLayout>
+                <ViewProduct />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/categories"
+            element={
+              <AdminLayout>
+                <Categories />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/banners"
+            element={
+              <AdminLayout>
+                <Banners />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/banners/add"
+            element={
+              <AdminLayout>
+                <AddBanner />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/banners/edit/:id"
+            element={
+              <AdminLayout>
+                <EditBanner />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/banners/view/:id"
+            element={
+              <AdminLayout>
+                <BannerView />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/customers"
+            element={
+              <AdminLayout>
+                <Customers />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminLayout>
+                <AdminOrders />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/orders/:id"
+            element={
+              <AdminLayout>
+                <OrderDetails />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/coupons"
+            element={
+              <AdminLayout>
+                <Coupons />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/coupons/add"
+            element={
+              <AdminLayout>
+                <AddCoupon />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/coupons/view/:id"
+            element={
+              <AdminLayout>
+                <ViewCoupon />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/inventory"
+            element={
+              <AdminLayout>
+                <Inventory />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminLayout>
+                <Settings />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/profile"
+            element={
+              <AdminLayout>
+                <AdminProfile />
+              </AdminLayout>
+            }
+          />
+
+        </Route>
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
