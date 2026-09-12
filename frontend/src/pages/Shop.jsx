@@ -27,10 +27,9 @@ function Shop() {
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
-
   const [currentPage, setCurrentPage] = useState(1);
 
-  const productsPerPage = 4;
+  const productsPerPage = 8;
 
   // ================= FETCH PRODUCTS =================
 
@@ -100,11 +99,21 @@ function Shop() {
 
   // ================= SEARCH =================
 
-  if (searchQuery) {
-    filteredProducts = filteredProducts.filter((product) =>
-      product.name?.toLowerCase().includes(searchQuery)
+  // ================= SEARCH =================
+
+if (searchQuery) {
+  filteredProducts = filteredProducts.filter((product) => {
+    const productName = product.name?.toLowerCase() || "";
+    const categoryName = product.category?.name?.toLowerCase() || "";
+    const description = product.description?.toLowerCase() || "";
+
+    return (
+      productName.includes(searchQuery) ||
+      categoryName.includes(searchQuery) ||
+      description.includes(searchQuery)
     );
-  }
+  });
+}
 
   // ================= AVAILABILITY =================
 
@@ -123,40 +132,46 @@ function Shop() {
   if (priceOrder === "low-high") {
     filteredProducts.sort((a, b) => {
       const priceA =
-        a.salePrice !== null && a.salePrice !== undefined
+        a.salePrice !== null &&
+        a.salePrice !== undefined
           ? a.salePrice
-          : a.regularPrice;
+          : a.regularPrice || a.price || 0;
 
       const priceB =
-        b.salePrice !== null && b.salePrice !== undefined
+        b.salePrice !== null &&
+        b.salePrice !== undefined
           ? b.salePrice
-          : b.regularPrice;
+          : b.regularPrice || b.price || 0;
 
       return priceA - priceB;
     });
   } else if (priceOrder === "high-low") {
     filteredProducts.sort((a, b) => {
       const priceA =
-        a.salePrice !== null && a.salePrice !== undefined
+        a.salePrice !== null &&
+        a.salePrice !== undefined
           ? a.salePrice
-          : a.regularPrice;
+          : a.regularPrice || a.price || 0;
 
       const priceB =
-        b.salePrice !== null && b.salePrice !== undefined
+        b.salePrice !== null &&
+        b.salePrice !== undefined
           ? b.salePrice
-          : b.regularPrice;
+          : b.regularPrice || b.price || 0;
 
       return priceB - priceA;
     });
   } else if (sortBy === "newest") {
     filteredProducts.sort(
       (a, b) =>
-        new Date(b.createdAt) - new Date(a.createdAt)
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0)
     );
   } else if (sortBy === "featured") {
     filteredProducts.sort(
       (a, b) =>
-        new Date(a.createdAt) - new Date(b.createdAt)
+        new Date(a.createdAt || 0) -
+        new Date(b.createdAt || 0)
     );
   }
 
@@ -296,6 +311,7 @@ function Shop() {
             <span className="product-count">
               {filteredProducts.length} PRODUCTS
             </span>
+
           </div>
         </section>
 
@@ -331,7 +347,8 @@ function Shop() {
                   product.salePrice !== undefined
                     ? product.salePrice
                     : product.regularPrice ||
-                      product.price;
+                      product.price ||
+                      0;
 
                 const productImage =
                   product.images?.[0] ||
@@ -340,8 +357,7 @@ function Shop() {
 
                 const isWishlisted = wishlist.some(
                   (item) =>
-                    (item._id || item.id) ===
-                    productId
+                    (item._id || item.id) === productId
                 );
 
                 return (
@@ -355,6 +371,7 @@ function Shop() {
                       {/* WISHLIST BUTTON */}
 
                       <button
+                        type="button"
                         className={`shop-wishlist-btn ${
                           isWishlisted
                             ? "active-wishlist"
@@ -380,6 +397,7 @@ function Shop() {
                         src={productImage}
                         alt={product.name}
                       />
+
                     </div>
 
                     <div className="shop-product-info">
@@ -388,10 +406,11 @@ function Shop() {
                       <p>
                         ₹
                         {Number(
-                          productPrice || 0
+                          productPrice
                         ).toLocaleString("en-IN")}
                       </p>
                     </div>
+
                   </Link>
                 );
               })
@@ -403,6 +422,7 @@ function Shop() {
               </p>
 
             )}
+
           </section>
         )}
 
@@ -461,6 +481,7 @@ function Shop() {
               </button>
 
             </div>
+
           )}
 
       </main>

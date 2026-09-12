@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-
-import {
-  useLocation,
-} from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -13,84 +10,112 @@ import "./NewArrivalsPage.css";
 function NewArrivalsPage() {
   const location = useLocation();
 
-  // ================= ACTIVE CATEGORY =================
+  // ================= ACTIVE FASHION =================
 
   const [activeFashion, setActiveFashion] = useState(
-    location.state?.activeFashion ||
-      "MEN'S FASHION"
+    location.state?.activeFashion || "MEN'S FASHION"
   );
 
   const [products, setProducts] = useState([]);
+  const [categoryTree, setCategoryTree] = useState([]);
 
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
-  // ================= FETCH PRODUCTS =================
+  // ================= FETCH DATA =================
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-
         setError("");
 
-        const response = await fetch(
-          "http://localhost:5000/api/products?limit=100"
-        );
+        const [categoryResponse, productResponse] =
+          await Promise.all([
+            fetch("http://localhost:5000/api/categories/tree"),
+            fetch("http://localhost:5000/api/products?limit=100"),
+          ]);
 
-        const data = await response.json();
+        const categoryData = await categoryResponse.json();
+        const productData = await productResponse.json();
 
-        if (!response.ok) {
+        if (!categoryResponse.ok) {
           throw new Error(
-            data.message ||
-              "Failed to fetch products"
+            categoryData.message || "Failed to fetch categories"
           );
         }
 
-        setProducts(data.products || []);
-      } catch (error) {
-        console.error(
-          "New Arrivals Page API Error:",
-          error
-        );
+        if (!productResponse.ok) {
+          throw new Error(
+            productData.message || "Failed to fetch products"
+          );
+        }
 
+        setCategoryTree(categoryData.categories || []);
+        setProducts(productData.products || []);
+      } catch (error) {
+        console.error("New Arrivals Page API Error:", error);
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
-  // ================= CATEGORY FILTER =================
+  // ================= FIND SELECTED CATEGORY =================
+
+  const selectedCategory = categoryTree.find((category) => {
+    if (activeFashion === "MEN'S FASHION") {
+      return category.slug === "men-s-fashion";
+    }
+
+    return category.slug === "womens-fashion";
+  });
+
+  // ================= GET ALL CHILD CATEGORY IDS =================
+
+  const childCategoryIds = (
+    selectedCategory?.children || []
+  ).map((category) => String(category._id));
+
+  // ================= FILTER PRODUCTS =================
 
   const filteredProducts = products
     .filter((product) => {
-      if (!product.category) return false;
+      // Active products മാത്രം
 
-      if (typeof product.category === "object") {
-        const categoryName =
-          product.category.name
-            ?.replace(/[’‘]/g, "'")
-            .toUpperCase();
-
-        const selectedCategory =
-          activeFashion
-            .replace(/[’‘]/g, "'")
-            .toUpperCase();
-
-        return categoryName === selectedCategory;
+      if (product.status !== "active") {
+        return false;
       }
 
-      return false;
+      if (!product.category) {
+        return false;
+      }
+
+      // Product category populated object അല്ലെങ്കിൽ ID
+
+      const productCategoryId =
+        product.category._id || product.category;
+
+      // Selected Men's/Women's Fashion-ന്റെ
+      // child categories-ലുള്ള products മാത്രം
+
+      return childCategoryIds.includes(
+        String(productCategoryId)
+      );
     })
     .sort(
       (a, b) =>
-        new Date(b.createdAt) -
-        new Date(a.createdAt)
+        new Date(b.createdAt) - new Date(a.createdAt)
     );
+
+  // ================= PAGE TOP =================
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <>
@@ -148,11 +173,9 @@ function NewArrivalsPage() {
 
           <div className="new-arrivals-page-top">
 
-            <h2>
-              {activeFashion === "MEN'S FASHION"
-                ? "Men's Fashion"
-                : "Women's Fashion"}
-            </h2>
+            {/* CATEGORY NAME വേണ്ട — New Arrivals മാത്രം */}
+
+            <h2>New Arrivals</h2>
 
             <p>
               {filteredProducts.length} Products
@@ -176,12 +199,11 @@ function NewArrivalsPage() {
             </p>
           )}
 
-          {/* ================= PRODUCT GRID ================= */}
+          {/* ================= PRODUCTS GRID ================= */}
 
           {!loading && !error && (
             <>
               {filteredProducts.length > 0 ? (
-
                 <div className="new-arrivals-page-grid">
                   {filteredProducts.map((product) => (
                     <ProductCard
@@ -190,13 +212,10 @@ function NewArrivalsPage() {
                     />
                   ))}
                 </div>
-
               ) : (
-
                 <p className="new-arrivals-page-message">
                   No products found.
                 </p>
-
               )}
             </>
           )}

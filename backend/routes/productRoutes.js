@@ -14,6 +14,8 @@ router.put("/:id/stock", productController.updateProductStock);
 
 router.get("/active", productController.getActiveProducts);
 
+router.get("/best-sellers", productController.getBestSellerProducts);
+
 // GET SINGLE
 router.get("/:id", productController.getProduct);
 

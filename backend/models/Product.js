@@ -23,6 +23,11 @@ const productSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+  isBestSeller: {
+   type: Boolean,
+   default: false,
+    },
+
     description: {
       type: String,
       required: true,

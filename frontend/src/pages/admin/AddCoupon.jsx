@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AddCoupon.css";
 
-const API_URL = "http://localhost:5000/api/coupons";
+const API_URL = "http://localhost:5000/api/coupons/create";
 
 function AddCoupon() {
   const navigate = useNavigate();
@@ -118,7 +118,26 @@ function AddCoupon() {
         }),
       });
 
-      const data = await response.json();
+      /* Safe JSON parsing */
+      const contentType = response.headers.get("content-type");
+
+      let data;
+
+      if (
+        contentType &&
+        contentType.includes("application/json")
+      ) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+
+        throw new Error(
+          `Server returned ${response.status} instead of JSON. ${text.slice(
+            0,
+            100
+          )}`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -126,13 +145,17 @@ function AddCoupon() {
         );
       }
 
-      alert(data.message || "Coupon created successfully");
+      alert(
+        data.message || "Coupon created successfully"
+      );
 
       navigate("/admin/coupons");
     } catch (error) {
       console.error("Error creating coupon:", error);
 
-      alert(error.message || "Something went wrong");
+      alert(
+        error.message || "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
@@ -160,12 +183,10 @@ function AddCoupon() {
 
       {/* Coupon Card */}
       <div className="add-coupon-card">
-
         <form onSubmit={handleSubmit}>
 
           {/* Coupon Details */}
           <div className="form-section">
-
             <h2>Coupon Details</h2>
 
             <div className="form-grid">
@@ -196,6 +217,7 @@ function AddCoupon() {
                   name="discountType"
                   value={coupon.discountType}
                   onChange={handleChange}
+                  required
                 >
                   <option value="percentage">
                     Percentage
@@ -214,7 +236,6 @@ function AddCoupon() {
                 </label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="discountValue"
@@ -230,7 +251,6 @@ function AddCoupon() {
                       ? "%"
                       : "₹"}
                   </span>
-
                 </div>
               </div>
 
@@ -239,7 +259,6 @@ function AddCoupon() {
                 <label>Minimum Purchase</label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="minimumPurchase"
@@ -250,7 +269,6 @@ function AddCoupon() {
                   />
 
                   <span>₹</span>
-
                 </div>
               </div>
 
@@ -259,7 +277,6 @@ function AddCoupon() {
                 <label>Maximum Discount</label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="maximumDiscount"
@@ -270,7 +287,6 @@ function AddCoupon() {
                   />
 
                   <span>₹</span>
-
                 </div>
               </div>
 
@@ -308,7 +324,6 @@ function AddCoupon() {
 
           {/* Status */}
           <div className="coupon-status-section">
-
             <div>
               <h3>Coupon Status</h3>
 
@@ -318,7 +333,6 @@ function AddCoupon() {
             </div>
 
             <label className="switch">
-
               <input
                 type="checkbox"
                 name="isActive"
@@ -327,9 +341,7 @@ function AddCoupon() {
               />
 
               <span className="slider"></span>
-
             </label>
-
           </div>
 
           {/* Actions */}
@@ -359,8 +371,8 @@ function AddCoupon() {
           </div>
 
         </form>
-
       </div>
+
     </div>
   );
 }

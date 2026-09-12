@@ -233,10 +233,28 @@ const updateProductStock = async (req, res, next) => {
   }
 };
 
+const getBestSellerProducts = async (req, res) => {
+  try {
+    const products = await productService.getBestSellerProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get best seller products",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
   getActiveProducts,
+  getBestSellerProducts,
   getProduct,
   updateProduct,
   deleteProduct,
