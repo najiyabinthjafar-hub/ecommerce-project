@@ -120,6 +120,11 @@ const resendOtp = async (email) => {
 
   await user.save();
 
+  // Temporary debugging
+  console.log("OTP email:", email);
+  console.log("EMAIL_USER loaded:", !!process.env.EMAIL_USER);
+  console.log("EMAIL_PASS loaded:", !!process.env.EMAIL_PASS);
+
   await sendOtpEmail(email, otp);
 
   return {

@@ -1,44 +1,56 @@
 const Coupon = require("../models/Coupon");
 
 const createCoupon = async (couponData) => {
-  const coupon = await Coupon.create(couponData);
-  return coupon;
-};
+  const existingCoupon = await Coupon.findOne({
+    code: couponData.code.toUpperCase(),
+  });
 
-const getAllCoupons = async () => {
-  const coupons = await Coupon.find().sort({ createdAt: -1 });
-  return coupons;
-};
+  if (existingCoupon) {
+    throw new Error("Coupon already exists");
+  }
 
-const getCouponByCode = async (code) => {
-  const coupon = await Coupon.findOne({
-    code: code.toUpperCase(),
+  const coupon = await Coupon.create({
+    ...couponData,
+    code: couponData.code.toUpperCase(),
   });
 
   return coupon;
 };
 
-const updateCoupon = async (couponId, updateData) => {
-  const coupon = await Coupon.findByIdAndUpdate(
-    couponId,
-    updateData,
+const getCoupons = async () => {
+  return await Coupon.find().sort({ createdAt: -1 });
+};
+
+const getCouponByCode = async (code) => {
+  return await Coupon.findOne({
+    code: code.toUpperCase(),
+  });
+};
+
+// Update coupon
+const updateCoupon = async (id, couponData) => {
+  if (couponData.code) {
+    couponData.code = couponData.code.toUpperCase();
+  }
+
+  return await Coupon.findByIdAndUpdate(
+    id,
+    couponData,
     {
       new: true,
       runValidators: true,
     }
   );
-
-  return coupon;
 };
 
-const deleteCoupon = async (couponId) => {
-  const coupon = await Coupon.findByIdAndDelete(couponId);
-  return coupon;
+// Delete coupon
+const deleteCoupon = async (id) => {
+  return await Coupon.findByIdAndDelete(id);
 };
 
 module.exports = {
   createCoupon,
-  getAllCoupons,
+  getCoupons,
   getCouponByCode,
   updateCoupon,
   deleteCoupon,

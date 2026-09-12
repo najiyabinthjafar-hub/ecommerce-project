@@ -1,9 +1,8 @@
 import { useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./ForgotPassword.css";
@@ -12,11 +11,8 @@ function ForgotPassword() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
-
   const [loading, setLoading] = useState(false);
-
   const [message, setMessage] = useState("");
-
   const [error, setError] = useState("");
 
   const handleForgotPassword = async (event) => {
@@ -25,7 +21,7 @@ function ForgotPassword() {
     setError("");
     setMessage("");
 
-    if (!email) {
+    if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
@@ -33,41 +29,39 @@ function ForgotPassword() {
     try {
       setLoading(true);
 
-      const response = await fetch(
+      const response = await axios.post(
         "http://localhost:5000/api/auth/forgot-password",
         {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-          }),
+          email: email.trim(),
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to send reset OTP"
-        );
-      }
-
       setMessage(
-        data.message || "OTP sent to your email."
+        response.data?.message ||
+          "OTP sent to your email."
       );
 
       // Save email for Reset Password page
-      localStorage.setItem("forgotPasswordEmail", email);
+      localStorage.setItem(
+        "forgotPasswordEmail",
+        email.trim()
+      );
 
+      // Go to reset password page
       setTimeout(() => {
         navigate("/reset-password");
       }, 1200);
+
     } catch (error) {
-      setError(error.message);
+      console.error(
+        "Forgot password error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          "Unable to process forgot password request."
+      );
     } finally {
       setLoading(false);
     }
@@ -78,17 +72,30 @@ function ForgotPassword() {
       <Navbar />
 
       <main className="forgot-password-page">
-        <section className="forgot-password-container">
-          <div className="forgot-password-header">
-            <p>PASSWORD RECOVERY</p>
 
-            <h1>FORGOT PASSWORD?</h1>
+        <section className="forgot-password-container">
+
+          {/* HEADER */}
+
+          <div className="forgot-password-header">
+
+            <p>
+              PASSWORD RECOVERY
+            </p>
+
+            <h1>
+              FORGOT PASSWORD?
+            </h1>
 
             <span>
-              Enter your email address and we will send you
-              an OTP to reset your password.
+              Enter your email address and we
+              will send you an OTP to reset
+              your password.
             </span>
+
           </div>
+
+          {/* SUCCESS MESSAGE */}
 
           {message && (
             <p className="forgot-success-message">
@@ -96,29 +103,39 @@ function ForgotPassword() {
             </p>
           )}
 
+          {/* ERROR MESSAGE */}
+
           {error && (
             <p className="forgot-error-message">
               {error}
             </p>
           )}
 
+          {/* FORM */}
+
           <form
             className="forgot-password-form"
             onSubmit={handleForgotPassword}
           >
+
             <div className="forgot-password-field">
+
               <label htmlFor="email">
                 EMAIL ADDRESS
               </label>
 
               <input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
                 required
               />
+
             </div>
 
             <button
@@ -130,14 +147,21 @@ function ForgotPassword() {
                 ? "SENDING..."
                 : "SEND RESET OTP"}
             </button>
+
           </form>
 
+          {/* BACK TO LOGIN */}
+
           <div className="forgot-back-login">
+
             <Link to="/login">
               ← BACK TO LOGIN
             </Link>
+
           </div>
+
         </section>
+
       </main>
 
       <Footer />

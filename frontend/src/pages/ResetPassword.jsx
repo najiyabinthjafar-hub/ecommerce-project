@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+import "./Login.css";
 import "./ResetPassword.css";
 
 function ResetPassword() {
@@ -12,6 +14,7 @@ function ResetPassword() {
   const [email, setEmail] = useState(
     localStorage.getItem("forgotPasswordEmail") || ""
   );
+
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -26,7 +29,12 @@ function ResetPassword() {
     setError("");
     setMessage("");
 
-    if (!email || !otp || !newPassword || !confirmPassword) {
+    if (
+      !email ||
+      !otp ||
+      !newPassword ||
+      !confirmPassword
+    ) {
       setError("Please fill in all fields.");
       return;
     }
@@ -39,40 +47,37 @@ function ResetPassword() {
     try {
       setLoading(true);
 
-      const response = await fetch(
+      const response = await axios.post(
         "http://localhost:5000/api/auth/reset-password",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            otp,
-            newPassword,
-          }),
+          email,
+          otp,
+          newPassword,
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to reset password"
-        );
-      }
-
       setMessage(
-        data.message || "Password reset successfully!"
+        response.data?.message ||
+          "Password reset successfully!"
       );
 
-      localStorage.removeItem("forgotPasswordEmail");
+      localStorage.removeItem(
+        "forgotPasswordEmail"
+      );
 
       setTimeout(() => {
         navigate("/login");
       }, 1500);
     } catch (error) {
-      setError(error.message);
+      console.error(
+        "Reset password error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          "Unable to reset password."
+      );
     } finally {
       setLoading(false);
     }
@@ -91,7 +96,8 @@ function ResetPassword() {
             <h1>RESET PASSWORD</h1>
 
             <span>
-              Enter the OTP sent to your email and create a new password.
+              Enter the OTP sent to your email
+              and create a new password.
             </span>
           </div>
 
@@ -112,6 +118,8 @@ function ResetPassword() {
             onSubmit={handleResetPassword}
           >
 
+            {/* EMAIL */}
+
             <div className="reset-password-field">
               <label htmlFor="email">
                 EMAIL ADDRESS
@@ -122,10 +130,14 @@ function ResetPassword() {
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
                 required
               />
             </div>
+
+            {/* OTP */}
 
             <div className="reset-password-field">
               <label htmlFor="otp">
@@ -137,10 +149,15 @@ function ResetPassword() {
                 type="text"
                 placeholder="Enter OTP"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(event) =>
+                  setOtp(event.target.value)
+                }
+                maxLength="6"
                 required
               />
             </div>
+
+            {/* NEW PASSWORD */}
 
             <div className="reset-password-field">
               <label htmlFor="newPassword">
@@ -152,10 +169,16 @@ function ResetPassword() {
                 type="password"
                 placeholder="Enter new password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(event) =>
+                  setNewPassword(
+                    event.target.value
+                  )
+                }
                 required
               />
             </div>
+
+            {/* CONFIRM PASSWORD */}
 
             <div className="reset-password-field">
               <label htmlFor="confirmPassword">
@@ -167,12 +190,16 @@ function ResetPassword() {
                 type="password"
                 placeholder="Confirm your new password"
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
+                onChange={(event) =>
+                  setConfirmPassword(
+                    event.target.value
+                  )
                 }
                 required
               />
             </div>
+
+            {/* RESET BUTTON */}
 
             <button
               type="submit"
