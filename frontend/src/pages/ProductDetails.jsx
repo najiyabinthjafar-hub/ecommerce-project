@@ -185,59 +185,46 @@ function ProductDetails() {
 
   // ================= ADD TO CART =================
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product.stock === 0) {
-      alert(
-        "This product is currently out of stock."
-      );
+      alert("This product is currently out of stock.");
       return;
     }
 
-    const existingCart =
-      JSON.parse(localStorage.getItem("cart")) ||
-      [];
+    try {
+      const token = localStorage.getItem("token");
 
-    const existingItem = existingCart.find(
-      (item) =>
-        item.id === product._id &&
-        item.size === selectedSize
-    );
+      if (!token) {
+        alert("Please login first.");
+        navigate("/login");
+        return;
+      }
 
-    let updatedCart;
-
-    if (existingItem) {
-      updatedCart = existingCart.map((item) =>
-        item.id === product._id &&
-        item.size === selectedSize
-          ? {
-              ...item,
-              quantity:
-                item.quantity + quantity,
-            }
-          : item
-      );
-    } else {
-      updatedCart = [
-        ...existingCart,
+      const response = await axios.post(
+        "http://localhost:5000/api/cart/add",
         {
-          id: product._id,
-          name: product.name,
-          price: productPrice,
-          image: selectedImage,
-          size: selectedSize,
-          quantity,
+          productId: product._id,
+          quantity: quantity,
         },
-      ];
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        alert("Product added to cart successfully!");
+        navigate("/cart");
+      }
+    } catch (error) {
+      console.error("ADD TO CART ERROR:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to add product to cart."
+      );
     }
-
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(updatedCart)
-    );
-
-    navigate("/cart");
   };
-
   // ================= BUY NOW =================
 
   const handleBuyNow = () => {
