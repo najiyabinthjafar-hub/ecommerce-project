@@ -1,96 +1,149 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./Wishlist.css";
+
+const API_URL = "http://localhost:5000/api";
 
 function Wishlist() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Profile page-il ninn vannal mathram true
   const showBackToProfile = location.state?.fromProfile === true;
 
-  // ================= WISHLIST =================
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [wishlist, setWishlist] = useState(() => {
+  // ================= GET WISHLIST =================
+
+  const fetchWishlist = async () => {
     try {
-      return JSON.parse(localStorage.getItem("wishlist")) || [];
-    } catch {
-      return [];
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setWishlist([]);
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_URL}/wishlist`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setWishlist(response.data.wishlist || []);
+    } catch (error) {
+      console.error("Wishlist fetch error:", error);
+      setWishlist([]);
+    } finally {
+      setLoading(false);
     }
-  });
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
 
   // ================= REMOVE FROM WISHLIST =================
 
-  const removeFromWishlist = (productId) => {
-    const updatedWishlist = wishlist.filter((product) => {
-      const id = product._id || product.id;
+  const removeFromWishlist = async (productId) => {
+    try {
+      const token = localStorage.getItem("token");
 
-      return id !== productId;
-    });
+      await axios.delete(
+        `${API_URL}/wishlist/remove/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    setWishlist(updatedWishlist);
+      setWishlist((currentWishlist) =>
+        currentWishlist.filter((product) => {
+          const id = product._id || product.id;
+          return id !== productId;
+        })
+      );
 
-    localStorage.setItem(
-      "wishlist",
-      JSON.stringify(updatedWishlist)
-    );
+      alert("Product removed from wishlist!");
+    } catch (error) {
+      console.error("Remove wishlist error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to remove product from wishlist."
+      );
+    }
   };
 
   // ================= ADD TO CART =================
 
-  const addToCart = (product) => {
+  const addToCart = async (product) => {
     try {
-      const cart =
-        JSON.parse(localStorage.getItem("cart")) || [];
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first.");
+        navigate("/login");
+        return;
+      }
 
       const productId = product._id || product.id;
 
-      const existingProduct = cart.find((item) => {
-        const itemId = item._id || item.id;
-
-        return itemId === productId;
-      });
-
-      let updatedCart;
-
-      if (existingProduct) {
-        updatedCart = cart.map((item) => {
-          const itemId = item._id || item.id;
-
-          if (itemId === productId) {
-            return {
-              ...item,
-              quantity: (item.quantity || 1) + 1,
-            };
-          }
-
-          return item;
-        });
-      } else {
-        updatedCart = [
-          ...cart,
-          {
-            ...product,
-            quantity: 1,
-            size: product.size || "M",
+      await axios.post(
+        `${API_URL}/cart/add`,
+        {
+          productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        ];
-      }
-
-      localStorage.setItem(
-        "cart",
-        JSON.stringify(updatedCart)
+        }
       );
 
       alert(`${product.name} added to cart!`);
     } catch (error) {
       console.error("Cart Error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to add product to cart."
+      );
+    }
+  };
+
+  // ================= CLEAR WISHLIST =================
+
+  const clearWishlist = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.delete(`${API_URL}/wishlist/clear`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setWishlist([]);
+
+      alert("Wishlist cleared!");
+    } catch (error) {
+      console.error("Clear wishlist error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to clear wishlist."
+      );
     }
   };
 
@@ -122,9 +175,15 @@ function Wishlist() {
             </span>
           </section>
 
-          {/* EMPTY WISHLIST */}
+          {/* LOADING */}
 
-          {wishlist.length === 0 ? (
+          {loading ? (
+            <section className="wishlist-empty">
+              <h2>Loading wishlist...</h2>
+            </section>
+          ) : wishlist.length === 0 ? (
+            /* EMPTY WISHLIST */
+
             <section className="wishlist-empty">
 
               <div className="empty-heart">♡</div>
@@ -148,25 +207,21 @@ function Wishlist() {
             <section className="wishlist-products">
 
               {wishlist.map((product) => {
-                // ================= PRODUCT ID =================
-
                 const productId =
                   product._id || product.id;
-
-                // ================= PRODUCT IMAGE =================
 
                 const productImage =
                   product.images?.[0] ||
                   product.image ||
                   "https://via.placeholder.com/300";
 
-                // ================= PRODUCT PRICE =================
-
                 const productPrice =
                   product.salePrice !== null &&
                   product.salePrice !== undefined
                     ? product.salePrice
-                    : product.regularPrice || product.price || 0;
+                    : product.regularPrice ||
+                      product.price ||
+                      0;
 
                 return (
                   <article
@@ -229,6 +284,15 @@ function Wishlist() {
                   </article>
                 );
               })}
+
+              {/* CLEAR WISHLIST */}
+
+              <button
+                className="wishlist-remove-btn"
+                onClick={clearWishlist}
+              >
+                CLEAR WISHLIST
+              </button>
 
             </section>
           )}
