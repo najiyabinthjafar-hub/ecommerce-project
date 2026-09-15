@@ -1,34 +1,15 @@
 const checkoutService = require("../services/checkoutService");
 
+// PROCESS CHECKOUT
 const processCheckout = async (req, res) => {
   try {
+    const userId = req.user._id;
+
     const {
-      userId,
       shippingAddress,
       paymentMethod,
       couponCode,
     } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "userId is required",
-      });
-    }
-
-    if (!shippingAddress) {
-      return res.status(400).json({
-        success: false,
-        message: "shippingAddress is required",
-      });
-    }
-
-    if (!paymentMethod) {
-      return res.status(400).json({
-        success: false,
-        message: "paymentMethod is required",
-      });
-    }
 
     const result = await checkoutService.processCheckout({
       userId,
@@ -37,13 +18,15 @@ const processCheckout = async (req, res) => {
       couponCode,
     });
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Checkout completed successfully",
       data: result,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Checkout Error:", error);
+
+    res.status(400).json({
       success: false,
       message: "Checkout failed",
       error: error.message,

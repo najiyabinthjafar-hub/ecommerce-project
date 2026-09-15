@@ -3,9 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-require("./models/Category");
-require("./models/Product");
-
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -19,33 +16,34 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const checkoutRoutes = require("./routes/checkoutRoutes");
 const adminTestRoutes = require("./routes/adminTestRoutes");
 
 const app = express();
 
-// DATABASE
-connectDB();
+// =========================
+// MIDDLEWARE
+// =========================
 
-// CORS
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   })
 );
 
-// MIDDLEWARE
 app.use(express.json());
 
-// TEST ROUTE
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "E-Commerce API is running",
-  });
-});
+// =========================
+// DATABASE
+// =========================
 
+connectDB();
+
+// =========================
 // API ROUTES
+// =========================
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/addresses", addressRoutes);
@@ -57,9 +55,48 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/checkout", checkoutRoutes);
 app.use("/api/admin", adminTestRoutes);
 
-// SERVER
+// =========================
+// ROOT ROUTE
+// =========================
+
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "E-commerce backend API is running",
+  });
+});
+
+// =========================
+// 404 ROUTE
+// =========================
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+  });
+});
+
+// =========================
+// ERROR HANDLER
+// =========================
+
+app.use((error, req, res, next) => {
+  console.error("Server error:", error);
+
+  res.status(error.status || 500).json({
+    success: false,
+    message: error.message || "Internal server error",
+  });
+});
+
+// =========================
+// START SERVER
+// =========================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

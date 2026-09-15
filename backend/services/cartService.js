@@ -1,16 +1,12 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 
-// =========================
 // GET CART
-// =========================
 const getCart = async (userId) => {
   return await Cart.findOne({ user: userId }).populate("items.product");
 };
 
-// =========================
 // ADD TO CART
-// =========================
 const addToCart = async (userId, productId, quantity = 1) => {
   const product = await Product.findById(productId);
 
@@ -23,7 +19,9 @@ const addToCart = async (userId, productId, quantity = 1) => {
   }
 
   if (quantity > product.stock) {
-    throw new Error(`Only ${product.stock} items are available in stock`);
+    throw new Error(
+      `Only ${product.stock} items are available in stock`
+    );
   }
 
   let cart = await Cart.findOne({ user: userId });
@@ -68,9 +66,7 @@ const addToCart = async (userId, productId, quantity = 1) => {
   return await cart.populate("items.product");
 };
 
-// =========================
 // UPDATE CART ITEM
-// =========================
 const updateCartItem = async (userId, productId, quantity) => {
   const product = await Product.findById(productId);
 
@@ -83,7 +79,9 @@ const updateCartItem = async (userId, productId, quantity) => {
   }
 
   if (quantity > product.stock) {
-    throw new Error(`Only ${product.stock} items are available in stock`);
+    throw new Error(
+      `Only ${product.stock} items are available in stock`
+    );
   }
 
   const cart = await Cart.findOne({ user: userId });
@@ -107,9 +105,7 @@ const updateCartItem = async (userId, productId, quantity) => {
   return await cart.populate("items.product");
 };
 
-// =========================
 // REMOVE FROM CART
-// =========================
 const removeFromCart = async (userId, productId) => {
   const cart = await Cart.findOne({ user: userId });
 
@@ -126,9 +122,7 @@ const removeFromCart = async (userId, productId) => {
   return await cart.populate("items.product");
 };
 
-// =========================
 // CLEAR CART
-// =========================
 const clearCart = async (userId) => {
   const cart = await Cart.findOne({ user: userId });
 
@@ -143,9 +137,6 @@ const clearCart = async (userId) => {
   return cart;
 };
 
-// =========================
-// EXPORT
-// =========================
 module.exports = {
   getCart,
   addToCart,
