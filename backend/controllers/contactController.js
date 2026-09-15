@@ -8,13 +8,12 @@ const createContact = async (req, res) => {
       name,
       email,
       phone,
-      subject,
-      message,
+      comment,
     } = req.body;
 
-    if (!name || !email || !subject || !message) {
+    if (!name || !email || !phone || !comment) {
       return res.status(400).json({
-        message: "Name, email, subject and message are required",
+        message: "Name, email, phone and comment are required",
       });
     }
 
@@ -22,8 +21,7 @@ const createContact = async (req, res) => {
       name,
       email,
       phone,
-      subject,
-      message,
+      comment,
     });
 
     res.status(201).json({
@@ -54,40 +52,6 @@ const getAllContacts = async (req, res) => {
   }
 };
 
-// ================= UPDATE CONTACT STATUS =================
-
-const updateContactStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({
-        message: "Status is required",
-      });
-    }
-
-    if (!["pending", "resolved"].includes(status)) {
-      return res.status(400).json({
-        message: "Status must be pending or resolved",
-      });
-    }
-
-    const contact = await contactService.updateContactStatus(
-      req.params.id,
-      status
-    );
-
-    res.status(200).json({
-      message: "Contact status updated successfully",
-      contact,
-    });
-  } catch (error) {
-    res.status(400).json({
-      message: error.message,
-    });
-  }
-};
-
 // ================= DELETE CONTACT =================
 
 const deleteContact = async (req, res) => {
@@ -107,6 +71,5 @@ const deleteContact = async (req, res) => {
 module.exports = {
   createContact,
   getAllContacts,
-  updateContactStatus,
   deleteContact,
 };
