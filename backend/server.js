@@ -27,6 +27,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const checkoutRoutes = require("./routes/checkoutRoutes");
 
 const adminTestRoutes = require("./routes/adminTestRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use("/api/checkout", checkoutRoutes);
 
 // Admin
 app.use("/api/admin", adminTestRoutes);
+app.use("/api/contacts", contactRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
