@@ -21,18 +21,52 @@ function Orders() {
         setLoading(true);
         setError("");
 
-        const response = await axios.get(
-          `${API_URL}/orders/all`
+        const token = localStorage.getItem("token");
+
+        console.log("ADMIN TOKEN EXISTS:", !!token);
+        console.log(
+          "ADMIN TOKEN LENGTH:",
+          token ? token.length : 0
         );
 
-        setOrders(response.data?.orders || []);
+        if (!token) {
+          setError("Authentication required");
+          return;
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders/all`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("ADMIN ORDERS RESPONSE:", response.data);
+
+        const orderList =
+          response.data?.orders ||
+          response.data?.data ||
+          response.data ||
+          [];
+
+        setOrders(
+          Array.isArray(orderList) ? orderList : []
+        );
       } catch (error) {
-        console.error("Failed to fetch orders:", error);
+        console.error(
+          "Failed to fetch admin orders:",
+          error
+        );
 
         setError(
           error.response?.data?.message ||
+            error.message ||
             "Failed to load orders."
         );
+
+        setOrders([]);
       } finally {
         setLoading(false);
       }
@@ -59,17 +93,14 @@ function Orders() {
         "";
 
       const orderId = order._id || "";
+      const searchText = search.toLowerCase();
 
       const matchesSearch =
-        orderId
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        customerName
-          .toLowerCase()
-          .includes(search.toLowerCase());
+        orderId.toLowerCase().includes(searchText) ||
+        customerName.toLowerCase().includes(searchText);
 
       const orderStatus = formatStatus(
-        order.orderStatus
+        order.orderStatus || order.status
       );
 
       const matchesStatus =
@@ -80,31 +111,40 @@ function Orders() {
     });
   }, [orders, search, statusFilter]);
 
-  const pendingOrders = orders.filter(
-    (order) =>
-      String(order.orderStatus).toLowerCase() ===
-      "pending"
-  ).length;
+  const pendingOrders = orders.filter((order) => {
+    const status = String(
+      order.orderStatus || order.status || ""
+    ).toLowerCase();
 
-  const processingOrders = orders.filter(
-    (order) =>
-      String(order.orderStatus).toLowerCase() ===
-        "processing" ||
-      String(order.orderStatus).toLowerCase() ===
-        "confirmed"
-  ).length;
+    return status === "pending";
+  }).length;
 
-  const deliveredOrders = orders.filter(
-    (order) =>
-      String(order.orderStatus).toLowerCase() ===
-      "delivered"
-  ).length;
+  const processingOrders = orders.filter((order) => {
+    const status = String(
+      order.orderStatus || order.status || ""
+    ).toLowerCase();
 
-  const cancelledOrders = orders.filter(
-    (order) =>
-      String(order.orderStatus).toLowerCase() ===
-      "cancelled"
-  ).length;
+    return (
+      status === "processing" ||
+      status === "confirmed"
+    );
+  }).length;
+
+  const deliveredOrders = orders.filter((order) => {
+    const status = String(
+      order.orderStatus || order.status || ""
+    ).toLowerCase();
+
+    return status === "delivered";
+  }).length;
+
+  const cancelledOrders = orders.filter((order) => {
+    const status = String(
+      order.orderStatus || order.status || ""
+    ).toLowerCase();
+
+    return status === "cancelled";
+  }).length;
 
   return (
     <div className="admin-layout">
@@ -166,14 +206,17 @@ function Orders() {
         </div>
 
         {error && (
-          <p
+          <div
             style={{
-              color: "red",
+              padding: "15px",
               margin: "20px 0",
+              color: "#b00020",
+              background: "#ffecec",
+              border: "1px solid #ffb3b3",
             }}
           >
             {error}
-          </p>
+          </div>
         )}
 
         <div className="orders-table-container">
@@ -232,7 +275,8 @@ function Orders() {
                     0;
 
                   const status = formatStatus(
-                    order.orderStatus
+                    order.orderStatus ||
+                      order.status
                   );
 
                   return (
@@ -248,7 +292,7 @@ function Orders() {
                       <td>{itemCount}</td>
 
                       <td className="order-total">
-                        ₹
+                        ?
                         {Number(total).toLocaleString(
                           "en-IN"
                         )}

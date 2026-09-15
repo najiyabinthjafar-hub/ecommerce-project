@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import logo from "../assets/logo.png";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -13,21 +12,25 @@ const API_URL = "http://localhost:5000/api";
 function Checkout() {
   const navigate = useNavigate();
 
-  const [cartItems, setCartItems] = useState([]);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [discount, setDiscount] = useState(0);
-  const [couponLoading, setCouponLoading] = useState(false);
+  const [coupon, setCoupon] = useState(null);
   const [couponMessage, setCouponMessage] = useState("");
-  const [couponError, setCouponError] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState("upi");
-  const [billingAddress, setBillingAddress] = useState("same");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
-  const [error, setError] = useState("");
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: "",
+    phone: "",
+    address: "",
+    apartment: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
 
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -38,1154 +41,657 @@ function Checkout() {
     },
   };
 
-  // =========================
-  // GET USER EMAIL
-  // =========================
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
-  const getUserEmail = () => {
+    fetchCart();
+  }, [token, navigate]);
+
+  const fetchCart = async () => {
     try {
-      const user = JSON.parse(
-        localStorage.getItem("user") || "{}"
+      setLoading(true);
+
+      const response = await axios.get(
+        `${API_URL}/cart`,
+        authConfig
       );
 
-      return user.email || "";
-    } catch {
-      return "";
+      setCart(response.data.cart || response.data);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("user");
+        navigate("/login");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // =========================
-  // GET CART
-  // =========================
+  const getCartItems = () => {
+    if (!cart) return [];
 
-  useEffect(() => {
-    const fetchCart = async () => {
-      if (!token) {
-        setLoading(false);
+    return cart.items || cart.products || [];
+  };
+
+  const getProduct = (item) => {
+    return item.product || item.productId || item;
+  };
+
+  const getQuantity = (item) => {
+    return item.quantity || 1;
+  };
+
+  const getPrice = (item) => {
+    const product = getProduct(item);
+
+    return Number(
+      product.price ||
+        product.salePrice ||
+        item.price ||
+        0
+    );
+  };
+
+  const cartItems = getCartItems();
+
+  const subtotal = cartItems.reduce((total, item) => {
+    return total + getPrice(item) * getQuantity(item);
+  }, 0);
+
+  const deliveryCharge = subtotal >= 999 || subtotal === 0 ? 0 : 99;
+
+  const discount = coupon
+    ? coupon.discountAmount || 0
+    : 0;
+
+  const totalAmount = Math.max(
+    0,
+    subtotal + deliveryCharge - discount
+  );
+
+  const handleAddressChange = (event) => {
+    const { name, value } = event.target;
+
+    setShippingAddress((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponMessage("Please enter a coupon code.");
+      setCoupon(null);
+      return;
+    }
+
+    try {
+      setCouponMessage("");
+
+      const response = await axios.get(
+        `${API_URL}/coupons/code/${couponCode.trim().toUpperCase()}`,
+        authConfig
+      );
+
+      const couponData = response.data.coupon || response.data;
+
+      if (!couponData) {
+        setCoupon(null);
+        setCouponMessage("Invalid coupon.");
         return;
       }
 
-      try {
-        const response = await axios.get(
-          `${API_URL}/cart`,
-          authConfig
-        );
-
-        setCartItems(
-          response.data.cart?.items || []
-        );
-      } catch (error) {
-        console.error("GET CART ERROR:", error);
-
-        setError(
-          error.response?.data?.message ||
-            "Failed to load cart"
-        );
-      } finally {
-        setLoading(false);
+      if (couponData.active === false) {
+        setCoupon(null);
+        setCouponMessage("This coupon is inactive.");
+        return;
       }
-    };
 
-    fetchCart();
-  }, []);
+      if (
+        couponData.expiryDate &&
+        new Date(couponData.expiryDate) < new Date()
+      ) {
+        setCoupon(null);
+        setCouponMessage("This coupon has expired.");
+        return;
+      }
 
-  // =========================
-  // SUBTOTAL
-  // =========================
+      const minimumPurchase =
+        Number(couponData.minimumPurchase || 0);
 
-  const subtotal = cartItems.reduce(
-    (total, item) => {
-      const price =
-        item.product?.salePrice ??
-        item.product?.regularPrice ??
-        item.product?.price ??
-        0;
+      if (subtotal < minimumPurchase) {
+        setCoupon(null);
+        setCouponMessage(
+          `Minimum purchase should be ₹${minimumPurchase}.`
+        );
+        return;
+      }
 
-      return (
-        total +
-        price * item.quantity
+      let discountAmount = 0;
+
+      if (
+        couponData.discountType === "percentage" ||
+        couponData.type === "percentage"
+      ) {
+        discountAmount =
+          (subtotal * Number(couponData.discountValue || 0)) /
+          100;
+      } else {
+        discountAmount = Number(
+          couponData.discountValue ||
+            couponData.discount ||
+            0
+        );
+      }
+
+      if (couponData.maxDiscount) {
+        discountAmount = Math.min(
+          discountAmount,
+          Number(couponData.maxDiscount)
+        );
+      }
+
+      setCoupon({
+        ...couponData,
+        discountAmount,
+      });
+
+      setCouponMessage(
+        `Coupon ${couponData.code} applied successfully.`
       );
-    },
-    0
-  );
+    } catch (error) {
+      console.error("Coupon error:", error);
 
-  // =========================
-  // DELIVERY
-  // =========================
+      setCoupon(null);
 
-  const delivery =
-    subtotal === 0
-      ? 0
-      : subtotal >= 999
-      ? 0
-      : 99;
+      setCouponMessage(
+        error.response?.data?.message ||
+          "Invalid coupon code."
+      );
+    }
+  };
 
-  // =========================
-  // APPLY COUPON
-  // =========================
-
-  const handleApplyCoupon = async () => {
-    const code = couponCode
-      .trim()
-      .toUpperCase();
-
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponCode("");
     setCouponMessage("");
-    setCouponError("");
+  };
 
-    if (!code) {
-      setCouponError(
-        "Please enter a coupon code."
+  const validateAddress = () => {
+    const requiredFields = [
+      "fullName",
+      "phone",
+      "address",
+      "city",
+      "state",
+      "pincode",
+    ];
+
+    for (const field of requiredFields) {
+      if (!shippingAddress[field].trim()) {
+        alert(`Please enter ${field}.`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    if (!validateAddress()) {
+      return;
+    }
+
+    /*
+      Currently COD is the functional payment method.
+      Razorpay integration will be added separately.
+    */
+    if (paymentMethod !== "cod") {
+      alert(
+        "Online payment is not available yet. Please select Cash on Delivery."
       );
       return;
     }
 
-    setCouponLoading(true);
-
     try {
-      const response = await axios.get(
-        `${API_URL}/coupons/code/${code}`
-      );
+      setPlacingOrder(true);
 
-      const coupon =
-        response.data?.coupon ||
-        response.data?.data ||
-        response.data;
-
-      if (!coupon) {
-        throw new Error("Invalid coupon");
-      }
-
-      // Active check
-      if (coupon.isActive === false) {
-        setCouponError(
-          "This coupon is inactive."
-        );
-        setDiscount(0);
-        setAppliedCoupon(null);
-        return;
-      }
-
-      // Expiry check
-      if (
-        coupon.expiry &&
-        new Date(coupon.expiry) < new Date()
-      ) {
-        setCouponError(
-          "This coupon has expired."
-        );
-        setDiscount(0);
-        setAppliedCoupon(null);
-        return;
-      }
-
-      // Minimum purchase check
-      if (
-        coupon.minimumPurchase &&
-        subtotal < coupon.minimumPurchase
-      ) {
-        setCouponError(
-          `Minimum purchase of ₹${coupon.minimumPurchase} is required.`
-        );
-        setDiscount(0);
-        setAppliedCoupon(null);
-        return;
-      }
-
-      let calculatedDiscount = 0;
-
-      // Percentage
-      if (
-        coupon.discountType ===
-        "percentage"
-      ) {
-        calculatedDiscount =
-          (subtotal *
-            coupon.discountValue) /
-          100;
-
-        if (
-          coupon.maxDiscount &&
-          calculatedDiscount >
-            coupon.maxDiscount
-        ) {
-          calculatedDiscount =
-            coupon.maxDiscount;
-        }
-      }
-
-      // Fixed
-      if (
-        coupon.discountType === "fixed"
-      ) {
-        calculatedDiscount =
-          coupon.discountValue;
-      }
-
-      // Discount cannot exceed subtotal
-      if (
-        calculatedDiscount > subtotal
-      ) {
-        calculatedDiscount = subtotal;
-      }
-
-      calculatedDiscount = Math.max(
-        0,
-        calculatedDiscount
-      );
-
-      setDiscount(calculatedDiscount);
-      setAppliedCoupon(coupon);
-
-      setCouponMessage(
-        `Coupon ${code} applied successfully.`
-      );
-    } catch (error) {
-      console.error(
-        "COUPON ERROR:",
-        error
-      );
-
-      setDiscount(0);
-      setAppliedCoupon(null);
-
-      setCouponError(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Invalid coupon code."
-      );
-    } finally {
-      setCouponLoading(false);
-    }
-  };
-
-  // =========================
-  // REMOVE COUPON
-  // =========================
-
-  const handleRemoveCoupon = () => {
-    setCouponCode("");
-    setAppliedCoupon(null);
-    setDiscount(0);
-    setCouponMessage("");
-    setCouponError("");
-  };
-
-  // =========================
-  // FINAL TOTAL
-  // =========================
-
-  const finalTotal = Math.max(
-    0,
-    subtotal + delivery - discount
-  );
-
-  // =========================
-  // PLACE ORDER
-  // =========================
-
-  const handlePlaceOrder = async (event) => {
-    event.preventDefault();
-
-    setError("");
-    setPlacingOrder(true);
-
-    try {
-      const formData = new FormData(
-        event.target
-      );
-
-      const shippingAddress = {
-        fullName:
-          `${formData.get(
-            "firstName"
-          )} ${formData.get(
-            "lastName"
-          )}`.trim(),
-
-        phone: formData.get("phone"),
-
-        address: formData.get("address"),
-
-        apartment:
-          formData.get("apartment"),
-
-        city: formData.get("city"),
-
-        state: formData.get("state"),
-
-        pincode:
-          formData.get("pincode"),
-      };
-
-      const selectedPayment =
-        paymentMethod === "cod"
-          ? "COD"
-          : paymentMethod === "upi"
-          ? "UPI"
-          : "Card";
-
-      const checkoutData = {
+      const orderData = {
         userId,
+        items: cartItems.map((item) => {
+          const product = getProduct(item);
+
+          return {
+            product: product._id || product.id,
+            quantity: getQuantity(item),
+            price: getPrice(item),
+          };
+        }),
         shippingAddress,
-        paymentMethod: selectedPayment,
+        couponCode: coupon?.code || null,
+        paymentMethod: "COD",
       };
 
-      if (appliedCoupon) {
-        checkoutData.couponCode =
-          couponCode
-            .trim()
-            .toUpperCase();
-      }
-
-      console.log(
-        "CHECKOUT DATA:",
-        checkoutData
-      );
+      console.log("Checkout request:", orderData);
 
       const response = await axios.post(
         `${API_URL}/checkout`,
-        checkoutData,
+        orderData,
         authConfig
       );
 
-      console.log(
-        "CHECKOUT SUCCESS:",
-        response.data
-      );
+      console.log("Checkout response:", response.data);
 
-      alert(
-        "Order placed successfully!"
-      );
+      alert("Order placed successfully!");
+
+      await fetchCart();
 
       navigate("/orders");
     } catch (error) {
-      console.error(
-        "CHECKOUT ERROR:",
-        error
-      );
+      console.error("Checkout error:", error);
 
-      setError(
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Checkout failed"
+      alert(
+        error.response?.data?.message ||
+          "Failed to place order. Please try again."
       );
     } finally {
       setPlacingOrder(false);
     }
   };
 
-  // =========================
-  // LOGIN REQUIRED
-  // =========================
-
-  if (!token) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="checkout-page">
-          <section className="checkout-heading">
-            <p>CHECKOUT</p>
-
-            <h1>LOGIN REQUIRED</h1>
-
-            <span>
-              Please login before
-              proceeding to checkout.
-            </span>
-          </section>
-
-          <div className="checkout-empty">
-            <Link to="/login">
-              LOGIN
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // =========================
-  // LOADING
-  // =========================
-
   if (loading) {
     return (
       <>
         <Navbar />
 
-        <main className="checkout-page">
-          <section className="checkout-heading">
-            <p>CHECKOUT</p>
-
-            <h1>LOADING...</h1>
-
-            <span>
-              Loading your cart...
-            </span>
-          </section>
-        </main>
+        <div className="checkout-page">
+          <div className="checkout-loading">
+            Loading checkout...
+          </div>
+        </div>
 
         <Footer />
       </>
     );
   }
 
-  // =========================
-  // EMPTY CART
-  // =========================
-
-  if (cartItems.length === 0) {
+  if (!cart || cartItems.length === 0) {
     return (
       <>
-        <main className="checkout-empty-page">
-          <div className="checkout-empty-logo">
-            <img
-              src={logo}
-              alt="Rizo"
-            />
-          </div>
+        <Navbar />
 
-          <div className="checkout-empty">
-            <h2>
-              Your cart is empty
-            </h2>
+        <div className="checkout-page">
+          <div className="empty-checkout">
+            <h2>Your cart is empty</h2>
 
-            <button
-              onClick={() =>
-                navigate("/shop")
-              }
-            >
-              CONTINUE SHOPPING
-            </button>
+            <p>
+              Add some products to your cart before checkout.
+            </p>
+
+            <Link to="/" className="checkout-shop-btn">
+              Continue Shopping
+            </Link>
           </div>
-        </main>
+        </div>
+
+        <Footer />
       </>
     );
   }
 
-  // =========================
-  // MAIN CHECKOUT
-  // =========================
-
   return (
     <>
-      <main className="figma-checkout">
+      <Navbar />
 
-        {error && (
-          <div className="checkout-error">
-            {error}
+      <main className="checkout-page">
+        <div className="checkout-container">
+
+          <div className="checkout-header">
+            <h1>Checkout</h1>
+
+            <Link to="/cart">
+              ← Back to Cart
+            </Link>
           </div>
-        )}
 
-        <form
-          className="figma-checkout-container"
-          onSubmit={handlePlaceOrder}
-        >
+          <div className="checkout-layout">
 
-          {/* ================= LEFT SIDE ================= */}
+            {/* LEFT SIDE */}
 
-          <section className="delivery-section">
+            <div className="checkout-left">
 
-            {/* LOGO */}
+              <section className="checkout-section">
+                <h2>Shipping Address</h2>
 
-            <div className="checkout-logo">
-              <img
-                src={logo}
-                alt="Rizo"
-              />
-            </div>
+                <div className="address-form">
 
-            {/* DELIVERY */}
+                  <div className="form-row">
 
-            <h2 className="delivery-title">
-              Delivery
-            </h2>
+                    <div className="form-group">
+                      <label>Full Name</label>
 
-            {/* COUNTRY */}
-
-            <div className="checkout-field">
-              <label>
-                Country/region
-              </label>
-
-              <select name="country">
-                <option value="India">
-                  India
-                </option>
-              </select>
-            </div>
-
-            {/* NAME */}
-
-            <div className="checkout-row">
-
-              <div className="checkout-field">
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="First name"
-                  required
-                />
-              </div>
-
-              <div className="checkout-field">
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Last name"
-                  required
-                />
-              </div>
-
-            </div>
-
-            {/* ADDRESS */}
-
-            <div className="checkout-field">
-              <input
-                type="text"
-                name="address"
-                placeholder="Address"
-                required
-              />
-
-              <span className="field-icon">
-                ⌕
-              </span>
-            </div>
-
-            {/* APARTMENT */}
-
-            <div className="checkout-field">
-              <input
-                type="text"
-                name="apartment"
-                placeholder="Apartment, suite, etc. (optional)"
-              />
-            </div>
-
-            {/* CITY STATE PIN */}
-
-            <div className="checkout-location-row">
-
-              <div className="checkout-field">
-                <input
-                  type="text"
-                  name="city"
-                  placeholder="City"
-                  required
-                />
-              </div>
-
-              <div className="checkout-field">
-                <select
-                  name="state"
-                  defaultValue="Kerala"
-                  required
-                >
-                  <option value="Kerala">
-                    Kerala
-                  </option>
-
-                  <option value="Tamil Nadu">
-                    Tamil Nadu
-                  </option>
-
-                  <option value="Karnataka">
-                    Karnataka
-                  </option>
-
-                  <option value="Maharashtra">
-                    Maharashtra
-                  </option>
-
-                  <option value="Delhi">
-                    Delhi
-                  </option>
-                </select>
-              </div>
-
-              <div className="checkout-field">
-                <input
-                  type="text"
-                  name="pincode"
-                  placeholder="PIN code"
-                  pattern="[0-9]{6}"
-                  title="Please enter a valid 6-digit PIN code"
-                  required
-                />
-              </div>
-
-            </div>
-
-            {/* PHONE */}
-
-            <div className="checkout-field">
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone"
-                pattern="[0-9]{10}"
-                title="Please enter a valid 10-digit phone number"
-                required
-              />
-
-              <span className="field-icon phone-icon">
-                ◷
-              </span>
-            </div>
-
-            {/* EMAIL */}
-
-            <input
-              type="hidden"
-              name="email"
-              value={getUserEmail()}
-              readOnly
-            />
-
-            {/* SAVE INFORMATION */}
-
-            <label className="save-info">
-              <input
-                type="checkbox"
-                name="saveInfo"
-              />
-
-              <span>
-                Save this information
-                for next time
-              </span>
-            </label>
-
-            {/* ================= COUPON ================= */}
-
-            <div className="coupon-section">
-
-              <h2>Discount code</h2>
-
-              <div
-                className="discount-box"
-              >
-                <input
-                  type="text"
-                  placeholder="Discount code or gift card"
-                  value={couponCode}
-                  onChange={(event) =>
-                    setCouponCode(
-                      event.target.value.toUpperCase()
-                    )
-                  }
-                />
-
-                <button
-                  type="button"
-                  onClick={
-                    handleApplyCoupon
-                  }
-                  disabled={
-                    couponLoading
-                  }
-                >
-                  {couponLoading
-                    ? "Applying..."
-                    : "Apply"}
-                </button>
-              </div>
-
-              {couponMessage && (
-                <p
-                  style={{
-                    color: "green",
-                    marginTop: "8px",
-                  }}
-                >
-                  {couponMessage}
-                </p>
-              )}
-
-              {couponError && (
-                <p
-                  style={{
-                    color: "red",
-                    marginTop: "8px",
-                  }}
-                >
-                  {couponError}
-                </p>
-              )}
-
-              {appliedCoupon && (
-                <button
-                  type="button"
-                  onClick={
-                    handleRemoveCoupon
-                  }
-                  style={{
-                    marginTop: "8px",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    textDecoration:
-                      "underline",
-                  }}
-                >
-                  Remove Coupon
-                </button>
-              )}
-
-            </div>
-
-          </section>
-
-          {/* ================= RIGHT SIDE ================= */}
-
-          <section className="checkout-right">
-
-            {/* PRODUCTS */}
-
-            <div className="order-summary-products">
-
-              {cartItems.map((item) => {
-                const product =
-                  item.product;
-
-                const price =
-                  product?.salePrice ??
-                  product?.regularPrice ??
-                  product?.price ??
-                  0;
-
-                return (
-                  <div
-                    className="figma-product"
-                    key={product?._id}
-                  >
-
-                    <div className="figma-product-image">
-
-                      <img
-                        src={
-                          product?.image ||
-                          product?.images?.[0] ||
-                          "/placeholder.png"
-                        }
-                        alt={
-                          product?.name ||
-                          "Product"
-                        }
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={shippingAddress.fullName}
+                        onChange={handleAddressChange}
+                        placeholder="Enter full name"
                       />
-
-                      <span className="product-quantity">
-                        {item.quantity}
-                      </span>
-
                     </div>
 
-                    <div className="figma-product-name">
+                    <div className="form-group">
+                      <label>Phone</label>
 
-                      <h4>
-                        {product?.name ||
-                          "Product"}
-                      </h4>
-
-                      {item.size && (
-                        <small>
-                          Size: {item.size}
-                        </small>
-                      )}
-
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={shippingAddress.phone}
+                        onChange={handleAddressChange}
+                        placeholder="Enter phone number"
+                      />
                     </div>
-
-                    <strong>
-                      ₹
-                      {(
-                        price *
-                        item.quantity
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
-                    </strong>
 
                   </div>
-                );
-              })}
 
-            </div>
+                  <div className="form-group">
+                    <label>Address</label>
 
-            {/* ================= PRICE DETAILS ================= */}
+                    <input
+                      type="text"
+                      name="address"
+                      value={shippingAddress.address}
+                      onChange={handleAddressChange}
+                      placeholder="House number, street, area"
+                    />
+                  </div>
 
-            <div className="price-details">
+                  <div className="form-group">
+                    <label>Apartment / Landmark</label>
 
-              <div className="price-row">
+                    <input
+                      type="text"
+                      name="apartment"
+                      value={shippingAddress.apartment}
+                      onChange={handleAddressChange}
+                      placeholder="Apartment, landmark (optional)"
+                    />
+                  </div>
 
-                <span>
-                  Subtotal
-                </span>
+                  <div className="form-row">
 
-                <span>
-                  ₹
-                  {subtotal.toLocaleString(
-                    "en-IN"
-                  )}
-                </span>
+                    <div className="form-group">
+                      <label>City</label>
 
-              </div>
+                      <input
+                        type="text"
+                        name="city"
+                        value={shippingAddress.city}
+                        onChange={handleAddressChange}
+                        placeholder="City"
+                      />
+                    </div>
 
-              {discount > 0 && (
-                <div className="price-row">
+                    <div className="form-group">
+                      <label>State</label>
 
-                  <span>
-                    Discount
-                    {appliedCoupon?.code
-                      ? ` (${appliedCoupon.code})`
-                      : ""}
-                  </span>
+                      <input
+                        type="text"
+                        name="state"
+                        value={shippingAddress.state}
+                        onChange={handleAddressChange}
+                        placeholder="State"
+                      />
+                    </div>
 
-                  <span>
-                    -₹
-                    {discount.toLocaleString(
-                      "en-IN"
-                    )}
-                  </span>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Pincode</label>
+
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={shippingAddress.pincode}
+                      onChange={handleAddressChange}
+                      placeholder="Pincode"
+                    />
+                  </div>
 
                 </div>
-              )}
+              </section>
 
-              <div className="price-row">
+              {/* PAYMENT */}
 
-                <span>
-                  Shipping
-                </span>
+              <section className="checkout-section">
+                <h2>Payment Method</h2>
 
-                <span className="shipping-value">
-                  {delivery === 0
-                    ? "FREE"
-                    : `₹${delivery}`}
-                </span>
+                <div className="payment-options">
 
-              </div>
+                  <label className="payment-option">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="cod"
+                      checked={paymentMethod === "cod"}
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value)
+                      }
+                    />
 
-            </div>
+                    <div>
+                      <strong>Cash on Delivery</strong>
 
-            {/* ================= TOTAL ================= */}
+                      <p>
+                        Pay when your order is delivered.
+                      </p>
+                    </div>
+                  </label>
 
-            <div className="figma-total">
+                  <label className="payment-option disabled-payment">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="razorpay"
+                      checked={paymentMethod === "razorpay"}
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value)
+                      }
+                    />
 
-              <div>
+                    <div>
+                      <strong>Online Payment</strong>
 
-                <h2>
-                  Total
-                </h2>
+                      <p>
+                        UPI / Card / Net Banking
+                      </p>
 
-                <small>
-                  Including taxes
-                </small>
+                      <small>
+                        Razorpay integration coming soon
+                      </small>
+                    </div>
+                  </label>
 
-              </div>
+                </div>
+              </section>
 
-              <strong>
+              {/* COUPON */}
 
-                <span className="currency">
-                  INR
-                </span>
+              <section className="checkout-section">
+                <h2>Coupon</h2>
 
-                ₹
-                {finalTotal.toLocaleString(
-                  "en-IN"
+                <div className="coupon-box">
+
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(event) =>
+                      setCouponCode(event.target.value)
+                    }
+                    placeholder="Enter coupon code"
+                    disabled={!!coupon}
+                  />
+
+                  {!coupon ? (
+                    <button
+                      type="button"
+                      onClick={validateCoupon}
+                    >
+                      Apply
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                    >
+                      Remove
+                    </button>
+                  )}
+
+                </div>
+
+                {couponMessage && (
+                  <p className="coupon-message">
+                    {couponMessage}
+                  </p>
                 )}
 
-              </strong>
+              </section>
 
             </div>
 
-            {/* ================= PAYMENT ================= */}
+            {/* RIGHT SIDE */}
 
-            <div className="payment-section">
+            <div className="checkout-right">
 
-              <h2>
-                Payment
-              </h2>
+              <section className="order-summary">
 
-              <p className="payment-subtitle">
-                All transactions are
-                secure and encrypted.
-              </p>
+                <h2>Order Summary</h2>
 
-              {/* UPI */}
+                <div className="summary-items">
 
-              <label
-                className={`payment-method ${
-                  paymentMethod === "upi"
-                    ? "active-payment"
-                    : ""
-                }`}
-              >
+                  {cartItems.map((item, index) => {
+                    const product = getProduct(item);
+                    const quantity = getQuantity(item);
+                    const price = getPrice(item);
 
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="upi"
-                  checked={
-                    paymentMethod ===
-                    "upi"
-                  }
-                  onChange={() =>
-                    setPaymentMethod(
-                      "upi"
-                    )
-                  }
-                />
+                    return (
+                      <div
+                        className="summary-item"
+                        key={
+                          product._id ||
+                          product.id ||
+                          index
+                        }
+                      >
 
-                <div className="payment-method-content">
+                        <div className="summary-product">
+
+                          {product.image && (
+                            <img
+                              src={product.image}
+                              alt={product.name || "Product"}
+                            />
+                          )}
+
+                          <div>
+                            <h4>
+                              {product.name ||
+                                "Product"}
+                            </h4>
+
+                            <p>
+                              Qty: {quantity}
+                            </p>
+                          </div>
+
+                        </div>
+
+                        <span>
+                          ₹
+                          {(price * quantity).toFixed(2)}
+                        </span>
+
+                      </div>
+                    );
+                  })}
+
+                </div>
+
+                <div className="summary-line">
+                  <span>Subtotal</span>
+
+                  <span>
+                    ₹{subtotal.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="summary-line">
+                  <span>Delivery</span>
+
+                  <span>
+                    {deliveryCharge === 0
+                      ? "FREE"
+                      : `₹${deliveryCharge.toFixed(2)}`}
+                  </span>
+                </div>
+
+                {coupon && (
+                  <div className="summary-line discount-line">
+                    <span>Discount</span>
+
+                    <span>
+                      -₹{discount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
+                <div className="summary-total">
+                  <span>Total</span>
 
                   <strong>
-                    PhonePe Payment
-                    Gateway
-                    (UPI, Cards &
-                    NetBanking)
+                    ₹{totalAmount.toFixed(2)}
                   </strong>
-
                 </div>
 
-                <span className="payment-icons">
-                  UPI&nbsp;&nbsp; VISA&nbsp;&nbsp; MC
-                </span>
+                <button
+                  type="button"
+                  className="place-order-btn"
+                  onClick={handlePlaceOrder}
+                  disabled={placingOrder}
+                >
+                  {placingOrder
+                    ? "PLACING ORDER..."
+                    : "PLACE ORDER"}
+                </button>
 
-              </label>
+                <p className="checkout-note">
+                  By placing your order, you agree to our
+                  terms and conditions.
+                </p>
 
-              {paymentMethod ===
-                "upi" && (
-                <div className="payment-info-box">
-
-                  <p>
-                    After clicking{" "}
-                    <strong>
-                      “Pay now”
-                    </strong>
-                    , you will be
-                    redirected to
-                    PhonePe Payment
-                    Gateway to
-                    complete your
-                    purchase securely.
-                  </p>
-
-                </div>
-              )}
-
-              {/* COD */}
-
-              <label
-                className={`payment-method ${
-                  paymentMethod === "cod"
-                    ? "active-payment"
-                    : ""
-                }`}
-              >
-
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cod"
-                  checked={
-                    paymentMethod ===
-                    "cod"
-                  }
-                  onChange={() =>
-                    setPaymentMethod(
-                      "cod"
-                    )
-                  }
-                />
-
-                <div className="payment-method-content">
-
-                  <strong>
-                    Cash on Delivery
-                  </strong>
-
-                </div>
-
-                <span className="payment-icons">
-                  ▣
-                </span>
-
-              </label>
-
-              {paymentMethod ===
-                "cod" && (
-                <div className="payment-info-box cod-info">
-
-                  <p>
-                    You can pay cash
-                    when your order is
-                    delivered.
-                  </p>
-
-                </div>
-              )}
-
-              {/* CARD */}
-
-              <label
-                className={`payment-method ${
-                  paymentMethod === "card"
-                    ? "active-payment"
-                    : ""
-                }`}
-              >
-
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="card"
-                  checked={
-                    paymentMethod ===
-                    "card"
-                  }
-                  onChange={() =>
-                    setPaymentMethod(
-                      "card"
-                    )
-                  }
-                />
-
-                <div className="payment-method-content">
-
-                  <strong>
-                    Credit / Debit Card
-                  </strong>
-
-                </div>
-
-                <span className="payment-icons">
-                  ▤
-                </span>
-
-              </label>
-
-              {paymentMethod ===
-                "card" && (
-                <div className="payment-info-box card-info">
-
-                  <p>
-                    You can complete
-                    your payment
-                    securely using
-                    your card.
-                  </p>
-
-                </div>
-              )}
+              </section>
 
             </div>
 
-            {/* ================= BILLING ADDRESS ================= */}
-
-            <div className="billing-section">
-
-              <h2>
-                Billing address
-              </h2>
-
-              <label className="billing-option">
-
-                <input
-                  type="radio"
-                  name="billing"
-                  value="same"
-                  checked={
-                    billingAddress ===
-                    "same"
-                  }
-                  onChange={() =>
-                    setBillingAddress(
-                      "same"
-                    )
-                  }
-                />
-
-                <span>
-                  Same as shipping
-                  address
-                </span>
-
-              </label>
-
-              <label className="billing-option">
-
-                <input
-                  type="radio"
-                  name="billing"
-                  value="different"
-                  checked={
-                    billingAddress ===
-                    "different"
-                  }
-                  onChange={() =>
-                    setBillingAddress(
-                      "different"
-                    )
-                  }
-                />
-
-                <span>
-                  Use a different
-                  billing address
-                </span>
-
-              </label>
-
-            </div>
-
-            {/* ================= PAY NOW ================= */}
-
-            <button
-              type="submit"
-              className="figma-pay-button"
-              disabled={placingOrder}
-            >
-              {placingOrder
-                ? "PLACING ORDER..."
-                : "PAY NOW"}
-            </button>
-
-            {/* ================= LINKS ================= */}
-
-            <div className="checkout-policy-links">
-
-              <Link to="/refund-policy">
-                Refund policy
-              </Link>
-
-              <span>|</span>
-
-              <Link to="/shipping-policy">
-                Shipping policy
-              </Link>
-
-              <span>|</span>
-
-              <Link to="/privacy-policy">
-                Privacy policy
-              </Link>
-
-              <span>|</span>
-
-              <Link to="/terms-of-service">
-                Terms of service
-              </Link>
-
-            </div>
-
-          </section>
-
-        </form>
-
+          </div>
+        </div>
       </main>
 
       <Footer />

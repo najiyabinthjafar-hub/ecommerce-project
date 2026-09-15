@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -65,7 +66,6 @@ function ProductDetails() {
 
     const fetchRelatedProducts = async () => {
       try {
-        // എല്ലാ products-ഉം fetch ചെയ്യുന്നു
         const response = await fetch(
           "http://localhost:5000/api/products?limit=100"
         );
@@ -80,7 +80,6 @@ function ProductDetails() {
 
         const products = data.products || [];
 
-        // നിലവിലെ product category ID
         const currentCategoryId =
           typeof product.category === "object"
             ? product.category._id
@@ -88,16 +87,13 @@ function ProductDetails() {
 
         const related = products
           .filter((item) => {
-            // നിലവിലെ product ഒഴിവാക്കുക
             if (item._id === id) return false;
 
-            // ഓരോ product-ന്റെയും category ID
             const itemCategoryId =
               typeof item.category === "object"
                 ? item.category._id
                 : item.category;
 
-            // SAME CATEGORY മാത്രം
             return (
               String(itemCategoryId) ===
               String(currentCategoryId)
@@ -200,6 +196,12 @@ function ProductDetails() {
         return;
       }
 
+      // Debug information
+      console.log("ADD TO CART CLICKED");
+      console.log("Product ID:", product._id);
+      console.log("Quantity:", quantity);
+      console.log("Token exists:", !!token);
+
       const response = await axios.post(
         "http://localhost:5000/api/cart/add",
         {
@@ -213,18 +215,27 @@ function ProductDetails() {
         }
       );
 
+      console.log("ADD TO CART RESPONSE:", response.data);
+
       if (response.data.success) {
         alert("Product added to cart successfully!");
         navigate("/cart");
+      } else {
+        alert(
+          response.data.message ||
+            "Failed to add product to cart."
+        );
       }
     } catch (error) {
       console.error("ADD TO CART ERROR:", error);
+
       alert(
         error.response?.data?.message ||
           "Failed to add product to cart."
       );
     }
   };
+
   // ================= BUY NOW =================
 
   const handleBuyNow = () => {

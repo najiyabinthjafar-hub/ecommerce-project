@@ -1,309 +1,314 @@
-import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import "./OrderDetails.css";
+import "./Orders.css";
+import AdminSidebar from "../../components/admin/AdminSidebar";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-function OrderDetails() {
+const API_URL = "http://localhost:5000/api";
+
+function Orders() {
   const navigate = useNavigate();
-  const { id } = useParams();
 
-  // UI demo data
-  const order = {
-    id: id || "ORD-1001",
-    date: "02 Sep 2026",
-    status: "Delivered",
-    customer: "John Doe",
-    email: "john@example.com",
-    phone: "+91 98765 43210",
-    address: "Kochi, Kerala, India",
-    payment: "Paid",
-    method: "Razorpay",
-    items: [
-      {
-        id: 1,
-        name: "Premium T-Shirt",
-        category: "Men",
-        quantity: 2,
-        price: 799,
-      },
-      {
-        id: 2,
-        name: "Classic Sneakers",
-        category: "Footwear",
-        quantity: 1,
-        price: 1499,
-      },
-    ],
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          throw new Error("Authentication required");
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders/all`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setOrders(response.data?.orders || response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+
+        setError(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load orders."
+        );
+
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
+
+    return (
+      status.charAt(0).toUpperCase() +
+      status.slice(1).toLowerCase()
+    );
   };
 
-  const subtotal = order.items.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const customerName =
+        order.user?.name ||
+        order.user?.fullName ||
+        order.user?.email ||
+        "";
 
-  const shipping = 50;
-  const total = subtotal + shipping;
+      const orderId = order._id || "";
+
+      const searchText = search.toLowerCase();
+
+      const matchesSearch =
+        orderId.toLowerCase().includes(searchText) ||
+        customerName.toLowerCase().includes(searchText);
+
+      const orderStatus = formatStatus(
+        order.orderStatus || order.status
+      );
+
+      const matchesStatus =
+        statusFilter === "All Status" ||
+        orderStatus === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, search, statusFilter]);
+
+  const pendingOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status
+      ).toLowerCase() === "pending"
+  ).length;
+
+  const processingOrders = orders.filter(
+    (order) => {
+      const status = String(
+        order.orderStatus || order.status
+      ).toLowerCase();
+
+      return (
+        status === "processing" ||
+        status === "confirmed"
+      );
+    }
+  ).length;
+
+  const deliveredOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status
+      ).toLowerCase() === "delivered"
+  ).length;
+
+  const cancelledOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status
+      ).toLowerCase() === "cancelled"
+  ).length;
 
   return (
-    <div className="order-details-page">
-      {/* Page Header */}
-      <div className="order-details-header">
-        <div>
-          <button
-            className="back-btn"
-            onClick={() => navigate("/admin/orders")}
-          >
-            ← Back to Orders
-          </button>
+    <div className="admin-layout">
+      <AdminSidebar />
 
-          <div className="title-row">
-            <div>
-              <h1>Order Details</h1>
-              <p>View complete information about this order.</p>
-            </div>
-
-            <span className="order-status">{order.status}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Order Overview */}
-      <div className="order-overview">
-        <div className="overview-item">
-          <span>Order ID</span>
-          <strong>#{order.id}</strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Order Date</span>
-          <strong>{order.date}</strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Payment</span>
-          <strong className="paid">{order.payment}</strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Payment Method</span>
-          <strong>{order.method}</strong>
-        </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="order-details-grid">
-        {/* Customer Details */}
-        <div className="details-card customer-card">
-          <div className="card-heading">
-            <div className="heading-icon">
-              <i className="bi bi-person"></i>
-            </div>
-
-            <div>
-              <h2>Customer Details</h2>
-              <p>Customer information</p>
-            </div>
-          </div>
-
-          <div className="customer-info">
-            <div>
-              <span>Name</span>
-              <strong>{order.customer}</strong>
-            </div>
-
-            <div>
-              <span>Email</span>
-              <strong>{order.email}</strong>
-            </div>
-
-            <div>
-              <span>Phone</span>
-              <strong>{order.phone}</strong>
-            </div>
-
-            <div>
-              <span>Shipping Address</span>
-              <strong>{order.address}</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Details */}
-        <div className="details-card payment-card">
-          <div className="card-heading">
-            <div className="heading-icon payment-icon">
-              <i className="bi bi-credit-card"></i>
-            </div>
-
-            <div>
-              <h2>Payment Details</h2>
-              <p>Transaction information</p>
-            </div>
-          </div>
-
-          <div className="payment-info">
-            <div>
-              <span>Payment Status</span>
-              <strong className="paid">Paid</strong>
-            </div>
-
-            <div>
-              <span>Method</span>
-              <strong>{order.method}</strong>
-            </div>
-
-            <div>
-              <span>Shipping</span>
-              <strong>Standard Delivery</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Products */}
-      <div className="details-card products-card">
-        <div className="products-card-header">
+      <main className="orders-content">
+        <div className="orders-header">
           <div>
-            <h2>Ordered Products</h2>
-            <p>{order.items.length} items in this order</p>
+            <h1>Orders</h1>
+            <p>Manage and track customer orders</p>
           </div>
         </div>
 
-        <div className="order-table-wrapper">
-          <table className="order-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {order.items.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    <div className="product-name">
-                      <div className="product-image">
-                        <i className="bi bi-box"></i>
-                      </div>
-
-                      <strong>{item.name}</strong>
-                    </div>
-                  </td>
-
-                  <td>{item.category}</td>
-
-                  <td>₹{item.price}</td>
-
-                  <td>{item.quantity}</td>
-
-                  <td>
-                    <strong>
-                      ₹{item.price * item.quantity}
-                    </strong>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="order-bottom-grid">
-        {/* Order Timeline */}
-        <div className="details-card timeline-card">
-          <div className="card-heading">
-            <div className="heading-icon">
-              <i className="bi bi-clock-history"></i>
-            </div>
-
-            <div>
-              <h2>Order Status</h2>
-              <p>Order progress</p>
-            </div>
+        {/* Order Summary Cards */}
+        <div className="order-cards">
+          <div className="order-card">
+            <span>Pending Orders</span>
+            <h2>{pendingOrders}</h2>
           </div>
 
-          <div className="timeline">
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
+          <div className="order-card">
+            <span>Processing</span>
+            <h2>{processingOrders}</h2>
+          </div>
 
-              <div>
-                <strong>Order Placed</strong>
-                <span>Order has been placed successfully.</span>
-              </div>
-            </div>
+          <div className="order-card">
+            <span>Delivered</span>
+            <h2>{deliveredOrders}</h2>
+          </div>
 
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Processing</strong>
-                <span>Order is being prepared.</span>
-              </div>
-            </div>
-
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Shipped</strong>
-                <span>Package has been shipped.</span>
-              </div>
-            </div>
-
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Delivered</strong>
-                <span>Order delivered to customer.</span>
-              </div>
-            </div>
+          <div className="order-card">
+            <span>Cancelled</span>
+            <h2>{cancelledOrders}</h2>
           </div>
         </div>
 
-        {/* Price Summary */}
-        <div className="details-card summary-card">
-          <h2>Order Summary</h2>
+        {/* Search and Filter */}
+        <div className="orders-tools">
+          <input
+            type="text"
+            placeholder="Search by order ID or customer..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+          />
 
-          <div className="summary-row">
-            <span>Subtotal</span>
-            <strong>₹{subtotal}</strong>
-          </div>
-
-          <div className="summary-row">
-            <span>Shipping</span>
-            <strong>₹{shipping}</strong>
-          </div>
-
-          <div className="summary-divider"></div>
-
-          <div className="summary-total">
-            <span>Total Amount</span>
-            <strong>₹{total}</strong>
-          </div>
-
-          <button
-            className="orders-btn"
-            onClick={() => navigate("/admin/orders")}
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value)
+            }
           >
-            View All Orders
-          </button>
+            <option>All Status</option>
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Confirmed</option>
+            <option>Delivered</option>
+            <option>Cancelled</option>
+          </select>
         </div>
-      </div>
+
+        {/* Error */}
+        {error && (
+          <p
+            style={{
+              color: "red",
+              margin: "20px 0",
+            }}
+          >
+            {error}
+          </p>
+        )}
+
+        {/* Orders Table */}
+        <div className="orders-table-container">
+          {loading ? (
+            <p style={{ padding: "20px" }}>
+              Loading orders...
+            </p>
+          ) : filteredOrders.length === 0 ? (
+            <p style={{ padding: "20px" }}>
+              No orders found.
+            </p>
+          ) : (
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredOrders.map((order) => {
+                  const customerName =
+                    order.user?.name ||
+                    order.user?.fullName ||
+                    order.user?.email ||
+                    "Unknown Customer";
+
+                  const orderDate = order.createdAt
+                    ? new Date(
+                        order.createdAt
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "-";
+
+                  const itemCount =
+                    order.items?.reduce(
+                      (total, item) =>
+                        total +
+                        Number(item.quantity || 0),
+                      0
+                    ) || 0;
+
+                  const total =
+                    order.finalAmount ??
+                    order.totalAmount ??
+                    order.total ??
+                    0;
+
+                  const status = formatStatus(
+                    order.orderStatus ||
+                      order.status
+                  );
+
+                  return (
+                    <tr key={order._id}>
+                      <td className="order-id">
+                        #{order._id?.slice(-6)}
+                      </td>
+
+                      <td>{customerName}</td>
+
+                      <td>{orderDate}</td>
+
+                      <td>{itemCount}</td>
+
+                      <td className="order-total">
+                        ₹
+                        {Number(total).toLocaleString(
+                          "en-IN"
+                        )}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`status ${status.toLowerCase()}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+
+                      <td>
+                        <button
+                          className="view-btn"
+                          onClick={() =>
+                            navigate(
+                              `/admin/orders/${order._id}`
+                            )
+                          }
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
 
-export default OrderDetails;
+export default Orders;
