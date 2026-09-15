@@ -17,25 +17,14 @@ const contactSchema = new mongoose.Schema(
 
     phone: {
       type: String,
-      trim: true,
-    },
-
-    subject: {
-      type: String,
       required: true,
       trim: true,
     },
 
-    message: {
+    comment: {
       type: String,
       required: true,
       trim: true,
-    },
-
-    status: {
-      type: String,
-      enum: ["pending", "resolved"],
-      default: "pending",
     },
   },
   {

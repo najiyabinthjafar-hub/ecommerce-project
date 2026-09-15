@@ -1,47 +1,31 @@
 const Contact = require("../models/Contact");
 
-// ================= CREATE CONTACT MESSAGE =================
+// ================= CREATE CONTACT =================
 
 const createContact = async ({
   name,
   email,
   phone,
-  subject,
-  message,
+  comment,
 }) => {
   const contact = await Contact.create({
     name,
     email,
     phone,
-    subject,
-    message,
+    comment,
   });
 
   return contact;
 };
 
-// ================= GET ALL CONTACT MESSAGES =================
+// ================= GET ALL CONTACTS =================
 
 const getAllContacts = async () => {
-  const contacts = await Contact.find().sort({ createdAt: -1 });
+  const contacts = await Contact.find().sort({
+    createdAt: -1,
+  });
 
   return contacts;
-};
-
-// ================= UPDATE CONTACT STATUS =================
-
-const updateContactStatus = async (contactId, status) => {
-  const contact = await Contact.findByIdAndUpdate(
-    contactId,
-    { status },
-    { new: true, runValidators: true }
-  );
-
-  if (!contact) {
-    throw new Error("Contact message not found");
-  }
-
-  return contact;
 };
 
 // ================= DELETE CONTACT =================
@@ -61,6 +45,5 @@ const deleteContact = async (contactId) => {
 module.exports = {
   createContact,
   getAllContacts,
-  updateContactStatus,
   deleteContact,
 };
