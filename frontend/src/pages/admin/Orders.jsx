@@ -6,6 +6,15 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000/api";
 
+const STATUS_OPTIONS = [
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
+
 function Orders() {
   const navigate = useNavigate();
 
@@ -14,64 +23,57 @@ function Orders() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState("");
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Authentication required");
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_URL}/orders/all`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const orderList =
+        response.data?.orders ||
+        response.data?.data ||
+        response.data ||
+        [];
+
+      setOrders(
+        Array.isArray(orderList) ? orderList : []
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch admin orders:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load orders."
+      );
+
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const token = localStorage.getItem("token");
-
-        console.log("ADMIN TOKEN EXISTS:", !!token);
-        console.log(
-          "ADMIN TOKEN LENGTH:",
-          token ? token.length : 0
-        );
-
-        if (!token) {
-          setError("Authentication required");
-          return;
-        }
-
-        const response = await axios.get(
-          `${API_URL}/orders/all`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log("ADMIN ORDERS RESPONSE:", response.data);
-
-        const orderList =
-          response.data?.orders ||
-          response.data?.data ||
-          response.data ||
-          [];
-
-        setOrders(
-          Array.isArray(orderList) ? orderList : []
-        );
-      } catch (error) {
-        console.error(
-          "Failed to fetch admin orders:",
-          error
-        );
-
-        setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to load orders."
-        );
-
-        setOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
   }, []);
 
@@ -82,6 +84,63 @@ function Orders() {
       status.charAt(0).toUpperCase() +
       status.slice(1).toLowerCase()
     );
+  };
+
+  const handleStatusChange = async (
+    orderId,
+    newStatus
+  ) => {
+    try {
+      setUpdatingId(orderId);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Authentication required");
+        return;
+      }
+
+      const response = await axios.put(
+        `${API_URL}/orders/${orderId}/status`,
+        {
+          orderStatus: newStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updatedOrder =
+        response.data?.order;
+
+      if (updatedOrder) {
+        setOrders((previousOrders) =>
+          previousOrders.map((order) =>
+            order._id === orderId
+              ? updatedOrder
+              : order
+          )
+        );
+      } else {
+        await fetchOrders();
+      }
+    } catch (error) {
+      console.error(
+        "Failed to update order status:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update order status."
+      );
+    } finally {
+      setUpdatingId("");
+    }
   };
 
   const filteredOrders = useMemo(() => {
@@ -111,40 +170,33 @@ function Orders() {
     });
   }, [orders, search, statusFilter]);
 
-  const pendingOrders = orders.filter((order) => {
-    const status = String(
-      order.orderStatus || order.status || ""
-    ).toLowerCase();
+  const pendingOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status || ""
+      ).toUpperCase() === "PENDING"
+  ).length;
 
-    return status === "pending";
-  }).length;
+  const processingOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status || ""
+      ).toUpperCase() === "PROCESSING"
+  ).length;
 
-  const processingOrders = orders.filter((order) => {
-    const status = String(
-      order.orderStatus || order.status || ""
-    ).toLowerCase();
+  const deliveredOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status || ""
+      ).toUpperCase() === "DELIVERED"
+  ).length;
 
-    return (
-      status === "processing" ||
-      status === "confirmed"
-    );
-  }).length;
-
-  const deliveredOrders = orders.filter((order) => {
-    const status = String(
-      order.orderStatus || order.status || ""
-    ).toLowerCase();
-
-    return status === "delivered";
-  }).length;
-
-  const cancelledOrders = orders.filter((order) => {
-    const status = String(
-      order.orderStatus || order.status || ""
-    ).toLowerCase();
-
-    return status === "cancelled";
-  }).length;
+  const cancelledOrders = orders.filter(
+    (order) =>
+      String(
+        order.orderStatus || order.status || ""
+      ).toUpperCase() === "CANCELLED"
+  ).length;
 
   return (
     <div className="admin-layout">
@@ -158,6 +210,7 @@ function Orders() {
           </div>
         </div>
 
+        {/* Order Summary Cards */}
         <div className="order-cards">
           <div className="order-card">
             <span>Pending Orders</span>
@@ -180,6 +233,7 @@ function Orders() {
           </div>
         </div>
 
+        {/* Search and Filter */}
         <div className="orders-tools">
           <input
             type="text"
@@ -198,13 +252,15 @@ function Orders() {
           >
             <option>All Status</option>
             <option>Pending</option>
-            <option>Processing</option>
             <option>Confirmed</option>
+            <option>Processing</option>
+            <option>Shipped</option>
             <option>Delivered</option>
             <option>Cancelled</option>
           </select>
         </div>
 
+        {/* Error */}
         {error && (
           <div
             style={{
@@ -219,6 +275,7 @@ function Orders() {
           </div>
         )}
 
+        {/* Orders Table */}
         <div className="orders-table-container">
           {loading ? (
             <p style={{ padding: "20px" }}>
@@ -274,10 +331,15 @@ function Orders() {
                     order.total ??
                     0;
 
-                  const status = formatStatus(
-                    order.orderStatus ||
-                      order.status
-                  );
+                  const currentStatus =
+                    String(
+                      order.orderStatus ||
+                        order.status ||
+                        "PENDING"
+                    ).toUpperCase();
+
+                  const displayStatus =
+                    formatStatus(currentStatus);
 
                   return (
                     <tr key={order._id}>
@@ -292,18 +354,36 @@ function Orders() {
                       <td>{itemCount}</td>
 
                       <td className="order-total">
-                        ?
+                        ₹
                         {Number(total).toLocaleString(
                           "en-IN"
                         )}
                       </td>
 
                       <td>
-                        <span
-                          className={`status ${status.toLowerCase()}`}
+                        <select
+                          value={currentStatus}
+                          disabled={
+                            updatingId === order._id
+                          }
+                          onChange={(event) =>
+                            handleStatusChange(
+                              order._id,
+                              event.target.value
+                            )
+                          }
                         >
-                          {status}
-                        </span>
+                          {STATUS_OPTIONS.map(
+                            (status) => (
+                              <option
+                                key={status}
+                                value={status}
+                              >
+                                {formatStatus(status)}
+                              </option>
+                            )
+                          )}
+                        </select>
                       </td>
 
                       <td>
