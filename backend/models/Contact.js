@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const categorySchema = new mongoose.Schema(
+const contactSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -8,29 +8,34 @@ const categorySchema = new mongoose.Schema(
       trim: true,
     },
 
-    slug: {
+    email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
     },
 
-    description: {
+    phone: {
       type: String,
       trim: true,
     },
 
-    parent: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      default: null,
+    subject: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    message: {
+      type: String,
+      required: true,
+      trim: true,
     },
 
     status: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+      enum: ["pending", "resolved"],
+      default: "pending",
     },
   },
   {
@@ -38,4 +43,4 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Category", categorySchema);
+module.exports = mongoose.model("Contact", contactSchema);

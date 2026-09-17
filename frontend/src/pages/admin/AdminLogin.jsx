@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/rizo-logo.png";
@@ -14,41 +13,52 @@ function AdminLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid email or password");
+        throw new Error(
+          data.message || "Invalid email or password"
+        );
       }
 
       // Check admin role
       if (data.user?.role !== "admin") {
-        throw new Error("You are not authorized as an admin");
+        throw new Error(
+          "You are not authorized as an admin"
+        );
       }
 
       // Save JWT token
       localStorage.setItem("token", data.token);
 
       // Save user details
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
 
       // Navigate to admin dashboard
-      navigate("/admin/dashboard", { replace: true });
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
     } catch (error) {
       setError(error.message || "Login failed");
     } finally {
@@ -59,7 +69,6 @@ function AdminLogin() {
   return (
     <div className="admin-login-page">
       <div className="admin-login-card">
-
         {/* Logo */}
         <div className="login-brand">
           <img
@@ -67,7 +76,6 @@ function AdminLogin() {
             alt="RIZO Logo"
             className="rizo-logo"
           />
-
           <h1>RIZO</h1>
           <p>Admin Panel</p>
         </div>
@@ -80,27 +88,28 @@ function AdminLogin() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
-
           <div className="login-group">
             <label>Email Address</label>
-
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
             />
           </div>
 
           <div className="login-group">
             <label>Password</label>
-
             <input
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
               required
             />
           </div>
@@ -120,12 +129,14 @@ function AdminLogin() {
             </label>
 
             <button
-  type="button"
-  className="forgot-password"
-  onClick={() => navigate("/admin/forgot-password")}
->
-  Forgot Password?
-</button>
+              type="button"
+              className="forgot-password"
+              onClick={() =>
+                navigate("/admin/forgot-password")
+              }
+            >
+              Forgot Password?
+            </button>
           </div>
 
           {/* Login Button */}
@@ -134,9 +145,10 @@ function AdminLogin() {
             className="admin-login-btn"
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading
+              ? "Logging in..."
+              : "Login"}
           </button>
-
         </form>
       </div>
     </div>
@@ -144,4 +156,3 @@ function AdminLogin() {
 }
 
 export default AdminLogin;
-

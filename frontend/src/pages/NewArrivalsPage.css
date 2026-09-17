@@ -184,3 +184,28 @@
     gap: 14px;
   }
 }
+
+
+
+
+/* FIX PRODUCT IMAGE SIZE ON NEW ARRIVALS PAGE */
+
+.new-arrivals-page-grid .product-card {
+  width: 100%;
+}
+
+.new-arrivals-page-grid .product-image-wrapper {
+  width: 100%;
+  aspect-ratio: 0.85;
+  height: auto;
+  overflow: hidden;
+}
+
+.new-arrivals-page-grid .product-image {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center;
+  display: block !important;
+}

@@ -1,9 +1,6 @@
 const bcrypt = require("bcryptjs");
-
 const User = require("../models/User");
-
 const generateOtp = require("../utils/generateOtp");
-
 const generateToken = require("../utils/generateToken");
 
 const {
@@ -41,7 +38,7 @@ const registerUser = async ({
     phone,
     password: hashedPassword,
     otp,
-    otpExpiresAt: new Date(Date.now() + 1 * 60 * 1000),
+    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
     otpAttempts: 0,
   });
 
@@ -85,15 +82,30 @@ const verifyEmailOtp = async (email, otp) => {
     throw new Error("Invalid OTP");
   }
 
+  // Mark email as verified
   user.isEmailVerified = true;
+
+  // Clear OTP data
   user.otp = null;
   user.otpExpiresAt = null;
   user.otpAttempts = 0;
 
   await user.save();
 
+  // Generate JWT token after successful OTP verification
+  const token = generateToken(user._id);
+
   return {
     message: "Email verified successfully",
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      profileCompleted: user.profileCompleted,
+    },
   };
 };
 
@@ -113,9 +125,11 @@ const resendOtp = async (email) => {
   const otp = generateOtp();
 
   user.otp = otp;
+
   user.otpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
+
   user.otpAttempts = 0;
 
   await user.save();
@@ -162,7 +176,6 @@ const loginUser = async ({ email, password }) => {
 
   return {
     token,
-
     user: {
       id: user._id,
       name: user.name,
@@ -187,7 +200,6 @@ const forgotPassword = async (email) => {
 
   user.resetOtp = otp;
 
-  // IMPORTANT FIX
   user.resetOtpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
@@ -226,6 +238,12 @@ const resetPassword = async ({
     throw new Error("Invalid reset OTP");
   }
 
+  if (newPassword.length < 6) {
+    throw new Error(
+      "New password must be at least 6 characters"
+    );
+  }
+
   const hashedPassword = await bcrypt.hash(
     newPassword,
     10
@@ -233,7 +251,6 @@ const resetPassword = async ({
 
   user.password = hashedPassword;
 
-  // Clear reset OTP after successful password reset
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
 

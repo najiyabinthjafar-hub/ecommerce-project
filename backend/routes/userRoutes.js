@@ -3,35 +3,46 @@ const express = require("express");
 const {
   getProfile,
   updateProfile,
+  getAllUsers,
+  changePassword,
 } = require("../controllers/userController");
 
-const { protect } = require("../middleware/authMiddleware");
+const {
+  protect,
+  adminOnly,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.get("/profile", protect, getProfile);
-router.put("/profile", protect, updateProfile);
+// ================= USER PROFILE =================
+
+router.get(
+  "/profile",
+  protect,
+  getProfile
+);
+
+router.put(
+  "/profile",
+  protect,
+  updateProfile
+);
+
+// ================= CHANGE PASSWORD =================
+
+router.put(
+  "/change-password",
+  protect,
+  changePassword
+);
+
+// ================= ADMIN - ALL CUSTOMERS =================
+
+router.get(
+  "/",
+  protect,
+  adminOnly,
+  getAllUsers
+);
 
 module.exports = router;
-
-// const express = require("express");
-// const { getProfile, updateProfile } = require("../controllers/userController");
-// const { protect } = require("../middleware/authMiddleware");
-// const { admin } = require("../middleware/adminMiddleware");
-
-// const router = express.Router();
-
-// router.get("/profile", protect, getProfile);
-// router.put("/profile", protect, updateProfile);
-
-// // Temporary admin test route
-// router.get("/admin-test", protect, admin, (req, res) => {
-//   res.json({
-//     message: "Admin access successful",
-//     user: req.user.email,
-//     role: req.user.role,
-//   });
-// });
-
-// module.exports = router;
-

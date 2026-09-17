@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // ================= CUSTOMER PAGES =================
+
 import ProductDetails from "./pages/ProductDetails";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
@@ -9,15 +10,12 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-
 import Profile from "./pages/Profile";
 import PersonalInformation from "./pages/PersonalInformation";
 import Addresses from "./pages/Addresses";
 import ChangePassword from "./pages/ChangePassword";
-
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NewArrivalsPage from "./pages/NewArrivalsPage";
@@ -25,8 +23,10 @@ import BestSellersPage from "./pages/BestSellersPage";
 import Category from "./pages/Category";
 import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
+import CategoriesPage from "./pages/CategoriesPage";
 
 // ================= FOOTER PAGES =================
+
 import Support from "./pages/Support";
 import Invoicing from "./pages/Invoicing";
 import Careers from "./pages/Careers";
@@ -34,12 +34,14 @@ import Blog from "./pages/Blog";
 import FAQs from "./pages/FAQs";
 
 // ================= POLICY PAGES =================
+
 import RefundPolicy from "./pages/RefundPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
 // ================= ADMIN PAGES =================
+
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminForgotPassword from "./pages/admin/ForgotPassword/ForgotPassword";
 import AdminResetPassword from "./pages/admin/ForgotPassword/ResetPassword";
@@ -55,7 +57,6 @@ import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
 import Settings from "./pages/admin/Settings";
 import AdminProfile from "./pages/admin/AdminProfile";
-
 import AddBanner from "./pages/admin/AddBanner";
 import EditBanner from "./pages/admin/EditBanner";
 import EditProduct from "./pages/admin/EditProduct";
@@ -71,38 +72,29 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* ================= CUSTOMER SIDE ================= */}
 
         <Route path="/" element={<Home />} />
-
         <Route path="/shop" element={<Shop />} />
-
         <Route path="/product/:id" element={<ProductDetails />} />
-
         <Route path="/cart" element={<Cart />} />
-
         <Route path="/checkout" element={<Checkout />} />
-
         <Route path="/orders" element={<Orders />} />
-
         <Route path="/login" element={<Login />} />
-
         <Route path="/register" element={<Register />} />
 
         {/* ================= PROFILE ================= */}
 
         <Route path="/profile" element={<Profile />} />
-
         <Route
           path="/profile/personal"
           element={<PersonalInformation />}
         />
-
         <Route
           path="/profile/addresses"
           element={<Addresses />}
         />
-
         <Route
           path="/profile/change-password"
           element={<ChangePassword />}
@@ -120,12 +112,14 @@ function App() {
           element={<ResetPassword />}
         />
 
-        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route
+          path="/verify-otp"
+          element={<VerifyOtp />}
+        />
 
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
         <Route path="/about" element={<About />} />
-
         <Route path="/contact" element={<Contact />} />
 
         <Route
@@ -138,20 +132,32 @@ function App() {
           element={<BestSellersPage />}
         />
 
-        <Route path="/category" element={<Category />} />
+        <Route
+          path="/category/:slug"
+          element={<Category />}
+        />
 
-        <Route path="/wishlist" element={<Wishlist />} />
+        <Route
+          path="/category/:slug/:subcategorySlug"
+          element={<Category />}
+        />
+
+        <Route
+          path="/categories"
+          element={<CategoriesPage />}
+        />
+
+        <Route
+          path="/wishlist"
+          element={<Wishlist />}
+        />
 
         {/* ================= FOOTER PAGES ================= */}
 
         <Route path="/support" element={<Support />} />
-
         <Route path="/invoicing" element={<Invoicing />} />
-
         <Route path="/careers" element={<Careers />} />
-
         <Route path="/blog" element={<Blog />} />
-
         <Route path="/faqs" element={<FAQs />} />
 
         {/* ================= POLICY PAGES ================= */}
@@ -196,7 +202,6 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
 
-          {/* Dashboard */}
           <Route
             path="/admin/dashboard"
             element={
@@ -206,7 +211,6 @@ function App() {
             }
           />
 
-          {/* Products */}
           <Route
             path="/admin/products"
             element={
@@ -216,7 +220,6 @@ function App() {
             }
           />
 
-          {/* Add Product */}
           <Route
             path="/admin/products/add"
             element={
@@ -226,7 +229,6 @@ function App() {
             }
           />
 
-          {/* Edit Product */}
           <Route
             path="/admin/products/edit/:id"
             element={
@@ -236,7 +238,6 @@ function App() {
             }
           />
 
-          {/* View Product */}
           <Route
             path="/admin/products/view/:id"
             element={
@@ -246,7 +247,6 @@ function App() {
             }
           />
 
-          {/* Categories */}
           <Route
             path="/admin/categories"
             element={
@@ -256,7 +256,6 @@ function App() {
             }
           />
 
-          {/* Banners */}
           <Route
             path="/admin/banners"
             element={
@@ -266,7 +265,6 @@ function App() {
             }
           />
 
-          {/* Add Banner */}
           <Route
             path="/admin/banners/add"
             element={
@@ -276,7 +274,6 @@ function App() {
             }
           />
 
-          {/* Edit Banner */}
           <Route
             path="/admin/banners/edit/:id"
             element={
@@ -286,7 +283,6 @@ function App() {
             }
           />
 
-          {/* View Banner */}
           <Route
             path="/admin/banners/view/:id"
             element={
@@ -296,7 +292,6 @@ function App() {
             }
           />
 
-          {/* Customers */}
           <Route
             path="/admin/customers"
             element={
@@ -306,7 +301,6 @@ function App() {
             }
           />
 
-          {/* Orders */}
           <Route
             path="/admin/orders"
             element={
@@ -316,7 +310,6 @@ function App() {
             }
           />
 
-          {/* Order Details */}
           <Route
             path="/admin/orders/:id"
             element={
@@ -326,7 +319,6 @@ function App() {
             }
           />
 
-          {/* Coupons */}
           <Route
             path="/admin/coupons"
             element={
@@ -336,7 +328,6 @@ function App() {
             }
           />
 
-          {/* Add Coupon */}
           <Route
             path="/admin/coupons/add"
             element={
@@ -346,7 +337,6 @@ function App() {
             }
           />
 
-          {/* View Coupon */}
           <Route
             path="/admin/coupons/view/:id"
             element={
@@ -356,7 +346,6 @@ function App() {
             }
           />
 
-          {/* Inventory */}
           <Route
             path="/admin/inventory"
             element={
@@ -366,7 +355,6 @@ function App() {
             }
           />
 
-          {/* Settings */}
           <Route
             path="/admin/settings"
             element={
@@ -376,7 +364,6 @@ function App() {
             }
           />
 
-          {/* Admin Profile */}
           <Route
             path="/admin/profile"
             element={
@@ -387,6 +374,7 @@ function App() {
           />
 
         </Route>
+
       </Routes>
     </BrowserRouter>
   );

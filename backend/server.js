@@ -3,30 +3,38 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const connectDB = require("./config/db");
+
+// Models
 require("./models/Category");
 require("./models/Product");
 
-const connectDB = require("./config/db");
-
+// Routes
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const addressRoutes = require("./routes/addressRoutes");
+
 const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
+
 const cartRoutes = require("./routes/cartRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+
 const paymentRoutes = require("./routes/paymentRoutes");
+const checkoutRoutes = require("./routes/checkoutRoutes");
+
 const adminTestRoutes = require("./routes/adminTestRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 const app = express();
 
-// DATABASE
+// Connect MongoDB
 connectDB();
 
-// CORS
+// Middleware
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -34,32 +42,41 @@ app.use(
   })
 );
 
-// MIDDLEWARE
 app.use(express.json());
 
-// TEST ROUTE
+// Root route
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "E-Commerce API is running",
+    message: "E-Commerce Backend API is running",
   });
 });
 
-// API ROUTES
+// Authentication & User
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/addresses", addressRoutes);
+
+// Product & Catalog
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
+
+// Customer Features
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
+
+// Orders & Payment
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/admin", adminTestRoutes);
+app.use("/api/checkout", checkoutRoutes);
 
-// SERVER
+// Admin
+app.use("/api/admin", adminTestRoutes);
+app.use("/api/contacts", contactRoutes);
+
+// Server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

@@ -10,9 +10,31 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Email verification OTP
+// ================= TEST EMAIL CONNECTION =================
+
+const verifyEmailConnection = async () => {
+  try {
+    await transporter.verify();
+
+    console.log("Email server is ready");
+    console.log("Sender email:", process.env.EMAIL_USER);
+  } catch (error) {
+    console.error("Email server connection failed:");
+    console.error(error.message);
+  }
+};
+
+// ================= SEND REGISTRATION OTP =================
+
 const sendOtpEmail = async (email, otp) => {
   try {
+    console.log("=================================");
+    console.log("Sending registration OTP");
+    console.log("From:", process.env.EMAIL_USER);
+    console.log("To:", email);
+    console.log("OTP:", otp);
+    console.log("=================================");
+
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -20,16 +42,31 @@ const sendOtpEmail = async (email, otp) => {
       text: `Your verification OTP is ${otp}. It will expire in 10 minutes.`,
     });
 
-    console.log("VERIFICATION EMAIL SENT:", info.messageId);
+    console.log("Registration OTP email sent successfully");
+    console.log("Message ID:", info.messageId);
+    console.log("Accepted:", info.accepted);
+    console.log("Rejected:", info.rejected);
+
+    return info;
   } catch (error) {
-    console.error("VERIFICATION EMAIL ERROR:", error);
-    throw error;
+    console.error("Registration OTP email failed:");
+    console.error(error.message);
+
+    throw new Error("Failed to send OTP email");
   }
 };
 
-// Password reset OTP
+// ================= SEND RESET PASSWORD OTP =================
+
 const sendResetOtpEmail = async (email, otp) => {
   try {
+    console.log("=================================");
+    console.log("Sending password reset OTP");
+    console.log("From:", process.env.EMAIL_USER);
+    console.log("To:", email);
+    console.log("OTP:", otp);
+    console.log("=================================");
+
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -37,14 +74,22 @@ const sendResetOtpEmail = async (email, otp) => {
       text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`,
     });
 
-    console.log("RESET EMAIL SENT:", info.messageId);
+    console.log("Password reset OTP email sent successfully");
+    console.log("Message ID:", info.messageId);
+    console.log("Accepted:", info.accepted);
+    console.log("Rejected:", info.rejected);
+
+    return info;
   } catch (error) {
-    console.error("RESET EMAIL ERROR:", error);
-    throw error;
+    console.error("Password reset OTP email failed:");
+    console.error(error.message);
+
+    throw new Error("Failed to send password reset OTP email");
   }
 };
 
 module.exports = {
+  verifyEmailConnection,
   sendOtpEmail,
   sendResetOtpEmail,
 };

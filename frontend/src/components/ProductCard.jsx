@@ -18,18 +18,35 @@ function ProductCard({ product }) {
 
   // ================= PRODUCT IMAGE =================
 
-  const productImage =
+  let productImage =
     product.images?.[0] ||
     product.image ||
-    "https://via.placeholder.com/300";
+    "";
+
+  // If image is stored as a relative backend path
+  if (
+    productImage &&
+    !productImage.startsWith("http") &&
+    !productImage.startsWith("data:")
+  ) {
+    productImage = `http://localhost:5000${productImage.startsWith("/")
+      ? ""
+      : "/"}${productImage}`;
+  }
+
+  // Fallback image
+  if (!productImage) {
+    productImage = "https://via.placeholder.com/500x600?text=No+Image";
+  }
 
   // ================= PRODUCT PRICE =================
 
   const productPrice =
     product.salePrice !== null &&
-    product.salePrice !== undefined
+    product.salePrice !== undefined &&
+    product.salePrice !== ""
       ? product.salePrice
-      : product.regularPrice || product.price;
+      : product.regularPrice ?? product.price ?? 0;
 
   // ================= WISHLIST CHECK =================
 
@@ -61,11 +78,17 @@ function ProductCard({ product }) {
     );
   };
 
+  // ================= IMAGE ERROR =================
+
+  const handleImageError = (e) => {
+    e.currentTarget.src =
+      "https://via.placeholder.com/500x600?text=No+Image";
+  };
+
   return (
     <div className="product-card">
 
       {/* WISHLIST BUTTON */}
-
       <button
         className={`wishlist-btn ${
           isWishlisted ? "active-wishlist" : ""
@@ -77,30 +100,28 @@ function ProductCard({ product }) {
       </button>
 
       {/* PRODUCT LINK */}
-
-      <Link to={`/product/${productId}`}>
-
+      <Link
+        to={`/product/${productId}`}
+        className="product-link"
+      >
         <div className="product-image-wrapper">
-
           <img
             src={productImage}
-            alt={product.name}
+            alt={product.name || "Product"}
             className="product-image"
+            onError={handleImageError}
           />
-
         </div>
 
         <div className="product-info">
-
-          <h3>{product.name}</h3>
+          <h3>{product.name || "Product Name"}</h3>
 
           <p className="product-price">
-            ₹ {Number(productPrice || 0).toLocaleString("en-IN")}/-
+            ₹ {Number(productPrice).toLocaleString("en-IN")}/-
           </p>
-
         </div>
-
       </Link>
+
     </div>
   );
 }

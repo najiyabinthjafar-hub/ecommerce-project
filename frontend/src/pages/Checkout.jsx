@@ -26,7 +26,6 @@ function Checkout() {
 
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [billingAddress, setBillingAddress] = useState("same");
-
   const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
@@ -38,9 +37,7 @@ function Checkout() {
     },
   };
 
-  // =========================
-  // GET USER EMAIL
-  // =========================
+  // ================= GET USER EMAIL =================
 
   const getUserEmail = () => {
     try {
@@ -54,9 +51,7 @@ function Checkout() {
     }
   };
 
-  // =========================
-  // GET CART
-  // =========================
+  // ================= GET CART =================
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -66,6 +61,9 @@ function Checkout() {
       }
 
       try {
+        setLoading(true);
+        setError("");
+
         const response = await axios.get(
           `${API_URL}/cart`,
           authConfig
@@ -89,9 +87,7 @@ function Checkout() {
     fetchCart();
   }, []);
 
-  // =========================
-  // SUBTOTAL
-  // =========================
+  // ================= SUBTOTAL =================
 
   const subtotal = cartItems.reduce(
     (total, item) => {
@@ -99,19 +95,15 @@ function Checkout() {
         item.product?.salePrice ??
         item.product?.regularPrice ??
         item.product?.price ??
+        item.price ??
         0;
 
-      return (
-        total +
-        price * item.quantity
-      );
+      return total + price * item.quantity;
     },
     0
   );
 
-  // =========================
-  // DELIVERY
-  // =========================
+  // ================= DELIVERY =================
 
   const delivery =
     subtotal === 0
@@ -120,9 +112,7 @@ function Checkout() {
       ? 0
       : 99;
 
-  // =========================
-  // APPLY COUPON
-  // =========================
+  // ================= APPLY COUPON =================
 
   const handleApplyCoupon = async () => {
     const code = couponCode
@@ -155,30 +145,38 @@ function Checkout() {
         throw new Error("Invalid coupon");
       }
 
-      // Active check
+      // ACTIVE CHECK
+
       if (coupon.isActive === false) {
         setCouponError(
           "This coupon is inactive."
         );
+
         setDiscount(0);
         setAppliedCoupon(null);
         return;
       }
 
-      // Expiry check
+      // EXPIRY CHECK
+
+      const expiryDate =
+        coupon.expiryDate || coupon.expiry;
+
       if (
-        coupon.expiry &&
-        new Date(coupon.expiry) < new Date()
+        expiryDate &&
+        new Date(expiryDate) < new Date()
       ) {
         setCouponError(
           "This coupon has expired."
         );
+
         setDiscount(0);
         setAppliedCoupon(null);
         return;
       }
 
-      // Minimum purchase check
+      // MINIMUM PURCHASE
+
       if (
         coupon.minimumPurchase &&
         subtotal < coupon.minimumPurchase
@@ -186,6 +184,7 @@ function Checkout() {
         setCouponError(
           `Minimum purchase of ₹${coupon.minimumPurchase} is required.`
         );
+
         setDiscount(0);
         setAppliedCoupon(null);
         return;
@@ -193,27 +192,28 @@ function Checkout() {
 
       let calculatedDiscount = 0;
 
-      // Percentage
+      // PERCENTAGE DISCOUNT
+
       if (
-        coupon.discountType ===
-        "percentage"
+        coupon.discountType === "percentage"
       ) {
         calculatedDiscount =
-          (subtotal *
-            coupon.discountValue) /
-          100;
+          (subtotal * coupon.discountValue) / 100;
+
+        const maxDiscount =
+          coupon.maxDiscount ||
+          coupon.maximumDiscount;
 
         if (
-          coupon.maxDiscount &&
-          calculatedDiscount >
-            coupon.maxDiscount
+          maxDiscount &&
+          calculatedDiscount > maxDiscount
         ) {
-          calculatedDiscount =
-            coupon.maxDiscount;
+          calculatedDiscount = maxDiscount;
         }
       }
 
-      // Fixed
+      // FIXED DISCOUNT
+
       if (
         coupon.discountType === "fixed"
       ) {
@@ -221,10 +221,9 @@ function Checkout() {
           coupon.discountValue;
       }
 
-      // Discount cannot exceed subtotal
-      if (
-        calculatedDiscount > subtotal
-      ) {
+      // DISCOUNT SHOULD NOT EXCEED SUBTOTAL
+
+      if (calculatedDiscount > subtotal) {
         calculatedDiscount = subtotal;
       }
 
@@ -258,9 +257,7 @@ function Checkout() {
     }
   };
 
-  // =========================
-  // REMOVE COUPON
-  // =========================
+  // ================= REMOVE COUPON =================
 
   const handleRemoveCoupon = () => {
     setCouponCode("");
@@ -270,23 +267,25 @@ function Checkout() {
     setCouponError("");
   };
 
-  // =========================
-  // FINAL TOTAL
-  // =========================
+  // ================= FINAL TOTAL =================
 
   const finalTotal = Math.max(
     0,
     subtotal + delivery - discount
   );
 
-  // =========================
-  // PLACE ORDER
-  // =========================
+  // ================= PLACE ORDER =================
 
   const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
     setError("");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     setPlacingOrder(true);
 
     try {
@@ -295,12 +294,9 @@ function Checkout() {
       );
 
       const shippingAddress = {
-        fullName:
-          `${formData.get(
-            "firstName"
-          )} ${formData.get(
-            "lastName"
-          )}`.trim(),
+        fullName: `${formData.get(
+          "firstName"
+        )} ${formData.get("lastName")}`.trim(),
 
         phone: formData.get("phone"),
 
@@ -315,6 +311,9 @@ function Checkout() {
 
         pincode:
           formData.get("pincode"),
+
+        country:
+          formData.get("country"),
       };
 
       const selectedPayment =
@@ -331,10 +330,9 @@ function Checkout() {
       };
 
       if (appliedCoupon) {
-        checkoutData.couponCode =
-          couponCode
-            .trim()
-            .toUpperCase();
+        checkoutData.couponCode = couponCode
+          .trim()
+          .toUpperCase();
       }
 
       console.log(
@@ -374,9 +372,7 @@ function Checkout() {
     }
   };
 
-  // =========================
-  // LOGIN REQUIRED
-  // =========================
+  // ================= LOGIN REQUIRED =================
 
   if (!token) {
     return (
@@ -390,8 +386,8 @@ function Checkout() {
             <h1>LOGIN REQUIRED</h1>
 
             <span>
-              Please login before
-              proceeding to checkout.
+              Please login before proceeding to
+              checkout.
             </span>
           </section>
 
@@ -407,9 +403,7 @@ function Checkout() {
     );
   }
 
-  // =========================
-  // LOADING
-  // =========================
+  // ================= LOADING =================
 
   if (loading) {
     return (
@@ -433,9 +427,7 @@ function Checkout() {
     );
   }
 
-  // =========================
-  // EMPTY CART
-  // =========================
+  // ================= EMPTY CART =================
 
   if (cartItems.length === 0) {
     return (
@@ -466,9 +458,7 @@ function Checkout() {
     );
   }
 
-  // =========================
-  // MAIN CHECKOUT
-  // =========================
+  // ================= MAIN CHECKOUT =================
 
   return (
     <>
@@ -485,7 +475,7 @@ function Checkout() {
           onSubmit={handlePlaceOrder}
         >
 
-          {/* ================= LEFT SIDE ================= */}
+          {/* LEFT SIDE */}
 
           <section className="delivery-section">
 
@@ -498,8 +488,6 @@ function Checkout() {
               />
             </div>
 
-            {/* DELIVERY */}
-
             <h2 className="delivery-title">
               Delivery
             </h2>
@@ -511,7 +499,10 @@ function Checkout() {
                 Country/region
               </label>
 
-              <select name="country">
+              <select
+                name="country"
+                defaultValue="India"
+              >
                 <option value="India">
                   India
                 </option>
@@ -521,7 +512,6 @@ function Checkout() {
             {/* NAME */}
 
             <div className="checkout-row">
-
               <div className="checkout-field">
                 <input
                   type="text"
@@ -539,7 +529,6 @@ function Checkout() {
                   required
                 />
               </div>
-
             </div>
 
             {/* ADDRESS */}
@@ -632,10 +621,6 @@ function Checkout() {
                 title="Please enter a valid 10-digit phone number"
                 required
               />
-
-              <span className="field-icon phone-icon">
-                ◷
-              </span>
             </div>
 
             {/* EMAIL */}
@@ -647,7 +632,7 @@ function Checkout() {
               readOnly
             />
 
-            {/* SAVE INFORMATION */}
+            {/* SAVE INFO */}
 
             <label className="save-info">
               <input
@@ -656,20 +641,16 @@ function Checkout() {
               />
 
               <span>
-                Save this information
-                for next time
+                Save this information for next time
               </span>
             </label>
 
-            {/* ================= COUPON ================= */}
+            {/* COUPON */}
 
             <div className="coupon-section">
-
               <h2>Discount code</h2>
 
-              <div
-                className="discount-box"
-              >
+              <div className="discount-box">
                 <input
                   type="text"
                   placeholder="Discount code or gift card"
@@ -683,12 +664,8 @@ function Checkout() {
 
                 <button
                   type="button"
-                  onClick={
-                    handleApplyCoupon
-                  }
-                  disabled={
-                    couponLoading
-                  }
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading}
                 >
                   {couponLoading
                     ? "Applying..."
@@ -721,60 +698,61 @@ function Checkout() {
               {appliedCoupon && (
                 <button
                   type="button"
-                  onClick={
-                    handleRemoveCoupon
-                  }
+                  onClick={handleRemoveCoupon}
                   style={{
                     marginTop: "8px",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    textDecoration:
-                      "underline",
+                    textDecoration: "underline",
                   }}
                 >
                   Remove Coupon
                 </button>
               )}
-
             </div>
 
           </section>
 
-          {/* ================= RIGHT SIDE ================= */}
+          {/* RIGHT SIDE */}
 
           <section className="checkout-right">
 
             {/* PRODUCTS */}
 
             <div className="order-summary-products">
-
               {cartItems.map((item) => {
                 const product =
+                  item.product || {};
+
+                const productId =
+                  product._id ||
+                  product.id ||
                   item.product;
 
                 const price =
-                  product?.salePrice ??
-                  product?.regularPrice ??
-                  product?.price ??
+                  product.salePrice ??
+                  product.regularPrice ??
+                  product.price ??
+                  item.price ??
                   0;
+
+                const image =
+                  product.image ||
+                  product.images?.[0] ||
+                  item.image ||
+                  "/placeholder.png";
 
                 return (
                   <div
                     className="figma-product"
-                    key={product?._id}
+                    key={productId}
                   >
-
                     <div className="figma-product-image">
-
                       <img
-                        src={
-                          product?.image ||
-                          product?.images?.[0] ||
-                          "/placeholder.png"
-                        }
+                        src={image}
                         alt={
-                          product?.name ||
+                          product.name ||
                           "Product"
                         }
                       />
@@ -782,13 +760,11 @@ function Checkout() {
                       <span className="product-quantity">
                         {item.quantity}
                       </span>
-
                     </div>
 
                     <div className="figma-product-name">
-
                       <h4>
-                        {product?.name ||
+                        {product.name ||
                           "Product"}
                       </h4>
 
@@ -797,34 +773,25 @@ function Checkout() {
                           Size: {item.size}
                         </small>
                       )}
-
                     </div>
 
                     <strong>
                       ₹
                       {(
-                        price *
-                        item.quantity
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
+                        price * item.quantity
+                      ).toLocaleString("en-IN")}
                     </strong>
-
                   </div>
                 );
               })}
-
             </div>
 
-            {/* ================= PRICE DETAILS ================= */}
+            {/* PRICE DETAILS */}
 
             <div className="price-details">
 
               <div className="price-row">
-
-                <span>
-                  Subtotal
-                </span>
+                <span>Subtotal</span>
 
                 <span>
                   ₹
@@ -832,12 +799,10 @@ function Checkout() {
                     "en-IN"
                   )}
                 </span>
-
               </div>
 
               {discount > 0 && (
                 <div className="price-row">
-
                   <span>
                     Discount
                     {appliedCoupon?.code
@@ -851,44 +816,33 @@ function Checkout() {
                       "en-IN"
                     )}
                   </span>
-
                 </div>
               )}
 
               <div className="price-row">
-
-                <span>
-                  Shipping
-                </span>
+                <span>Shipping</span>
 
                 <span className="shipping-value">
                   {delivery === 0
                     ? "FREE"
                     : `₹${delivery}`}
                 </span>
-
               </div>
 
             </div>
 
-            {/* ================= TOTAL ================= */}
+            {/* TOTAL */}
 
             <div className="figma-total">
-
               <div>
-
-                <h2>
-                  Total
-                </h2>
+                <h2>Total</h2>
 
                 <small>
                   Including taxes
                 </small>
-
               </div>
 
               <strong>
-
                 <span className="currency">
                   INR
                 </span>
@@ -897,22 +851,17 @@ function Checkout() {
                 {finalTotal.toLocaleString(
                   "en-IN"
                 )}
-
               </strong>
-
             </div>
 
-            {/* ================= PAYMENT ================= */}
+            {/* PAYMENT */}
 
             <div className="payment-section">
 
-              <h2>
-                Payment
-              </h2>
+              <h2>Payment</h2>
 
               <p className="payment-subtitle">
-                All transactions are
-                secure and encrypted.
+                All transactions are secure and encrypted.
               </p>
 
               {/* UPI */}
@@ -924,56 +873,39 @@ function Checkout() {
                     : ""
                 }`}
               >
-
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="upi"
                   checked={
-                    paymentMethod ===
-                    "upi"
+                    paymentMethod === "upi"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "upi"
-                    )
+                    setPaymentMethod("upi")
                   }
                 />
 
                 <div className="payment-method-content">
-
                   <strong>
-                    PhonePe Payment
-                    Gateway
-                    (UPI, Cards &
-                    NetBanking)
+                    PhonePe Payment Gateway
+                    (UPI, Cards & NetBanking)
                   </strong>
-
                 </div>
 
                 <span className="payment-icons">
                   UPI&nbsp;&nbsp; VISA&nbsp;&nbsp; MC
                 </span>
-
               </label>
 
-              {paymentMethod ===
-                "upi" && (
+              {paymentMethod === "upi" && (
                 <div className="payment-info-box">
-
                   <p>
                     After clicking{" "}
-                    <strong>
-                      “Pay now”
-                    </strong>
-                    , you will be
-                    redirected to
-                    PhonePe Payment
-                    Gateway to
-                    complete your
-                    purchase securely.
+                    <strong>“Pay now”</strong>,
+                    you will be redirected to
+                    PhonePe Payment Gateway to
+                    complete your purchase securely.
                   </p>
-
                 </div>
               )}
 
@@ -986,46 +918,35 @@ function Checkout() {
                     : ""
                 }`}
               >
-
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="cod"
                   checked={
-                    paymentMethod ===
-                    "cod"
+                    paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "cod"
-                    )
+                    setPaymentMethod("cod")
                   }
                 />
 
                 <div className="payment-method-content">
-
                   <strong>
                     Cash on Delivery
                   </strong>
-
                 </div>
 
                 <span className="payment-icons">
                   ▣
                 </span>
-
               </label>
 
-              {paymentMethod ===
-                "cod" && (
+              {paymentMethod === "cod" && (
                 <div className="payment-info-box cod-info">
-
                   <p>
-                    You can pay cash
-                    when your order is
-                    delivered.
+                    You can pay cash when your order
+                    is delivered.
                   </p>
-
                 </div>
               )}
 
@@ -1038,111 +959,85 @@ function Checkout() {
                     : ""
                 }`}
               >
-
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="card"
                   checked={
-                    paymentMethod ===
-                    "card"
+                    paymentMethod === "card"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "card"
-                    )
+                    setPaymentMethod("card")
                   }
                 />
 
                 <div className="payment-method-content">
-
                   <strong>
                     Credit / Debit Card
                   </strong>
-
                 </div>
 
                 <span className="payment-icons">
                   ▤
                 </span>
-
               </label>
 
-              {paymentMethod ===
-                "card" && (
+              {paymentMethod === "card" && (
                 <div className="payment-info-box card-info">
-
                   <p>
-                    You can complete
-                    your payment
-                    securely using
-                    your card.
+                    You can complete your payment
+                    securely using your card.
                   </p>
-
                 </div>
               )}
 
             </div>
 
-            {/* ================= BILLING ADDRESS ================= */}
+            {/* BILLING ADDRESS */}
 
             <div className="billing-section">
 
-              <h2>
-                Billing address
-              </h2>
+              <h2>Billing address</h2>
 
               <label className="billing-option">
-
                 <input
                   type="radio"
                   name="billing"
                   value="same"
                   checked={
-                    billingAddress ===
-                    "same"
+                    billingAddress === "same"
                   }
                   onChange={() =>
-                    setBillingAddress(
-                      "same"
-                    )
+                    setBillingAddress("same")
                   }
                 />
 
                 <span>
-                  Same as shipping
-                  address
+                  Same as shipping address
                 </span>
-
               </label>
 
               <label className="billing-option">
-
                 <input
                   type="radio"
                   name="billing"
                   value="different"
                   checked={
-                    billingAddress ===
-                    "different"
+                    billingAddress === "different"
                   }
                   onChange={() =>
-                    setBillingAddress(
-                      "different"
-                    )
+                    setBillingAddress("different")
                   }
                 />
 
                 <span>
-                  Use a different
-                  billing address
+                  Use a different billing address
                 </span>
-
               </label>
 
             </div>
 
-            {/* ================= PAY NOW ================= */}
+            {/* PAY NOW */}
 
             <button
               type="submit"
@@ -1154,10 +1049,9 @@ function Checkout() {
                 : "PAY NOW"}
             </button>
 
-            {/* ================= LINKS ================= */}
+            {/* POLICY LINKS */}
 
             <div className="checkout-policy-links">
-
               <Link to="/refund-policy">
                 Refund policy
               </Link>
@@ -1179,13 +1073,10 @@ function Checkout() {
               <Link to="/terms-of-service">
                 Terms of service
               </Link>
-
             </div>
 
           </section>
-
         </form>
-
       </main>
 
       <Footer />
