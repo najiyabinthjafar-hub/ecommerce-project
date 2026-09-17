@@ -1284,3 +1284,122 @@
     font-size: 8px;
   }
 }
+/* =========================================================
+   BEST SELLER BADGE
+========================================================= */
+
+.best-seller-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.best-seller-badge i {
+  font-size: 10px;
+}
+
+.regular-product-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #f3f3f3;
+  color: #666;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* =========================================================
+   PRODUCTS TABLE - 7 COLUMNS
+========================================================= */
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.products-table th:nth-child(1),
+.products-table td:nth-child(1) {
+  width: 25%;
+}
+
+.products-table th:nth-child(2),
+.products-table td:nth-child(2) {
+  width: 14%;
+}
+
+.products-table th:nth-child(3),
+.products-table td:nth-child(3) {
+  width: 12%;
+}
+
+.products-table th:nth-child(4),
+.products-table td:nth-child(4) {
+  width: 8%;
+}
+
+.products-table th:nth-child(5),
+.products-table td:nth-child(5) {
+  width: 11%;
+}
+
+.products-table th:nth-child(6),
+.products-table td:nth-child(6) {
+  width: 17%;
+}
+
+.products-table th:nth-child(7),
+.products-table td:nth-child(7) {
+  width: 13%;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.products-table th:last-child,
+.products-table td:last-child {
+  width: 13% !important;
+  min-width: 100px !important;
+}
+
+.products-table .product-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  min-width: 90px !important;
+}
+
+.products-table .product-actions button,
+.products-table .view-btn,
+.products-table .edit-btn,
+.products-table .delete-btn {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  flex: 0 0 30px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 6px;
+  box-sizing: border-box;
+}

@@ -19,13 +19,13 @@ function EditProduct() {
     variants: [],
     description: "",
     status: "active",
+    isBestSeller: false,
   });
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
 
@@ -40,55 +40,38 @@ function EditProduct() {
       try {
         setLoadingProduct(true);
 
-        const response = await fetch(
-          `${PRODUCT_API_URL}/${id}`
-        );
+        const response = await fetch(`${PRODUCT_API_URL}/${id}`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch product");
         }
 
         const data = await response.json();
-
         const p = data.product || data.data || data;
 
         setProduct({
           sku: p.sku || "",
           name: p.name || "",
-          category:
-            p.category?._id ||
-            p.category ||
-            "",
-          regularPrice:
-            p.regularPrice ?? "",
-          salePrice:
-            p.salePrice ?? "",
-          stock:
-            p.stock ?? "",
-          variants:
-            Array.isArray(p.variants)
-              ? p.variants
-              : [],
-          description:
-            p.description || "",
-          status:
-            p.status || "active",
+          category: p.category?._id || p.category || "",
+          regularPrice: p.regularPrice ?? "",
+          salePrice: p.salePrice ?? "",
+          stock: p.stock ?? "",
+          variants: Array.isArray(p.variants) ? p.variants : [],
+          description: p.description || "",
+          status: p.status || "active",
+
+          // Best Seller
+          isBestSeller: p.isBestSeller === true,
         });
 
         setExistingImages(
-          Array.isArray(p.images)
-            ? p.images
-            : []
+          Array.isArray(p.images) ? p.images : []
         );
       } catch (error) {
-        console.error(
-          "Error fetching product:",
-          error
-        );
+        console.error("Error fetching product:", error);
 
         alert(
-          error.message ||
-            "Failed to load product."
+          error.message || "Failed to load product."
         );
       } finally {
         setLoadingProduct(false);
@@ -109,27 +92,19 @@ function EditProduct() {
       try {
         setLoadingCategories(true);
 
-        const response = await fetch(
-          CATEGORY_API_URL
-        );
+        const response = await fetch(CATEGORY_API_URL);
 
         if (!response.ok) {
-          throw new Error(
-            "Failed to fetch categories"
-          );
+          throw new Error("Failed to fetch categories");
         }
 
         const data = await response.json();
 
         if (Array.isArray(data)) {
           setCategories(data);
-        } else if (
-          Array.isArray(data.categories)
-        ) {
+        } else if (Array.isArray(data.categories)) {
           setCategories(data.categories);
-        } else if (
-          Array.isArray(data.data)
-        ) {
+        } else if (Array.isArray(data.data)) {
           setCategories(data.data);
         } else {
           setCategories([]);
@@ -153,33 +128,27 @@ function EditProduct() {
      MAIN CATEGORIES
   ========================= */
 
-  const mainCategories =
-    categories.filter(
-      (category) => !category.parent
-    );
+  const mainCategories = categories.filter(
+    (category) => !category.parent
+  );
 
   /* =========================
      GET SUBCATEGORIES
   ========================= */
 
-  const getSubcategories = (
-    mainCategoryId
-  ) => {
-    return categories.filter(
-      (subcategory) => {
-        if (!subcategory.parent) {
-          return false;
-        }
-
-        const parentId =
-          typeof subcategory.parent ===
-          "object"
-            ? subcategory.parent?._id
-            : subcategory.parent;
-
-        return parentId === mainCategoryId;
+  const getSubcategories = (mainCategoryId) => {
+    return categories.filter((subcategory) => {
+      if (!subcategory.parent) {
+        return false;
       }
-    );
+
+      const parentId =
+        typeof subcategory.parent === "object"
+          ? subcategory.parent?._id
+          : subcategory.parent;
+
+      return parentId === mainCategoryId;
+    });
   };
 
   /* =========================
@@ -216,6 +185,17 @@ function EditProduct() {
   };
 
   /* =========================
+     BEST SELLER
+  ========================= */
+
+  const handleBestSellerChange = (e) => {
+    setProduct((prev) => ({
+      ...prev,
+      isBestSeller: e.target.checked,
+    }));
+  };
+
+  /* =========================
      NEW IMAGE SELECTION
   ========================= */
 
@@ -229,11 +209,9 @@ function EditProduct() {
     }
 
     const totalImages =
-      existingImages.length +
-      newImages.length;
+      existingImages.length + newImages.length;
 
-    const remainingSlots =
-      5 - totalImages;
+    const remainingSlots = 5 - totalImages;
 
     if (remainingSlots <= 0) {
       alert(
@@ -244,15 +222,13 @@ function EditProduct() {
       return;
     }
 
-    const filesToAdd =
-      selectedFiles.slice(
-        0,
-        remainingSlots
-      );
+    const filesToAdd = selectedFiles.slice(
+      0,
+      remainingSlots
+    );
 
     if (
-      selectedFiles.length >
-      remainingSlots
+      selectedFiles.length > remainingSlots
     ) {
       alert(
         `Only ${remainingSlots} more image(s) can be added.`
@@ -271,9 +247,7 @@ function EditProduct() {
      REMOVE EXISTING IMAGE
   ========================= */
 
-  const removeExistingImage = (
-    index
-  ) => {
+  const removeExistingImage = (index) => {
     setExistingImages((prev) =>
       prev.filter(
         (_, imageIndex) =>
@@ -356,18 +330,27 @@ function EditProduct() {
         name: product.name.trim(),
         slug: generateSlug(product.name),
         category: product.category,
+
         regularPrice: Number(
           product.regularPrice
         ),
+
         salePrice:
           product.salePrice === ""
             ? 0
             : Number(product.salePrice),
+
         stock: Number(product.stock),
+
         variants: product.variants,
+
         description:
           product.description.trim(),
+
         status: product.status,
+
+        // Best Seller
+        isBestSeller: product.isBestSeller,
       };
 
       /* =========================
@@ -379,17 +362,13 @@ function EditProduct() {
         {
           method: "PUT",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(
-            productData
-          ),
+          body: JSON.stringify(productData),
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -403,8 +382,7 @@ function EditProduct() {
       ========================= */
 
       if (newImages.length > 0) {
-        const imageFormData =
-          new FormData();
+        const imageFormData = new FormData();
 
         newImages.forEach((image) => {
           imageFormData.append(
@@ -413,14 +391,13 @@ function EditProduct() {
           );
         });
 
-        const imageResponse =
-          await fetch(
-            `${PRODUCT_API_URL}/${id}/images`,
-            {
-              method: "POST",
-              body: imageFormData,
-            }
-          );
+        const imageResponse = await fetch(
+          `${PRODUCT_API_URL}/${id}/images`,
+          {
+            method: "POST",
+            body: imageFormData,
+          }
+        );
 
         const imageData =
           await imageResponse.json();
@@ -438,9 +415,7 @@ function EditProduct() {
          IF BACKEND SUPPORTS PUT
       ========================= */
 
-      if (
-        Array.isArray(existingImages)
-      ) {
+      if (Array.isArray(existingImages)) {
         try {
           const imageUpdateResponse =
             await fetch(
@@ -452,15 +427,12 @@ function EditProduct() {
                     "application/json",
                 },
                 body: JSON.stringify({
-                  images:
-                    existingImages,
+                  images: existingImages,
                 }),
               }
             );
 
-          if (
-            !imageUpdateResponse.ok
-          ) {
+          if (!imageUpdateResponse.ok) {
             console.warn(
               "Existing image list could not be updated."
             );
@@ -534,9 +506,7 @@ function EditProduct() {
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* =========================
-            HEADER
-        ========================= */}
+        {/* HEADER */}
 
         <div className="add-product-header">
           <div className="add-product-heading">
@@ -558,21 +528,14 @@ function EditProduct() {
           </button>
         </div>
 
-        {/* =========================
-            CARD
-        ========================= */}
+        {/* CARD */}
 
         <div className="add-product-card">
-          <form
-            onSubmit={handleSubmit}
-          >
+          <form onSubmit={handleSubmit}>
 
-            {/* =========================
-                SKU + NAME
-            ========================= */}
+            {/* SKU + NAME */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="sku">
                   SKU
@@ -603,15 +566,11 @@ function EditProduct() {
                   required
                 />
               </div>
-
             </div>
 
-            {/* =========================
-                CATEGORY + STOCK
-            ========================= */}
+            {/* CATEGORY + STOCK */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="category">
                   Category
@@ -644,11 +603,8 @@ function EditProduct() {
 
                         return (
                           <React.Fragment
-                            key={
-                              mainCategoryId
-                            }
+                            key={mainCategoryId}
                           >
-
                             {/* MAIN CATEGORY */}
 
                             <option
@@ -665,9 +621,7 @@ function EditProduct() {
                             {/* SUBCATEGORIES */}
 
                             {subcategories.map(
-                              (
-                                subcategory
-                              ) => {
+                              (subcategory) => {
                                 const subcategoryId =
                                   subcategory._id ||
                                   subcategory.id;
@@ -689,7 +643,6 @@ function EditProduct() {
                                 );
                               }
                             )}
-
                           </React.Fragment>
                         );
                       }
@@ -718,15 +671,11 @@ function EditProduct() {
                   required
                 />
               </div>
-
             </div>
 
-            {/* =========================
-                PRICES
-            ========================= */}
+            {/* PRICES */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="regularPrice">
                   Regular Price
@@ -736,9 +685,7 @@ function EditProduct() {
                   type="number"
                   id="regularPrice"
                   name="regularPrice"
-                  value={
-                    product.regularPrice
-                  }
+                  value={product.regularPrice}
                   onChange={handleChange}
                   placeholder="Enter regular price"
                   min="0"
@@ -756,26 +703,19 @@ function EditProduct() {
                   type="number"
                   id="salePrice"
                   name="salePrice"
-                  value={
-                    product.salePrice
-                  }
+                  value={product.salePrice}
                   onChange={handleChange}
                   placeholder="Enter sale price"
                   min="0"
                   step="0.01"
                 />
               </div>
-
             </div>
 
-            {/* =========================
-                SIZES
-            ========================= */}
+            {/* SIZES */}
 
             <div className="form-group">
-              <label>
-                Sizes
-              </label>
+              <label>Sizes</label>
 
               <div className="size-selection">
                 {sizes.map((size) => (
@@ -790,9 +730,7 @@ function EditProduct() {
                         : ""
                     }`}
                     onClick={() =>
-                      handleSizeChange(
-                        size
-                      )
+                      handleSizeChange(size)
                     }
                   >
                     {size}
@@ -801,14 +739,38 @@ function EditProduct() {
               </div>
 
               <small className="size-hint">
-                Select the available
-                sizes
+                Select the available sizes
               </small>
             </div>
 
-            {/* =========================
-                PRODUCT IMAGES
-            ========================= */}
+            {/* BEST SELLER */}
+
+            <div className="form-group best-seller-group">
+              <label className="best-seller-label">
+                Best Seller
+              </label>
+
+              <label className="best-seller-checkbox">
+                <input
+                  type="checkbox"
+                  checked={product.isBestSeller}
+                  onChange={
+                    handleBestSellerChange
+                  }
+                />
+
+                <span>
+                  Mark this product as Best Seller
+                </span>
+              </label>
+
+              <small className="size-hint">
+                Best Seller products will appear
+                in the Best Sellers section.
+              </small>
+            </div>
+
+            {/* PRODUCT IMAGES */}
 
             <div className="form-group product-image-full">
               <label htmlFor="images">
@@ -821,20 +783,16 @@ function EditProduct() {
                 name="images"
                 accept="image/*"
                 multiple
-                onChange={
-                  handleImageChange
-                }
+                onChange={handleImageChange}
               />
 
               <small className="size-hint">
-                You can have up to 5
-                images.
+                You can have up to 5 images.
               </small>
 
               {/* EXISTING IMAGES */}
 
-              {existingImages.length >
-                0 && (
+              {existingImages.length > 0 && (
                 <>
                   <small
                     className="size-hint"
@@ -847,13 +805,9 @@ function EditProduct() {
 
                   <div className="product-image-preview">
                     {existingImages.map(
-                      (
-                        image,
-                        index
-                      ) => {
+                      (image, index) => {
                         const imageUrl =
-                          typeof image ===
-                          "string"
+                          typeof image === "string"
                             ? image
                             : image?.url ||
                               image?.secure_url ||
@@ -863,17 +817,12 @@ function EditProduct() {
                         return (
                           <div
                             className="preview-image-box"
-                            key={
-                              `${imageUrl}-${index}`
-                            }
+                            key={`${imageUrl}-${index}`}
                           >
                             <img
-                              src={
-                                imageUrl
-                              }
+                              src={imageUrl}
                               alt={`Product ${
-                                index +
-                                1
+                                index + 1
                               }`}
                             />
 
@@ -912,10 +861,7 @@ function EditProduct() {
 
                   <div className="product-image-preview">
                     {newImages.map(
-                      (
-                        image,
-                        index
-                      ) => (
+                      (image, index) => (
                         <div
                           className="preview-image-box"
                           key={`${image.name}-${index}`}
@@ -925,8 +871,7 @@ function EditProduct() {
                               image
                             )}
                             alt={`New product ${
-                              index +
-                              1
+                              index + 1
                             }`}
                           />
 
@@ -950,9 +895,7 @@ function EditProduct() {
               )}
             </div>
 
-            {/* =========================
-                STATUS
-            ========================= */}
+            {/* STATUS */}
 
             <div className="form-group">
               <label htmlFor="status">
@@ -975,9 +918,7 @@ function EditProduct() {
               </select>
             </div>
 
-            {/* =========================
-                DESCRIPTION
-            ========================= */}
+            {/* DESCRIPTION */}
 
             <div className="form-group">
               <label htmlFor="description">
@@ -987,21 +928,16 @@ function EditProduct() {
               <textarea
                 id="description"
                 name="description"
-                value={
-                  product.description
-                }
+                value={product.description}
                 onChange={handleChange}
                 placeholder="Enter product description"
                 rows="5"
               ></textarea>
             </div>
 
-            {/* =========================
-                ACTIONS
-            ========================= */}
+            {/* ACTIONS */}
 
             <div className="form-actions">
-
               <button
                 type="button"
                 className="cancel-btn"
@@ -1028,7 +964,6 @@ function EditProduct() {
                   </>
                 )}
               </button>
-
             </div>
 
           </form>

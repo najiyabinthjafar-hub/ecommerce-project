@@ -4,7 +4,6 @@ import "./Products.css";
 
 const API_URL = "http://localhost:5000/api/products";
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
-
 const PRODUCTS_PER_PAGE = 10;
 
 function Products() {
@@ -17,6 +16,7 @@ function Products() {
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [availability, setAvailability] = useState("");
+  const [bestSeller, setBestSeller] = useState("");
   const [sort, setSort] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,9 +120,6 @@ function Products() {
     const selectedCategory = e.target.value;
 
     setCategory(selectedCategory);
-
-    // Main category change cheyyumbol
-    // old subcategory clear cheyyum
     setSubcategory("");
   };
 
@@ -162,7 +159,6 @@ function Products() {
       result = result.filter((product) => {
         let productCategoryId = "";
 
-        // Product category populated object aanenkil
         if (
           typeof product.category === "object" &&
           product.category !== null
@@ -172,18 +168,12 @@ function Products() {
           productCategoryId = product.category;
         }
 
-        // ---------------------------------------------------
-        // SUBCATEGORY SELECTED
-        // ---------------------------------------------------
-
+        // SUBCATEGORY
         if (subcategory) {
           return productCategoryId === subcategory;
         }
 
-        // ---------------------------------------------------
-        // MAIN CATEGORY SELECTED
-        // ---------------------------------------------------
-
+        // MAIN CATEGORY
         const productCategory = categories.find(
           (cat) => cat._id === productCategoryId
         );
@@ -213,6 +203,22 @@ function Products() {
     if (availability === "out-of-stock") {
       result = result.filter(
         (product) => Number(product.stock || 0) === 0
+      );
+    }
+
+    // =======================================================
+    // BEST SELLER
+    // =======================================================
+
+    if (bestSeller === "best-seller") {
+      result = result.filter(
+        (product) => product.isBestSeller === true
+      );
+    }
+
+    if (bestSeller === "regular") {
+      result = result.filter(
+        (product) => product.isBestSeller !== true
       );
     }
 
@@ -276,6 +282,7 @@ function Products() {
     category,
     subcategory,
     availability,
+    bestSeller,
     sort,
   ]);
 
@@ -287,13 +294,16 @@ function Products() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
+    Math.ceil(
+      totalProducts / PRODUCTS_PER_PAGE
+    )
   );
 
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * PRODUCTS_PER_PAGE,
-    currentPage * PRODUCTS_PER_PAGE
-  );
+  const paginatedProducts =
+    filteredProducts.slice(
+      (currentPage - 1) * PRODUCTS_PER_PAGE,
+      currentPage * PRODUCTS_PER_PAGE
+    );
 
   // =========================================================
   // RESET PAGE WHEN FILTER CHANGES
@@ -306,6 +316,7 @@ function Products() {
     category,
     subcategory,
     availability,
+    bestSeller,
     sort,
   ]);
 
@@ -318,6 +329,7 @@ function Products() {
     setCategory("");
     setSubcategory("");
     setAvailability("");
+    setBestSeller("");
     setSort("");
     setCurrentPage(1);
   };
@@ -352,18 +364,21 @@ function Products() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${API_URL}/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to delete product");
+        throw new Error(
+          "Failed to delete product"
+        );
       }
 
       await fetchProducts();
 
-      // Current page-il last product delete aayal
-      // previous page-lekku pokum
       if (
         paginatedProducts.length === 1 &&
         currentPage > 1
@@ -371,7 +386,11 @@ function Products() {
         setCurrentPage((prev) => prev - 1);
       }
     } catch (error) {
-      console.error("Error deleting product:", error);
+      console.error(
+        "Error deleting product:",
+        error
+      );
+
       alert("Failed to delete product.");
     }
   };
@@ -417,14 +436,20 @@ function Products() {
       typeof product.category === "object" &&
       product.category !== null
     ) {
-      return product.category.name || "Uncategorized";
+      return (
+        product.category.name ||
+        "Uncategorized"
+      );
     }
 
     const foundCategory = categories.find(
       (cat) => cat._id === product.category
     );
 
-    return foundCategory?.name || "Uncategorized";
+    return (
+      foundCategory?.name ||
+      "Uncategorized"
+    );
   };
 
   // =========================================================
@@ -488,7 +513,6 @@ function Products() {
       <div className="products-header">
         <div>
           <h1>Products</h1>
-
           <p>
             Manage your products and inventory
           </p>
@@ -509,10 +533,6 @@ function Products() {
       ===================================================== */}
 
       <div className="products-table-container">
-
-        {/* ===================================================
-            TABLE HEADER
-        =================================================== */}
 
         <div className="products-table-header">
 
@@ -618,6 +638,28 @@ function Products() {
               </option>
             </select>
 
+            {/* BEST SELLER */}
+
+            <select
+              className="products-filter"
+              value={bestSeller}
+              onChange={(e) =>
+                setBestSeller(e.target.value)
+              }
+            >
+              <option value="">
+                Best Seller
+              </option>
+
+              <option value="best-seller">
+                Best Sellers
+              </option>
+
+              <option value="regular">
+                Regular Products
+              </option>
+            </select>
+
             {/* SORT */}
 
             <select
@@ -703,183 +745,206 @@ function Products() {
                   <th>PRICE</th>
                   <th>STOCK</th>
                   <th>STATUS</th>
+                  <th>BEST SELLER</th>
                   <th>ACTION</th>
                 </tr>
               </thead>
 
               <tbody>
 
-                {paginatedProducts.map((product) => {
+                {paginatedProducts.map(
+                  (product) => {
 
-                  const status =
-                    getProductStatus(product);
+                    const status =
+                      getProductStatus(product);
 
-                  const image =
-                    product.images &&
-                    product.images.length > 0
-                      ? product.images[0]
-                      : null;
+                    const image =
+                      product.images &&
+                      product.images.length > 0
+                        ? product.images[0]
+                        : null;
 
-                  return (
-                    <tr key={product._id}>
+                    return (
+                      <tr
+                        key={product._id}
+                      >
 
-                      {/* PRODUCT */}
+                        {/* PRODUCT */}
 
-                      <td>
-                        <div className="product-info">
+                        <td>
+                          <div className="product-info">
 
-                          <div className="product-icon">
-                            {image ? (
-                              <img
-                                src={image}
-                                alt={product.name}
-                              />
+                            <div className="product-icon">
+                              {image ? (
+                                <img
+                                  src={image}
+                                  alt={product.name}
+                                />
+                              ) : (
+                                <i className="bi bi-image"></i>
+                              )}
+                            </div>
+
+                            <div className="product-details">
+
+                              <strong className="product-name">
+                                {product.name}
+                              </strong>
+
+                              <span className="product-sku">
+                                {product.sku ||
+                                  "No SKU"}
+                              </span>
+
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* CATEGORY */}
+
+                        <td>
+                          <span className="product-category">
+                            {getCategoryName(product)}
+                          </span>
+                        </td>
+
+                        {/* PRICE */}
+
+                        <td>
+                          <div className="product-price">
+
+                            {product.salePrice ? (
+                              <>
+                                <span className="sale-price">
+                                  ₹
+                                  {Number(
+                                    product.salePrice
+                                  ).toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </span>
+
+                                <span className="regular-price">
+                                  ₹
+                                  {Number(
+                                    product.regularPrice
+                                  ).toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </span>
+                              </>
                             ) : (
-                              <i className="bi bi-image"></i>
-                            )}
-                          </div>
-
-                          <div className="product-details">
-
-                            <strong className="product-name">
-                              {product.name}
-                            </strong>
-
-                            <span className="product-sku">
-                              {product.sku ||
-                                "No SKU"}
-                            </span>
-
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* CATEGORY */}
-
-                      <td>
-                        <span className="product-category">
-                          {getCategoryName(product)}
-                        </span>
-                      </td>
-
-                      {/* PRICE */}
-
-                      <td>
-                        <div className="product-price">
-
-                          {product.salePrice ? (
-                            <>
                               <span className="sale-price">
                                 ₹
                                 {Number(
-                                  product.salePrice
+                                  product.regularPrice ||
+                                    product.price ||
+                                    0
                                 ).toLocaleString(
                                   "en-IN"
                                 )}
                               </span>
+                            )}
 
-                              <span className="regular-price">
-                                ₹
-                                {Number(
-                                  product.regularPrice
-                                ).toLocaleString(
-                                  "en-IN"
-                                )}
-                              </span>
-                            </>
+                          </div>
+                        </td>
+
+                        {/* STOCK */}
+
+                        <td>
+                          <span
+                            className={
+                              Number(
+                                product.stock || 0
+                              ) <= 10
+                                ? "stock-low"
+                                : "stock-normal"
+                            }
+                          >
+                            {product.stock ?? 0}
+                          </span>
+                        </td>
+
+                        {/* STATUS */}
+
+                        <td>
+                          <span
+                            className={`product-status ${status.className}`}
+                          >
+                            <span className="status-dot"></span>
+                            {status.label}
+                          </span>
+                        </td>
+
+                        {/* BEST SELLER */}
+
+                        <td>
+                          {product.isBestSeller ? (
+                            <span className="best-seller-badge">
+                              <i className="bi bi-star-fill"></i>
+                              Best Seller
+                            </span>
                           ) : (
-                            <span className="sale-price">
-                              ₹
-                              {Number(
-                                product.regularPrice ||
-                                  product.price ||
-                                  0
-                              ).toLocaleString(
-                                "en-IN"
-                              )}
+                            <span className="regular-product-badge">
+                              Regular
                             </span>
                           )}
+                        </td>
 
-                        </div>
-                      </td>
+                        {/* ACTIONS */}
 
-                      {/* STOCK */}
+                        <td>
+                          <div className="product-actions">
 
-                      <td>
-                        <span
-                          className={
-                            Number(product.stock || 0) <= 10
-                              ? "stock-low"
-                              : "stock-normal"
-                          }
-                        >
-                          {product.stock ?? 0}
-                        </span>
-                      </td>
+                            {/* VIEW */}
 
-                      {/* STATUS */}
+                            <button
+                              className="view-btn"
+                              title="View"
+                              onClick={() =>
+                                navigate(
+                                  `/admin/products/view/${product._id}`
+                                )
+                              }
+                            >
+                              <i className="bi bi-eye"></i>
+                            </button>
 
-                      <td>
-                        <span
-                          className={`product-status ${status.className}`}
-                        >
-                          <span className="status-dot"></span>
+                            {/* EDIT */}
 
-                          {status.label}
-                        </span>
-                      </td>
+                            <button
+                              className="edit-btn"
+                              title="Edit"
+                              onClick={() =>
+                                navigate(
+                                  `/admin/products/edit/${product._id}`
+                                )
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
 
-                      {/* ACTIONS */}
+                            {/* DELETE */}
 
-                      <td>
-                        <div className="product-actions">
+                            <button
+                              className="delete-btn"
+                              title="Delete"
+                              onClick={() =>
+                                handleDelete(
+                                  product._id
+                                )
+                              }
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
 
-                          {/* VIEW */}
+                          </div>
+                        </td>
 
-                          <button
-                            className="view-btn"
-                            title="View"
-                            onClick={() =>
-                              navigate(
-                                `/admin/products/view/${product._id}`
-                              )
-                            }
-                          >
-                            <i className="bi bi-eye"></i>
-                          </button>
-
-                          {/* EDIT */}
-
-                          <button
-                            className="edit-btn"
-                            title="Edit"
-                            onClick={() =>
-                              navigate(
-                                `/admin/products/edit/${product._id}`
-                              )
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
-
-                          {/* DELETE */}
-
-                          <button
-                            className="delete-btn"
-                            title="Delete"
-                            onClick={() =>
-                              handleDelete(product._id)
-                            }
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-
-                        </div>
-                      </td>
-
-                    </tr>
-                  );
-                })}
+                      </tr>
+                    );
+                  }
+                )}
 
               </tbody>
             </table>

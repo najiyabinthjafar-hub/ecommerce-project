@@ -55,7 +55,7 @@ import AdminOrders from "./pages/admin/Orders";
 import OrderDetails from "./pages/admin/OrderDetails";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
-import Settings from "./pages/admin/Settings";
+
 import AdminProfile from "./pages/admin/AdminProfile";
 import AddBanner from "./pages/admin/AddBanner";
 import EditBanner from "./pages/admin/EditBanner";
@@ -64,6 +64,7 @@ import ViewProduct from "./pages/admin/ViewProduct";
 import BannerView from "./pages/admin/BannerView";
 import AddCoupon from "./pages/admin/AddCoupon";
 import ViewCoupon from "./pages/admin/ViewCoupon";
+import EditCoupon from "./pages/admin/EditCoupon";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -87,14 +88,17 @@ function App() {
         {/* ================= PROFILE ================= */}
 
         <Route path="/profile" element={<Profile />} />
+
         <Route
           path="/profile/personal"
           element={<PersonalInformation />}
         />
+
         <Route
           path="/profile/addresses"
           element={<Addresses />}
         />
+
         <Route
           path="/profile/change-password"
           element={<ChangePassword />}
@@ -188,15 +192,16 @@ function App() {
           path="/admin/login"
           element={<AdminLogin />}
         />
-         <Route
-  path="/admin/forgot-password"
-  element={<AdminForgotPassword />}
-/>
 
-<Route
-  path="/admin/reset-password"
-  element={<AdminResetPassword />}
-/>
+        <Route
+          path="/admin/forgot-password"
+          element={<AdminForgotPassword />}
+        />
+
+        <Route
+          path="/admin/reset-password"
+          element={<AdminResetPassword />}
+        />
 
         {/* ================= PROTECTED ADMIN SIDE ================= */}
 
@@ -347,6 +352,16 @@ function App() {
           />
 
           <Route
+            path="/admin/coupons/edit/:id"
+            element={
+              <AdminLayout>
+                <EditCoupon />
+              </AdminLayout>
+            }
+          />
+
+          {/* Inventory */}
+          <Route
             path="/admin/inventory"
             element={
               <AdminLayout>
@@ -355,15 +370,7 @@ function App() {
             }
           />
 
-          <Route
-            path="/admin/settings"
-            element={
-              <AdminLayout>
-                <Settings />
-              </AdminLayout>
-            }
-          />
-
+          {/* Admin Profile */}
           <Route
             path="/admin/profile"
             element={

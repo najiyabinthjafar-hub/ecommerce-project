@@ -1,23 +1,30 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ViewCoupon.css";
 
 const API_URL = "http://localhost:5000/api/coupons";
+const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
 function ViewCoupon() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [coupon, setCoupon] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================================
+  /* =========================================================
      FETCH COUPON
-  ================================= */
+  ========================================================= */
 
   useEffect(() => {
     const fetchCoupon = async () => {
       try {
+        setLoading(true);
+
         const response = await fetch(`${API_URL}/all`);
 
         if (!response.ok) {
@@ -39,29 +46,93 @@ function ViewCoupon() {
       }
     };
 
-    fetchCoupon();
+    if (id) {
+      fetchCoupon();
+    }
   }, [id]);
 
-  /* ================================
+  /* =========================================================
+     FETCH CATEGORIES
+  ========================================================= */
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(CATEGORY_API_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+
+        const data = await response.json();
+
+        const categoryList = Array.isArray(data)
+          ? data
+          : data.categories || data.data || [];
+
+        setCategories(categoryList);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  /* =========================================================
+     FETCH PRODUCTS
+  ========================================================= */
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(
+          `${PRODUCT_API_URL}?limit=1000`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const data = await response.json();
+
+        const productList = Array.isArray(data)
+          ? data
+          : data.products || data.data || [];
+
+        setProducts(productList);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts([]);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  /* =========================================================
      GET COUPON STATUS
-  ================================= */
+  ========================================================= */
 
   const getCouponStatus = () => {
     if (!coupon) return "inactive";
 
-    const now = new Date();
-    const expiryDate = new Date(coupon.expiryDate);
+    if (coupon.expiryDate) {
+      const now = new Date();
+      const expiryDate = new Date(coupon.expiryDate);
 
-    if (expiryDate < now) {
-      return "expired";
+      if (expiryDate < now) {
+        return "expired";
+      }
     }
 
     return coupon.isActive ? "active" : "inactive";
   };
 
-  /* ================================
+  /* =========================================================
      FORMAT DISCOUNT
-  ================================= */
+  ========================================================= */
 
   const formatDiscount = () => {
     if (!coupon) return "-";
@@ -70,12 +141,14 @@ function ViewCoupon() {
       return `${coupon.discountValue}%`;
     }
 
-    return `₹${coupon.discountValue}`;
+    return `₹${Number(coupon.discountValue || 0).toLocaleString(
+      "en-IN"
+    )}`;
   };
 
-  /* ================================
+  /* =========================================================
      FORMAT DATE
-  ================================= */
+  ========================================================= */
 
   const formatDate = (date) => {
     if (!date) return "-";
@@ -87,9 +160,71 @@ function ViewCoupon() {
     });
   };
 
-  /* ================================
+  /* =========================================================
+     GET COUPON TYPE
+  ========================================================= */
+
+  const getCouponType = () => {
+    if (!coupon?.couponType) {
+      return "General";
+    }
+
+    switch (coupon.couponType) {
+      case "category":
+        return "Category";
+
+      case "product":
+        return "Product";
+
+      case "general":
+      default:
+        return "General";
+    }
+  };
+
+  /* =========================================================
+     GET CATEGORY NAME
+  ========================================================= */
+
+  const getCategoryName = () => {
+    if (!coupon?.category) {
+      return "-";
+    }
+
+    if (typeof coupon.category === "object") {
+      return coupon.category.name || "-";
+    }
+
+    const category = categories.find(
+      (item) => item._id === coupon.category
+    );
+
+    return category?.name || "-";
+  };
+
+  /* =========================================================
+     GET PRODUCT NAME
+  ========================================================= */
+
+  const getProductName = () => {
+    if (!coupon?.product) {
+      return "-";
+    }
+
+    if (typeof coupon.product === "object") {
+      return coupon.product.name || "-";
+    }
+
+    const product = products.find(
+      (item) => item._id === coupon.product
+    );
+
+    return product?.name || "-";
+  };
+
+  /* =========================================================
      LOADING
-  ================================= */
+  ========================================================= */
 
   if (loading) {
     return (
@@ -101,9 +236,9 @@ function ViewCoupon() {
     );
   }
 
-  /* ================================
+  /* =========================================================
      COUPON NOT FOUND
-  ================================= */
+  ========================================================= */
 
   if (!coupon) {
     return (
@@ -118,8 +253,10 @@ function ViewCoupon() {
           </p>
 
           <button
+            className="coupon-back-btn"
             onClick={() => navigate("/admin/coupons")}
           >
+            <i className="bi bi-arrow-left"></i>
             Back to Coupons
           </button>
         </div>
@@ -129,16 +266,16 @@ function ViewCoupon() {
 
   const status = getCouponStatus();
 
-  /* ================================
+  /* =========================================================
      PAGE
-  ================================= */
+  ========================================================= */
 
   return (
     <div className="view-coupon-page">
 
-      {/* ================================
+      {/* =====================================================
           HEADER
-      ================================= */}
+      ===================================================== */}
 
       <div className="view-coupon-header">
         <h1>View Coupon</h1>
@@ -148,15 +285,15 @@ function ViewCoupon() {
         </p>
       </div>
 
-      {/* ================================
+      {/* =====================================================
           MAIN CARD
-      ================================= */}
+      ===================================================== */}
 
       <div className="view-coupon-card">
 
-        {/* ================================
+        {/* ===================================================
             COUPON TOP SECTION
-        ================================= */}
+        =================================================== */}
 
         <div className="view-coupon-top">
 
@@ -190,11 +327,21 @@ function ViewCoupon() {
 
         </div>
 
-        {/* ================================
+        {/* ===================================================
             COUPON DETAILS
-        ================================= */}
+        =================================================== */}
 
         <div className="coupon-details-grid">
+
+          {/* Coupon Type */}
+
+          <div className="coupon-detail-item">
+            <span>Coupon Type</span>
+
+            <strong>
+              {getCouponType()}
+            </strong>
+          </div>
 
           {/* Discount */}
 
@@ -218,13 +365,40 @@ function ViewCoupon() {
             </strong>
           </div>
 
+          {/* Category */}
+
+          {coupon.couponType === "category" && (
+            <div className="coupon-detail-item">
+              <span>Category</span>
+
+              <strong>
+                {getCategoryName()}
+              </strong>
+            </div>
+          )}
+
+          {/* Product */}
+
+          {coupon.couponType === "product" && (
+            <div className="coupon-detail-item">
+              <span>Product</span>
+
+              <strong>
+                {getProductName()}
+              </strong>
+            </div>
+          )}
+
           {/* Minimum Purchase */}
 
           <div className="coupon-detail-item">
             <span>Minimum Purchase</span>
 
             <strong>
-              ₹{coupon.minimumPurchase || 0}
+              ₹
+              {Number(
+                coupon.minimumPurchase || 0
+              ).toLocaleString("en-IN")}
             </strong>
           </div>
 
@@ -235,7 +409,9 @@ function ViewCoupon() {
 
             <strong>
               {coupon.maximumDiscount
-                ? `₹${coupon.maximumDiscount}`
+                ? `₹${Number(
+                    coupon.maximumDiscount
+                  ).toLocaleString("en-IN")}`
                 : "No Limit"}
             </strong>
           </div>
@@ -282,9 +458,9 @@ function ViewCoupon() {
 
         </div>
 
-        {/* ================================
+        {/* ===================================================
             ACTION BUTTONS
-        ================================= */}
+        =================================================== */}
 
         <div className="view-coupon-actions">
 
@@ -295,7 +471,6 @@ function ViewCoupon() {
             onClick={() => navigate("/admin/coupons")}
           >
             <i className="bi bi-arrow-left"></i>
-
             Back
           </button>
 
@@ -310,7 +485,6 @@ function ViewCoupon() {
             }
           >
             <i className="bi bi-pencil"></i>
-
             Edit Coupon
           </button>
 
@@ -322,3 +496,4 @@ function ViewCoupon() {
 }
 
 export default ViewCoupon;
+

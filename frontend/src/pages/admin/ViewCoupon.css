@@ -1,25 +1,36 @@
+
 * {
   box-sizing: border-box;
 }
 
-/* ================================
+/* =========================================================
    PAGE
-================================ */
+========================================================= */
 
 .view-coupon-page {
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
   padding: 0;
+
   color: #171717;
+
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-/* ================================
+
+/* =========================================================
    HEADER
-================================ */
+========================================================= */
 
 .view-coupon-header {
   width: 100%;
+
   margin-bottom: 24px;
 
   display: flex;
@@ -30,28 +41,31 @@
 .view-coupon-header h1 {
   margin: 0;
 
+  color: #151515;
+
   font-size: 27px;
   font-weight: 700;
-  letter-spacing: -0.4px;
 
-  color: #151515;
+  letter-spacing: -0.4px;
 }
 
 .view-coupon-header p {
   margin: 6px 0 0;
 
   color: #888;
+
   font-size: 13px;
 }
 
-/* ================================
+
+/* =========================================================
    MAIN CARD
-================================ */
+========================================================= */
 
 .view-coupon-card {
   width: 100%;
 
-  background: #fff;
+  background: #ffffff;
 
   border: 1px solid #e8e8e8;
   border-radius: 14px;
@@ -61,9 +75,10 @@
   overflow: hidden;
 }
 
-/* ================================
+
+/* =========================================================
    TOP SECTION
-================================ */
+========================================================= */
 
 .view-coupon-top {
   padding: 24px;
@@ -77,9 +92,10 @@
   border-bottom: 1px solid #eeeeee;
 }
 
-/* ================================
+
+/* =========================================================
    COUPON MAIN INFO
-================================ */
+========================================================= */
 
 .coupon-main-info {
   display: flex;
@@ -128,9 +144,10 @@
   letter-spacing: 0.3px;
 }
 
-/* ================================
+
+/* =========================================================
    STATUS
-================================ */
+========================================================= */
 
 .view-status {
   display: inline-flex;
@@ -144,6 +161,8 @@
 
   font-size: 10px;
   font-weight: 600;
+
+  white-space: nowrap;
 }
 
 .view-status .status-dot {
@@ -154,6 +173,7 @@
 
   border-radius: 50%;
 }
+
 
 /* Active */
 
@@ -166,6 +186,7 @@
   background: #269653;
 }
 
+
 /* Inactive */
 
 .view-status.inactive {
@@ -176,6 +197,7 @@
 .view-status.inactive .status-dot {
   background: #999;
 }
+
 
 /* Expired */
 
@@ -188,14 +210,16 @@
   background: #d95353;
 }
 
-/* ================================
+
+/* =========================================================
    DETAILS GRID
-================================ */
+========================================================= */
 
 .coupon-details-grid {
   width: 100%;
 
   display: grid;
+
   grid-template-columns: repeat(4, 1fr);
 
   gap: 0;
@@ -203,9 +227,10 @@
   border-bottom: 1px solid #eeeeee;
 }
 
-/* ================================
+
+/* =========================================================
    DETAIL ITEM
-================================ */
+========================================================= */
 
 .coupon-detail-item {
   min-height: 105px;
@@ -218,13 +243,23 @@
 
   border-right: 1px solid #eeeeee;
   border-bottom: 1px solid #eeeeee;
+
+  background: #ffffff;
+
+  transition: background 0.2s ease;
 }
+
+.coupon-detail-item:hover {
+  background: #fcfcfc;
+}
+
 
 /* Every 4th item */
 
 .coupon-detail-item:nth-child(4n) {
   border-right: none;
 }
+
 
 /* Last row */
 
@@ -246,9 +281,12 @@
 
   font-size: 14px;
   font-weight: 650;
+
+  line-height: 1.4;
 }
 
-/* Discount highlight */
+
+/* First detail - Discount highlight */
 
 .coupon-detail-item:first-child strong {
   color: #171717;
@@ -257,9 +295,19 @@
   font-weight: 700;
 }
 
-/* ================================
+
+/* =========================================================
+   COUPON TYPE
+========================================================= */
+
+.coupon-detail-item strong {
+  word-break: break-word;
+}
+
+
+/* =========================================================
    ACTIONS
-================================ */
+========================================================= */
 
 .view-coupon-actions {
   padding: 18px 24px;
@@ -270,12 +318,13 @@
 
   gap: 9px;
 
-  background: #fff;
+  background: #ffffff;
 }
 
-/* ================================
-   BOTTOM BACK BUTTON
-================================ */
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
 
 .coupon-back-btn {
   height: 38px;
@@ -291,16 +340,17 @@
   border: 1px solid #dedede;
   border-radius: 8px;
 
-  background: #fff;
+  background: #ffffff;
   color: #555;
 
   font-family: inherit;
+
   font-size: 12px;
   font-weight: 600;
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .coupon-back-btn i {
@@ -309,13 +359,22 @@
 
 .coupon-back-btn:hover {
   background: #f5f5f5;
-  border-color: #ccc;
+
+  border-color: #cccccc;
+
   color: #222;
+
+  transform: translateY(-1px);
 }
 
-/* ================================
+.coupon-back-btn:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
    EDIT BUTTON
-================================ */
+========================================================= */
 
 .coupon-edit-btn {
   height: 38px;
@@ -332,15 +391,16 @@
   border-radius: 8px;
 
   background: #171717;
-  color: #fff;
+  color: #ffffff;
 
   font-family: inherit;
+
   font-size: 12px;
   font-weight: 600;
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .coupon-edit-btn i {
@@ -348,13 +408,21 @@
 }
 
 .coupon-edit-btn:hover {
-  background: #333;
-  border-color: #333;
+  background: #333333;
+
+  border-color: #333333;
+
+  transform: translateY(-1px);
 }
 
-/* ================================
+.coupon-edit-btn:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
    LOADING
-================================ */
+========================================================= */
 
 .view-coupon-loading {
   width: 100%;
@@ -367,7 +435,7 @@
 
   font-size: 12px;
 
-  background: #fff;
+  background: #ffffff;
 
   border: 1px solid #e8e8e8;
   border-radius: 14px;
@@ -375,9 +443,10 @@
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.025);
 }
 
-/* ================================
+
+/* =========================================================
    EMPTY
-================================ */
+========================================================= */
 
 .view-coupon-empty {
   width: 100%;
@@ -386,7 +455,7 @@
 
   text-align: center;
 
-  background: #fff;
+  background: #ffffff;
 
   border: 1px solid #e8e8e8;
   border-radius: 14px;
@@ -399,7 +468,7 @@
 
   margin-bottom: 12px;
 
-  color: #aaa;
+  color: #aaaaaa;
 
   font-size: 28px;
 }
@@ -407,7 +476,7 @@
 .view-coupon-empty h2 {
   margin: 0 0 6px;
 
-  color: #444;
+  color: #444444;
 
   font-size: 16px;
   font-weight: 650;
@@ -416,7 +485,7 @@
 .view-coupon-empty p {
   margin: 0 0 18px;
 
-  color: #999;
+  color: #999999;
 
   font-size: 12px;
 }
@@ -424,30 +493,40 @@
 .view-coupon-empty button {
   height: 38px;
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
   padding: 0 15px;
 
   border: none;
   border-radius: 8px;
 
   background: #171717;
-  color: #fff;
+  color: #ffffff;
 
   font-family: inherit;
+
   font-size: 12px;
   font-weight: 600;
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .view-coupon-empty button:hover {
-  background: #333;
+  background: #333333;
+
+  transform: translateY(-1px);
 }
 
-/* ================================
+
+/* =========================================================
    LAPTOP
-================================ */
+========================================================= */
 
 @media (max-width: 1100px) {
   .coupon-details-grid {
@@ -471,9 +550,10 @@
   }
 }
 
-/* ================================
+
+/* =========================================================
    TABLET
-================================ */
+========================================================= */
 
 @media (max-width: 800px) {
   .view-coupon-header h1 {
@@ -493,9 +573,10 @@
   }
 }
 
-/* ================================
+
+/* =========================================================
    MOBILE
-================================ */
+========================================================= */
 
 @media (max-width: 600px) {
   .view-coupon-header {
@@ -510,11 +591,12 @@
     font-size: 12px;
   }
 
+
   /* Coupon top section */
 
   .view-coupon-top {
-    align-items: flex-start;
     flex-direction: column;
+    align-items: flex-start;
 
     padding: 18px;
   }
@@ -538,6 +620,7 @@
     align-self: flex-start;
   }
 
+
   /* Details */
 
   .coupon-details-grid {
@@ -548,6 +631,8 @@
   .coupon-detail-item:nth-child(2n),
   .coupon-detail-item:nth-child(4n) {
     min-height: 82px;
+
+    padding: 17px 18px;
 
     border-right: none;
     border-bottom: 1px solid #eeeeee;
@@ -561,12 +646,15 @@
     font-size: 17px;
   }
 
+
   /* Bottom buttons */
 
   .view-coupon-actions {
     padding: 15px 18px;
 
     justify-content: stretch;
+
+    gap: 8px;
   }
 
   .coupon-back-btn,
@@ -575,9 +663,10 @@
   }
 }
 
-/* ================================
+
+/* =========================================================
    SMALL MOBILE
-================================ */
+========================================================= */
 
 @media (max-width: 400px) {
   .view-coupon-header h1 {
@@ -603,6 +692,8 @@
   .coupon-back-btn,
   .coupon-edit-btn {
     width: 100%;
+
     flex: none;
   }
 }
+

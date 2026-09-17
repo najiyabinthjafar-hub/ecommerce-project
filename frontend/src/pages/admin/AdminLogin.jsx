@@ -69,6 +69,7 @@ function AdminLogin() {
   return (
     <div className="admin-login-page">
       <div className="admin-login-card">
+
         {/* Logo */}
         <div className="login-brand">
           <img
@@ -88,8 +89,10 @@ function AdminLogin() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
+
           <div className="login-group">
             <label>Email Address</label>
+
             <input
               type="email"
               placeholder="Enter your email"
@@ -103,6 +106,7 @@ function AdminLogin() {
 
           <div className="login-group">
             <label>Password</label>
+
             <input
               type="password"
               placeholder="Enter your password"
@@ -121,13 +125,8 @@ function AdminLogin() {
             </p>
           )}
 
-          {/* Options */}
+          {/* Forgot Password */}
           <div className="login-options">
-            <label>
-              <input type="checkbox" />
-              Remember me
-            </label>
-
             <button
               type="button"
               className="forgot-password"
@@ -149,6 +148,7 @@ function AdminLogin() {
               ? "Logging in..."
               : "Login"}
           </button>
+
         </form>
       </div>
     </div>

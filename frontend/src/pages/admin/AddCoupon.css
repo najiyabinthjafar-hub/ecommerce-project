@@ -1,22 +1,28 @@
-/* ================================
+
+/* =========================================================
    ADD COUPON PAGE
-================================ */
+========================================================= */
 
 .add-coupon-page {
   width: 100%;
-  min-height: 100%;
-  padding: 28px 32px 40px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px;
   box-sizing: border-box;
-  background: #f7f7f7;
+  color: #171717;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-
-/* ================================
+/* =========================================================
    HEADER
-================================ */
+========================================================= */
 
 .add-coupon-header {
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -25,153 +31,149 @@
 }
 
 .add-coupon-header h1 {
-  margin: 0;
-  font-size: 28px;
+  margin: 0 0 5px;
+  font-size: 25px;
   font-weight: 700;
+  letter-spacing: -0.4px;
   color: #111;
 }
 
 .add-coupon-header p {
-  margin: 6px 0 0;
-  font-size: 14px;
+  margin: 0;
+  font-size: 13px;
   color: #777;
 }
 
-
-/* ================================
+/* =========================================================
    BACK BUTTON
-================================ */
+========================================================= */
 
 .back-coupon-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 17px;
-  border: 1px solid #222;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #dedede;
   border-radius: 7px;
-  background: #222;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
+  background: #fff;
+  color: #222;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.back-coupon-btn i {
-  font-size: 16px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-coupon-btn:hover {
-  background: #333;
-  color: #fff;
-  border-color: #111;
+  background: #f5f5f5;
+  border-color: #cfcfcf;
+  transform: translateY(-1px);
 }
 
+.back-coupon-btn i {
+  font-size: 14px;
+}
 
-/* ================================
+/* =========================================================
    MAIN CARD
-================================ */
+========================================================= */
 
 .add-coupon-card {
   width: 100%;
   background: #fff;
-  border: 1px solid #e5e5e5;
+  border: 1px solid #e7e7e7;
   border-radius: 10px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-
-/* ================================
+/* =========================================================
    FORM SECTION
-================================ */
+========================================================= */
 
 .form-section {
-  padding: 28px 30px;
+  padding: 25px;
 }
 
 .form-section h2 {
-  margin: 0 0 22px;
-  font-size: 19px;
-  font-weight: 650;
-  color: #111;
+  margin: 0 0 20px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #ededed;
+  font-size: 15px;
+  font-weight: 700;
+  color: #151515;
 }
 
-
-/* ================================
+/* =========================================================
    FORM GRID
-================================ */
+========================================================= */
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px 24px;
+  gap: 19px 22px;
 }
 
-
-/* ================================
-   FORM GROUP
-================================ */
-
 .form-group {
-  width: 100%;
+  min-width: 0;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-size: 14px;
+  margin-bottom: 7px;
+  font-size: 12px;
   font-weight: 600;
+  color: #333;
 }
 
 .form-group label span {
-  color: #e53935;
+  color: #111;
+  font-weight: 700;
 }
 
-
-/* ================================
-   INPUT + SELECT
-================================ */
+/* =========================================================
+   INPUTS / SELECT
+========================================================= */
 
 .form-group input,
 .form-group select {
   width: 100%;
-  height: 44px;
-  padding: 0 13px;
-  box-sizing: border-box;
-
+  height: 42px;
+  padding: 0 12px;
   border: 1px solid #dcdcdc;
   border-radius: 7px;
-
+  outline: none;
   background: #fff;
   color: #222;
-
-  font-size: 14px;
-  outline: none;
-
-  transition: border-color 0.2s ease,
-              box-shadow 0.2s ease;
+  font-family: inherit;
+  font-size: 12px;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-group input::placeholder {
-  color: #aaa;
+  color: #a0a0a0;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #111;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+  border-color: #222;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 }
 
 .form-group select {
   cursor: pointer;
 }
 
-
-/* ================================
+/* =========================================================
    INPUT WITH SYMBOL
-================================ */
+========================================================= */
 
 .input-with-symbol {
   position: relative;
@@ -179,64 +181,311 @@
 }
 
 .input-with-symbol input {
-  padding-right: 42px;
+  padding-right: 43px;
 }
 
 .input-with-symbol span {
   position: absolute;
-  right: 14px;
   top: 50%;
+  right: 13px;
   transform: translateY(-50%);
-
-  color: #777;
-  font-size: 14px;
+  color: #555;
+  font-size: 12px;
   font-weight: 600;
-
   pointer-events: none;
 }
 
+/* =========================================================
+   PRODUCT SEARCH
+========================================================= */
 
-/* ================================
-   COUPON STATUS
-================================ */
+.product-select-group {
+  position: relative;
+}
 
-.coupon-status-section {
+.product-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.product-search-box > i {
+  position: absolute;
+  left: 13px;
+  z-index: 2;
+  color: #777;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.product-search-box input {
+  padding-left: 37px;
+  padding-right: 38px;
+}
+
+.clear-product-search {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 5px;
+  background: #f1f1f1;
+  color: #555;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.clear-product-search:hover {
+  background: #e5e5e5;
+  color: #111;
+}
+
+.clear-product-search i {
+  font-size: 13px;
+}
+
+/* =========================================================
+   PRODUCT SEARCH RESULTS
+========================================================= */
+
+.product-search-results {
+  width: 100%;
+  margin-top: 7px;
+  max-height: 245px;
+  overflow-y: auto;
+  border: 1px solid #dedede;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  box-sizing: border-box;
+}
+
+/* Scrollbar */
+
+.product-search-results::-webkit-scrollbar {
+  width: 5px;
+}
+
+.product-search-results::-webkit-scrollbar-track {
+  background: #f7f7f7;
+}
+
+.product-search-results::-webkit-scrollbar-thumb {
+  background: #cfcfcf;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   PRODUCT RESULT ITEM
+========================================================= */
+
+.product-result-item {
+  width: 100%;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 15px;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 1px solid #eeeeee;
+  background: #fff;
+  color: #222;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background 0.18s ease,
+    padding-left 0.18s ease;
+}
 
-  padding: 22px 30px;
+.product-result-item:last-child {
+  border-bottom: none;
+}
 
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+.product-result-item:hover {
+  background: #f7f7f7;
+  padding-left: 16px;
+}
 
+.product-result-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.product-result-info strong {
+  overflow: hidden;
+  color: #222;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-result-info small {
+  color: #888;
+  font-size: 10px;
+}
+
+.product-result-item > i {
+  flex-shrink: 0;
+  color: #999;
+  font-size: 12px;
+}
+
+.product-result-item:hover > i {
+  color: #111;
+}
+
+/* =========================================================
+   LOADING / EMPTY STATE
+========================================================= */
+
+.product-loading,
+.no-products-found {
+  min-height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: #888;
+  font-size: 11px;
+  text-align: center;
+}
+
+.no-products-found {
+  color: #999;
+}
+
+.more-products-text {
+  padding: 9px 12px;
+  border-top: 1px solid #ededed;
   background: #fafafa;
+  color: #888;
+  font-size: 10px;
+  text-align: center;
+}
+
+/* =========================================================
+   SELECTED PRODUCT
+========================================================= */
+
+.selected-product-box {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 7px;
+  padding: 9px 11px 9px 13px;
+  border: 1px solid #cfcfcf;
+  border-radius: 7px;
+  background: #f8f8f8;
+  box-sizing: border-box;
+}
+
+.selected-product-box > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.selected-product-box strong {
+  overflow: hidden;
+  color: #222;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-product-box small {
+  color: #888;
+  font-size: 10px;
+}
+
+.selected-product-box > button {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.selected-product-box > button:hover {
+  border-color: #bbb;
+  background: #eee;
+  color: #111;
+}
+
+.selected-product-box > button i {
+  font-size: 13px;
+}
+
+/* =========================================================
+   COUPON STATUS
+========================================================= */
+
+.coupon-status-section {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 25px;
+  border-top: 1px solid #ededed;
+  border-bottom: 1px solid #ededed;
+  background: #fafafa;
+  box-sizing: border-box;
 }
 
 .coupon-status-section h3 {
-  margin: 0 0 5px;
-  font-size: 16px;
-  font-weight: 650;
-  color: #111;
+  margin: 0 0 4px;
+  color: #222;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .coupon-status-section p {
   margin: 0;
-  font-size: 13px;
-  color: #777;
+  color: #888;
+  font-size: 11px;
 }
 
-
-/* ================================
+/* =========================================================
    TOGGLE SWITCH
-================================ */
+========================================================= */
 
 .switch {
   position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 26px;
   flex-shrink: 0;
+  width: 42px;
+  height: 23px;
+  display: inline-block;
 }
 
 .switch input {
@@ -248,31 +497,23 @@
 .slider {
   position: absolute;
   inset: 0;
-
-  background: #ccc;
   border-radius: 30px;
-
+  background: #cfcfcf;
   cursor: pointer;
-
-  transition: 0.25s ease;
+  transition: background 0.2s ease;
 }
 
 .slider::before {
   content: "";
-
   position: absolute;
-
-  width: 20px;
-  height: 20px;
-
   left: 3px;
-  top: 3px;
-
-  background: #fff;
+  bottom: 3px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-
-  transition: 0.25s ease;
+  background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
 }
 
 .switch input:checked + .slider {
@@ -280,132 +521,103 @@
 }
 
 .switch input:checked + .slider::before {
-  transform: translateX(22px);
+  transform: translateX(19px);
 }
 
-
-/* ================================
+/* =========================================================
    FORM ACTIONS
-================================ */
+========================================================= */
 
 .form-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-
-  padding: 20px 30px;
-  background: #fff;
+  gap: 10px;
+  padding: 19px 25px;
 }
 
-
-/* ================================
-   CANCEL BUTTON
-================================ */
-
-.cancel-coupon-btn {
-  min-width: 100px;
-  height: 42px;
-
-  padding: 0 18px;
-
-  border: 1px solid #d8d8d8;
-  border-radius: 7px;
-
-  background: #fff;
-  color: #333;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.cancel-coupon-btn:hover {
-  background: #f2f2f2;
-  border-color: #bbb;
-}
-
-.cancel-coupon-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-
-/* ================================
-   SAVE BUTTON
-================================ */
-
+.cancel-coupon-btn,
 .save-coupon-btn {
-  min-width: 145px;
-  height: 42px;
-
-  display: flex;
+  min-width: 105px;
+  height: 40px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-
-  padding: 0 18px;
-
-  border: 1px solid #111;
+  padding: 0 15px;
   border-radius: 7px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
 
+.cancel-coupon-btn {
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #333;
+}
+
+.cancel-coupon-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #c9c9c9;
+}
+
+.save-coupon-btn {
+  border: 1px solid #111;
   background: #111;
   color: #fff;
+}
 
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-  transition: 0.2s ease;
+.save-coupon-btn:hover:not(:disabled) {
+  background: #292929;
+  border-color: #292929;
+  transform: translateY(-1px);
 }
 
 .save-coupon-btn i {
-  font-size: 15px;
+  font-size: 13px;
 }
 
-.save-coupon-btn:hover {
-  background: #333;
-  border-color: #333;
-}
-
+.cancel-coupon-btn:disabled,
 .save-coupon-btn:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
 }
 
-
-/* ================================
+/* =========================================================
    TABLET
-================================ */
+========================================================= */
 
 @media (max-width: 900px) {
   .add-coupon-page {
-    padding: 24px;
+    padding: 20px;
   }
 
-  .form-section {
-    padding: 24px;
+  .form-grid {
+    gap: 17px;
   }
 
-  .coupon-status-section {
-    padding: 20px 24px;
-  }
-
+  .form-section,
+  .coupon-status-section,
   .form-actions {
-    padding: 18px 24px;
+    padding-left: 20px;
+    padding-right: 20px;
   }
 }
 
-
-/* ================================
+/* =========================================================
    MOBILE
-================================ */
+========================================================= */
 
 @media (max-width: 650px) {
   .add-coupon-page {
-    padding: 18px 14px 30px;
+    padding: 15px;
   }
 
   .add-coupon-header {
@@ -415,77 +627,77 @@
   }
 
   .add-coupon-header h1 {
-    font-size: 23px;
-  }
-
-  .add-coupon-header p {
-    font-size: 13px;
+    font-size: 22px;
   }
 
   .back-coupon-btn {
     width: 100%;
-    justify-content: center;
-  }
-
-  .form-section {
-    padding: 20px 16px;
-  }
-
-  .form-section h2 {
-    font-size: 17px;
-    margin-bottom: 18px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 16px;
+  }
+
+  .form-section {
+    padding: 18px;
+  }
+
+  .form-section h2 {
+    margin-bottom: 17px;
   }
 
   .coupon-status-section {
     align-items: center;
-    gap: 15px;
-    padding: 18px 16px;
+    padding: 17px 18px;
   }
 
   .coupon-status-section p {
-    max-width: 240px;
-    line-height: 1.4;
+    max-width: 230px;
+    line-height: 1.45;
   }
 
   .form-actions {
-    flex-direction: column-reverse;
-    padding: 18px 16px;
+    padding: 17px 18px;
   }
 
   .cancel-coupon-btn,
   .save-coupon-btn {
-    width: 100%;
+    flex: 1;
   }
 }
 
-
-/* ================================
+/* =========================================================
    SMALL MOBILE
-================================ */
+========================================================= */
 
 @media (max-width: 400px) {
   .add-coupon-page {
-    padding: 15px 10px 25px;
+    padding: 12px;
+  }
+
+  .add-coupon-card {
+    border-radius: 8px;
   }
 
   .form-section {
-    padding: 18px 13px;
+    padding: 15px;
   }
 
   .coupon-status-section {
-    padding: 17px 13px;
+    padding: 15px;
   }
 
   .form-actions {
-    padding: 16px 13px;
+    padding: 15px;
   }
 
-  .add-coupon-header h1 {
-    font-size: 21px;
+  .product-search-results {
+    max-height: 210px;
+  }
+
+  .product-result-item {
+    min-height: 49px;
   }
 }
+

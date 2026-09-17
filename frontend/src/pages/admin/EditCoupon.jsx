@@ -1,18 +1,18 @@
-
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./AddCoupon.css";
 
-const COUPON_API_URL = "http://localhost:5000/api/coupons/create";
+const COUPON_API_URL = "http://localhost:5000/api/coupons";
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
 const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
-function AddCoupon() {
+function EditCoupon() {
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [coupon, setCoupon] = useState({
     code: "",
-    couponType: "general",
+    couponType: "cart",
     category: "",
     product: "",
     discountType: "percentage",
@@ -26,19 +26,18 @@ function AddCoupon() {
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-
   const [productSearch, setProductSearch] = useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch Categories
+  // =========================================================
+  // FETCH CATEGORIES
+  // =========================================================
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        setLoadingCategories(true);
-
         const response = await fetch(CATEGORY_API_URL);
 
         if (!response.ok) {
@@ -53,21 +52,20 @@ function AddCoupon() {
 
         setCategories(categoryList);
       } catch (error) {
-        console.error("Error fetching categories:", error);
-      } finally {
-        setLoadingCategories(false);
+        console.error("Category fetch error:", error);
       }
     };
 
     fetchCategories();
   }, []);
 
-  // Fetch Products
+  // =========================================================
+  // FETCH PRODUCTS
+  // =========================================================
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoadingProducts(true);
-
         const response = await fetch(
           `${PRODUCT_API_URL}?limit=1000`
         );
@@ -84,59 +82,277 @@ function AddCoupon() {
 
         setProducts(productList);
       } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoadingProducts(false);
+        console.error("Product fetch error:", error);
       }
     };
 
     fetchProducts();
   }, []);
 
-  // Handle normal inputs
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  // =========================================================
+  // FETCH SINGLE COUPON
+  // =========================================================
 
-    setCoupon((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  useEffect(() => {
+    const fetchCoupon = async () => {
+      try {
+        setLoading(true);
 
-  // Handle Coupon Type
-  const handleCouponTypeChange = (e) => {
-    const value = e.target.value;
+        const response = await fetch(
+          `${COUPON_API_URL}/all`
+        );
 
-    setCoupon((prev) => ({
-      ...prev,
-      couponType: value,
-      category: "",
-      product: "",
-    }));
+        if (!response.ok) {
+          throw new Error("Failed to fetch coupons");
+        }
 
-    setProductSearch("");
-  };
+        const data = await response.json();
 
-  // Filter Products
-  const filteredProducts = products.filter((product) => {
-    const searchValue = productSearch.trim().toLowerCase();
+        const couponList = Array.isArray(data)
+          ? data
+          : data.coupons || data.data || [];
 
-    if (!searchValue) {
-      return true;
+        const foundCoupon = couponList.find(
+          (item) => String(item._id) === String(id)
+        );
+
+        if (!foundCoupon) {
+          throw new Error("Coupon not found");
+        }
+
+        // ---------------------------------------------
+        // GET CATEGORY ID
+        // ---------------------------------------------
+
+        const categoryId =
+          foundCoupon.category &&
+          typeof foundCoupon.category === "object"
+            ? foundCoupon.category._id
+            : foundCoupon.category;
+
+        // ---------------------------------------------
+        // GET PRODUCT ID
+        // ---------------------------------------------
+
+        const productId =
+          foundCoupon.product &&
+          typeof foundCoupon.product === "object"
+            ? foundCoupon.product._id
+            : foundCoupon.product;
+
+        // ---------------------------------------------
+        // COUPON TYPE
+        // ---------------------------------------------
+
+        const couponType =
+          foundCoupon.couponType || "cart";
+
+        // ---------------------------------------------
+        // EXPIRY DATE
+        // Backend field = expiry
+        // ---------------------------------------------
+
+        const formattedExpiry = foundCoupon.expiry
+          ? String(foundCoupon.expiry).split("T")[0]
+          : "";
+
+        // ---------------------------------------------
+        // SET FORM
+        // ---------------------------------------------
+
+        setCoupon({
+          code: foundCoupon.code || "",
+
+          couponType: couponType,
+
+          category:
+            couponType === "category"
+              ? categoryId || ""
+              : "",
+
+          product:
+            couponType === "product"
+              ? productId || ""
+              : "",
+
+          discountType:
+            foundCoupon.discountType || "percentage",
+
+          discountValue:
+            foundCoupon.discountValue ?? "",
+
+          minimumPurchase:
+            foundCoupon.minimumPurchase ?? "",
+
+          // Backend field = maxDiscount
+          maximumDiscount:
+            foundCoupon.maxDiscount ?? "",
+
+          usageLimit:
+            foundCoupon.usageLimit ?? "",
+
+          expiryDate: formattedExpiry,
+
+          isActive:
+            foundCoupon.isActive !== undefined
+              ? Boolean(foundCoupon.isActive)
+              : true,
+        });
+
+        // ---------------------------------------------
+        // PRODUCT SEARCH NAME
+        // ---------------------------------------------
+
+        if (
+          couponType === "product" &&
+          foundCoupon.product
+        ) {
+          if (
+            typeof foundCoupon.product === "object" &&
+            foundCoupon.product.name
+          ) {
+            setProductSearch(
+              foundCoupon.product.name
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Fetch coupon error:", error);
+
+        alert(
+          error.message || "Failed to load coupon"
+        );
+
+        navigate("/admin/coupons");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchCoupon();
+    } else {
+      setLoading(false);
     }
+  }, [id, navigate]);
 
-    return (
-      product.name?.toLowerCase().includes(searchValue) ||
-      product.sku?.toLowerCase().includes(searchValue)
-    );
-  });
+  // =========================================================
+  // SET PRODUCT SEARCH AFTER PRODUCTS LOAD
+  // =========================================================
 
-  // Selected Product
-  const selectedProduct = products.find(
-    (product) => product._id === coupon.product
+  useEffect(() => {
+    if (
+      coupon.couponType === "product" &&
+      coupon.product &&
+      !productSearch
+    ) {
+      const selectedProduct = products.find(
+        (product) =>
+          String(product._id) ===
+          String(coupon.product)
+      );
+
+      if (selectedProduct) {
+        setProductSearch(
+          selectedProduct.name || ""
+        );
+      }
+    }
+  }, [
+    products,
+    coupon.product,
+    coupon.couponType,
+    productSearch,
+  ]);
+
+  // =========================================================
+  // HANDLE INPUT
+  // =========================================================
+
+  const handleChange = (e) => {
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
+
+    setCoupon((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
+    }));
+  };
+
+  // =========================================================
+  // CHANGE COUPON TYPE
+  // =========================================================
+
+  const handleCouponTypeChange = (e) => {
+    const newType = e.target.value;
+
+    setCoupon((prev) => ({
+      ...prev,
+
+      couponType: newType,
+
+      category:
+        newType === "category"
+          ? prev.category
+          : "",
+
+      product:
+        newType === "product"
+          ? prev.product
+          : "",
+    }));
+
+    if (newType !== "product") {
+      setProductSearch("");
+    }
+  };
+
+  // =========================================================
+  // PRODUCT SEARCH
+  // =========================================================
+
+  const filteredProducts = products.filter(
+    (product) => {
+      const searchValue = productSearch
+        .trim()
+        .toLowerCase();
+
+      if (!searchValue) {
+        return true;
+      }
+
+      return (
+        product.name
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        product.sku
+          ?.toLowerCase()
+          .includes(searchValue)
+      );
+    }
   );
 
-  // Select Product
+  // =========================================================
+  // SELECTED PRODUCT
+  // =========================================================
+
+  const selectedProduct = products.find(
+    (product) =>
+      String(product._id) ===
+      String(coupon.product)
+  );
+
+  // =========================================================
+  // SELECT PRODUCT
+  // =========================================================
+
   const handleProductSelect = (product) => {
     setCoupon((prev) => ({
       ...prev,
@@ -146,17 +362,22 @@ function AddCoupon() {
     setProductSearch(product.name || "");
   };
 
-  // Submit
+  // =========================================================
+  // UPDATE COUPON
+  // =========================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Coupon Code
+    // ---------------------------------------------
+    // VALIDATION
+    // ---------------------------------------------
+
     if (!coupon.code.trim()) {
       alert("Please enter coupon code");
       return;
     }
 
-    // Category
     if (
       coupon.couponType === "category" &&
       !coupon.category
@@ -165,7 +386,6 @@ function AddCoupon() {
       return;
     }
 
-    // Product
     if (
       coupon.couponType === "product" &&
       !coupon.product
@@ -174,18 +394,16 @@ function AddCoupon() {
       return;
     }
 
-    // Discount Value
     if (
       coupon.discountValue === "" ||
       Number(coupon.discountValue) <= 0
     ) {
       alert(
-        "Please enter a valid discount value greater than 0"
+        "Please enter a valid discount value"
       );
       return;
     }
 
-    // Percentage Discount
     if (
       coupon.discountType === "percentage" &&
       Number(coupon.discountValue) > 100
@@ -196,7 +414,6 @@ function AddCoupon() {
       return;
     }
 
-    // Minimum Purchase
     if (
       coupon.minimumPurchase === "" ||
       Number(coupon.minimumPurchase) < 1
@@ -207,7 +424,6 @@ function AddCoupon() {
       return;
     }
 
-    // Maximum Discount
     if (
       coupon.maximumDiscount === "" ||
       Number(coupon.maximumDiscount) <= 0
@@ -218,7 +434,6 @@ function AddCoupon() {
       return;
     }
 
-    // Usage Limit
     if (
       coupon.usageLimit === "" ||
       Number(coupon.usageLimit) < 1
@@ -229,105 +444,244 @@ function AddCoupon() {
       return;
     }
 
-    // Expiry Date
     if (!coupon.expiryDate) {
       alert("Please select expiry date");
       return;
     }
 
+    // ---------------------------------------------
+    // UPDATE
+    // ---------------------------------------------
+
     try {
-      setLoading(true);
+      setSaving(true);
+
+      // IMPORTANT:
+      // Backend schema uses:
+      // expiry
+      // maxDiscount
 
       const requestBody = {
-        code: coupon.code.trim().toUpperCase(),
+        code: coupon.code
+          .trim()
+          .toUpperCase(),
+
         couponType: coupon.couponType,
-        discountType: coupon.discountType,
-        discountValue: Number(coupon.discountValue),
-        minimumPurchase: Number(coupon.minimumPurchase),
-        maximumDiscount: Number(coupon.maximumDiscount),
-        usageLimit: Number(coupon.usageLimit),
-        expiryDate: coupon.expiryDate,
-        isActive: coupon.isActive,
+
+        category:
+          coupon.couponType === "category"
+            ? coupon.category
+            : null,
+
+        product:
+          coupon.couponType === "product"
+            ? coupon.product
+            : null,
+
+        discountType:
+          coupon.discountType,
+
+        discountValue:
+          Number(coupon.discountValue),
+
+        minimumPurchase:
+          Number(coupon.minimumPurchase),
+
+        maxDiscount:
+          Number(coupon.maximumDiscount),
+
+        usageLimit:
+          Number(coupon.usageLimit),
+
+        expiry:
+          coupon.expiryDate,
+
+        isActive:
+          Boolean(coupon.isActive),
       };
 
-      // Category Coupon
-      if (coupon.couponType === "category") {
-        requestBody.category = coupon.category;
-      }
+      console.log(
+        "===================================="
+      );
 
-      // Product Coupon
-      if (coupon.couponType === "product") {
-        requestBody.product = coupon.product;
-      }
+      console.log(
+        "UPDATE COUPON ID:",
+        id
+      );
+
+      console.log(
+        "UPDATE COUPON DATA:",
+        requestBody
+      );
+
+      console.log(
+        "EXPIRY DATE BEING SENT:",
+        requestBody.expiry
+      );
+
+      console.log(
+        "MAX DISCOUNT BEING SENT:",
+        requestBody.maxDiscount
+      );
+
+      console.log(
+        "===================================="
+      );
+
+      // ---------------------------------------------
+      // PUT REQUEST
+      // ---------------------------------------------
 
       const response = await fetch(
-        COUPON_API_URL,
+        `${COUPON_API_URL}/${id}`,
         {
-          method: "POST",
+          method: "PUT",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
-          body: JSON.stringify(requestBody),
+
+          body: JSON.stringify(
+            requestBody
+          ),
         }
       );
 
       const contentType =
-        response.headers.get("content-type");
+        response.headers.get(
+          "content-type"
+        ) || "";
 
-      let data;
+      let data = null;
 
       if (
-        contentType &&
-        contentType.includes("application/json")
+        contentType.includes(
+          "application/json"
+        )
       ) {
         data = await response.json();
       } else {
-        const text = await response.text();
+        const text =
+          await response.text();
 
         throw new Error(
-          `Server returned ${response.status} instead of JSON. ${text.slice(
+          `Server returned ${response.status}: ${text.slice(
             0,
-            100
+            200
           )}`
         );
       }
 
+      // ---------------------------------------------
+      // CHECK RESPONSE
+      // ---------------------------------------------
+
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to create coupon"
+          data?.message ||
+            "Failed to update coupon"
         );
       }
 
-      alert(
-        data.message ||
-          "Coupon created successfully"
+      console.log(
+        "===================================="
       );
 
-      navigate("/admin/coupons");
+      console.log(
+        "UPDATE SUCCESS RESPONSE:",
+        data
+      );
+
+      console.log(
+        "UPDATED COUPON:",
+        data?.coupon
+      );
+
+      console.log(
+        "UPDATED EXPIRY DATE:",
+        data?.coupon?.expiry
+      );
+
+      console.log(
+        "UPDATED MAX DISCOUNT:",
+        data?.coupon?.maxDiscount
+      );
+
+      console.log(
+        "===================================="
+      );
+
+      // ---------------------------------------------
+      // SUCCESS
+      // ---------------------------------------------
+
+      alert(
+        data?.message ||
+          "Coupon updated successfully"
+      );
+
+      // Reload Coupons page
+      window.location.href =
+        "/admin/coupons";
+
     } catch (error) {
       console.error(
-        "Error creating coupon:",
+        "UPDATE COUPON ERROR:",
         error
       );
 
       alert(
         error.message ||
-          "Something went wrong"
+          "Failed to update coupon"
       );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading) {
+    return (
+      <div className="add-coupon-page">
+        <div className="add-coupon-card">
+          <div
+            style={{
+              minHeight: "250px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#777",
+              fontSize: "13px",
+            }}
+          >
+            Loading coupon...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // PAGE
+  // =========================================================
 
   return (
     <div className="add-coupon-page">
 
-      {/* Header */}
+      {/* HEADER */}
+
       <div className="add-coupon-header">
+
         <div>
-          <h1>Add Coupon</h1>
-          <p>Create a new discount coupon</p>
+          <h1>Edit Coupon</h1>
+
+          <p>
+            Update coupon details
+          </p>
         </div>
 
         <button
@@ -336,28 +690,38 @@ function AddCoupon() {
           onClick={() =>
             navigate("/admin/coupons")
           }
+          disabled={saving}
         >
           <i className="bi bi-arrow-left"></i>
+
           Back to Coupons
         </button>
+
       </div>
 
-      {/* Card */}
+      {/* FORM */}
+
       <div className="add-coupon-card">
 
         <form onSubmit={handleSubmit}>
 
-          {/* Coupon Details */}
+          {/* COUPON DETAILS */}
+
           <div className="form-section">
 
-            <h2>Coupon Details</h2>
+            <h2>
+              Coupon Details
+            </h2>
 
             <div className="form-grid">
 
-              {/* Coupon Code */}
+              {/* CODE */}
+
               <div className="form-group">
+
                 <label>
-                  Coupon Code <span>*</span>
+                  Coupon Code{" "}
+                  <span>*</span>
                 </label>
 
                 <input
@@ -368,12 +732,16 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
-              {/* Coupon Type */}
+              {/* TYPE */}
+
               <div className="form-group">
+
                 <label>
-                  Coupon Type <span>*</span>
+                  Coupon Type{" "}
+                  <span>*</span>
                 </label>
 
                 <select
@@ -384,8 +752,9 @@ function AddCoupon() {
                   }
                   required
                 >
-                  <option value="general">
-                    General Coupon
+
+                  <option value="cart">
+                    Cart Coupon
                   </option>
 
                   <option value="category">
@@ -395,13 +764,17 @@ function AddCoupon() {
                   <option value="product">
                     Product Coupon
                   </option>
+
                 </select>
+
               </div>
 
-              {/* Category */}
+              {/* CATEGORY */}
+
               {coupon.couponType ===
                 "category" && (
                 <div className="form-group">
+
                   <label>
                     Select Category{" "}
                     <span>*</span>
@@ -413,10 +786,9 @@ function AddCoupon() {
                     onChange={handleChange}
                     required
                   >
+
                     <option value="">
-                      {loadingCategories
-                        ? "Loading categories..."
-                        : "Select category"}
+                      Select category
                     </option>
 
                     {categories.map(
@@ -429,22 +801,25 @@ function AddCoupon() {
                         </option>
                       )
                     )}
+
                   </select>
+
                 </div>
               )}
 
-              {/* Product Search */}
+              {/* PRODUCT */}
+
               {coupon.couponType ===
                 "product" && (
-                <div className="form-group product-select-group">
+                <div className="form-group">
 
                   <label>
                     Select Product{" "}
                     <span>*</span>
                   </label>
 
-                  {/* Search Box */}
                   <div className="product-search-box">
+
                     <i className="bi bi-search"></i>
 
                     <input
@@ -456,17 +831,10 @@ function AddCoupon() {
                           e.target.value
                         );
 
-                        // Clear selected product
-                        if (
-                          coupon.product
-                        ) {
-                          setCoupon(
-                            (prev) => ({
-                              ...prev,
-                              product: "",
-                            })
-                          );
-                        }
+                        setCoupon((prev) => ({
+                          ...prev,
+                          product: "",
+                        }));
                       }}
                     />
 
@@ -475,9 +843,7 @@ function AddCoupon() {
                         type="button"
                         className="clear-product-search"
                         onClick={() => {
-                          setProductSearch(
-                            ""
-                          );
+                          setProductSearch("");
 
                           setCoupon(
                             (prev) => ({
@@ -490,73 +856,70 @@ function AddCoupon() {
                         <i className="bi bi-x"></i>
                       </button>
                     )}
+
                   </div>
 
-                  {/* Product List */}
+                  {/* PRODUCT RESULTS */}
+
                   {!coupon.product && (
                     <div className="product-search-results">
 
-                      {loadingProducts ? (
-                        <div className="product-loading">
-                          Loading products...
-                        </div>
-                      ) : filteredProducts.length >
-                        0 ? (
+                      {filteredProducts.length >
+                      0 ? (
                         filteredProducts
                           .slice(0, 8)
-                          .map((product) => (
-                            <button
-                              type="button"
-                              className="product-result-item"
-                              key={product._id}
-                              onClick={() =>
-                                handleProductSelect(
-                                  product
-                                )
-                              }
-                            >
-                              <div className="product-result-info">
-                                <strong>
-                                  {
-                                    product.name
-                                  }
-                                </strong>
+                          .map(
+                            (product) => (
+                              <button
+                                type="button"
+                                className="product-result-item"
+                                key={product._id}
+                                onClick={() =>
+                                  handleProductSelect(
+                                    product
+                                  )
+                                }
+                              >
 
-                                {product.sku && (
-                                  <small>
-                                    SKU:{" "}
-                                    {
-                                      product.sku
-                                    }
-                                  </small>
-                                )}
-                              </div>
+                                <div className="product-result-info">
 
-                              <i className="bi bi-chevron-right"></i>
-                            </button>
-                          ))
+                                  <strong>
+                                    {product.name}
+                                  </strong>
+
+                                  {product.sku && (
+                                    <small>
+                                      SKU:{" "}
+                                      {
+                                        product.sku
+                                      }
+                                    </small>
+                                  )}
+
+                                </div>
+
+                                <i className="bi bi-chevron-right"></i>
+
+                              </button>
+                            )
+                          )
                       ) : (
                         <div className="no-products-found">
                           No products found
                         </div>
                       )}
 
-                      {filteredProducts.length >
-                        8 && (
-                        <div className="more-products-text">
-                          Type more to narrow
-                          down your search...
-                        </div>
-                      )}
                     </div>
                   )}
 
-                  {/* Selected Product */}
+                  {/* SELECTED PRODUCT */}
+
                   {coupon.product &&
                     selectedProduct && (
                       <div className="selected-product-box">
 
                         <div>
+
                           <strong>
                             {
                               selectedProduct.name
@@ -571,6 +934,7 @@ function AddCoupon() {
                               }
                             </small>
                           )}
+
                         </div>
 
                         <button
@@ -583,9 +947,7 @@ function AddCoupon() {
                               })
                             );
 
-                            setProductSearch(
-                              ""
-                            );
+                            setProductSearch("");
                           }}
                         >
                           <i className="bi bi-x"></i>
@@ -594,20 +956,13 @@ function AddCoupon() {
                       </div>
                     )}
 
-                  <input
-                    type="hidden"
-                    name="product"
-                    value={coupon.product}
-                    required={
-                      coupon.couponType ===
-                      "product"
-                    }
-                  />
                 </div>
               )}
 
-              {/* Discount Type */}
+              {/* DISCOUNT TYPE */}
+
               <div className="form-group">
+
                 <label>
                   Discount Type{" "}
                   <span>*</span>
@@ -621,6 +976,7 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 >
+
                   <option value="percentage">
                     Percentage
                   </option>
@@ -628,11 +984,15 @@ function AddCoupon() {
                   <option value="fixed">
                     Fixed Amount
                   </option>
+
                 </select>
+
               </div>
 
-              {/* Discount Value */}
+              {/* DISCOUNT VALUE */}
+
               <div className="form-group">
+
                 <label>
                   Discount Value{" "}
                   <span>*</span>
@@ -661,10 +1021,13 @@ function AddCoupon() {
                   </span>
 
                 </div>
+
               </div>
 
-              {/* Minimum Purchase */}
+              {/* MINIMUM PURCHASE */}
+
               <div className="form-group">
+
                 <label>
                   Minimum Purchase{" "}
                   <span>*</span>
@@ -688,10 +1051,13 @@ function AddCoupon() {
                   <span>₹</span>
 
                 </div>
+
               </div>
 
-              {/* Maximum Discount */}
+              {/* MAXIMUM DISCOUNT */}
+
               <div className="form-group">
+
                 <label>
                   Maximum Discount{" "}
                   <span>*</span>
@@ -715,10 +1081,13 @@ function AddCoupon() {
                   <span>₹</span>
 
                 </div>
+
               </div>
 
-              {/* Usage Limit */}
+              {/* USAGE LIMIT */}
+
               <div className="form-group">
+
                 <label>
                   Usage Limit{" "}
                   <span>*</span>
@@ -736,10 +1105,13 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
-              {/* Expiry Date */}
+              {/* EXPIRY */}
+
               <div className="form-group">
+
                 <label>
                   Expiry Date{" "}
                   <span>*</span>
@@ -754,21 +1126,26 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
             </div>
           </div>
 
-          {/* Status */}
+          {/* STATUS */}
+
           <div className="coupon-status-section">
 
             <div>
-              <h3>Coupon Status</h3>
+
+              <h3>
+                Coupon Status
+              </h3>
 
               <p>
-                Enable this coupon
-                immediately after creation.
+                Enable this coupon immediately.
               </p>
+
             </div>
 
             <label className="switch">
@@ -776,29 +1153,27 @@ function AddCoupon() {
               <input
                 type="checkbox"
                 name="isActive"
-                checked={
-                  coupon.isActive
-                }
+                checked={coupon.isActive}
                 onChange={handleChange}
               />
 
               <span className="slider"></span>
 
             </label>
+
           </div>
 
-          {/* Actions */}
+          {/* ACTIONS */}
+
           <div className="form-actions">
 
             <button
               type="button"
               className="cancel-coupon-btn"
               onClick={() =>
-                navigate(
-                  "/admin/coupons"
-                )
+                navigate("/admin/coupons")
               }
-              disabled={loading}
+              disabled={saving}
             >
               Cancel
             </button>
@@ -806,22 +1181,25 @@ function AddCoupon() {
             <button
               type="submit"
               className="save-coupon-btn"
-              disabled={loading}
+              disabled={saving}
             >
+
               <i className="bi bi-check-lg"></i>
 
-              {loading
-                ? "Creating..."
-                : "Create Coupon"}
+              {saving
+                ? "Updating..."
+                : "Update Coupon"}
+
             </button>
 
           </div>
 
         </form>
+
       </div>
+
     </div>
   );
 }
 
-export default AddCoupon;
-
+export default EditCoupon;
