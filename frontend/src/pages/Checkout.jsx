@@ -16,6 +16,9 @@ function Checkout() {
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
 
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState(null);
   const [couponMessage, setCouponMessage] = useState("");
@@ -48,6 +51,7 @@ function Checkout() {
     }
 
     fetchCart();
+    fetchAddresses();
   }, [token, navigate]);
 
   const fetchCart = async () => {
@@ -74,6 +78,39 @@ function Checkout() {
     }
   };
 
+  const fetchAddresses = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/addresses`,
+        authConfig
+      );
+
+      const addressList =
+        response.data.addresses || response.data || [];
+
+      setAddresses(addressList);
+
+      const defaultAddress = addressList.find(
+        (address) => address.isDefault
+      );
+
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress._id);
+
+        setShippingAddress({
+          fullName: defaultAddress.fullName || "",
+          phone: defaultAddress.phone || "",
+          address: defaultAddress.addressLine1 || "",
+          apartment: defaultAddress.addressLine2 || "",
+          city: defaultAddress.city || "",
+          state: defaultAddress.state || "",
+          pincode: defaultAddress.postalCode || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+    }
+  };
   const getCartItems = () => {
     if (!cart) return [];
 
@@ -379,6 +416,47 @@ function Checkout() {
 
               <section className="checkout-section">
                 <h2>Shipping Address</h2>
+
+                {addresses.length > 0 && (
+                  <div className="form-group">
+                    <label>Select Saved Address</label>
+
+                    <select
+                      value={selectedAddressId}
+                      onChange={(event) => {
+                        const address = addresses.find(
+                          (item) => item._id === event.target.value
+                        );
+
+                        setSelectedAddressId(event.target.value);
+
+                        if (address) {
+                          setShippingAddress({
+                            fullName: address.fullName || "",
+                            phone: address.phone || "",
+                            address: address.addressLine1 || "",
+                            apartment: address.addressLine2 || "",
+                            city: address.city || "",
+                            state: address.state || "",
+                            pincode: address.postalCode || "",
+                          });
+                        }
+                      }}
+                    >
+                      <option value="">Select an address</option>
+
+                      {addresses.map((address) => (
+                        <option
+                          key={address._id}
+                          value={address._id}
+                        >
+                          {address.fullName} - {address.addressLine1},{" "}
+                          {address.city}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="address-form">
 
@@ -700,3 +778,7 @@ function Checkout() {
 }
 
 export default Checkout;
+
+
+
+
