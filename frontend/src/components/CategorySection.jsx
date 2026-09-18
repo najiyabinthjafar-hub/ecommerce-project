@@ -29,12 +29,7 @@ function CategorySection() {
         let { days, hours, minutes, seconds } = currentTime;
 
         // Countdown finished
-        if (
-          days === 0 &&
-          hours === 0 &&
-          minutes === 0 &&
-          seconds === 0
-        ) {
+        if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
           clearInterval(countdownTimer);
           return currentTime;
         }
@@ -84,9 +79,7 @@ function CategorySection() {
   };
 
   const prevSlide = () => {
-    setActiveIndex(
-      (current) => (current - 1 + images.length) % images.length
-    );
+    setActiveIndex((current) => (current - 1 + images.length) % images.length);
   };
 
   // Automatic slide
@@ -119,7 +112,7 @@ function CategorySection() {
 
         {/* EXPLORE MORE */}
         <Link
-          to="/shop"
+          to="/categories"
           className="explore-btn"
           onClick={() => window.scrollTo(0, 0)}
         >

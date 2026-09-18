@@ -29,18 +29,27 @@ const checkoutRoutes = require("./routes/checkoutRoutes");
 const adminTestRoutes = require("./routes/adminTestRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 
+const notificationRoutes = require("./routes/notificationRoutes");
+
 const app = express();
 
 // Connect MongoDB
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // Root route
 app.get("/", (req, res) => {
   res.json({
+    success: true,
     message: "E-Commerce Backend API is running",
   });
 });
@@ -55,7 +64,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);
 
-// Customer features
+// Customer Features
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -68,6 +77,10 @@ app.use("/api/checkout", checkoutRoutes);
 // Admin
 app.use("/api/admin", adminTestRoutes);
 app.use("/api/contacts", contactRoutes);
+
+
+// Notifications
+app.use("/api/notifications", notificationRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;

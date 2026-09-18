@@ -1,9 +1,8 @@
 import { useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./Login.css";
@@ -12,11 +11,9 @@ function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
 
   const handleLogin = async (event) => {
@@ -27,43 +24,73 @@ function Login() {
     try {
       setLoading(true);
 
-      const response = await fetch(
+      const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-            password,
-          }),
+          email,
+          password,
         }
       );
 
-      const data = await response.json();
+      console.log(
+        "Login response:",
+        response.data
+      );
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+      const { token, user } =
+        response.data;
+
+      // Check token
+      if (!token) {
+        setError(
+          "Login failed: Token not received."
+        );
+        return;
       }
 
-      // Save token and user details
-      localStorage.setItem("token", data.token);
-
+      // Save JWT token
       localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
+        "token",
+        token
       );
+
+      // Save user details
+      if (user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(user)
+        );
+
+        if (user._id) {
+          localStorage.setItem(
+            "userId",
+            user._id
+          );
+        }
+      }
+
+      alert("Login successful!");
 
       // Go to home page
       navigate("/");
+
     } catch (error) {
-      setError(error.message);
+      console.error(
+        "Login error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          "Login failed. Please check your email and password."
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   return (
@@ -71,14 +98,29 @@ function Login() {
       <Navbar />
 
       <main className="login-page">
+
         <section className="login-container">
+
+          {/* HEADER */}
+
           <div className="login-header">
-            <h1>LOGIN</h1>
+
+            <p className="login-label">
+              WELCOME BACK
+            </p>
+
+            <h1>
+              LOGIN
+            </h1>
 
             <span>
-              Sign in to continue shopping with us.
+              Sign in to continue
+              shopping with us.
             </span>
+
           </div>
+
+          {/* ERROR */}
 
           {error && (
             <p className="login-error-message">
@@ -86,11 +128,17 @@ function Login() {
             </p>
           )}
 
+          {/* LOGIN FORM */}
+
           <form
             className="login-form"
             onSubmit={handleLogin}
           >
+
+            {/* EMAIL */}
+
             <div className="login-field">
+
               <label htmlFor="email">
                 EMAIL ADDRESS
               </label>
@@ -101,12 +149,20 @@ function Login() {
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) =>
+                  setEmail(
+                    event.target.value
+                  )
+                }
                 required
               />
+
             </div>
 
+            {/* PASSWORD */}
+
             <div className="login-field">
+
               <label htmlFor="password">
                 PASSWORD
               </label>
@@ -117,33 +173,46 @@ function Login() {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
+                onChange={(event) =>
+                  setPassword(
+                    event.target.value
+                  )
                 }
                 required
               />
+
             </div>
 
+            {/* REMEMBER + FORGOT */}
+
             <div className="login-options">
+
               <label className="remember-me">
+
                 <input
                   type="checkbox"
                   name="remember"
                 />
 
-                <span>Remember me</span>
+                <span>
+                  Remember me
+                </span>
+
               </label>
 
               <button
                 type="button"
                 className="forgot-password"
-                onClick={() =>
-                  navigate("/forgot-password")
+                onClick={
+                  handleForgotPassword
                 }
               >
                 Forgot password?
               </button>
+
             </div>
+
+            {/* LOGIN BUTTON */}
 
             <button
               type="submit"
@@ -154,9 +223,13 @@ function Login() {
                 ? "LOGGING IN..."
                 : "LOGIN"}
             </button>
+
           </form>
 
+          {/* REGISTER */}
+
           <div className="login-register">
+
             <span>
               Don't have an account?
             </span>
@@ -164,8 +237,11 @@ function Login() {
             <Link to="/register">
               CREATE ACCOUNT
             </Link>
+
           </div>
+
         </section>
+
       </main>
 
       <Footer />

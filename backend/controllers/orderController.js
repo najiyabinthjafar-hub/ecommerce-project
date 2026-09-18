@@ -7,7 +7,8 @@ const createOrder = async (req, res) => {
       user: req.body.user,
     };
 
-    const order = await orderService.createOrder(orderData);
+    const order =
+      await orderService.createOrder(orderData);
 
     res.status(201).json({
       success: true,
@@ -27,7 +28,8 @@ const getOrders = async (req, res) => {
   try {
     const userId = req.query.userId;
 
-    const orders = await orderService.getOrdersByUser(userId);
+    const orders =
+      await orderService.getOrdersByUser(userId);
 
     res.status(200).json({
       success: true,
@@ -42,9 +44,36 @@ const getOrders = async (req, res) => {
   }
 };
 
+// Get all customers' orders
+const getAllOrders = async (req, res) => {
+  try {
+    const orders =
+      await orderService.getAllOrders();
+
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error(
+      "Get all orders error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get all orders",
+      error: error.message,
+    });
+  }
+};
+
 const getOrderById = async (req, res) => {
   try {
-    const order = await orderService.getOrderById(req.params.id);
+    const order =
+      await orderService.getOrderById(
+        req.params.id
+      );
 
     if (!order) {
       return res.status(404).json({
@@ -68,10 +97,11 @@ const getOrderById = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
   try {
-    const order = await orderService.updateOrderStatus(
-      req.params.id,
-      req.body.orderStatus
-    );
+    const order =
+      await orderService.updateOrderStatus(
+        req.params.id,
+        req.body.orderStatus
+      );
 
     if (!order) {
       return res.status(404).json({
@@ -82,13 +112,32 @@ const updateOrderStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Order status updated successfully",
+      message:
+        "Order status updated successfully",
       order,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to update order status",
+      message:
+        "Failed to update order status",
+      error: error.message,
+    });
+  }
+};
+
+const getBestSellingProducts = async (req, res) => {
+  try {
+    const products = await orderService.getBestSellingProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get best selling products",
       error: error.message,
     });
   }
@@ -97,6 +146,8 @@ const updateOrderStatus = async (req, res) => {
 module.exports = {
   createOrder,
   getOrders,
+  getAllOrders,
   getOrderById,
+  getBestSellingProducts,
   updateOrderStatus,
 };
