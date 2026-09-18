@@ -1,7 +1,17 @@
 const Order = require("../models/Order");
+const notificationService = require("./notificationService");
+
+
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
+
+  await notificationService.createNotification({
+  user: order.user,
+  title: "Order Created",
+  message: "Your order has been created successfully.",
+  type: "ORDER",
+});
 
   return order;
 };
@@ -24,8 +34,11 @@ const getAllOrders = async () => {
   return orders;
 };
 
-const getOrderById = async (orderId) => {
-  const order = await Order.findById(orderId)
+const getOrderById = async (orderId,userId) => {
+  const order = await Order.findOne({
+  _id: orderId,
+  user: userId,
+})
     .populate("items.product")
     .populate("user", "-password");
 
@@ -44,6 +57,16 @@ const updateOrderStatus = async (
       runValidators: true,
     }
   );
+
+  if (order) {
+    await notificationService.createNotification({
+      user: order.user,
+      title: "Order Status Updated",
+      message: `Your order status is now ${orderStatus}.`,
+      type: "ORDER",
+    });
+  }
+
 
   return order;
 };

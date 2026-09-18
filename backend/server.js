@@ -29,6 +29,8 @@ const checkoutRoutes = require("./routes/checkoutRoutes");
 const adminTestRoutes = require("./routes/adminTestRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 
+const notificationRoutes = require("./routes/notificationRoutes");
+
 const app = express();
 
 // Connect MongoDB
@@ -75,6 +77,10 @@ app.use("/api/checkout", checkoutRoutes);
 // Admin
 app.use("/api/admin", adminTestRoutes);
 app.use("/api/contacts", contactRoutes);
+
+
+// Notifications
+app.use("/api/notifications", notificationRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
