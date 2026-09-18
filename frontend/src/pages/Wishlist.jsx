@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -38,7 +38,7 @@ function Wishlist() {
         }
       );
 
-      setWishlist(response.data.wishlist || []);
+      setWishlist(response.data.wishlist?.products || []);
     } catch (error) {
       console.error("Wishlist fetch error:", error);
       setWishlist([]);
@@ -161,7 +161,7 @@ function Wishlist() {
               className="wishlist-back-btn"
               onClick={() => navigate("/profile")}
             >
-              ← BACK TO PROFILE
+              â† BACK TO PROFILE
             </button>
           )}
 
@@ -186,7 +186,7 @@ function Wishlist() {
 
             <section className="wishlist-empty">
 
-              <div className="empty-heart">♡</div>
+              <div className="empty-heart">â™¡</div>
 
               <h2>Your wishlist is empty</h2>
 
@@ -248,7 +248,7 @@ function Wishlist() {
                       <h3>{product.name}</h3>
 
                       <p>
-                        ₹{" "}
+                        â‚¹{" "}
                         {Number(productPrice).toLocaleString(
                           "en-IN"
                         )}

@@ -1,29 +1,20 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 import "./ProductCard.css";
 
+const API_URL = "http://localhost:5000/api";
+
 function ProductCard({ product }) {
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("wishlist")) || [];
-    } catch {
-      return [];
-    }
-  });
-
-  // ================= PRODUCT ID =================
-
   const productId = product._id || product.id;
 
-  // ================= PRODUCT IMAGE =================
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const productImage =
     product.images?.[0] ||
     product.image ||
     "https://via.placeholder.com/300";
-
-  // ================= PRODUCT PRICE =================
 
   const productPrice =
     product.salePrice !== null &&
@@ -31,40 +22,56 @@ function ProductCard({ product }) {
       ? product.salePrice
       : product.regularPrice || product.price;
 
-  // ================= WISHLIST CHECK =================
-
-  const isWishlisted = wishlist.some(
-    (item) => (item._id || item.id) === productId
-  );
-
-  // ================= WISHLIST =================
-
-  const handleWishlist = (e) => {
+  const handleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    let updatedWishlist;
+    try {
+      const token = localStorage.getItem("token");
 
-    if (isWishlisted) {
-      updatedWishlist = wishlist.filter(
-        (item) => (item._id || item.id) !== productId
+      if (!token) {
+        alert("Please login first");
+        return;
+      }
+
+      if (isWishlisted) {
+        await axios.delete(
+          `${API_URL}/wishlist/remove/${productId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setIsWishlisted(false);
+        alert("Product removed from wishlist");
+      } else {
+        await axios.post(
+          `${API_URL}/wishlist/add`,
+          { productId },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setIsWishlisted(true);
+        alert("Product added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Wishlist operation failed"
       );
-    } else {
-      updatedWishlist = [...wishlist, product];
     }
-
-    setWishlist(updatedWishlist);
-
-    localStorage.setItem(
-      "wishlist",
-      JSON.stringify(updatedWishlist)
-    );
   };
 
   return (
     <div className="product-card">
-
-      {/* WISHLIST BUTTON */}
 
       <button
         className={`wishlist-btn ${
@@ -76,28 +83,22 @@ function ProductCard({ product }) {
         {isWishlisted ? "♥" : "♡"}
       </button>
 
-      {/* PRODUCT LINK */}
-
       <Link to={`/product/${productId}`}>
 
         <div className="product-image-wrapper">
-
           <img
             src={productImage}
             alt={product.name}
             className="product-image"
           />
-
         </div>
 
         <div className="product-info">
-
           <h3>{product.name}</h3>
 
           <p className="product-price">
             ₹ {Number(productPrice || 0).toLocaleString("en-IN")}/-
           </p>
-
         </div>
 
       </Link>

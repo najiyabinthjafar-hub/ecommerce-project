@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import axios from "axios";
 import { Link, useSearchParams } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -16,14 +17,7 @@ function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("wishlist")) || [];
-    } catch {
-      return [];
-    }
-  });
-
+  const [wishlist, setWishlist] = useState([]);
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
@@ -64,36 +58,103 @@ function Shop() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setWishlist([]);
+          return;
+        }
+
+        const response = await axios.get(
+          "http://localhost:5000/api/wishlist",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setWishlist(
+          response.data.wishlist?.products || []
+        );
+      } catch (error) {
+        console.error("Wishlist fetch error:", error);
+        setWishlist([]);
+      }
+    };
+
+    fetchWishlist();
+  }, []);
   // ================= WISHLIST =================
 
-  const handleWishlist = (e, product) => {
+  const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const productId = product._id || product.id;
+    try {
+      const token = localStorage.getItem("token");
 
-    const isWishlisted = wishlist.some(
-      (item) => (item._id || item.id) === productId
-    );
+      if (!token) {
+        alert("Please login first.");
+        return;
+      }
 
-    let updatedWishlist;
+      const productId = product._id || product.id;
 
-    if (isWishlisted) {
-      updatedWishlist = wishlist.filter(
-        (item) => (item._id || item.id) !== productId
+      const isWishlisted = wishlist.some(
+        (item) => (item._id || item.id) === productId
       );
-    } else {
-      updatedWishlist = [...wishlist, product];
+
+      if (isWishlisted) {
+        await axios.delete(
+          `http://localhost:5000/api/wishlist/remove/${productId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setWishlist((currentWishlist) =>
+          currentWishlist.filter(
+            (item) => (item._id || item.id) !== productId
+          )
+        );
+
+        alert("Product removed from wishlist!");
+      } else {
+        const response = await axios.post(
+          "http://localhost:5000/api/wishlist/add",
+          {
+            productId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          setWishlist(
+            response.data.wishlist?.products || []
+          );
+
+          alert("Product added to wishlist!");
+        }
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Wishlist operation failed."
+      );
     }
-
-    setWishlist(updatedWishlist);
-
-    localStorage.setItem(
-      "wishlist",
-      JSON.stringify(updatedWishlist)
-    );
   };
-
   // ================= FILTER PRODUCTS =================
 
   let filteredProducts = [...products];
@@ -365,7 +426,7 @@ function Shop() {
                         }
                         aria-label="Add to wishlist"
                       >
-                        {isWishlisted ? "♥" : "♡"}
+                        {isWishlisted ? "â™¥" : "â™¡"}
                       </button>
 
                       {/* SOLD OUT */}
@@ -386,7 +447,7 @@ function Shop() {
                       <h3>{product.name}</h3>
 
                       <p>
-                        ₹
+                        â‚¹
                         {Number(
                           productPrice || 0
                         ).toLocaleString("en-IN")}
@@ -422,7 +483,7 @@ function Shop() {
                 }
                 disabled={safeCurrentPage === 1}
               >
-                ←
+                â†
               </button>
 
               {Array.from(
@@ -457,7 +518,7 @@ function Shop() {
                   safeCurrentPage === totalPages
                 }
               >
-                →
+                â†’
               </button>
 
             </div>
@@ -471,3 +532,7 @@ function Shop() {
 }
 
 export default Shop;
+
+
+
+
