@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -130,7 +130,7 @@ function Orders() {
           className="orders-back-btn"
           onClick={() => navigate("/profile")}
         >
-          ← BACK TO PROFILE
+          ?� BACK TO PROFILE
         </button>
 
         <section className="orders-heading">
@@ -236,7 +236,7 @@ function Orders() {
 
                           <img
                             src={
-                              product.image ||
+                              product.images?.[0] ||
                               item.image ||
                               "/placeholder.png"
                             }
@@ -271,7 +271,7 @@ function Orders() {
                         </div>
 
                         <strong>
-                          ₹
+                          ?
                           {(
                             (item.price || 0) *
                             item.quantity
@@ -300,7 +300,7 @@ function Orders() {
                     <span>TOTAL</span>
 
                     <strong>
-                      ₹
+                      ?
                       {(
                         order.totalAmount ||
                         order.total ||
