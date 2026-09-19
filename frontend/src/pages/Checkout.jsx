@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import logo from "../assets/logo.png";
@@ -12,6 +12,17 @@ const API_URL = "http://localhost:5000/api";
 
 function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ================= BUY NOW DATA =================
+
+  const buyNowProduct = location.state?.buyNow
+    ? location.state.product
+    : null;
+
+  const isBuyNow = Boolean(buyNowProduct);
+
+  // ================= STATES =================
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,12 +31,16 @@ function Checkout() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
+
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMessage, setCouponMessage] = useState("");
   const [couponError, setCouponError] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  // COD default
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+
   const [billingAddress, setBillingAddress] = useState("same");
+
   const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
@@ -51,14 +66,31 @@ function Checkout() {
     }
   };
 
-  // ================= GET CART =================
+  // ================= GET CART OR BUY NOW PRODUCT =================
 
   useEffect(() => {
-    const fetchCart = async () => {
+    const fetchCheckoutItems = async () => {
       if (!token) {
         setLoading(false);
         return;
       }
+
+      // ================= BUY NOW =================
+
+      if (isBuyNow && buyNowProduct) {
+        setCartItems([
+          {
+            product: buyNowProduct,
+            quantity: buyNowProduct.quantity || 1,
+            size: buyNowProduct.selectedSize || "",
+          },
+        ]);
+
+        setLoading(false);
+        return;
+      }
+
+      // ================= CART CHECKOUT =================
 
       try {
         setLoading(true);
@@ -84,21 +116,26 @@ function Checkout() {
       }
     };
 
-    fetchCart();
-  }, []);
+    fetchCheckoutItems();
+  }, [token, isBuyNow, buyNowProduct]);
 
   // ================= SUBTOTAL =================
 
   const subtotal = cartItems.reduce(
     (total, item) => {
+      const product = item.product || {};
+
       const price =
-        item.product?.salePrice ??
-        item.product?.regularPrice ??
-        item.product?.price ??
+        product.salePrice ??
+        product.regularPrice ??
+        product.price ??
         item.price ??
         0;
 
-      return total + price * item.quantity;
+      return (
+        total +
+        Number(price) * Number(item.quantity)
+      );
     },
     0
   );
@@ -112,12 +149,17 @@ function Checkout() {
       ? 0
       : 99;
 
+  // ================= FINAL TOTAL =================
+
+  const finalTotal = Math.max(
+    0,
+    subtotal + delivery - discount
+  );
+
   // ================= APPLY COUPON =================
 
   const handleApplyCoupon = async () => {
-    const code = couponCode
-      .trim()
-      .toUpperCase();
+    const code = couponCode.trim().toUpperCase();
 
     setCouponMessage("");
     setCouponError("");
@@ -145,8 +187,7 @@ function Checkout() {
         throw new Error("Invalid coupon");
       }
 
-      // ACTIVE CHECK
-
+      // Active check
       if (coupon.isActive === false) {
         setCouponError(
           "This coupon is inactive."
@@ -157,8 +198,7 @@ function Checkout() {
         return;
       }
 
-      // EXPIRY CHECK
-
+      // Expiry check
       const expiryDate =
         coupon.expiryDate || coupon.expiry;
 
@@ -175,8 +215,7 @@ function Checkout() {
         return;
       }
 
-      // MINIMUM PURCHASE
-
+      // Minimum purchase
       if (
         coupon.minimumPurchase &&
         subtotal < coupon.minimumPurchase
@@ -192,13 +231,13 @@ function Checkout() {
 
       let calculatedDiscount = 0;
 
-      // PERCENTAGE DISCOUNT
-
+      // Percentage discount
       if (
         coupon.discountType === "percentage"
       ) {
         calculatedDiscount =
-          (subtotal * coupon.discountValue) / 100;
+          (subtotal * coupon.discountValue) /
+          100;
 
         const maxDiscount =
           coupon.maxDiscount ||
@@ -212,8 +251,7 @@ function Checkout() {
         }
       }
 
-      // FIXED DISCOUNT
-
+      // Fixed discount
       if (
         coupon.discountType === "fixed"
       ) {
@@ -221,8 +259,7 @@ function Checkout() {
           coupon.discountValue;
       }
 
-      // DISCOUNT SHOULD NOT EXCEED SUBTOTAL
-
+      // Discount cannot exceed subtotal
       if (calculatedDiscount > subtotal) {
         calculatedDiscount = subtotal;
       }
@@ -267,13 +304,6 @@ function Checkout() {
     setCouponError("");
   };
 
-  // ================= FINAL TOTAL =================
-
-  const finalTotal = Math.max(
-    0,
-    subtotal + delivery - discount
-  );
-
   // ================= PLACE ORDER =================
 
   const handlePlaceOrder = async (event) => {
@@ -286,6 +316,30 @@ function Checkout() {
       return;
     }
 
+    if (!userId) {
+      setError(
+        "User information not found. Please login again."
+      );
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError(
+        "No products available to place the order."
+      );
+      return;
+    }
+
+    // ================= RAZORPAY UI ONLY =================
+
+    if (paymentMethod === "razorpay") {
+      alert(
+        "Razorpay payment integration will be available soon."
+      );
+
+      return;
+    }
+
     setPlacingOrder(true);
 
     try {
@@ -293,61 +347,82 @@ function Checkout() {
         event.target
       );
 
+      // ================= SHIPPING ADDRESS =================
+
       const shippingAddress = {
         fullName: `${formData.get(
           "firstName"
         )} ${formData.get("lastName")}`.trim(),
 
         phone: formData.get("phone"),
-
         address: formData.get("address"),
-
-        apartment:
-          formData.get("apartment"),
-
         city: formData.get("city"),
-
         state: formData.get("state"),
-
-        pincode:
-          formData.get("pincode"),
-
-        country:
-          formData.get("country"),
+        pincode: formData.get("pincode"),
       };
 
-      const selectedPayment =
-        paymentMethod === "cod"
-          ? "COD"
-          : paymentMethod === "upi"
-          ? "UPI"
-          : "Card";
+      // ================= ORDER ITEMS =================
 
-      const checkoutData = {
-        userId,
-        shippingAddress,
-        paymentMethod: selectedPayment,
-      };
+      const orderItems = cartItems.map(
+        (item) => {
+          const product = item.product || {};
 
-      if (appliedCoupon) {
-        checkoutData.couponCode = couponCode
-          .trim()
-          .toUpperCase();
-      }
+          const price =
+            product.salePrice ??
+            product.regularPrice ??
+            product.price ??
+            item.price ??
+            0;
 
-      console.log(
-        "CHECKOUT DATA:",
-        checkoutData
+          return {
+            product:
+              product._id ||
+              product.id ||
+              item.product,
+
+            quantity: item.quantity,
+
+            price: price,
+
+            size: item.size || "",
+          };
+        }
       );
 
+      // ================= ORDER DATA =================
+
+      const orderData = {
+        user: userId,
+
+        items: orderItems,
+
+        shippingAddress,
+
+        totalAmount: subtotal,
+
+        discountAmount: discount,
+
+        finalAmount: finalTotal,
+
+        // COD
+        paymentMethod: "COD",
+      };
+
+      console.log(
+        "ORDER DATA:",
+        orderData
+      );
+
+      // ================= CREATE ORDER =================
+
       const response = await axios.post(
-        `${API_URL}/checkout`,
-        checkoutData,
+        `${API_URL}/orders`,
+        orderData,
         authConfig
       );
 
       console.log(
-        "CHECKOUT SUCCESS:",
+        "ORDER SUCCESS:",
         response.data
       );
 
@@ -358,14 +433,15 @@ function Checkout() {
       navigate("/orders");
     } catch (error) {
       console.error(
-        "CHECKOUT ERROR:",
-        error
+        "ORDER ERROR:",
+        error.response?.data ||
+          error.message
       );
 
       setError(
         error.response?.data?.error ||
           error.response?.data?.message ||
-          "Checkout failed"
+          "Failed to place order"
       );
     } finally {
       setPlacingOrder(false);
@@ -417,7 +493,7 @@ function Checkout() {
             <h1>LOADING...</h1>
 
             <span>
-              Loading your cart...
+              Loading your products...
             </span>
           </section>
         </main>
@@ -427,34 +503,31 @@ function Checkout() {
     );
   }
 
-  // ================= EMPTY CART =================
+  // ================= EMPTY =================
 
   if (cartItems.length === 0) {
     return (
-      <>
-        <main className="checkout-empty-page">
-          <div className="checkout-empty-logo">
-            <img
-              src={logo}
-              alt="Rizo"
-            />
-          </div>
+      <main className="checkout-empty-page">
 
-          <div className="checkout-empty">
-            <h2>
-              Your cart is empty
-            </h2>
+        <div className="checkout-empty-logo">
+          <img src={logo} alt="Rizo" />
+        </div>
 
-            <button
-              onClick={() =>
-                navigate("/shop")
-              }
-            >
-              CONTINUE SHOPPING
-            </button>
-          </div>
-        </main>
-      </>
+        <div className="checkout-empty">
+          <h2>
+            Your cart is empty
+          </h2>
+
+          <button
+            onClick={() =>
+              navigate("/shop")
+            }
+          >
+            CONTINUE SHOPPING
+          </button>
+        </div>
+
+      </main>
     );
   }
 
@@ -463,6 +536,17 @@ function Checkout() {
   return (
     <>
       <main className="figma-checkout">
+
+        {/* ================= MOBILE BACK BUTTON ================= */}
+
+        <button
+          type="button"
+          className="checkout-back-button"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ←
+        </button>
 
         {error && (
           <div className="checkout-error">
@@ -475,11 +559,9 @@ function Checkout() {
           onSubmit={handlePlaceOrder}
         >
 
-          {/* LEFT SIDE */}
+          {/* ================= LEFT SIDE ================= */}
 
           <section className="delivery-section">
-
-            {/* LOGO */}
 
             <div className="checkout-logo">
               <img
@@ -495,6 +577,7 @@ function Checkout() {
             {/* COUNTRY */}
 
             <div className="checkout-field">
+
               <label>
                 Country/region
               </label>
@@ -507,33 +590,41 @@ function Checkout() {
                   India
                 </option>
               </select>
+
             </div>
 
             {/* NAME */}
 
             <div className="checkout-row">
+
               <div className="checkout-field">
+
                 <input
                   type="text"
                   name="firstName"
                   placeholder="First name"
                   required
                 />
+
               </div>
 
               <div className="checkout-field">
+
                 <input
                   type="text"
                   name="lastName"
                   placeholder="Last name"
                   required
                 />
+
               </div>
+
             </div>
 
             {/* ADDRESS */}
 
             <div className="checkout-field">
+
               <input
                 type="text"
                 name="address"
@@ -541,19 +632,16 @@ function Checkout() {
                 required
               />
 
-              <span className="field-icon">
-                ⌕
-              </span>
             </div>
 
-            {/* APARTMENT */}
-
             <div className="checkout-field">
+
               <input
                 type="text"
                 name="apartment"
                 placeholder="Apartment, suite, etc. (optional)"
               />
+
             </div>
 
             {/* CITY STATE PIN */}
@@ -561,15 +649,18 @@ function Checkout() {
             <div className="checkout-location-row">
 
               <div className="checkout-field">
+
                 <input
                   type="text"
                   name="city"
                   placeholder="City"
                   required
                 />
+
               </div>
 
               <div className="checkout-field">
+
                 <select
                   name="state"
                   defaultValue="Kerala"
@@ -595,9 +686,11 @@ function Checkout() {
                     Delhi
                   </option>
                 </select>
+
               </div>
 
               <div className="checkout-field">
+
                 <input
                   type="text"
                   name="pincode"
@@ -606,6 +699,7 @@ function Checkout() {
                   title="Please enter a valid 6-digit PIN code"
                   required
                 />
+
               </div>
 
             </div>
@@ -613,6 +707,7 @@ function Checkout() {
             {/* PHONE */}
 
             <div className="checkout-field">
+
               <input
                 type="tel"
                 name="phone"
@@ -621,9 +716,8 @@ function Checkout() {
                 title="Please enter a valid 10-digit phone number"
                 required
               />
-            </div>
 
-            {/* EMAIL */}
+            </div>
 
             <input
               type="hidden"
@@ -635,6 +729,7 @@ function Checkout() {
             {/* SAVE INFO */}
 
             <label className="save-info">
+
               <input
                 type="checkbox"
                 name="saveInfo"
@@ -643,14 +738,19 @@ function Checkout() {
               <span>
                 Save this information for next time
               </span>
+
             </label>
 
             {/* COUPON */}
 
             <div className="coupon-section">
-              <h2>Discount code</h2>
+
+              <h2>
+                Discount code
+              </h2>
 
               <div className="discount-box">
+
                 <input
                   type="text"
                   placeholder="Discount code or gift card"
@@ -671,6 +771,7 @@ function Checkout() {
                     ? "Applying..."
                     : "Apply"}
                 </button>
+
               </div>
 
               {couponMessage && (
@@ -698,92 +799,120 @@ function Checkout() {
               {appliedCoupon && (
                 <button
                   type="button"
-                  onClick={handleRemoveCoupon}
+                  onClick={
+                    handleRemoveCoupon
+                  }
                   style={{
                     marginTop: "8px",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    textDecoration: "underline",
+                    textDecoration:
+                      "underline",
                   }}
                 >
                   Remove Coupon
                 </button>
               )}
+
             </div>
 
           </section>
 
-          {/* RIGHT SIDE */}
+          {/* ================= RIGHT SIDE ================= */}
 
           <section className="checkout-right">
 
             {/* PRODUCTS */}
 
             <div className="order-summary-products">
-              {cartItems.map((item) => {
-                const product =
-                  item.product || {};
 
-                const productId =
-                  product._id ||
-                  product.id ||
-                  item.product;
+              {cartItems.map(
+                (item, index) => {
+                  const product =
+                    item.product || {};
 
-                const price =
-                  product.salePrice ??
-                  product.regularPrice ??
-                  product.price ??
-                  item.price ??
-                  0;
+                  const productId =
+                    product._id ||
+                    product.id ||
+                    index;
 
-                const image =
-                  product.image ||
-                  product.images?.[0] ||
-                  item.image ||
-                  "/placeholder.png";
+                  const price =
+                    product.salePrice ??
+                    product.regularPrice ??
+                    product.price ??
+                    item.price ??
+                    0;
 
-                return (
-                  <div
-                    className="figma-product"
-                    key={productId}
-                  >
-                    <div className="figma-product-image">
-                      <img
-                        src={image}
-                        alt={
-                          product.name ||
-                          "Product"
-                        }
-                      />
+                  let image =
+                    product.image ||
+                    product.images?.[0] ||
+                    item.image ||
+                    "/placeholder.png";
 
-                      <span className="product-quantity">
-                        {item.quantity}
-                      </span>
+                  if (
+                    image &&
+                    !image.startsWith("http")
+                  ) {
+                    image = `http://localhost:5000${
+                      image.startsWith("/")
+                        ? ""
+                        : "/"
+                    }${image}`;
+                  }
+
+                  return (
+                    <div
+                      className="figma-product"
+                      key={productId}
+                    >
+
+                      <div className="figma-product-image">
+
+                        <img
+                          src={image}
+                          alt={
+                            product.name ||
+                            "Product"
+                          }
+                        />
+
+                        <span className="product-quantity">
+                          {item.quantity}
+                        </span>
+
+                      </div>
+
+                      <div className="figma-product-name">
+
+                        <h4>
+                          {product.name ||
+                            "Product"}
+                        </h4>
+
+                        {item.size && (
+                          <small>
+                            Size: {item.size}
+                          </small>
+                        )}
+
+                      </div>
+
+                      <strong>
+                        ₹
+                        {(
+                          price *
+                          item.quantity
+                        ).toLocaleString(
+                          "en-IN"
+                        )}
+                      </strong>
+
                     </div>
+                  );
+                }
+              )}
 
-                    <div className="figma-product-name">
-                      <h4>
-                        {product.name ||
-                          "Product"}
-                      </h4>
-
-                      {item.size && (
-                        <small>
-                          Size: {item.size}
-                        </small>
-                      )}
-                    </div>
-
-                    <strong>
-                      ₹
-                      {(
-                        price * item.quantity
-                      ).toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                );
-              })}
             </div>
 
             {/* PRICE DETAILS */}
@@ -791,7 +920,10 @@ function Checkout() {
             <div className="price-details">
 
               <div className="price-row">
-                <span>Subtotal</span>
+
+                <span>
+                  Subtotal
+                </span>
 
                 <span>
                   ₹
@@ -799,10 +931,12 @@ function Checkout() {
                     "en-IN"
                   )}
                 </span>
+
               </div>
 
               {discount > 0 && (
                 <div className="price-row">
+
                   <span>
                     Discount
                     {appliedCoupon?.code
@@ -816,17 +950,22 @@ function Checkout() {
                       "en-IN"
                     )}
                   </span>
+
                 </div>
               )}
 
               <div className="price-row">
-                <span>Shipping</span>
+
+                <span>
+                  Shipping
+                </span>
 
                 <span className="shipping-value">
                   {delivery === 0
                     ? "FREE"
                     : `₹${delivery}`}
                 </span>
+
               </div>
 
             </div>
@@ -834,15 +973,21 @@ function Checkout() {
             {/* TOTAL */}
 
             <div className="figma-total">
+
               <div>
-                <h2>Total</h2>
+
+                <h2>
+                  Total
+                </h2>
 
                 <small>
                   Including taxes
                 </small>
+
               </div>
 
               <strong>
+
                 <span className="currency">
                   INR
                 </span>
@@ -851,63 +996,23 @@ function Checkout() {
                 {finalTotal.toLocaleString(
                   "en-IN"
                 )}
+
               </strong>
+
             </div>
 
             {/* PAYMENT */}
 
             <div className="payment-section">
 
-              <h2>Payment</h2>
+              <h2>
+                Payment
+              </h2>
 
               <p className="payment-subtitle">
-                All transactions are secure and encrypted.
+                All transactions are secure
+                and encrypted.
               </p>
-
-              {/* UPI */}
-
-              <label
-                className={`payment-method ${
-                  paymentMethod === "upi"
-                    ? "active-payment"
-                    : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="upi"
-                  checked={
-                    paymentMethod === "upi"
-                  }
-                  onChange={() =>
-                    setPaymentMethod("upi")
-                  }
-                />
-
-                <div className="payment-method-content">
-                  <strong>
-                    PhonePe Payment Gateway
-                    (UPI, Cards & NetBanking)
-                  </strong>
-                </div>
-
-                <span className="payment-icons">
-                  UPI&nbsp;&nbsp; VISA&nbsp;&nbsp; MC
-                </span>
-              </label>
-
-              {paymentMethod === "upi" && (
-                <div className="payment-info-box">
-                  <p>
-                    After clicking{" "}
-                    <strong>“Pay now”</strong>,
-                    you will be redirected to
-                    PhonePe Payment Gateway to
-                    complete your purchase securely.
-                  </p>
-                </div>
-              )}
 
               {/* COD */}
 
@@ -918,6 +1023,7 @@ function Checkout() {
                     : ""
                 }`}
               >
+
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -926,118 +1032,152 @@ function Checkout() {
                     paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod("cod")
+                    setPaymentMethod(
+                      "cod"
+                    )
                   }
                 />
 
                 <div className="payment-method-content">
+
                   <strong>
                     Cash on Delivery
                   </strong>
+
                 </div>
 
                 <span className="payment-icons">
-                  ▣
+                  COD
                 </span>
+
               </label>
 
               {paymentMethod === "cod" && (
                 <div className="payment-info-box cod-info">
+
                   <p>
-                    You can pay cash when your order
-                    is delivered.
+                    You can pay cash when
+                    your order is delivered.
                   </p>
+
                 </div>
               )}
 
-              {/* CARD */}
+              {/* RAZORPAY */}
 
               <label
                 className={`payment-method ${
-                  paymentMethod === "card"
+                  paymentMethod ===
+                  "razorpay"
                     ? "active-payment"
                     : ""
                 }`}
               >
+
                 <input
                   type="radio"
                   name="paymentMethod"
-                  value="card"
+                  value="razorpay"
                   checked={
-                    paymentMethod === "card"
+                    paymentMethod ===
+                    "razorpay"
                   }
                   onChange={() =>
-                    setPaymentMethod("card")
+                    setPaymentMethod(
+                      "razorpay"
+                    )
                   }
                 />
 
                 <div className="payment-method-content">
+
                   <strong>
-                    Credit / Debit Card
+                    Razorpay
+                    (UPI, Cards & NetBanking)
                   </strong>
+
                 </div>
 
                 <span className="payment-icons">
-                  ▤
+                  UPI&nbsp;&nbsp;VISA&nbsp;&nbsp;MC
                 </span>
+
               </label>
 
-              {paymentMethod === "card" && (
-                <div className="payment-info-box card-info">
+              {paymentMethod ===
+                "razorpay" && (
+                <div className="payment-info-box">
+
                   <p>
-                    You can complete your payment
-                    securely using your card.
+                    Razorpay payment gateway
+                    UI is ready. Payment API
+                    integration will be added
+                    later.
                   </p>
+
                 </div>
               )}
 
             </div>
 
-            {/* BILLING ADDRESS */}
+            {/* BILLING */}
 
             <div className="billing-section">
 
-              <h2>Billing address</h2>
+              <h2>
+                Billing address
+              </h2>
 
               <label className="billing-option">
+
                 <input
                   type="radio"
                   name="billing"
                   value="same"
                   checked={
-                    billingAddress === "same"
+                    billingAddress ===
+                    "same"
                   }
                   onChange={() =>
-                    setBillingAddress("same")
+                    setBillingAddress(
+                      "same"
+                    )
                   }
                 />
 
                 <span>
                   Same as shipping address
                 </span>
+
               </label>
 
               <label className="billing-option">
+
                 <input
                   type="radio"
                   name="billing"
                   value="different"
                   checked={
-                    billingAddress === "different"
+                    billingAddress ===
+                    "different"
                   }
                   onChange={() =>
-                    setBillingAddress("different")
+                    setBillingAddress(
+                      "different"
+                    )
                   }
                 />
 
                 <span>
-                  Use a different billing address
+                  Use a different billing
+                  address
                 </span>
+
               </label>
 
             </div>
 
-            {/* PAY NOW */}
+            {/* PLACE ORDER */}
 
             <button
               type="submit"
@@ -1046,12 +1186,15 @@ function Checkout() {
             >
               {placingOrder
                 ? "PLACING ORDER..."
-                : "PAY NOW"}
+                : paymentMethod === "cod"
+                ? "PLACE ORDER"
+                : "PAY WITH RAZORPAY"}
             </button>
 
             {/* POLICY LINKS */}
 
             <div className="checkout-policy-links">
+
               <Link to="/refund-policy">
                 Refund policy
               </Link>
@@ -1073,9 +1216,11 @@ function Checkout() {
               <Link to="/terms-of-service">
                 Terms of service
               </Link>
+
             </div>
 
           </section>
+
         </form>
       </main>
 

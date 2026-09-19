@@ -20,29 +20,23 @@
 
 .new-arrivals-page-heading .section-label {
   margin: 0 0 14px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   letter-spacing: 2px;
-
   color: #777777;
 }
 
 .new-arrivals-page-heading h1 {
   margin: 0;
-
   font-family: Georgia, "Times New Roman", serif;
   font-size: 34px;
   font-weight: 400;
-
   letter-spacing: -0.5px;
 }
 
 .new-arrivals-page-description {
   margin: 14px auto 24px;
-
   color: #777777;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   line-height: 1.7;
@@ -57,21 +51,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-
   gap: 8px;
 }
 
 .fashion-btn {
   border: none;
-
   background: #eeeeee;
-
   padding: 9px 20px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
-
   cursor: pointer;
+  transition: 0.3s ease;
 }
 
 .fashion-btn.active {
@@ -87,9 +77,7 @@
 .new-arrivals-page-products {
   width: 88%;
   max-width: 1250px;
-
   margin: 0 auto;
-
   padding-bottom: 80px;
 }
 
@@ -102,16 +90,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   border-bottom: 1px solid #dddddd;
-
   padding-bottom: 14px;
   margin-bottom: 25px;
 }
 
 .new-arrivals-page-top h2 {
   margin: 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 18px;
   font-weight: 500;
@@ -119,11 +104,52 @@
 
 .new-arrivals-page-top p {
   margin: 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 11px;
-
   color: #777777;
+}
+
+
+/* =========================================
+   FILTER BAR
+========================================= */
+
+.category-filter-bar {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  color: #777777;
+  white-space: nowrap;
+}
+
+.filter-group select {
+  border: none;
+  border-bottom: 1px solid #cccccc;
+  background: #ffffff;
+  color: #111111;
+  padding: 5px 18px 5px 2px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-group select:focus {
+  border-bottom-color: #111111;
 }
 
 
@@ -133,13 +159,9 @@
 
 .new-arrivals-page-grid {
   width: 100%;
-
   display: grid;
-
   grid-template-columns: repeat(4, minmax(0, 1fr));
-
   gap: 22px;
-
   align-items: start;
 }
 
@@ -150,55 +172,26 @@
 
 
 /* =========================================
-   TABLET
+   PRODUCT CARD
 ========================================= */
-
-@media (max-width: 900px) {
-
-  .new-arrivals-page-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 650px) {
-
-  .new-arrivals-page-heading {
-    padding: 50px 20px 40px;
-  }
-
-  .new-arrivals-page-heading h1 {
-    font-size: 28px;
-  }
-
-  .new-arrivals-page-products {
-    width: 92%;
-  }
-
-  .new-arrivals-page-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-}
-
-
-
-
-/* FIX PRODUCT IMAGE SIZE ON NEW ARRIVALS PAGE */
 
 .new-arrivals-page-grid .product-card {
   width: 100%;
 }
 
+
+/* =========================================
+   PRODUCT IMAGE
+   ROUNDED SQUARE
+========================================= */
+
 .new-arrivals-page-grid .product-image-wrapper {
+  position: relative;
   width: 100%;
   aspect-ratio: 0.85;
   height: auto;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .new-arrivals-page-grid .product-image {
@@ -208,4 +201,542 @@
   object-fit: cover !important;
   object-position: center;
   display: block !important;
+}
+
+
+/* =========================================
+   WISHLIST
+   SAME SIZE AS SHOP PAGE
+========================================= */
+
+.new-arrivals-page-grid .shop-wishlist-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  box-sizing: border-box;
+
+  border: none;
+  border-radius: 50% !important;
+  background: #ffffff;
+
+  font-size: 22px;
+  line-height: 1;
+  color: #222222;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.2s ease;
+}
+
+.new-arrivals-page-grid .shop-wishlist-btn:hover {
+  transform: scale(1.08);
+}
+
+.new-arrivals-page-grid .shop-wishlist-btn.active-wishlist {
+  color: #e63946;
+}
+
+
+/* =========================================
+   MESSAGE
+========================================= */
+
+.new-arrivals-page-message {
+  text-align: center;
+  padding: 40px 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #777777;
+}
+
+
+/* =========================================
+   PAGINATION
+========================================= */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+  margin-top: 55px;
+}
+
+.pagination button {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: transparent;
+  color: #111;
+  border: none;
+}
+
+.pagination button.active-page {
+  background: transparent;
+  color: #111;
+  border: none;
+  font-weight: 500;
+}
+
+.pagination button:disabled {
+  background: transparent;
+  color: #ddd;
+  border: none;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.pagination .pagination-arrow {
+  font-size: 15px;
+  color: #aaa;
+}
+
+.pagination .pagination-arrow:hover:not(:disabled) {
+  color: #111;
+}
+
+
+/* =========================================
+   LARGE TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+  .new-arrivals-page-products {
+    width: 90%;
+  }
+
+  .new-arrivals-page-grid {
+    gap: 18px;
+  }
+
+  .category-filter-bar {
+    gap: 22px;
+  }
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .new-arrivals-page-heading {
+    padding: 60px 20px 45px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 32px;
+  }
+
+  .new-arrivals-page-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .new-arrivals-page-products {
+    width: 90%;
+    padding-bottom: 65px;
+  }
+
+  .category-filter-bar {
+    justify-content: flex-end;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+
+  .filter-group {
+    gap: 5px;
+  }
+
+  .filter-group label,
+  .filter-group select {
+    font-size: 9px;
+  }
+}
+
+
+/* =========================================
+   SMALL TABLET / MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+  .new-arrivals-page-heading {
+    padding: 50px 20px 40px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 29px;
+  }
+
+  .new-arrivals-page-description {
+    font-size: 10px;
+    line-height: 1.6;
+    max-width: 500px;
+  }
+
+  .new-arrivals-page-products {
+    width: 92%;
+  }
+
+  .new-arrivals-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .new-arrivals-page-top {
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .new-arrivals-page-top h2 {
+    font-size: 16px;
+  }
+
+  .new-arrivals-page-top p {
+    font-size: 10px;
+  }
+
+
+  /* FILTERS */
+
+  .category-filter-bar {
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    gap: 4px;
+  }
+
+  .filter-group label {
+    font-size: 8px;
+  }
+
+  .filter-group select {
+    font-size: 8px;
+    padding: 4px 14px 4px 1px;
+  }
+
+
+  /* PAGINATION */
+
+  .pagination {
+    gap: 7px;
+    margin-top: 40px;
+  }
+
+  .pagination button {
+    width: auto;
+    height: auto;
+    font-size: 13px;
+  }
+
+
+  /* WISHLIST - SAME AS SHOP */
+
+  .new-arrivals-page-grid .shop-wishlist-btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    box-sizing: border-box;
+    top: 9px;
+    right: 9px;
+    font-size: 19px;
+    border-radius: 50% !important;
+  }
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 650px) {
+  .new-arrivals-page-heading {
+    padding: 45px 15px 35px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 27px;
+  }
+
+  .new-arrivals-page-description {
+    margin: 12px auto 20px;
+    font-size: 9px;
+  }
+
+  .new-arrivals-page-description br {
+    display: none;
+  }
+
+  .fashion-buttons {
+    gap: 6px;
+  }
+
+  .fashion-btn {
+    padding: 8px 15px;
+    font-size: 9px;
+  }
+
+  .new-arrivals-page-products {
+    width: 92%;
+    padding-bottom: 55px;
+  }
+
+  .new-arrivals-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .new-arrivals-page-top h2 {
+    font-size: 15px;
+  }
+
+  .new-arrivals-page-top p {
+    font-size: 9px;
+  }
+
+
+  /* FILTERS */
+
+  .category-filter-bar {
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .filter-group label {
+    font-size: 8px;
+  }
+
+  .filter-group select {
+    font-size: 8px;
+    padding: 4px 12px 4px 1px;
+  }
+
+
+  /* PAGINATION */
+
+  .pagination {
+    margin-top: 35px;
+    gap: 6px;
+  }
+
+  .pagination button {
+    width: auto;
+    height: auto;
+    font-size: 12px;
+  }
+
+
+  /* WISHLIST */
+
+  .new-arrivals-page-grid .shop-wishlist-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    box-sizing: border-box;
+    top: 8px;
+    right: 8px;
+    font-size: 18px;
+    border-radius: 50% !important;
+  }
+}
+
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+  .new-arrivals-page-heading {
+    padding: 40px 12px 30px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 24px;
+  }
+
+  .new-arrivals-page-description {
+    font-size: 8.5px;
+    line-height: 1.55;
+  }
+
+  .fashion-btn {
+    padding: 8px 12px;
+    font-size: 8px;
+  }
+
+  .new-arrivals-page-products {
+    width: 94%;
+  }
+
+  .new-arrivals-page-grid {
+    gap: 11px;
+  }
+
+  .new-arrivals-page-top {
+    margin-bottom: 17px;
+  }
+
+  .new-arrivals-page-top h2 {
+    font-size: 14px;
+  }
+
+  .new-arrivals-page-top p {
+    font-size: 8px;
+  }
+
+
+  /* FILTERS */
+
+  .category-filter-bar {
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .filter-group label {
+    font-size: 7px;
+  }
+
+  .filter-group select {
+    font-size: 7px;
+    padding: 3px 10px 3px 0;
+  }
+
+
+  /* PAGINATION */
+
+  .pagination {
+    gap: 5px;
+  }
+
+  .pagination button {
+    width: auto;
+    height: auto;
+    font-size: 11px;
+  }
+
+
+  /* WISHLIST - SAME AS SHOP */
+
+  .new-arrivals-page-grid .shop-wishlist-btn {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    min-height: 27px;
+    padding: 0;
+    box-sizing: border-box;
+    top: 7px;
+    right: 7px;
+    font-size: 17px;
+    border-radius: 50% !important;
+  }
+}
+
+
+/* =========================================
+   VERY SMALL MOBILE
+========================================= */
+
+@media (max-width: 360px) {
+  .new-arrivals-page-heading {
+    padding: 35px 10px 25px;
+  }
+
+  .new-arrivals-page-heading h1 {
+    font-size: 22px;
+  }
+
+  .fashion-buttons {
+    gap: 5px;
+  }
+
+  .fashion-btn {
+    padding: 7px 10px;
+    font-size: 8px;
+  }
+
+  .new-arrivals-page-products {
+    width: 95%;
+  }
+
+  .new-arrivals-page-grid {
+    gap: 9px;
+  }
+
+
+  /* FILTERS */
+
+  .category-filter-bar {
+    gap: 4px;
+  }
+
+  .filter-group label {
+    font-size: 6.5px;
+  }
+
+  .filter-group select {
+    font-size: 6.5px;
+    padding: 3px 8px 3px 0;
+  }
+
+
+  /* PAGINATION */
+
+  .pagination button {
+    width: auto;
+    height: auto;
+    font-size: 10px;
+  }
+
+
+  /* WISHLIST */
+
+  .new-arrivals-page-grid .shop-wishlist-btn {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    padding: 0;
+    box-sizing: border-box;
+    top: 6px;
+    right: 6px;
+    font-size: 16px;
+    border-radius: 50% !important;
+  }
 }
