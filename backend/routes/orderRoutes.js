@@ -2,12 +2,14 @@ const express = require("express");
 
 const orderController = require("../controllers/orderController");
 
-const { protect, adminOnly } = require("../middleware/authMiddleware");
-
-
+const {
+  protect,
+  adminOnly,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// TEST
 router.get("/test", (req, res) => {
   res.json({
     success: true,
@@ -15,18 +17,44 @@ router.get("/test", (req, res) => {
   });
 });
 
+// CREATE ORDER
 router.post("/", protect, orderController.createOrder);
 
-// Get best selling products
-router.get("/best-sellers", orderController.getBestSellingProducts);
+// BEST SELLING PRODUCTS
+router.get(
+  "/best-sellers",
+  protect,
+  orderController.getBestSellingProducts
+);
 
-router.get("/", protect, orderController.getOrders);
+// LOGGED-IN USER ORDERS
+router.get(
+  "/",
+  protect,
+  orderController.getOrders
+);
 
-// ALL ORDERS
-router.get("/all", orderController.getAllOrders);
+// ALL ORDERS - ADMIN ONLY
+router.get(
+  "/all",
+  protect,
+  adminOnly,
+  orderController.getAllOrders
+);
 
 // SINGLE ORDER
-router.get("/:id", protect, orderController.getOrderById);
-router.put("/:id/status", orderController.updateOrderStatus);
+router.get(
+  "/:id",
+  protect,
+  orderController.getOrderById
+);
+
+// UPDATE ORDER STATUS - ADMIN ONLY
+router.put(
+  "/:id/status",
+  protect,
+  adminOnly,
+  orderController.updateOrderStatus
+);
 
 module.exports = router;
