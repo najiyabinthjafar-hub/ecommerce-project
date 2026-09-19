@@ -1,3 +1,8 @@
+
+/* =========================================
+   CONTACT PAGE
+========================================= */
+
 .contact-page {
   min-height: 650px;
   background: #ffffff;
@@ -11,6 +16,10 @@
   margin: 0 auto;
 }
 
+/* =========================================
+   HEADING
+========================================= */
+
 .contact-section h1 {
   font-size: 28px;
   font-weight: 600;
@@ -18,7 +27,9 @@
   margin: 0 0 34px;
 }
 
-/* FORM */
+/* =========================================
+   FORM
+========================================= */
 
 .contact-form {
   width: 100%;
@@ -74,14 +85,50 @@
   font-weight: 600;
   cursor: pointer;
   letter-spacing: 0.3px;
+  transition: 0.2s ease;
 }
 
 .contact-form button:hover {
   background: #222;
 }
 
+.contact-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-/* RESPONSIVE */
+/* =========================================
+   SUCCESS / ERROR
+========================================= */
+
+.contact-success,
+.contact-error {
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  margin: -15px 0 20px;
+}
+
+.contact-success {
+  color: #16803c;
+}
+
+.contact-error {
+  color: #c62828;
+}
+
+/* =========================================
+   LARGE TABLET
+========================================= */
+
+@media (max-width: 1000px) {
+  .contact-section {
+    width: 70%;
+  }
+}
+
+/* =========================================
+   TABLET
+========================================= */
 
 @media (max-width: 768px) {
   .contact-page {
@@ -95,10 +142,102 @@
 
   .contact-section h1 {
     font-size: 25px;
+    margin-bottom: 28px;
   }
 
   .contact-row {
     flex-direction: column;
     gap: 0;
   }
+
+  .contact-form input {
+    height: 32px;
+    font-size: 10px;
+    margin-bottom: 9px;
+  }
+
+  .contact-form textarea {
+    height: 100px;
+    font-size: 10px;
+    margin-bottom: 15px;
+  }
+
+  .contact-form input::placeholder,
+  .contact-form textarea::placeholder {
+    font-size: 8px;
+  }
 }
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .contact-page {
+    padding-top: 45px;
+    min-height: 560px;
+  }
+
+  .contact-section {
+    width: 90%;
+  }
+
+  .contact-section h1 {
+    font-size: 23px;
+    margin-bottom: 25px;
+  }
+
+  .contact-form input {
+    height: 34px;
+    padding: 0 10px;
+  }
+
+  .contact-form textarea {
+    height: 105px;
+    padding: 9px 10px;
+  }
+
+  .contact-form button {
+    width: 55px;
+    height: 22px;
+    font-size: 7px;
+  }
+
+  .contact-success,
+  .contact-error {
+    font-size: 9px;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 400px) {
+  .contact-page {
+    padding-top: 40px;
+  }
+
+  .contact-section {
+    width: 92%;
+  }
+
+  .contact-section h1 {
+    font-size: 21px;
+    margin-bottom: 22px;
+  }
+
+  .contact-form input {
+    height: 32px;
+  }
+
+  .contact-form textarea {
+    height: 95px;
+  }
+
+  .contact-form button {
+    width: 52px;
+    height: 21px;
+  }
+}
+

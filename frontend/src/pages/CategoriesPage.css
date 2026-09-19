@@ -1,3 +1,4 @@
+
 /* =========================================
    CATEGORIES PAGE
 ========================================= */
@@ -5,8 +6,9 @@
 .categories-page {
   width: 100%;
   min-height: 70vh;
-  background: #ffffff;
-  color: #111111;
+  background: #fff;
+  color: #111;
+  box-sizing: border-box;
 }
 
 /* =========================================
@@ -14,8 +16,10 @@
 ========================================= */
 
 .categories-heading {
+  width: 100%;
   text-align: center;
   padding: 70px 20px 55px;
+  box-sizing: border-box;
 }
 
 .categories-heading h1 {
@@ -30,7 +34,8 @@
   margin: 14px 0 0;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
-  color: #777777;
+  line-height: 1.6;
+  color: #777;
 }
 
 /* =========================================
@@ -42,11 +47,12 @@
   max-width: 1100px;
   margin: 0 auto;
   padding-bottom: 90px;
+  box-sizing: border-box;
 }
 
 .fashion-category-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
 }
 
@@ -59,23 +65,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #f5f5f5;
   text-decoration: none;
-  color: #111111;
-
-  transition: transform 0.3s ease,
+  color: #111;
+  box-sizing: border-box;
+  transition:
+    transform 0.3s ease,
     background 0.3s ease;
 }
 
 .fashion-category-card:hover {
   transform: translateY(-5px);
-  background: #eeeeee;
+  background: #eee;
 }
 
 .fashion-category-content {
+  width: 100%;
   text-align: center;
   padding: 30px;
+  box-sizing: border-box;
 }
 
 .fashion-category-content h2 {
@@ -89,7 +97,8 @@
   margin: 14px 0 22px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
-  color: #777777;
+  line-height: 1.6;
+  color: #777;
 }
 
 .fashion-category-content span {
@@ -103,10 +112,46 @@
 ========================================= */
 
 .categories-message {
+  margin: 0;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 13px;
-  color: #777777;
+  color: #777;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .categories-heading {
+    padding: 55px 20px 45px;
+  }
+
+  .categories-heading h1 {
+    font-size: 31px;
+  }
+
+  .fashion-category-section {
+    width: 90%;
+    padding-bottom: 70px;
+  }
+
+  .fashion-category-grid {
+    gap: 18px;
+  }
+
+  .fashion-category-card {
+    min-height: 250px;
+  }
+
+  .fashion-category-content {
+    padding: 25px;
+  }
+
+  .fashion-category-content h2 {
+    font-size: 25px;
+  }
 }
 
 /* =========================================
@@ -115,11 +160,21 @@
 
 @media (max-width: 650px) {
   .categories-heading {
-    padding: 50px 20px 40px;
+    padding: 45px 20px 35px;
   }
 
   .categories-heading h1 {
-    font-size: 28px;
+    font-size: 27px;
+  }
+
+  .categories-heading p {
+    margin-top: 12px;
+    font-size: 11px;
+  }
+
+  .fashion-category-section {
+    width: 90%;
+    padding-bottom: 55px;
   }
 
   .fashion-category-grid {
@@ -130,4 +185,74 @@
   .fashion-category-card {
     min-height: 220px;
   }
+
+  .fashion-category-content {
+    padding: 25px 20px;
+  }
+
+  .fashion-category-content h2 {
+    font-size: 24px;
+  }
+
+  .fashion-category-content p {
+    margin: 12px 0 19px;
+    font-size: 11px;
+  }
+
+  .fashion-category-content span {
+    font-size: 10px;
+  }
 }
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 400px) {
+  .categories-heading {
+    padding: 38px 15px 30px;
+  }
+
+  .categories-heading h1 {
+    font-size: 23px;
+  }
+
+  .categories-heading p {
+    font-size: 10px;
+  }
+
+  .fashion-category-section {
+    width: 92%;
+    padding-bottom: 45px;
+  }
+
+  .fashion-category-grid {
+    gap: 12px;
+  }
+
+  .fashion-category-card {
+    min-height: 190px;
+  }
+
+  .fashion-category-content {
+    padding: 20px 15px;
+  }
+
+  .fashion-category-content h2 {
+    font-size: 21px;
+  }
+
+  .fashion-category-content p {
+    margin: 10px 0 16px;
+    font-size: 10px;
+  }
+
+  .fashion-category-content span {
+    font-size: 9px;
+  }
+
+  .categories-message {
+    font-size: 11px;
+  }
+}
+

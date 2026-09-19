@@ -19,7 +19,8 @@ function VerifyOtp() {
 
   const email = localStorage.getItem("registerEmail");
 
-  // Countdown Timer
+  // ================= COUNTDOWN TIMER =================
+
   useEffect(() => {
     if (timeLeft <= 0) return;
 
@@ -30,7 +31,8 @@ function VerifyOtp() {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Convert seconds to MM:SS
+  // ================= FORMAT TIME =================
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -39,6 +41,8 @@ function VerifyOtp() {
       remainingSeconds
     ).padStart(2, "0")}`;
   };
+
+  // ================= VERIFY OTP =================
 
   const handleVerifyOtp = async (event) => {
     event.preventDefault();
@@ -68,9 +72,11 @@ function VerifyOtp() {
         "http://localhost:5000/api/auth/verify-otp",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             email,
             otp,
@@ -81,22 +87,53 @@ function VerifyOtp() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "OTP verification failed");
+        throw new Error(
+          data.message || "OTP verification failed"
+        );
+      }
+
+      // ================= SAVE LOGIN TOKEN =================
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Save user details
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+
+        if (data.user._id || data.user.id) {
+          localStorage.setItem(
+            "userId",
+            data.user._id || data.user.id
+          );
+        }
       }
 
       setMessage(data.message);
 
+      // Remove registration email
       localStorage.removeItem("registerEmail");
 
+      // ================= GO TO HOME =================
+      // Replace OTP page in browser history
+
       setTimeout(() => {
-        navigate("/login");
+        navigate("/", { replace: true });
       }, 1500);
     } catch (error) {
+      console.error("OTP Verification Error:", error);
+
       setError(error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // ================= RESEND OTP =================
 
   const handleResendOtp = async () => {
     setError("");
@@ -114,9 +151,11 @@ function VerifyOtp() {
         "http://localhost:5000/api/auth/resend-otp",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             email,
           }),
@@ -126,7 +165,9 @@ function VerifyOtp() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to resend OTP");
+        throw new Error(
+          data.message || "Failed to resend OTP"
+        );
       }
 
       setMessage(data.message);
@@ -137,6 +178,8 @@ function VerifyOtp() {
       // Clear old OTP
       setOtp("");
     } catch (error) {
+      console.error("Resend OTP Error:", error);
+
       setError(error.message);
     } finally {
       setLoading(false);
@@ -150,6 +193,8 @@ function VerifyOtp() {
       <main className="verify-otp-page">
         <section className="verify-otp-container">
 
+          {/* HEADER */}
+
           <div className="verify-otp-header">
             <p>EMAIL VERIFICATION</p>
 
@@ -160,21 +205,30 @@ function VerifyOtp() {
             </span>
           </div>
 
+          {/* EMAIL */}
+
           {email && (
-            <p className="otp-email">{email}</p>
+            <p className="otp-email">
+              {email}
+            </p>
           )}
 
           {/* TIMER */}
+
           <div className="otp-timer">
             {timeLeft > 0 ? (
               <>
                 OTP expires in:{" "}
-                <strong>{formatTime(timeLeft)}</strong>
+                <strong>
+                  {formatTime(timeLeft)}
+                </strong>
               </>
             ) : (
               <strong>OTP EXPIRED</strong>
             )}
           </div>
+
+          {/* SUCCESS MESSAGE */}
 
           {message && (
             <p className="otp-success-message">
@@ -182,17 +236,23 @@ function VerifyOtp() {
             </p>
           )}
 
+          {/* ERROR MESSAGE */}
+
           {error && (
             <p className="otp-error-message">
               {error}
             </p>
           )}
 
+          {/* OTP FORM */}
+
           <form
             className="verify-otp-form"
             onSubmit={handleVerifyOtp}
           >
+
             <div className="verify-otp-field">
+
               <label htmlFor="otp">
                 ENTER OTP
               </label>
@@ -202,16 +262,21 @@ function VerifyOtp() {
                 type="text"
                 placeholder="Enter OTP"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) =>
+                  setOtp(e.target.value)
+                }
                 disabled={timeLeft <= 0}
                 required
               />
+
             </div>
 
             <button
               type="submit"
               className="verify-otp-btn"
-              disabled={loading || timeLeft <= 0}
+              disabled={
+                loading || timeLeft <= 0
+              }
             >
               {loading
                 ? "VERIFYING..."
@@ -219,9 +284,13 @@ function VerifyOtp() {
                 ? "OTP EXPIRED"
                 : "VERIFY OTP"}
             </button>
+
           </form>
 
+          {/* RESEND OTP */}
+
           <div className="resend-otp">
+
             <span>
               Didn't receive the OTP?
             </span>
@@ -235,7 +304,10 @@ function VerifyOtp() {
                 ? "SENDING..."
                 : "RESEND OTP"}
             </button>
+
           </div>
+
+          {/* BACK TO LOGIN */}
 
           <div className="back-login">
             <Link to="/login">

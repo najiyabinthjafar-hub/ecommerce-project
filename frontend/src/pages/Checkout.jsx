@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -9,6 +9,21 @@ const API_URL = "http://localhost:5000/api";
 
 function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // =========================================================
+  // BUY NOW
+  // =========================================================
+
+  const buyNowProduct = location.state?.buyNow
+    ? location.state.product
+    : null;
+
+  const isBuyNow = Boolean(buyNowProduct);
+
+  // =========================================================
+  // STATES
+  // =========================================================
 
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,9 +32,16 @@ function Checkout() {
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState(null);
   const [couponMessage, setCouponMessage] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [billingAddress, setBillingAddress] = useState("same");
+
+  const [error, setError] = useState("");
+
+  // =========================================================
+  // AUTH
+  // =========================================================
 
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -29,6 +51,10 @@ function Checkout() {
       Authorization: `Bearer ${token}`,
     },
   };
+
+  // =========================================================
+  // FETCH CART
+  // =========================================================
 
   useEffect(() => {
     if (!token) {
@@ -42,6 +68,7 @@ function Checkout() {
   const fetchCart = async () => {
     try {
       setLoading(true);
+      setError("");
 
       const response = await axios.get(
         `${API_URL}/cart`,
@@ -56,14 +83,34 @@ function Checkout() {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
         localStorage.removeItem("user");
+
         navigate("/login");
+      } else {
+        setError(
+          error.response?.data?.message ||
+            "Failed to load cart."
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================================================
+  // CART HELPERS
+  // =========================================================
+
   const getCartItems = () => {
+    if (isBuyNow && buyNowProduct) {
+      return [
+        {
+          product: buyNowProduct,
+          quantity: buyNowProduct.quantity || 1,
+          size: buyNowProduct.selectedSize || "",
+        },
+      ];
+    }
+
     if (!cart) {
       return [];
     }
@@ -76,57 +123,74 @@ function Checkout() {
   };
 
   const getQuantity = (item) => {
-    return item.quantity || 1;
+    return Number(item.quantity || 1);
   };
 
   const getPrice = (item) => {
     const product = getProduct(item);
 
     return Number(
-      product.price ||
-        product.salePrice ||
-        item.price ||
+      product.salePrice ??
+        product.regularPrice ??
+        product.price ??
+        item.price ??
         0
     );
   };
 
   const cartItems = getCartItems();
 
-  const subtotal = cartItems.reduce((total, item) => {
-    return total + getPrice(item) * getQuantity(item);
-  }, 0);
+  // =========================================================
+  // PRICE CALCULATIONS
+  // =========================================================
+
+  const subtotal = cartItems.reduce(
+    (total, item) => {
+      return (
+        total +
+        getPrice(item) * getQuantity(item)
+      );
+    },
+    0
+  );
 
   const deliveryCharge =
-    subtotal >= 999 || subtotal === 0 ? 0 : 99;
+    subtotal >= 999 || subtotal === 0
+      ? 0
+      : 99;
 
-  const discount = coupon
-    ? coupon.discountAmount || 0
-    : 0;
+  const discount = coupon?.discountAmount || 0;
 
   const totalAmount = Math.max(
     0,
     subtotal + deliveryCharge - discount
   );
 
+  // =========================================================
+  // COUPON
+  // =========================================================
+
   const validateCoupon = async () => {
-    if (!couponCode.trim()) {
+    const code = couponCode.trim().toUpperCase();
+
+    if (!code) {
       setCouponMessage("Please enter a coupon code.");
       setCoupon(null);
       return;
     }
 
     try {
+      setCouponLoading(true);
       setCouponMessage("");
 
       const response = await axios.get(
-        `${API_URL}/coupons/code/${couponCode
-          .trim()
-          .toUpperCase()}`,
+        `${API_URL}/coupons/code/${code}`,
         authConfig
       );
 
       const couponData =
-        response.data.coupon || response.data;
+        response.data.coupon ||
+        response.data;
 
       if (!couponData) {
         setCoupon(null);
@@ -134,57 +198,70 @@ function Checkout() {
         return;
       }
 
+      // Active check
       if (
         couponData.active === false ||
         couponData.isActive === false
       ) {
         setCoupon(null);
-        setCouponMessage("This coupon is inactive.");
+        setCouponMessage(
+          "This coupon is inactive."
+        );
         return;
       }
 
+      // Expiry check
       const expiryDate =
-        couponData.expiryDate || couponData.expiry;
+        couponData.expiryDate ||
+        couponData.expiry;
 
       if (
         expiryDate &&
         new Date(expiryDate) < new Date()
       ) {
         setCoupon(null);
-        setCouponMessage("This coupon has expired.");
+        setCouponMessage(
+          "This coupon has expired."
+        );
         return;
       }
 
+      // Minimum purchase
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
 
       if (subtotal < minimumPurchase) {
         setCoupon(null);
+
         setCouponMessage(
           `Minimum purchase should be ₹${minimumPurchase}.`
         );
+
         return;
       }
 
+      // Calculate discount
       let discountAmount = 0;
 
-      if (
-        couponData.discountType === "percentage" ||
-        couponData.type === "percentage"
-      ) {
+      const discountType =
+        couponData.discountType ||
+        couponData.type;
+
+      const discountValue = Number(
+        couponData.discountValue ||
+          couponData.discount ||
+          0
+      );
+
+      if (discountType === "percentage") {
         discountAmount =
-          (subtotal *
-            Number(couponData.discountValue || 0)) /
-          100;
+          (subtotal * discountValue) / 100;
       } else {
-        discountAmount = Number(
-          couponData.discountValue ||
-            couponData.discount ||
-            0
-        );
+        discountAmount = discountValue;
       }
 
+      // Maximum discount
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -192,6 +269,14 @@ function Checkout() {
         );
       }
 
+      if (couponData.maximumDiscount) {
+        discountAmount = Math.min(
+          discountAmount,
+          Number(couponData.maximumDiscount)
+        );
+      }
+
+      // Discount cannot exceed subtotal
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -209,7 +294,7 @@ function Checkout() {
 
       setCouponMessage(
         `Coupon ${
-          couponData.code || couponCode
+          couponData.code || code
         } applied successfully.`
       );
     } catch (error) {
@@ -221,6 +306,8 @@ function Checkout() {
         error.response?.data?.message ||
           "Invalid coupon code."
       );
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -230,6 +317,10 @@ function Checkout() {
     setCouponMessage("");
   };
 
+  // =========================================================
+  // PLACE ORDER
+  // =========================================================
+
   const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
@@ -238,8 +329,26 @@ function Checkout() {
       return;
     }
 
+    if (!userId) {
+      setError(
+        "User information not found. Please login again."
+      );
+      return;
+    }
+
     if (cartItems.length === 0) {
-      alert("Your cart is empty.");
+      setError(
+        "No products available to place the order."
+      );
+      return;
+    }
+
+    // Razorpay UI is ready, actual integration later
+    if (paymentMethod === "razorpay") {
+      alert(
+        "Razorpay payment integration will be added later."
+      );
+
       return;
     }
 
@@ -247,13 +356,21 @@ function Checkout() {
       alert(
         "Online payment is not available yet. Please select Cash on Delivery."
       );
+
       return;
     }
 
     try {
       setPlacingOrder(true);
+      setError("");
 
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData(
+        event.currentTarget
+      );
+
+      // =====================================================
+      // SHIPPING ADDRESS
+      // =====================================================
 
       const firstName =
         formData.get("firstName") || "";
@@ -262,15 +379,35 @@ function Checkout() {
         formData.get("lastName") || "";
 
       const shippingAddress = {
-        fullName: `${firstName} ${lastName}`.trim(),
-        phone: formData.get("phone") || "",
-        address: formData.get("address") || "",
-        apartment: formData.get("apartment") || "",
-        city: formData.get("city") || "",
-        state: formData.get("state") || "",
-        pincode: formData.get("pincode") || "",
-        country: formData.get("country") || "India",
+        fullName:
+          `${firstName} ${lastName}`.trim(),
+
+        phone:
+          formData.get("phone") || "",
+
+        address:
+          formData.get("address") || "",
+
+        apartment:
+          formData.get("apartment") || "",
+
+        city:
+          formData.get("city") || "",
+
+        state:
+          formData.get("state") || "",
+
+        pincode:
+          formData.get("pincode") || "",
+
+        country:
+          formData.get("country") ||
+          "India",
       };
+
+      // =====================================================
+      // VALIDATION
+      // =====================================================
 
       if (!shippingAddress.fullName) {
         alert("Please enter your name.");
@@ -308,68 +445,127 @@ function Checkout() {
         return;
       }
 
-      const orderData = {
-        userId: userId,
-        items: cartItems.map((item) => {
+      // =====================================================
+      // ORDER ITEMS
+      // =====================================================
+
+      const orderItems = cartItems.map(
+        (item) => {
           const product = getProduct(item);
 
           return {
-            product: product._id || product.id,
-            quantity: getQuantity(item),
-            price: getPrice(item),
+            product:
+              product._id ||
+              product.id ||
+              item.product,
+
+            quantity:
+              getQuantity(item),
+
+            price:
+              getPrice(item),
+
+            size:
+              item.size ||
+              item.selectedSize ||
+              "",
           };
-        }),
-        shippingAddress: shippingAddress,
+        }
+      );
+
+      // =====================================================
+      // ORDER DATA
+      // =====================================================
+
+      const orderData = {
+        user: userId,
+
+        items: orderItems,
+
+        shippingAddress,
+
+        totalAmount: subtotal,
+
+        discountAmount: discount,
+
+        finalAmount: totalAmount,
+
         couponCode:
           coupon?.code ||
           couponCode.trim().toUpperCase() ||
           null,
+
         paymentMethod: "COD",
       };
 
-      console.log("Checkout request:", orderData);
+      console.log(
+        "ORDER DATA:",
+        orderData
+      );
+
+      // =====================================================
+      // CREATE ORDER
+      // =====================================================
 
       const response = await axios.post(
-        `${API_URL}/checkout`,
+        `${API_URL}/orders`,
         orderData,
         authConfig
       );
 
-      console.log("Checkout response:", response.data);
+      console.log(
+        "ORDER SUCCESS:",
+        response.data
+      );
 
       alert("Order placed successfully!");
 
-      await fetchCart();
+      if (!isBuyNow) {
+        await fetchCart();
+      }
 
       navigate("/orders");
     } catch (error) {
-      console.error("Checkout error:", error);
+      console.error(
+        "ORDER ERROR:",
+        error.response?.data ||
+          error.message
+      );
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to place order. Please try again."
+      setError(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Failed to place order."
       );
     } finally {
       setPlacingOrder(false);
     }
   };
 
+  // =========================================================
+  // LOGIN CHECK
+  // =========================================================
+
   if (!token) {
     return (
       <>
         <Navbar />
 
-        <main className="checkout-page">
-          <section className="checkout-heading">
-            <p>CHECKOUT</p>
-            <h1>LOGIN REQUIRED</h1>
-            <span>
-              Please login before proceeding to checkout.
-            </span>
-          </section>
-
+        <main className="checkout-empty-page">
           <div className="checkout-empty">
-            <Link to="/login">LOGIN</Link>
+            <h2>Login Required</h2>
+
+            <p>
+              Please login before proceeding
+              to checkout.
+            </p>
+
+            <Link
+              to="/login"
+              className="checkout-shop-btn"
+            >
+              LOGIN
+            </Link>
           </div>
         </main>
 
@@ -378,15 +574,17 @@ function Checkout() {
     );
   }
 
+  // =========================================================
+  // LOADING
+  // =========================================================
+
   if (loading) {
     return (
       <>
         <Navbar />
 
-        <div className="checkout-page">
-          <div className="checkout-loading">
-            Loading checkout...
-          </div>
+        <div className="checkout-loading">
+          Loading checkout...
         </div>
 
         <Footer />
@@ -394,495 +592,717 @@ function Checkout() {
     );
   }
 
-  if (!cart || cartItems.length === 0) {
+  // =========================================================
+  // EMPTY CART
+  // =========================================================
+
+  if (cartItems.length === 0) {
     return (
       <>
         <Navbar />
 
-        <div className="checkout-page">
-          <div className="empty-checkout">
-            <h2>Your cart is empty</h2>
+        <main className="checkout-empty-page">
+          <div className="checkout-empty-logo">
+            <img
+              src="/logo.png"
+              alt="Rizo"
+            />
+          </div>
+
+          <div className="checkout-empty">
+            <h2>
+              Your cart is empty
+            </h2>
 
             <p>
-              Add some products to your cart before checkout.
+              Add some products to your
+              cart before checkout.
             </p>
 
-            <Link
-              to="/"
-              className="checkout-shop-btn"
+            <button
+              onClick={() =>
+                navigate("/shop")
+              }
             >
-              Continue Shopping
-            </Link>
+              CONTINUE SHOPPING
+            </button>
           </div>
-        </div>
+        </main>
 
         <Footer />
       </>
     );
   }
+
+  // =========================================================
+  // CHECKOUT PAGE
+  // =========================================================
 
   return (
     <>
       <Navbar />
 
-      <main className="checkout-page">
-        <div className="checkout-container">
+      <main className="figma-checkout">
 
-          <div className="checkout-header">
-            <h1>Checkout</h1>
+        {/* MOBILE BACK BUTTON */}
 
-            <Link to="/cart">
-              Back to Cart
-            </Link>
+        <button
+          type="button"
+          className="checkout-back-button"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ←
+        </button>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="checkout-error">
+            {error}
           </div>
+        )}
 
-          <form onSubmit={handlePlaceOrder}>
-            <div className="checkout-layout">
+        <form
+          className="figma-checkout-container"
+          onSubmit={handlePlaceOrder}
+        >
 
-              <div className="checkout-left">
+          {/* =================================================
+              LEFT SIDE
+          ================================================= */}
 
-                <section className="checkout-section">
-                  <h2 className="delivery-title">
-                    Delivery
-                  </h2>
+          <section className="delivery-section">
 
-                  <div className="checkout-field">
-                    <label>Country/region</label>
+            {/* LOGO */}
 
-                    <select
-                      name="country"
-                      defaultValue="India"
-                    >
-                      <option value="India">
-                        India
-                      </option>
-                    </select>
-                  </div>
+            <div className="checkout-logo">
+              <img
+                src="/logo.png"
+                alt="Rizo"
+              />
+            </div>
 
-                  <div className="checkout-row">
+            {/* DELIVERY */}
 
-                    <div className="checkout-field">
-                      <input
-                        type="text"
-                        name="firstName"
-                        placeholder="First name"
-                        required
-                      />
-                    </div>
+            <h2 className="delivery-title">
+              Delivery
+            </h2>
 
-                    <div className="checkout-field">
-                      <input
-                        type="text"
-                        name="lastName"
-                        placeholder="Last name"
-                        required
-                      />
-                    </div>
+            {/* COUNTRY */}
 
-                  </div>
+            <div className="checkout-field">
+              <label>
+                Country/region
+              </label>
 
-                  <div className="checkout-field">
-                    <input
-                      type="text"
-                      name="address"
-                      placeholder="Address"
-                      required
-                    />
+              <select
+                name="country"
+                defaultValue="India"
+              >
+                <option value="India">
+                  India
+                </option>
+              </select>
+            </div>
 
-                    <span className="field-icon">
-                      Search
-                    </span>
-                  </div>
+            {/* NAME */}
 
-                  <div className="checkout-field">
-                    <input
-                      type="text"
-                      name="apartment"
-                      placeholder="Apartment, suite, etc. (optional)"
-                    />
-                  </div>
+            <div className="checkout-row">
 
-                  <div className="checkout-location-row">
+              <div className="checkout-field">
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="First name"
+                  required
+                />
+              </div>
 
-                    <div className="checkout-field">
-                      <input
-                        type="text"
-                        name="city"
-                        placeholder="City"
-                        required
-                      />
-                    </div>
+              <div className="checkout-field">
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Last name"
+                  required
+                />
+              </div>
 
-                    <div className="checkout-field">
-                      <select
-                        name="state"
-                        defaultValue="Kerala"
-                        required
-                      >
-                        <option value="Kerala">
-                          Kerala
-                        </option>
+            </div>
 
-                        <option value="Tamil Nadu">
-                          Tamil Nadu
-                        </option>
+            {/* ADDRESS */}
 
-                        <option value="Karnataka">
-                          Karnataka
-                        </option>
+            <div className="checkout-field">
+              <input
+                type="text"
+                name="address"
+                placeholder="Address"
+                required
+              />
+            </div>
 
-                        <option value="Maharashtra">
-                          Maharashtra
-                        </option>
+            {/* APARTMENT */}
 
-                        <option value="Delhi">
-                          Delhi
-                        </option>
-                      </select>
-                    </div>
+            <div className="checkout-field">
+              <input
+                type="text"
+                name="apartment"
+                placeholder="Apartment, suite, etc. (optional)"
+              />
+            </div>
 
-                    <div className="checkout-field">
-                      <input
-                        type="text"
-                        name="pincode"
-                        placeholder="PIN code"
-                        pattern="[0-9]{6}"
-                        title="Please enter a valid 6-digit PIN code"
-                        required
-                      />
-                    </div>
+            {/* CITY / STATE / PIN */}
 
-                  </div>
+            <div className="checkout-location-row">
 
-                  <div className="checkout-field">
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="Phone"
-                      pattern="[0-9]{10}"
-                      title="Please enter a valid 10-digit phone number"
-                      required
-                    />
-                  </div>
+              <div className="checkout-field">
+                <input
+                  type="text"
+                  name="city"
+                  placeholder="City"
+                  required
+                />
+              </div>
 
-                  <label className="save-info">
-                    <input
-                      type="checkbox"
-                      name="saveInfo"
-                    />
+              <div className="checkout-field">
+                <select
+                  name="state"
+                  defaultValue="Kerala"
+                  required
+                >
+                  <option value="Kerala">
+                    Kerala
+                  </option>
 
-                    <span>
-                      Save this information for next time
-                    </span>
-                  </label>
-                </section>
+                  <option value="Tamil Nadu">
+                    Tamil Nadu
+                  </option>
 
-                <section className="checkout-section">
-                  <h2>Payment Method</h2>
+                  <option value="Karnataka">
+                    Karnataka
+                  </option>
 
-                  <div className="payment-options">
+                  <option value="Maharashtra">
+                    Maharashtra
+                  </option>
 
-                    <label className="payment-option">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cod"
-                        checked={paymentMethod === "cod"}
-                        onChange={() =>
-                          setPaymentMethod("cod")
-                        }
-                      />
+                  <option value="Delhi">
+                    Delhi
+                  </option>
+                </select>
+              </div>
 
-                      <div>
-                        <strong>
-                          Cash on Delivery
-                        </strong>
+              <div className="checkout-field">
+                <input
+                  type="text"
+                  name="pincode"
+                  placeholder="PIN code"
+                  pattern="[0-9]{6}"
+                  title="Please enter a valid 6-digit PIN code"
+                  required
+                />
+              </div>
 
-                        <p>
-                          Pay when your order is delivered.
-                        </p>
-                      </div>
-                    </label>
+            </div>
 
-                    <label className="payment-option disabled-payment">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="online"
-                        disabled
-                      />
+            {/* PHONE */}
 
-                      <div>
-                        <strong>
-                          Online Payment
-                        </strong>
+            <div className="checkout-field">
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Phone"
+                pattern="[0-9]{10}"
+                title="Please enter a valid 10-digit phone number"
+                required
+              />
+            </div>
 
-                        <p>
-                          UPI / Card / Net Banking
-                        </p>
+            {/* SAVE INFO */}
 
-                        <small>
-                          Razorpay integration coming soon
-                        </small>
-                      </div>
-                    </label>
+            <label className="save-info">
+              <input
+                type="checkbox"
+                name="saveInfo"
+              />
 
-                  </div>
-                </section>
+              <span>
+                Save this information for next time
+              </span>
+            </label>
 
-                <section className="checkout-section">
-                  <h2>Discount code</h2>
+            {/* =================================================
+                COUPON
+            ================================================= */}
 
-                  <div className="discount-box">
-                    <input
-                      type="text"
-                      placeholder="Discount code or gift card"
-                      value={couponCode}
-                      onChange={(event) =>
-                        setCouponCode(
-                          event.target.value.toUpperCase()
-                        )
-                      }
-                      disabled={!!coupon}
-                    />
+            <div className="coupon-section">
 
-                    {!coupon ? (
-                      <button
-                        type="button"
-                        onClick={validateCoupon}
-                      >
-                        Apply
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={removeCoupon}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
+              <h2>
+                Discount code
+              </h2>
 
-                  {couponMessage && (
-                    <p className="coupon-message">
-                      {couponMessage}
-                    </p>
-                  )}
-                </section>
+              <div className="discount-box">
 
-                <section className="checkout-section">
-                  <h2>Billing address</h2>
+                <input
+                  type="text"
+                  placeholder="Discount code or gift card"
+                  value={couponCode}
+                  onChange={(event) =>
+                    setCouponCode(
+                      event.target.value.toUpperCase()
+                    )
+                  }
+                  disabled={!!coupon}
+                />
 
-                  <label className="billing-option">
-                    <input
-                      type="radio"
-                      name="billing"
-                      value="same"
-                      checked={billingAddress === "same"}
-                      onChange={() =>
-                        setBillingAddress("same")
-                      }
-                    />
-
-                    <span>
-                      Same as shipping address
-                    </span>
-                  </label>
-
-                  <label className="billing-option">
-                    <input
-                      type="radio"
-                      name="billing"
-                      value="different"
-                      checked={
-                        billingAddress === "different"
-                      }
-                      onChange={() =>
-                        setBillingAddress("different")
-                      }
-                    />
-
-                    <span>
-                      Use a different billing address
-                    </span>
-                  </label>
-
-                  {billingAddress === "different" && (
-                    <p className="checkout-note">
-                      Different billing address support
-                      can be added later.
-                    </p>
-                  )}
-                </section>
+                {!coupon ? (
+                  <button
+                    type="button"
+                    onClick={validateCoupon}
+                    disabled={couponLoading}
+                  >
+                    {couponLoading
+                      ? "Applying..."
+                      : "Apply"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                  >
+                    Remove
+                  </button>
+                )}
 
               </div>
 
-              <div className="checkout-right">
+              {couponMessage && (
+                <p className="coupon-message">
+                  {couponMessage}
+                </p>
+              )}
 
-                <section className="checkout-section">
-                  <h2>Order Summary</h2>
+            </div>
 
-                  <div className="order-summary-products">
+          </section>
 
-                    {cartItems.map((item, index) => {
-                      const product = getProduct(item);
+          {/* =================================================
+              RIGHT SIDE
+          ================================================= */}
 
-                      const productId =
-                        product._id ||
-                        product.id ||
-                        index;
+          <section className="checkout-right">
 
-                      const price = getPrice(item);
-                      const quantity = getQuantity(item);
+            {/* PRODUCTS */}
 
-                      const image =
-                        product.image ||
-                        product.images?.[0] ||
-                        item.image ||
-                        "/placeholder.png";
+            <div className="order-summary-products">
 
-                      return (
-                        <div
-                          className="figma-product"
-                          key={productId}
-                        >
+              {cartItems.map(
+                (item, index) => {
+                  const product =
+                    getProduct(item);
 
-                          <div className="figma-product-image">
-                            <img
-                              src={image}
-                              alt={
-                                product.name || "Product"
-                              }
-                            />
+                  const productId =
+                    product._id ||
+                    product.id ||
+                    index;
 
-                            <span className="product-quantity">
-                              {quantity}
-                            </span>
-                          </div>
+                  const price =
+                    getPrice(item);
 
-                          <div className="figma-product-name">
-                            <h4>
-                              {product.name || "Product"}
-                            </h4>
+                  const quantity =
+                    getQuantity(item);
 
-                            {item.size && (
-                              <small>
-                                Size: {item.size}
-                              </small>
-                            )}
-                          </div>
+                  let image =
+                    product.image ||
+                    product.images?.[0] ||
+                    item.image ||
+                    "/placeholder.png";
 
-                          <strong>
-                            ₹
-                            {(
-                              price * quantity
-                            ).toLocaleString("en-IN")}
-                          </strong>
+                  if (
+                    image &&
+                    !image.startsWith("http")
+                  ) {
+                    image =
+                      `http://localhost:5000${
+                        image.startsWith("/")
+                          ? ""
+                          : "/"
+                      }${image}`;
+                  }
 
-                        </div>
-                      );
-                    })}
+                  return (
+                    <div
+                      className="figma-product"
+                      key={productId}
+                    >
 
-                  </div>
+                      <div className="figma-product-image">
 
-                  <div className="price-row">
-                    <span>Subtotal</span>
+                        <img
+                          src={image}
+                          alt={
+                            product.name ||
+                            "Product"
+                          }
+                        />
 
-                    <span>
-                      ₹
-                      {subtotal.toLocaleString("en-IN")}
-                    </span>
-                  </div>
+                        <span className="product-quantity">
+                          {quantity}
+                        </span>
 
-                  <div className="price-row">
-                    <span>Shipping</span>
+                      </div>
 
-                    <span className="shipping-value">
-                      {deliveryCharge === 0
-                        ? "FREE"
-                        : `₹${deliveryCharge}`}
-                    </span>
-                  </div>
+                      <div className="figma-product-name">
 
-                  {discount > 0 && (
-                    <div className="price-row">
-                      <span>
-                        Discount
-                        {coupon?.code
-                          ? ` (${coupon.code})`
-                          : ""}
-                      </span>
+                        <h4>
+                          {product.name ||
+                            "Product"}
+                        </h4>
 
-                      <span>
-                        -₹
-                        {discount.toLocaleString(
+                        {item.size && (
+                          <small>
+                            Size: {item.size}
+                          </small>
+                        )}
+
+                      </div>
+
+                      <strong>
+                        ₹
+                        {(
+                          price * quantity
+                        ).toLocaleString(
                           "en-IN"
                         )}
-                      </span>
+                      </strong>
+
                     </div>
+                  );
+                }
+              )}
+
+            </div>
+
+            {/* PRICE DETAILS */}
+
+            <div className="price-details">
+
+              <div className="price-row">
+
+                <span>
+                  Subtotal
+                </span>
+
+                <span>
+                  ₹
+                  {subtotal.toLocaleString(
+                    "en-IN"
                   )}
+                </span>
 
-                  <div className="figma-total">
-                    <div>
-                      <h2>Total</h2>
+              </div>
 
-                      <small>
-                        Including taxes
-                      </small>
-                    </div>
+              {discount > 0 && (
+                <div className="price-row">
 
-                    <strong>
-                      <span className="currency">
-                        INR
-                      </span>{" "}
-                      ₹
-                      {totalAmount.toLocaleString(
-                        "en-IN"
-                      )}
-                    </strong>
-                  </div>
-                </section>
+                  <span>
+                    Discount
+                    {coupon?.code
+                      ? ` (${coupon.code})`
+                      : ""}
+                  </span>
 
-                <button
-                  type="submit"
-                  className="figma-pay-button"
-                  disabled={placingOrder}
-                >
-                  {placingOrder
-                    ? "PLACING ORDER..."
-                    : "PLACE ORDER"}
-                </button>
+                  <span>
+                    -₹
+                    {discount.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
 
-                <div className="checkout-policy-links">
-                  <Link to="/refund-policy">
-                    Refund policy
-                  </Link>
-
-                  <span>|</span>
-
-                  <Link to="/shipping-policy">
-                    Shipping policy
-                  </Link>
-
-                  <span>|</span>
-
-                  <Link to="/privacy-policy">
-                    Privacy policy
-                  </Link>
-
-                  <span>|</span>
-
-                  <Link to="/terms-of-service">
-                    Terms of service
-                  </Link>
                 </div>
+              )}
+
+              <div className="price-row">
+
+                <span>
+                  Shipping
+                </span>
+
+                <span className="shipping-value">
+                  {deliveryCharge === 0
+                    ? "FREE"
+                    : `₹${deliveryCharge}`}
+                </span>
 
               </div>
 
             </div>
-          </form>
 
-        </div>
+            {/* TOTAL */}
+
+            <div className="figma-total">
+
+              <div>
+
+                <h2>
+                  Total
+                </h2>
+
+                <small>
+                  Including taxes
+                </small>
+
+              </div>
+
+              <strong>
+
+                <span className="currency">
+                  INR
+                </span>
+
+                ₹
+                {totalAmount.toLocaleString(
+                  "en-IN"
+                )}
+
+              </strong>
+
+            </div>
+
+            {/* =================================================
+                PAYMENT
+            ================================================= */}
+
+            <div className="payment-section">
+
+              <h2>
+                Payment
+              </h2>
+
+              <p className="payment-subtitle">
+                All transactions are secure
+                and encrypted.
+              </p>
+
+              {/* COD */}
+
+              <label
+                className={`payment-method ${
+                  paymentMethod === "cod"
+                    ? "active-payment"
+                    : ""
+                }`}
+              >
+
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="cod"
+                  checked={
+                    paymentMethod === "cod"
+                  }
+                  onChange={() =>
+                    setPaymentMethod("cod")
+                  }
+                />
+
+                <div className="payment-method-content">
+
+                  <strong>
+                    Cash on Delivery
+                  </strong>
+
+                </div>
+
+                <span className="payment-icons">
+                  COD
+                </span>
+
+              </label>
+
+              {paymentMethod === "cod" && (
+                <div className="payment-info-box">
+
+                  <p>
+                    You can pay cash when
+                    your order is delivered.
+                  </p>
+
+                </div>
+              )}
+
+              {/* RAZORPAY */}
+
+              <label
+                className={`payment-method ${
+                  paymentMethod ===
+                  "razorpay"
+                    ? "active-payment"
+                    : ""
+                }`}
+              >
+
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="razorpay"
+                  checked={
+                    paymentMethod ===
+                    "razorpay"
+                  }
+                  onChange={() =>
+                    setPaymentMethod(
+                      "razorpay"
+                    )
+                  }
+                />
+
+                <div className="payment-method-content">
+
+                  <strong>
+                    Razorpay
+                    (UPI, Cards & NetBanking)
+                  </strong>
+
+                </div>
+
+                <span className="payment-icons">
+                  UPI&nbsp;&nbsp;VISA&nbsp;&nbsp;MC
+                </span>
+
+              </label>
+
+              {paymentMethod ===
+                "razorpay" && (
+                <div className="payment-info-box">
+
+                  <p>
+                    Razorpay payment gateway
+                    UI is ready. Payment API
+                    integration will be added
+                    later.
+                  </p>
+
+                </div>
+              )}
+
+            </div>
+
+            {/* =================================================
+                BILLING
+            ================================================= */}
+
+            <div className="billing-section">
+
+              <h2>
+                Billing address
+              </h2>
+
+              <label className="billing-option">
+
+                <input
+                  type="radio"
+                  name="billing"
+                  value="same"
+                  checked={
+                    billingAddress ===
+                    "same"
+                  }
+                  onChange={() =>
+                    setBillingAddress(
+                      "same"
+                    )
+                  }
+                />
+
+                <span>
+                  Same as shipping address
+                </span>
+
+              </label>
+
+              <label className="billing-option">
+
+                <input
+                  type="radio"
+                  name="billing"
+                  value="different"
+                  checked={
+                    billingAddress ===
+                    "different"
+                  }
+                  onChange={() =>
+                    setBillingAddress(
+                      "different"
+                    )
+                  }
+                />
+
+                <span>
+                  Use a different billing
+                  address
+                </span>
+
+              </label>
+
+              {billingAddress ===
+                "different" && (
+                <p className="checkout-note">
+                  Different billing address
+                  support can be added later.
+                </p>
+              )}
+
+            </div>
+
+            {/* =================================================
+                PLACE ORDER
+            ================================================= */}
+
+            <button
+              type="submit"
+              className="figma-pay-button"
+              disabled={placingOrder}
+            >
+              {placingOrder
+                ? "PLACING ORDER..."
+                : paymentMethod === "cod"
+                ? "PLACE ORDER"
+                : "PAY WITH RAZORPAY"}
+            </button>
+
+            {/* POLICY LINKS */}
+
+            <div className="checkout-policy-links">
+
+              <Link to="/refund-policy">
+                Refund policy
+              </Link>
+
+              <span>|</span>
+
+              <Link to="/shipping-policy">
+                Shipping policy
+              </Link>
+
+              <span>|</span>
+
+              <Link to="/privacy-policy">
+                Privacy policy
+              </Link>
+
+              <span>|</span>
+
+              <Link to="/terms-of-service">
+                Terms of service
+              </Link>
+
+            </div>
+
+          </section>
+
+        </form>
+
       </main>
 
       <Footer />

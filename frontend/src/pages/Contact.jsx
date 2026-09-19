@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Contact.css";
@@ -34,7 +35,7 @@ function Contact() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/contact",
+        "http://localhost:5000/api/contacts",
         {
           method: "POST",
           headers: {
@@ -52,7 +53,14 @@ function Contact() {
         );
       }
 
-      setMessage("Message sent successfully! Մենք will contact you soon.");
+      setMessage(
+        "Message sent successfully! We will contact you soon."
+      );
+
+      // Message will disappear after 2 seconds
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
 
       setFormData({
         name: "",
@@ -60,7 +68,6 @@ function Contact() {
         phone: "",
         comment: "",
       });
-
     } catch (error) {
       setError(error.message);
     } finally {
@@ -74,7 +81,6 @@ function Contact() {
 
       <main className="contact-page">
         <section className="contact-section">
-
           <h1>Contact</h1>
 
           {message && (
@@ -93,9 +99,7 @@ function Contact() {
             className="contact-form"
             onSubmit={handleSubmit}
           >
-
             <div className="contact-row">
-
               <input
                 type="text"
                 placeholder="NAME"
@@ -112,7 +116,6 @@ function Contact() {
                 onChange={handleChange}
                 required
               />
-
             </div>
 
             <input
@@ -138,9 +141,7 @@ function Contact() {
             >
               {loading ? "SENDING..." : "SEND"}
             </button>
-
           </form>
-
         </section>
       </main>
 

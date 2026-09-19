@@ -13,12 +13,10 @@ function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState("");
-  const [selectedSize, setSelectedSize] = useState("S");
+  const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [addingToCart, setAddingToCart] = useState(false);
 
   // ================= FETCH SINGLE PRODUCT =================
@@ -37,19 +35,25 @@ function ProductDetails() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch product"
-          );
+          throw new Error(data.message || "Failed to fetch product");
         }
 
-        setProduct(data.product);
+        const fetchedProduct = data.product;
 
-        if (data.product.images?.length > 0) {
-          setSelectedImage(data.product.images[0]);
+        setProduct(fetchedProduct);
+
+        // Product image
+        if (fetchedProduct.images?.length > 0) {
+          setSelectedImage(fetchedProduct.images[0]);
+        } else {
+          setSelectedImage("");
         }
 
-        if (data.product.variants?.length > 0) {
-          setSelectedSize(data.product.variants[0]);
+        // Product variant / size
+        if (fetchedProduct.variants?.length > 0) {
+          setSelectedSize(fetchedProduct.variants[0]);
+        } else {
+          setSelectedSize("");
         }
 
         setQuantity(1);
@@ -85,11 +89,13 @@ function ProductDetails() {
 
         const products = data.products || [];
 
+        // Current product category
         const currentCategoryId =
           typeof product.category === "object"
-            ? product.category._id
+            ? product.category?._id
             : product.category;
 
+        // Same category products only
         const related = products
           .filter((item) => {
             // Exclude current product
@@ -99,10 +105,10 @@ function ProductDetails() {
 
             const itemCategoryId =
               typeof item.category === "object"
-                ? item.category._id
+                ? item.category?._id
                 : item.category;
 
-            // Same category products only
+            // Same category only
             return (
               String(itemCategoryId) ===
               String(currentCategoryId)
@@ -110,18 +116,16 @@ function ProductDetails() {
           })
           .sort(
             (a, b) =>
-              new Date(b.createdAt) -
-              new Date(a.createdAt)
+              new Date(b.createdAt || 0) -
+              new Date(a.createdAt || 0)
           )
           .slice(0, 4);
 
+        console.log("RELATED PRODUCTS:", related);
+
         setRelatedProducts(related);
       } catch (error) {
-        console.error(
-          "Related Products Error:",
-          error
-        );
-
+        console.error("Related Products Error:", error);
         setRelatedProducts([]);
       }
     };
@@ -183,19 +187,14 @@ function ProductDetails() {
   };
 
   const decreaseQuantity = () => {
-    setQuantity((prev) =>
-      prev > 1 ? prev - 1 : 1
-    );
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
   // ================= ADD TO CART =================
 
   const handleAddToCart = async () => {
     if (product.stock === 0) {
-      alert(
-        "This product is currently out of stock."
-      );
-
+      alert("This product is currently out of stock.");
       return;
     }
 
@@ -203,9 +202,7 @@ function ProductDetails() {
 
     if (!token) {
       alert("Please login to add products to your cart.");
-
       navigate("/login");
-
       return;
     }
 
@@ -219,7 +216,6 @@ function ProductDetails() {
 
           headers: {
             "Content-Type": "application/json",
-
             Authorization: `Bearer ${token}`,
           },
 
@@ -238,8 +234,6 @@ function ProductDetails() {
         );
       }
 
-      console.log("Cart Response:", data);
-
       alert("Product added to cart successfully!");
 
       navigate("/cart");
@@ -255,14 +249,33 @@ function ProductDetails() {
     }
   };
 
-  // ================= BUY NOW =================
+  // ================= BUY IT NOW =================
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (product.stock === 0) {
+      alert("This product is currently out of stock.");
       return;
     }
 
-    await handleAddToCart();
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login to continue.");
+      navigate("/login");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        buyNow: true,
+
+        product: {
+          ...product,
+          quantity: quantity,
+          selectedSize: selectedSize,
+        },
+      },
+    });
   };
 
   return (
@@ -270,13 +283,23 @@ function ProductDetails() {
       <Navbar />
 
       <main className="product-details-page">
+
+        {/* MOBILE BACK BUTTON */}
+
+        <button
+          type="button"
+          className="mobile-product-back"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ←
+        </button>
+
         <div className="product-details-container">
 
-          {/* ================= LEFT SIDE ================= */}
+          {/* ================= LEFT - PRODUCT GALLERY ================= */}
 
           <div className="product-gallery">
-
-            {/* MAIN IMAGE */}
 
             <div className="product-main-image">
               {selectedImage ? (
@@ -289,49 +312,45 @@ function ProductDetails() {
               )}
             </div>
 
-            {/* ================= THUMBNAILS ================= */}
-
             {product.images?.length > 0 && (
               <div className="product-thumbnails">
-                {product.images.map(
-                  (image, index) => (
-                    <button
-                      key={index}
-                      className={`thumbnail ${
-                        selectedImage === image
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        setSelectedImage(image)
-                      }
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.name} ${
-                          index + 1
-                        }`}
-                      />
-                    </button>
-                  )
-                )}
+
+                {product.images.map((image, index) => (
+                  <button
+                    type="button"
+                    key={index}
+                    className={`thumbnail ${
+                      selectedImage === image
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedImage(image)
+                    }
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} ${index + 1}`}
+                    />
+                  </button>
+                ))}
+
               </div>
             )}
+
           </div>
 
-          {/* ================= RIGHT SIDE ================= */}
+          {/* ================= RIGHT - PRODUCT INFO ================= */}
 
           <div className="product-details-info">
 
             <h1>{product.name}</h1>
 
-            {/* PRICE */}
-
             <div className="product-price">
               ₹{" "}
-              {Number(
-                productPrice || 0
-              ).toLocaleString("en-IN")}
+              {Number(productPrice || 0).toLocaleString(
+                "en-IN"
+              )}
             </div>
 
             <p className="tax-info">
@@ -345,13 +364,13 @@ function ProductDetails() {
 
                 <div className="size-label">
                   <span>SIZE</span>
-
-                  <span>Select your size</span>
                 </div>
 
                 <div className="size-options">
+
                   {product.variants.map((size) => (
                     <button
+                      type="button"
                       key={size}
                       className={
                         selectedSize === size
@@ -365,6 +384,7 @@ function ProductDetails() {
                       {size}
                     </button>
                   ))}
+
                 </div>
 
               </div>
@@ -388,6 +408,7 @@ function ProductDetails() {
                 <div className="quantity-box">
 
                   <button
+                    type="button"
                     onClick={decreaseQuantity}
                   >
                     −
@@ -396,20 +417,23 @@ function ProductDetails() {
                   <span>{quantity}</span>
 
                   <button
+                    type="button"
                     onClick={increaseQuantity}
                   >
                     +
                   </button>
 
                 </div>
+
               </div>
             )}
 
-            {/* ================= BUTTONS ================= */}
+            {/* ================= ACTION BUTTONS ================= */}
 
             <div className="product-actions">
 
               <button
+                type="button"
                 className="add-cart-btn"
                 onClick={handleAddToCart}
                 disabled={
@@ -425,6 +449,7 @@ function ProductDetails() {
               </button>
 
               <button
+                type="button"
                 className="buy-now-btn"
                 onClick={handleBuyNow}
                 disabled={
@@ -468,9 +493,7 @@ function ProductDetails() {
                     className="related-product-card"
                     key={item._id}
                     onClick={() =>
-                      navigate(
-                        `/product/${item._id}`
-                      )
+                      navigate(`/product/${item._id}`)
                     }
                   >
 
@@ -500,7 +523,6 @@ function ProductDetails() {
               })}
 
             </div>
-
           </section>
         )}
 

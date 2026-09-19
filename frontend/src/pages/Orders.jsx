@@ -1,282 +1,429 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Orders.css";
 
-function getOrders() {
-  try {
-    return JSON.parse(localStorage.getItem("orders")) || [];
-  } catch {
-    return [];
-  }
-}
+const API_URL = "http://localhost:5000/api";
 
-function Orders() {
+const Orders = () => {
   const navigate = useNavigate();
 
-  const [orders, setOrders] = useState(getOrders());
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // ================= CANCEL ORDER =================
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-  const handleCancelOrder = (orderId) => {
+  // =========================
+  // FETCH ORDERS
+  // =========================
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      if (!token || !userId) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_URL}/orders?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("ORDERS RESPONSE:", response.data);
+
+      // Backend response safe handling
+      const ordersData =
+        response.data?.orders ||
+        response.data?.data ||
+        response.data;
+
+      setOrders(
+        Array.isArray(ordersData)
+          ? ordersData
+          : []
+      );
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to load your orders."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================
+  // TRACK ORDER
+  // =========================
+  const handleTrackOrder = (order) => {
+    navigate(`/track-order/${order._id}`, {
+      state: {
+        order: order,
+      },
+    });
+  };
+
+  // =========================
+  // CANCEL ORDER
+  // =========================
+  const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this order?"
     );
 
     if (!confirmCancel) return;
 
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: "Cancelled" }
-        : order
-    );
+    try {
+      const token = localStorage.getItem("token");
 
-    setOrders(updatedOrders);
+      await axios.put(
+        `${API_URL}/orders/${orderId}/status`,
+        {
+          orderStatus: "CANCELLED",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    localStorage.setItem(
-      "orders",
-      JSON.stringify(updatedOrders)
-    );
+      alert("Order cancelled successfully!");
 
-    alert("Your order has been cancelled.");
+      // Refresh orders after cancellation
+      fetchOrders();
+    } catch (err) {
+      console.error("Cancel order error:", err);
+
+      alert(
+        err.response?.data?.message ||
+          "Failed to cancel order."
+      );
+    }
   };
 
-  // ================= RETURN ORDER =================
+  // =========================
+  // FORMAT STATUS
+  // =========================
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
 
-  const handleReturnOrder = (orderId) => {
-    const confirmReturn = window.confirm(
-      "Do you want to request a return for this order?"
-    );
-
-    if (!confirmReturn) return;
-
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: "Return Requested" }
-        : order
-    );
-
-    setOrders(updatedOrders);
-
-    localStorage.setItem(
-      "orders",
-      JSON.stringify(updatedOrders)
-    );
-
-    alert("Your return request has been submitted.");
+    return status
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
   };
 
+  // =========================
+  // PRODUCT NAME
+  // =========================
+  const getProductName = (item) => {
+    if (item?.product?.name) {
+      return item.product.name;
+    }
+
+    if (item?.productName) {
+      return item.productName;
+    }
+
+    return "Product";
+  };
+
+  // =========================
+  // PRODUCT IMAGE
+  // =========================
+  const getProductImage = (item) => {
+    if (item?.image) {
+      return item.image;
+    }
+
+    if (item?.product?.image) {
+      return item.product.image;
+    }
+
+    if (
+      item?.product?.images &&
+      item.product.images.length > 0
+    ) {
+      return item.product.images[0];
+    }
+
+    return "";
+  };
+
+  // =========================
+  // LOADING
+  // =========================
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="orders-page">
+          <div className="orders-loading">
+            Loading your orders...
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================
+  // LOGIN CHECK
+  // =========================
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+
+  if (!token || !userId) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="orders-page">
+          <div className="orders-login">
+            <p>MY ACCOUNT</p>
+
+            <h1>My Orders</h1>
+
+            <span>
+              Please login to view your orders.
+            </span>
+
+            <Link
+              to="/login"
+              className="orders-login-btn"
+            >
+              LOGIN
+            </Link>
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================
+  // ERROR
+  // =========================
+  if (error) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="orders-page">
+          <div className="orders-error">
+            <p>{error}</p>
+
+            <button
+              className="orders-retry"
+              onClick={fetchOrders}
+            >
+              TRY AGAIN
+            </button>
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================
+  // EMPTY ORDERS
+  // =========================
+  if (orders.length === 0) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="orders-page">
+          <div className="orders-empty">
+            <h2>No Orders Yet</h2>
+
+            <p>
+              You haven't placed any orders yet.
+            </p>
+
+            <Link
+              to="/shop"
+              className="orders-shop-btn"
+            >
+              SHOP NOW
+            </Link>
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================
+  // ORDERS PAGE
+  // =========================
   return (
     <>
       <Navbar />
 
       <main className="orders-page">
 
-        {/* BACK TO PROFILE */}
+        {/* =========================
+            TABLE HEADER
+        ========================= */}
+        <div className="orders-table-header">
+          <span>PRODUCT</span>
+          <span>STATUS</span>
+        </div>
 
-        <button
-          className="orders-back-btn"
-          onClick={() => navigate("/profile")}
-        >
-          ← BACK TO PROFILE
-        </button>
+        {/* =========================
+            ORDERS LIST
+        ========================= */}
+        <div className="orders-list">
 
-        <section className="orders-heading">
-          <p>YOUR ACCOUNT</p>
+          {orders.map((order) => {
+            const firstItem = order.items?.[0];
 
-          <h1>MY ORDERS</h1>
+            const productName =
+              getProductName(firstItem);
 
-          <span>
-            View your recent orders and order details.
-          </span>
-        </section>
+            const productImage =
+              getProductImage(firstItem);
 
-        {orders.length === 0 ? (
+            const quantity =
+              firstItem?.quantity || 1;
 
-          <section className="orders-empty">
-            <h2>No orders yet</h2>
+            const size =
+              firstItem?.size;
 
-            <p>
-              You haven't placed any orders yet.
-            </p>
+            const status =
+              order.orderStatus || "PENDING";
 
-            <Link to="/shop">
-              START SHOPPING
-            </Link>
-          </section>
+            return (
+              <div
+                className="order-row"
+                key={order._id}
+              >
 
-        ) : (
+                {/* =========================
+                    PRODUCT SECTION
+                ========================= */}
+                <div className="order-product-section">
 
-          <section className="orders-container">
+                  <div className="order-product">
 
-            {orders
-              .slice()
-              .reverse()
-              .map((order) => (
+                    {/* PRODUCT IMAGE */}
+                    <div className="order-image">
 
-                <article
-                  className="order-card"
-                  key={order.id}
-                >
+                      {productImage ? (
+                        <img
+                          src={productImage}
+                          alt={productName}
+                        />
+                      ) : (
+                        <span>
+                          No Image
+                        </span>
+                      )}
 
-                  {/* ORDER HEADER */}
-
-                  <div className="order-header">
-
-                    <div>
-                      <span>ORDER ID</span>
-
-                      <strong>
-                        #{order.id}
-                      </strong>
                     </div>
 
-                    <div>
-                      <span>DATE</span>
+                    {/* PRODUCT DETAILS */}
+                    <div className="order-details">
 
-                      <strong>
-                        {order.date}
-                      </strong>
-                    </div>
+                      <h3>
+                        {productName}
+                      </h3>
 
-                    <div>
-                      <span>STATUS</span>
+                      <p>
+                        ₹{firstItem?.price || 0}
+                      </p>
 
-                      <strong
-                        className={`order-status ${order.status
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`}
-                      >
-                        {order.status}
-                      </strong>
-                    </div>
+                      <span>
+                        Quantity: {quantity}
 
-                  </div>
+                        {size
+                          ? ` • Size: ${size}`
+                          : ""}
+                      </span>
 
-                  {/* ORDER PRODUCTS */}
-
-                  <div className="order-products">
-
-                    {order.items.map((item) => (
-
-                      <div
-                        className="order-product"
-                        key={`${order.id}-${item.id}-${item.size}`}
-                      >
-
-                        <div className="order-product-image">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                          />
-                        </div>
-
-                        <div className="order-product-info">
-
-                          <h3>
-                            {item.name}
-                          </h3>
-
-                          {item.size && (
-                            <p>
-                              Size: {item.size}
-                            </p>
-                          )}
-
-                          <p>
-                            Quantity: {item.quantity}
-                          </p>
-
-                        </div>
-
-                        <strong>
-                          ₹
-                          {(
-                            item.price * item.quantity
-                          ).toLocaleString("en-IN")}
-                        </strong>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                  {/* ORDER FOOTER */}
-
-                  <div className="order-footer">
-
-                    <div>
-                      <span>PAYMENT</span>
-
-                      <strong>
-                        {order.paymentMethod}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>TOTAL</span>
-
-                      <strong>
-                        ₹
-                        {order.total.toLocaleString("en-IN")}
-                      </strong>
                     </div>
 
                   </div>
 
-                  {/* ORDER ACTIONS */}
+                </div>
 
-                  <div className="order-actions">
+                {/* =========================
+                    STATUS SECTION
+                ========================= */}
+                <div className="order-status-section">
 
-                    {/* CANCEL */}
+                  <span
+                    className={`order-status ${status
+                      .toLowerCase()
+                      .replace(/_/g, "-")}`}
+                  >
+                    {formatStatus(status)}
+                  </span>
 
-                    {order.status === "Order Placed" && (
+                  {/* TRACK ORDER BUTTON */}
+                  <button
+                    className="track-order-btn"
+                    onClick={() =>
+                      handleTrackOrder(order)
+                    }
+                  >
+                    Track Your Order
+                  </button>
 
+                  {/* CANCEL ORDER BUTTON */}
+                  {status !== "CANCELLED" &&
+                    status !== "DELIVERED" && (
                       <button
                         className="cancel-order-btn"
                         onClick={() =>
-                          handleCancelOrder(order.id)
+                          handleCancelOrder(
+                            order._id
+                          )
                         }
                       >
-                        CANCEL ORDER
+                        Cancel Order
                       </button>
-
                     )}
 
-                    {/* RETURN */}
+                </div>
 
-                    {order.status === "Delivered" && (
+              </div>
+            );
+          })}
 
-                      <button
-                        className="return-order-btn"
-                        onClick={() =>
-                          handleReturnOrder(order.id)
-                        }
-                      >
-                        RETURN ORDER
-                      </button>
-
-                    )}
-
-                  </div>
-
-                </article>
-
-              ))}
-
-          </section>
-
-        )}
-
+        </div>
       </main>
 
       <Footer />
     </>
   );
-}
+};
 
 export default Orders;

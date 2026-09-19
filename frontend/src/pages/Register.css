@@ -6,6 +6,7 @@
   align-items: center;
   padding: 70px 20px;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .register-container {
@@ -66,6 +67,7 @@
   outline: none;
   font-size: 13px;
   background: #fff;
+  transition: border-color 0.2s ease;
 }
 
 .register-field input:focus {
@@ -89,7 +91,9 @@
 .terms-checkbox input {
   width: 14px;
   height: 14px;
+  margin: 0;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .register-btn {
@@ -101,11 +105,16 @@
   font-size: 11px;
   letter-spacing: 2px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.3s ease;
 }
 
 .register-btn:hover {
   background: #333;
+}
+
+.register-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .register-login {
@@ -116,6 +125,7 @@
   margin-top: 28px;
   font-size: 12px;
   color: #777;
+  text-align: center;
 }
 
 .register-login a {
@@ -130,18 +140,178 @@
   text-decoration: underline;
 }
 
+.register-error-message {
+  color: red;
+  font-size: 13px;
+  text-align: center;
+  margin: 0 0 15px;
+  line-height: 1.5;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .register-page {
+    min-height: 70vh;
+    padding: 55px 25px;
+  }
+
+  .register-container {
+    max-width: 500px;
+  }
+
+  .register-header {
+    margin-bottom: 35px;
+  }
+
+  .register-header h1 {
+    font-size: 36px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
 @media (max-width: 600px) {
   .register-page {
-    padding: 50px 20px;
+    min-height: 70vh;
+    padding: 40px 20px 50px;
+    align-items: flex-start;
+  }
+
+  .register-container {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .register-header {
+    margin-bottom: 30px;
+  }
+
+  .register-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    margin-bottom: 10px;
   }
 
   .register-header h1 {
     font-size: 32px;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+
+  .register-header span {
+    font-size: 12px;
+    line-height: 1.5;
   }
 
   .register-row {
     grid-template-columns: 1fr;
     gap: 0;
   }
+
+  .register-field {
+    margin-bottom: 19px;
+  }
+
+  .register-field label {
+    font-size: 9px;
+    margin-bottom: 8px;
+  }
+
+  .register-field input {
+    padding: 14px 12px;
+    font-size: 12px;
+  }
+
+  .terms-checkbox {
+    gap: 7px;
+    margin: 2px 0 22px;
+    font-size: 10px;
+  }
+
+  .terms-checkbox input {
+    width: 13px;
+    height: 13px;
+  }
+
+  .register-btn {
+    padding: 15px;
+    font-size: 10px;
+    letter-spacing: 1.8px;
+  }
+
+  .register-login {
+    margin-top: 24px;
+    font-size: 11px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .register-login a {
+    font-size: 10px;
+  }
+
+  .register-error-message {
+    font-size: 12px;
+  }
 }
 
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+  .register-page {
+    padding: 35px 15px 45px;
+  }
+
+  .register-header {
+    margin-bottom: 26px;
+  }
+
+  .register-label {
+    font-size: 8px;
+  }
+
+  .register-header h1 {
+    font-size: 28px;
+  }
+
+  .register-header span {
+    font-size: 11px;
+  }
+
+  .register-field {
+    margin-bottom: 17px;
+  }
+
+  .register-field input {
+    padding: 13px 11px;
+    font-size: 11px;
+  }
+
+  .register-field label {
+    font-size: 8px;
+  }
+
+  .terms-checkbox {
+    font-size: 9px;
+  }
+
+  .register-btn {
+    padding: 14px;
+    font-size: 9px;
+  }
+
+  .register-login {
+    font-size: 10px;
+  }
+
+  .register-login a {
+    font-size: 9px;
+  }
+}
