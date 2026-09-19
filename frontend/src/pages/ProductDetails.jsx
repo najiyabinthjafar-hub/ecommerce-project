@@ -48,7 +48,6 @@ function ProductDetails() {
           setSelectedImage(data.product.images[0]);
         }
 
-        // ആദ്യത്തെ variant default ആയി select ചെയ്യുന്നു
         if (data.product.variants?.length > 0) {
           setSelectedSize(data.product.variants[0]);
         }
@@ -93,7 +92,7 @@ function ProductDetails() {
 
         const related = products
           .filter((item) => {
-            // നിലവിലെ product ഒഴിവാക്കുക
+            // Exclude current product
             if (String(item._id) === String(id)) {
               return false;
             }
@@ -103,7 +102,7 @@ function ProductDetails() {
                 ? item.category._id
                 : item.category;
 
-            // Same category products മാത്രം
+            // Same category products only
             return (
               String(itemCategoryId) ===
               String(currentCategoryId)
@@ -200,10 +199,8 @@ function ProductDetails() {
       return;
     }
 
-    // LOGIN TOKEN
     const token = localStorage.getItem("token");
 
-    // User login ചെയ്തിട്ടില്ലെങ്കിൽ
     if (!token) {
       alert("Please login to add products to your cart.");
 
