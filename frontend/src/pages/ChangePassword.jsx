@@ -6,6 +6,8 @@ import Footer from "../components/Footer";
 
 import "./ChangePassword.css";
 
+const API_URL = "http://localhost:5000/api";
+
 function ChangePassword() {
   const navigate = useNavigate();
 
@@ -15,34 +17,85 @@ function ChangePassword() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setMessage("");
     setError("");
 
-    // പുതിയ password രണ്ടും same ആണോ എന്ന് പരിശോധിക്കുന്നു
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("New passwords do not match!");
       return;
     }
 
-    // Password empty ആകരുത്
     if (newPassword.length < 6) {
       setError("Password must contain at least 6 characters!");
       return;
     }
 
-    // ഇപ്പോൾ frontend demo success
-    setMessage("Password changed successfully!");
+    if (currentPassword === newPassword) {
+      setError(
+        "New password must be different from your current password!"
+      );
+      return;
+    }
 
-    // Form clear
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      setLoading(true);
 
-    // പിന്നീട് backend API connect ചെയ്യാം
+      const response = await fetch(
+        `${API_URL}/users/change-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword,
+            newPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to change password"
+        );
+      }
+
+      setMessage(
+        data.message || "Password changed successfully!"
+      );
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      setTimeout(() => {
+        navigate("/profile");
+      }, 1500);
+
+    } catch (error) {
+      console.error("CHANGE PASSWORD ERROR:", error);
+
+      setError(
+        error.message || "Failed to change password"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,12 +105,7 @@ function ChangePassword() {
       <main className="change-password-page">
         <div className="change-password-container">
 
-          <button
-            className="password-back-btn"
-            onClick={() => navigate("/profile")}
-          >
-            ← BACK TO PROFILE
-          </button>
+          
 
           <h1>CHANGE PASSWORD</h1>
 
@@ -81,7 +129,6 @@ function ChangePassword() {
             className="change-password-form"
             onSubmit={handleSubmit}
           >
-
             <div className="password-field">
               <label>CURRENT PASSWORD</label>
 
@@ -93,6 +140,7 @@ function ChangePassword() {
                   setCurrentPassword(e.target.value)
                 }
                 required
+                disabled={loading}
               />
             </div>
 
@@ -107,6 +155,7 @@ function ChangePassword() {
                   setNewPassword(e.target.value)
                 }
                 required
+                disabled={loading}
               />
             </div>
 
@@ -121,16 +170,19 @@ function ChangePassword() {
                   setConfirmPassword(e.target.value)
                 }
                 required
+                disabled={loading}
               />
             </div>
 
             <button
               type="submit"
               className="update-password-btn"
+              disabled={loading}
             >
-              UPDATE PASSWORD
+              {loading
+                ? "UPDATING PASSWORD..."
+                : "UPDATE PASSWORD"}
             </button>
-
           </form>
 
         </div>

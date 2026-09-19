@@ -15,10 +15,8 @@ function ProductDetails() {
   const [selectedImage, setSelectedImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("S");
   const [quantity, setQuantity] = useState(1);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [addingToCart, setAddingToCart] = useState(false);
 
   // ================= FETCH SINGLE PRODUCT =================
@@ -31,26 +29,29 @@ function ProductDetails() {
         setRelatedProducts([]);
 
         const response = await fetch(
-          `http://localhost:5000/api/products/${id}`
+          `http://localhost:5000/api/products/${id}`,
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch product"
-          );
+          throw new Error(data.message || "Failed to fetch product");
         }
 
-        setProduct(data.product);
+        const fetchedProduct = data.product;
 
-        if (data.product.images?.length > 0) {
-          setSelectedImage(data.product.images[0]);
+        setProduct(fetchedProduct);
+
+        if (fetchedProduct.images?.length > 0) {
+          setSelectedImage(fetchedProduct.images[0]);
+        } else {
+          setSelectedImage("");
         }
 
-        // ആദ്യത്തെ variant default ആയി select ചെയ്യുന്നു
-        if (data.product.variants?.length > 0) {
-          setSelectedSize(data.product.variants[0]);
+        if (fetchedProduct.variants?.length > 0) {
+          setSelectedSize(fetchedProduct.variants[0]);
+        } else {
+          setSelectedSize("");
         }
 
         setQuantity(1);
@@ -73,55 +74,49 @@ function ProductDetails() {
     const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/products?limit=100"
+          "http://localhost:5000/api/products?limit=100",
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch related products"
-          );
+          throw new Error(data.message || "Failed to fetch related products");
         }
 
         const products = data.products || [];
 
+        // Current product category
         const currentCategoryId =
           typeof product.category === "object"
-            ? product.category._id
+            ? product.category?._id
             : product.category;
 
+        // Same exact category products only
         const related = products
           .filter((item) => {
-            // നിലവിലെ product ഒഴിവാക്കുക
+            // Don't show current product
             if (String(item._id) === String(id)) {
               return false;
             }
 
             const itemCategoryId =
               typeof item.category === "object"
-                ? item.category._id
+                ? item.category?._id
                 : item.category;
 
-            // Same category products മാത്രം
-            return (
-              String(itemCategoryId) ===
-              String(currentCategoryId)
-            );
+            // Same category only
+            return String(itemCategoryId) === String(currentCategoryId);
           })
           .sort(
-            (a, b) =>
-              new Date(b.createdAt) -
-              new Date(a.createdAt)
+            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
           )
           .slice(0, 4);
 
+        console.log("RELATED PRODUCTS:", related);
+
         setRelatedProducts(related);
       } catch (error) {
-        console.error(
-          "Related Products Error:",
-          error
-        );
+        console.error("Related Products Error:", error);
 
         setRelatedProducts([]);
       }
@@ -156,10 +151,7 @@ function ProductDetails() {
         <main className="product-not-found">
           <h1>Product Not Found</h1>
 
-          <p>
-            {error ||
-              "The product you're looking for doesn't exist."}
-          </p>
+          <p>{error || "The product you're looking for doesn't exist."}</p>
         </main>
 
         <Footer />
@@ -170,8 +162,7 @@ function ProductDetails() {
   // ================= PRODUCT PRICE =================
 
   const productPrice =
-    product.salePrice !== null &&
-    product.salePrice !== undefined
+    product.salePrice !== null && product.salePrice !== undefined
       ? product.salePrice
       : product.regularPrice;
 
@@ -184,64 +175,48 @@ function ProductDetails() {
   };
 
   const decreaseQuantity = () => {
-    setQuantity((prev) =>
-      prev > 1 ? prev - 1 : 1
-    );
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
   // ================= ADD TO CART =================
 
   const handleAddToCart = async () => {
     if (product.stock === 0) {
-      alert(
-        "This product is currently out of stock."
-      );
-
+      alert("This product is currently out of stock.");
       return;
     }
 
-    // LOGIN TOKEN
     const token = localStorage.getItem("token");
 
-    // User login ചെയ്തിട്ടില്ലെങ്കിൽ
     if (!token) {
       alert("Please login to add products to your cart.");
 
       navigate("/login");
-
       return;
     }
 
     try {
       setAddingToCart(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/cart/add",
-        {
-          method: "POST",
+      const response = await fetch("http://localhost:5000/api/cart/add", {
+        method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
 
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            productId: product._id,
-            quantity: quantity,
-          }),
-        }
-      );
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: quantity,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to add product to cart"
-        );
+        throw new Error(data.message || "Failed to add product to cart");
       }
-
-      console.log("Cart Response:", data);
 
       alert("Product added to cart successfully!");
 
@@ -251,21 +226,41 @@ function ProductDetails() {
 
       alert(
         error.message ||
-          "Something went wrong while adding the product to cart."
+          "Something went wrong while adding the product to cart.",
       );
     } finally {
       setAddingToCart(false);
     }
   };
 
-  // ================= BUY NOW =================
+  // ================= BUY IT NOW =================
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (product.stock === 0) {
+      alert("This product is currently out of stock.");
       return;
     }
 
-    await handleAddToCart();
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login to continue.");
+
+      navigate("/login");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        buyNow: true,
+
+        product: {
+          ...product,
+          quantity: quantity,
+          selectedSize: selectedSize,
+        },
+      },
+    });
   };
 
   return (
@@ -273,103 +268,77 @@ function ProductDetails() {
       <Navbar />
 
       <main className="product-details-page">
-        <div className="product-details-container">
+        {/* MOBILE BACK BUTTON */}
+        <button
+          type="button"
+          className="mobile-product-back"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ←
+        </button>
 
-          {/* ================= LEFT SIDE ================= */}
+        <div className="product-details-container">
+          {/* ================= LEFT - PRODUCT GALLERY ================= */}
 
           <div className="product-gallery">
-
-            {/* MAIN IMAGE */}
-
             <div className="product-main-image">
               {selectedImage ? (
-                <img
-                  src={selectedImage}
-                  alt={product.name}
-                />
+                <img src={selectedImage} alt={product.name} />
               ) : (
                 <p>No image available</p>
               )}
             </div>
 
-            {/* ================= THUMBNAILS ================= */}
-
             {product.images?.length > 0 && (
               <div className="product-thumbnails">
-                {product.images.map(
-                  (image, index) => (
-                    <button
-                      key={index}
-                      className={`thumbnail ${
-                        selectedImage === image
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        setSelectedImage(image)
-                      }
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.name} ${
-                          index + 1
-                        }`}
-                      />
-                    </button>
-                  )
-                )}
+                {product.images.map((image, index) => (
+                  <button
+                    type="button"
+                    key={index}
+                    className={`thumbnail ${
+                      selectedImage === image ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedImage(image)}
+                  >
+                    <img src={image} alt={`${product.name} ${index + 1}`} />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* ================= RIGHT SIDE ================= */}
+          {/* ================= RIGHT - PRODUCT INFO ================= */}
 
           <div className="product-details-info">
-
             <h1>{product.name}</h1>
 
-            {/* PRICE */}
-
             <div className="product-price">
-              ₹{" "}
-              {Number(
-                productPrice || 0
-              ).toLocaleString("en-IN")}
+              ₹ {Number(productPrice || 0).toLocaleString("en-IN")}
             </div>
 
-            <p className="tax-info">
-              Taxes included.
-            </p>
+            <p className="tax-info">Taxes included.</p>
 
             {/* ================= SIZE ================= */}
 
             {product.variants?.length > 0 && (
               <div className="size-section">
-
                 <div className="size-label">
                   <span>SIZE</span>
-
-                  <span>Select your size</span>
                 </div>
 
                 <div className="size-options">
                   {product.variants.map((size) => (
                     <button
+                      type="button"
                       key={size}
-                      className={
-                        selectedSize === size
-                          ? "size-selected"
-                          : ""
-                      }
-                      onClick={() =>
-                        setSelectedSize(size)
-                      }
+                      className={selectedSize === size ? "size-selected" : ""}
+                      onClick={() => setSelectedSize(size)}
                     >
                       {size}
                     </button>
                   ))}
                 </div>
-
               </div>
             )}
 
@@ -385,84 +354,64 @@ function ProductDetails() {
 
             {product.stock > 0 && (
               <div className="quantity-section">
-
                 <label>QUANTITY</label>
 
                 <div className="quantity-box">
-
-                  <button
-                    onClick={decreaseQuantity}
-                  >
+                  <button type="button" onClick={decreaseQuantity}>
                     −
                   </button>
 
                   <span>{quantity}</span>
 
-                  <button
-                    onClick={increaseQuantity}
-                  >
+                  <button type="button" onClick={increaseQuantity}>
                     +
                   </button>
-
                 </div>
               </div>
             )}
 
-            {/* ================= BUTTONS ================= */}
+            {/* ================= ACTION BUTTONS ================= */}
 
             <div className="product-actions">
-
               <button
+                type="button"
                 className="add-cart-btn"
                 onClick={handleAddToCart}
-                disabled={
-                  product.stock === 0 ||
-                  addingToCart
-                }
+                disabled={product.stock === 0 || addingToCart}
               >
                 {addingToCart
                   ? "ADDING..."
                   : product.stock === 0
-                  ? "OUT OF STOCK"
-                  : "ADD TO CART"}
+                    ? "OUT OF STOCK"
+                    : "ADD TO CART"}
               </button>
 
               <button
+                type="button"
                 className="buy-now-btn"
                 onClick={handleBuyNow}
-                disabled={
-                  product.stock === 0 ||
-                  addingToCart
-                }
+                disabled={product.stock === 0 || addingToCart}
               >
                 BUY IT NOW
               </button>
-
             </div>
 
             {/* ================= DESCRIPTION ================= */}
 
-            <p className="product-long-description">
-              {product.description}
-            </p>
-
+            <p className="product-long-description">{product.description}</p>
           </div>
         </div>
 
-        {/* ================= RELATED PRODUCTS ================= */}
+        {/* ================= FIND YOUR NEXT FAVOURITE ================= */}
 
         {relatedProducts.length > 0 && (
           <section className="you-may-like">
-
             <h2>Find your next favourite</h2>
 
             <div className="related-products-grid">
-
               {relatedProducts.map((item) => {
-
                 const relatedPrice =
-                  item.salePrice !== null &&
-                  item.salePrice !== undefined
+                  item.salePrice !== null && item.salePrice !== undefined
                     ? item.salePrice
                     : item.regularPrice;
 
@@ -470,43 +419,28 @@ function ProductDetails() {
                   <div
                     className="related-product-card"
                     key={item._id}
-                    onClick={() =>
-                      navigate(
-                        `/product/${item._id}`
-                      )
-                    }
+                    onClick={() => navigate(`/product/${item._id}`)}
                   >
-
                     <div className="related-image">
-
                       <img
                         src={
-                          item.images?.[0] ||
-                          "https://via.placeholder.com/300"
+                          item.images?.[0] || "https://via.placeholder.com/300"
                         }
                         alt={item.name}
                       />
-
                     </div>
 
                     <p>{item.name}</p>
 
                     <span>
-                      ₹{" "}
-                      {Number(
-                        relatedPrice || 0
-                      ).toLocaleString("en-IN")}
+                      ₹ {Number(relatedPrice || 0).toLocaleString("en-IN")}
                     </span>
-
                   </div>
                 );
               })}
-
             </div>
-
           </section>
         )}
-
       </main>
 
       <Footer />

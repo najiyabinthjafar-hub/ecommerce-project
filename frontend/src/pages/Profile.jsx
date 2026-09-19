@@ -19,7 +19,6 @@ function Profile() {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
 
-      // եթե token ഇല്ലെങ്കിൽ login page-ലേക്ക് പോകുക
       if (!token) {
         navigate("/login");
         return;
@@ -48,12 +47,10 @@ function Profile() {
           );
         }
 
-        // Backend response-ൽ user ഉണ്ടെങ്കിൽ അത് ഉപയോഗിക്കും
         const profileData = data.user || data;
 
         setUser(profileData);
 
-        // Latest user details localStorage-ലും update ചെയ്യുക
         localStorage.setItem(
           "user",
           JSON.stringify(profileData)
@@ -84,9 +81,19 @@ function Profile() {
 
       <main className="profile-page">
         <div className="profile-container">
-          <h1>MY ACCOUNT</h1>
 
-          {/* LOADING */}
+          {/* ================= PAGE HEADER ================= */}
+
+          <div className="profile-header">
+
+            <h1>My Account</h1>
+
+            <p className="profile-subtitle">
+              Manage your account and orders
+            </p>
+          </div>
+
+          {/* ================= LOADING ================= */}
 
           {loading && (
             <p className="profile-message">
@@ -94,7 +101,7 @@ function Profile() {
             </p>
           )}
 
-          {/* ERROR */}
+          {/* ================= ERROR ================= */}
 
           {error && (
             <p className="profile-error">
@@ -102,23 +109,34 @@ function Profile() {
             </p>
           )}
 
-          {/* USER INFO */}
+          {/* ================= USER INFO ================= */}
 
           {!loading && !error && (
             <>
+
               <div className="profile-user">
-                <div className="profile-avatar">
-                  👤
+
+                <div className="profile-user-details">
+                  <p className="profile-welcome">
+                    Welcome back
+                  </p>
+
+                  <h2>
+                    {user?.name || "User"}
+                  </h2>
+
+                  <p className="profile-email">
+                    {user?.email || ""}
+                  </p>
                 </div>
 
-                <div>
-                  <h2>{user?.name || "User"}</h2>
+                <span className="profile-user-arrow">
+                  →
+                </span>
 
-                  <p>{user?.email || ""}</p>
-                </div>
               </div>
 
-              {/* MENU */}
+              {/* ================= ACCOUNT MENU ================= */}
 
               <div className="profile-menu">
 
@@ -128,10 +146,25 @@ function Profile() {
                   to="/profile/personal"
                   className="profile-item"
                 >
-                  <div>
-                    <h3>Personal Information</h3>
-                    <p>Manage your account details</p>
+                  <div className="profile-item-content">
+                    <span className="profile-item-number">
+                      01
+                    </span>
+
+                    <div>
+                      <h3>
+                        Personal Information
+                      </h3>
+
+                      <p>
+                        Manage your account details
+                      </p>
+                    </div>
                   </div>
+
+                  <span className="profile-item-arrow">
+                    →
+                  </span>
                 </Link>
 
                 {/* MY ORDERS */}
@@ -140,10 +173,25 @@ function Profile() {
                   to="/orders"
                   className="profile-item"
                 >
-                  <div>
-                    <h3>My Orders</h3>
-                    <p>View your orders</p>
+                  <div className="profile-item-content">
+                    <span className="profile-item-number">
+                      02
+                    </span>
+
+                    <div>
+                      <h3>
+                        My Orders
+                      </h3>
+
+                      <p>
+                        View and track your orders
+                      </p>
+                    </div>
                   </div>
+
+                  <span className="profile-item-arrow">
+                    →
+                  </span>
                 </Link>
 
                 {/* MY WISHLIST */}
@@ -152,10 +200,25 @@ function Profile() {
                   to="/wishlist"
                   className="profile-item"
                 >
-                  <div>
-                    <h3>My Wishlist</h3>
-                    <p>View your favourite products</p>
+                  <div className="profile-item-content">
+                    <span className="profile-item-number">
+                      03
+                    </span>
+
+                    <div>
+                      <h3>
+                        My Wishlist
+                      </h3>
+
+                      <p>
+                        View your favourite products
+                      </p>
+                    </div>
                   </div>
+
+                  <span className="profile-item-arrow">
+                    →
+                  </span>
                 </Link>
 
                 {/* MY ADDRESSES */}
@@ -164,10 +227,25 @@ function Profile() {
                   to="/profile/addresses"
                   className="profile-item"
                 >
-                  <div>
-                    <h3>My Addresses</h3>
-                    <p>Manage delivery addresses</p>
+                  <div className="profile-item-content">
+                    <span className="profile-item-number">
+                      04
+                    </span>
+
+                    <div>
+                      <h3>
+                        My Addresses
+                      </h3>
+
+                      <p>
+                        Manage your delivery addresses
+                      </p>
+                    </div>
                   </div>
+
+                  <span className="profile-item-arrow">
+                    →
+                  </span>
                 </Link>
 
                 {/* CHANGE PASSWORD */}
@@ -176,24 +254,41 @@ function Profile() {
                   to="/profile/change-password"
                   className="profile-item"
                 >
-                  <div>
-                    <h3>Change Password</h3>
-                    <p>Update your password</p>
+                  <div className="profile-item-content">
+                    <span className="profile-item-number">
+                      05
+                    </span>
+
+                    <div>
+                      <h3>
+                        Change Password
+                      </h3>
+
+                      <p>
+                        Update your account password
+                      </p>
+                    </div>
                   </div>
+
+                  <span className="profile-item-arrow">
+                    →
+                  </span>
                 </Link>
 
               </div>
 
-              {/* LOGOUT */}
+              {/* ================= LOGOUT ================= */}
 
               <button
                 className="logout-btn"
                 onClick={handleLogout}
               >
-                LOGOUT
+                LOG OUT
               </button>
+
             </>
           )}
+
         </div>
       </main>
 

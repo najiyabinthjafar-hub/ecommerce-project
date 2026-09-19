@@ -1,7 +1,12 @@
+/* =========================
+   NEW ARRIVALS
+========================= */
+
 .new-arrivals {
   width: 100%;
   background: #ffffff;
   padding: 55px 0 75px;
+  box-sizing: border-box;
 }
 
 /* =========================
@@ -11,6 +16,8 @@
 .new-arrivals-heading {
   text-align: center;
   margin-bottom: 58px;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .new-arrivals-heading h2 {
@@ -37,6 +44,7 @@
   justify-content: center;
   align-items: center;
   gap: 9px;
+  flex-wrap: wrap;
 }
 
 .fashion-btn {
@@ -49,11 +57,25 @@
   font-weight: 400;
   cursor: pointer;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+  transition: 0.25s ease;
 }
 
 .fashion-btn.active {
   background: #050505;
   color: #ffffff;
+}
+
+/* =========================
+   MESSAGE
+========================= */
+
+.new-arrivals-message {
+  width: 100%;
+  text-align: center;
+  color: #777;
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  margin: 30px 0;
 }
 
 /* =========================
@@ -64,50 +86,20 @@
   width: 88%;
   max-width: 1150px;
   margin: 0 auto;
-
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: 28px;
   row-gap: 34px;
+  box-sizing: border-box;
 }
 
 /* =========================
-   VIEW MORE
-========================= */
-
-.view-more-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 52px;
-}
-
-.view-more-btn {
-  border: none;
-  border-radius: 4px;
-  background: #050505;
-  color: #ffffff;
-
-  padding: 9px 27px;
-
-  font-size: 8px;
-  font-weight: 400;
-
-  cursor: pointer;
-
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
-}
-
-.view-more-btn:hover {
-  background: #222;
-}
-
-/* =========================
-   PRODUCT CARD OVERRIDE
+   PRODUCT CARD
 ========================= */
 
 .products-grid .product-card {
   width: 100%;
+  min-width: 0;
   background: #fff;
 }
 
@@ -150,14 +142,135 @@
 }
 
 /* =========================
+   VIEW MORE
+========================= */
+
+.view-more-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 52px;
+  padding: 0 20px;
+}
+
+.view-more-btn {
+  border: none;
+  border-radius: 4px;
+  background: #050505;
+  color: #ffffff;
+  padding: 9px 27px;
+  font-size: 8px;
+  font-weight: 400;
+  cursor: pointer;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+  transition: 0.25s ease;
+}
+
+.view-more-btn:hover {
+  background: #222;
+}
+
+/* =========================
+   LARGE TABLET
+========================= */
+
+@media (max-width: 1100px) {
+
+  .products-grid {
+    width: 90%;
+    column-gap: 22px;
+  }
+
+  .products-grid .product-image-wrapper {
+    height: 225px;
+  }
+}
+
+/* =========================
    TABLET
 ========================= */
 
 @media (max-width: 900px) {
+
+  .new-arrivals {
+    padding: 50px 0 70px;
+  }
+
+  .new-arrivals-heading {
+    margin-bottom: 48px;
+  }
+
   .products-grid {
     width: 90%;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 20px;
+  }
+
+  .products-grid .product-image-wrapper {
+    height: 220px;
+  }
+
+  .products-grid .product-card h3 {
+    font-size: 8.5px;
+  }
+
+  .products-grid .product-card .category {
+    font-size: 7px;
+  }
+
+  .products-grid .product-card .price {
+    font-size: 8px;
+  }
+}
+
+/* =========================
+   SMALL TABLET
+========================= */
+
+@media (max-width: 768px) {
+
+  .new-arrivals {
+    padding: 45px 0 65px;
+  }
+
+  .new-arrivals-heading {
+    margin-bottom: 42px;
+  }
+
+  .new-arrivals-heading h2 {
+    font-size: 21px;
+  }
+
+  .new-arrivals-description {
+    font-size: 8px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .products-grid {
+    width: 92%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 25px 16px;
+  }
+
+  .products-grid .product-image-wrapper {
+    height: 220px;
+  }
+
+  .products-grid .product-card h3 {
+    font-size: 9px;
+  }
+
+  .products-grid .product-card .category {
+    font-size: 7px;
+  }
+
+  .products-grid .product-card .price {
+    font-size: 8px;
+  }
+
+  .view-more-wrapper {
+    margin-top: 45px;
   }
 }
 
@@ -166,29 +279,126 @@
 ========================= */
 
 @media (max-width: 600px) {
+
   .new-arrivals {
-    padding: 45px 0 60px;
+    padding: 42px 0 60px;
   }
 
   .new-arrivals-heading {
-    margin-bottom: 40px;
+    margin-bottom: 38px;
+    padding: 0 15px;
   }
 
   .new-arrivals-heading h2 {
     font-size: 20px;
   }
 
+  .new-arrivals-description {
+    margin-top: 9px;
+    margin-bottom: 18px;
+    font-size: 7.5px;
+    line-height: 1.7;
+  }
+
+  .new-arrivals-description br {
+    display: none;
+  }
+
+  .fashion-buttons {
+    gap: 7px;
+  }
+
+  .fashion-btn {
+    padding: 7px 14px;
+    font-size: 7.5px;
+  }
+
   .products-grid {
-    width: 90%;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px 12px;
+    width: 92%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 24px;
   }
 
   .products-grid .product-image-wrapper {
     height: 190px;
   }
 
+  .products-grid .product-card h3 {
+    margin-top: 8px;
+    font-size: 8px;
+  }
+
+  .products-grid .product-card .category {
+    font-size: 6.5px;
+  }
+
+  .products-grid .product-card .price {
+    font-size: 7.5px;
+    margin-top: 3px;
+  }
+
   .view-more-wrapper {
     margin-top: 40px;
+  }
+
+  .view-more-btn {
+    padding: 9px 24px;
+    font-size: 8px;
+  }
+}
+
+/* =========================
+   VERY SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+
+  .new-arrivals {
+    padding-top: 38px;
+    padding-bottom: 55px;
+  }
+
+  .new-arrivals-heading {
+    margin-bottom: 34px;
+  }
+
+  .new-arrivals-heading h2 {
+    font-size: 19px;
+  }
+
+  .new-arrivals-description {
+    font-size: 7px;
+  }
+
+  .fashion-btn {
+    padding: 6px 12px;
+    font-size: 7px;
+  }
+
+  .products-grid {
+    width: 94%;
+    column-gap: 10px;
+    row-gap: 22px;
+  }
+
+  .products-grid .product-image-wrapper {
+    height: 165px;
+  }
+
+  .products-grid .product-card h3 {
+    font-size: 7.5px;
+  }
+
+  .products-grid .product-card .category {
+    font-size: 6px;
+  }
+
+  .products-grid .product-card .price {
+    font-size: 7px;
+  }
+
+  .view-more-wrapper {
+    margin-top: 35px;
   }
 }

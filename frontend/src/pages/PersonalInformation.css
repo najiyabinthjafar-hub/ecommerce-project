@@ -1,7 +1,9 @@
+
 .personal-page {
   min-height: 70vh;
   padding: 60px 20px;
   background: #f8f8f8;
+  box-sizing: border-box;
 }
 
 .personal-container {
@@ -13,14 +15,21 @@
 .personal-container h1 {
   text-align: center;
   font-size: 28px;
+  font-weight: 500;
   letter-spacing: 2px;
-  margin-bottom: 35px;
+  margin: 0 0 35px;
 }
 
+/* =========================
+   FORM
+========================= */
+
 .personal-form {
-  background: #ffffff;
+  width: 100%;
+  background: #fff;
   padding: 35px;
   border: 1px solid #e5e5e5;
+  box-sizing: border-box;
 }
 
 .personal-field {
@@ -30,25 +39,34 @@
 .personal-field label {
   display: block;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
 .personal-field input {
   width: 100%;
-  padding: 13px 15px;
-
+  height: 48px;
+  padding: 0 15px;
   border: 1px solid #dcdcdc;
   outline: none;
-
-  font-size: 15px;
+  font-size: 13px;
+  background: #fff;
   box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
 .personal-field input:focus {
-  border-color: #000;
+  border-color: #111;
 }
+
+.personal-field input::placeholder {
+  color: #aaa;
+}
+
+/* =========================
+   BUTTONS
+========================= */
 
 .personal-buttons {
   display: flex;
@@ -59,49 +77,186 @@
 .cancel-btn,
 .save-profile-btn {
   flex: 1;
-  padding: 14px;
-
-  font-size: 13px;
+  height: 45px;
+  padding: 0 15px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
-
+  letter-spacing: 1.5px;
   cursor: pointer;
+  transition: all 0.25s ease;
 }
 
 .cancel-btn {
-  background: white;
-  color: black;
-  border: 1px solid black;
+  background: #fff;
+  color: #111;
+  border: 1px solid #111;
 }
 
 .save-profile-btn {
-  background: black;
-  color: white;
-  border: 1px solid black;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
 }
 
 .cancel-btn:hover {
-  background: #f2f2f2;
+  background: #111;
+  color: #fff;
 }
 
 .save-profile-btn:hover {
-  opacity: 0.8;
+  background: #333;
 }
+
+.cancel-btn:disabled,
+.save-profile-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================
+   MESSAGES
+========================= */
+
+.profile-message,
+.phone-error,
+.profile-success {
+  text-align: center;
+  font-size: 12px;
+  margin: 0 auto 18px;
+  padding: 11px 15px;
+  box-sizing: border-box;
+}
+
+.profile-message {
+  color: #777;
+}
+
+.phone-error {
+  color: #d32f2f;
+  background: #fff3f3;
+  border: 1px solid #f0cccc;
+}
+
+.profile-success {
+  color: #2e7d32;
+  background: #f1f8f3;
+  border: 1px solid #cfe5d3;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .personal-page {
+    padding: 50px 25px;
+  }
+
+  .personal-container {
+    max-width: 580px;
+  }
+
+  .personal-container h1 {
+    font-size: 26px;
+    margin-bottom: 30px;
+  }
+
+  .personal-form {
+    padding: 32px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 600px) {
   .personal-page {
-    padding: 40px 15px;
+    min-height: 70vh;
+    padding: 40px 20px 50px;
+  }
+
+  .personal-container {
+    max-width: 500px;
+  }
+
+  .personal-container h1 {
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    margin-bottom: 25px;
   }
 
   .personal-form {
     padding: 25px 20px;
   }
 
-  .personal-container h1 {
-    font-size: 23px;
+  .personal-field {
+    margin-bottom: 19px;
+  }
+
+  .personal-field label {
+    font-size: 9px;
+    margin-bottom: 7px;
+  }
+
+  .personal-field input {
+    height: 45px;
+    padding: 0 12px;
+    font-size: 12px;
   }
 
   .personal-buttons {
     flex-direction: column;
+    gap: 10px;
+    margin-top: 25px;
+  }
+
+  .cancel-btn,
+  .save-profile-btn {
+    width: 100%;
+    flex: none;
+    height: 43px;
+    font-size: 9px;
   }
 }
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+  .personal-page {
+    padding: 35px 15px 45px;
+  }
+
+  .personal-container h1 {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+
+  .personal-form {
+    padding: 22px 17px;
+  }
+
+  .personal-field input {
+    height: 43px;
+    font-size: 11px;
+  }
+
+  .personal-buttons {
+    margin-top: 22px;
+  }
+
+  .cancel-btn,
+  .save-profile-btn {
+    height: 41px;
+    font-size: 8px;
+  }
+
+  .profile-message,
+  .phone-error,
+  .profile-success {
+    font-size: 11px;
+  }
+}
+
