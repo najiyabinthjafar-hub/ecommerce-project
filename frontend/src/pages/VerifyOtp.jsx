@@ -11,16 +11,27 @@ function VerifyOtp() {
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // 1 minute = 60 seconds
   const [timeLeft, setTimeLeft] = useState(60);
 
   const email = localStorage.getItem("registerEmail");
 
-  // ================= COUNTDOWN TIMER =================
+  // ================= TOAST AUTO HIDE =================
+  useEffect(() => {
+    if (!message && !error) return;
 
+    const timer = setTimeout(() => {
+      setMessage("");
+      setError("");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [message, error]);
+
+  // ================= COUNTDOWN TIMER =================
   useEffect(() => {
     if (timeLeft <= 0) return;
 
@@ -32,9 +43,9 @@ function VerifyOtp() {
   }, [timeLeft]);
 
   // ================= FORMAT TIME =================
-
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
+
     const remainingSeconds = seconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(
@@ -43,7 +54,6 @@ function VerifyOtp() {
   };
 
   // ================= VERIFY OTP =================
-
   const handleVerifyOtp = async (event) => {
     event.preventDefault();
 
@@ -93,12 +103,11 @@ function VerifyOtp() {
       }
 
       // ================= SAVE LOGIN TOKEN =================
-
       if (data.token) {
         localStorage.setItem("token", data.token);
       }
 
-      // Save user details
+      // ================= SAVE USER DETAILS =================
       if (data.user) {
         localStorage.setItem(
           "user",
@@ -113,14 +122,15 @@ function VerifyOtp() {
         }
       }
 
-      setMessage(data.message);
+      // ================= SUCCESS TOAST =================
+      setMessage(
+        data.message || "Email verified successfully!"
+      );
 
       // Remove registration email
       localStorage.removeItem("registerEmail");
 
       // ================= GO TO HOME =================
-      // Replace OTP page in browser history
-
       setTimeout(() => {
         navigate("/", { replace: true });
       }, 1500);
@@ -134,7 +144,6 @@ function VerifyOtp() {
   };
 
   // ================= RESEND OTP =================
-
   const handleResendOtp = async () => {
     setError("");
     setMessage("");
@@ -170,9 +179,12 @@ function VerifyOtp() {
         );
       }
 
-      setMessage(data.message);
+      // ================= SUCCESS TOAST =================
+      setMessage(
+        data.message || "New OTP sent successfully"
+      );
 
-      // Restart timer to 1 minute
+      // Restart timer
       setTimeLeft(60);
 
       // Clear old OTP
@@ -190,22 +202,57 @@ function VerifyOtp() {
     <>
       <Navbar />
 
+      {/* ================= TOAST ================= */}
+
+      {message && (
+        <div className="verify-toast verify-toast-success">
+          <span className="verify-toast-icon">✓</span>
+
+          <span>{message}</span>
+
+          <button
+            type="button"
+            onClick={() => setMessage("")}
+            aria-label="Close notification"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="verify-toast verify-toast-error">
+          <span className="verify-toast-icon">!</span>
+
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Close notification"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <main className="verify-otp-page">
         <section className="verify-otp-container">
 
-          {/* HEADER */}
+          {/* ================= HEADER ================= */}
 
           <div className="verify-otp-header">
             <p>EMAIL VERIFICATION</p>
 
-            <h1>VERIFY OTP</h1>
+            <h1>Verify OTP</h1>
 
             <span>
-              We have sent a verification code to your email address.
+              Enter the verification code sent to your email
+              address.
             </span>
           </div>
 
-          {/* EMAIL */}
+          {/* ================= EMAIL ================= */}
 
           {email && (
             <p className="otp-email">
@@ -213,12 +260,12 @@ function VerifyOtp() {
             </p>
           )}
 
-          {/* TIMER */}
+          {/* ================= TIMER ================= */}
 
           <div className="otp-timer">
             {timeLeft > 0 ? (
               <>
-                OTP expires in:{" "}
+                OTP expires in{" "}
                 <strong>
                   {formatTime(timeLeft)}
                 </strong>
@@ -228,47 +275,33 @@ function VerifyOtp() {
             )}
           </div>
 
-          {/* SUCCESS MESSAGE */}
-
-          {message && (
-            <p className="otp-success-message">
-              {message}
-            </p>
-          )}
-
-          {/* ERROR MESSAGE */}
-
-          {error && (
-            <p className="otp-error-message">
-              {error}
-            </p>
-          )}
-
-          {/* OTP FORM */}
+          {/* ================= OTP FORM ================= */}
 
           <form
             className="verify-otp-form"
             onSubmit={handleVerifyOtp}
           >
-
             <div className="verify-otp-field">
-
               <label htmlFor="otp">
                 ENTER OTP
               </label>
 
               <input
                 id="otp"
+                name="otp"
                 type="text"
+                inputMode="numeric"
+                maxLength="6"
                 placeholder="Enter OTP"
                 value={otp}
                 onChange={(e) =>
-                  setOtp(e.target.value)
+                  setOtp(
+                    e.target.value.replace(/\D/g, "")
+                  )
                 }
                 disabled={timeLeft <= 0}
                 required
               />
-
             </div>
 
             <button
@@ -284,13 +317,11 @@ function VerifyOtp() {
                 ? "OTP EXPIRED"
                 : "VERIFY OTP"}
             </button>
-
           </form>
 
-          {/* RESEND OTP */}
+          {/* ================= RESEND OTP ================= */}
 
           <div className="resend-otp">
-
             <span>
               Didn't receive the OTP?
             </span>
@@ -304,17 +335,15 @@ function VerifyOtp() {
                 ? "SENDING..."
                 : "RESEND OTP"}
             </button>
-
           </div>
 
-          {/* BACK TO LOGIN */}
+          {/* ================= BACK TO LOGIN ================= */}
 
           <div className="back-login">
             <Link to="/login">
               BACK TO LOGIN
             </Link>
           </div>
-
         </section>
       </main>
 

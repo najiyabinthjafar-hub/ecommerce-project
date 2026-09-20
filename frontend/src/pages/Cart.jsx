@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -10,182 +9,199 @@ import "./Cart.css";
 const API_URL = "http://localhost:5000/api";
 
 function Cart() {
-  const navigate = useNavigate();
-
-  const [cartItems, setCartItems] = useState([]);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [updatingItem, setUpdatingItem] = useState(null);
+  const [message, setMessage] = useState("");
 
-  const getToken = () => {
-    return localStorage.getItem("token");
-  };
+  const token = localStorage.getItem("token");
 
-  const getAuthConfig = () => {
-    return {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    };
-  };
-
-  // ================= FETCH CART =================
+  // =========================
+  // FETCH CART
+  // =========================
 
   const fetchCart = async () => {
-    const token = getToken();
-
-    if (!token) {
-      setCartItems([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
-      setError("");
 
-      const response = await axios.get(`${API_URL}/cart`, getAuthConfig());
+      const response = await fetch(`${API_URL}/cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setCartItems(response.data.cart?.items || []);
+      if (!response.ok) {
+        throw new Error("Failed to fetch cart");
+      }
+
+      const data = await response.json();
+
+      console.log("CART API RESPONSE:", data);
+
+      // Backend response:
+      // {
+      //   success: true,
+      //   cart: {
+      //     user: "...",
+      //     items: [...]
+      //   }
+      // }
+
+      setCart(
+        data.cart || {
+          items: [],
+        }
+      );
     } catch (error) {
-      console.error("GET CART ERROR:", error);
+      console.error("Cart error:", error);
 
-      setError(error.response?.data?.message || "Failed to fetch cart");
-
-      setCartItems([]);
+      setCart({
+        items: [],
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================
+  // LOAD CART
+  // =========================
+
   useEffect(() => {
-    fetchCart();
-  }, []);
-
-  // ================= UPDATE QUANTITY =================
-
-  const updateQuantity = async (productId, newQuantity) => {
-    const token = getToken();
-
-    if (!token) {
-      navigate("/login");
-      return;
+    if (token) {
+      fetchCart();
+    } else {
+      setLoading(false);
     }
+  }, [token]);
 
-    if (newQuantity < 1) {
-      await removeItem(productId);
-      return;
-    }
+  // =========================
+  // PRODUCT PRICE
+  // =========================
 
-    try {
-      setUpdatingItem(productId);
+  const getProductPrice = (item) => {
+    const product = item.product || item;
 
-      await axios.put(
-        `${API_URL}/cart/update/${productId}`,
-        {
-          quantity: newQuantity,
-        },
-        getAuthConfig(),
-      );
-
-      await fetchCart();
-    } catch (error) {
-      console.error("UPDATE CART ERROR:", error);
-
-      alert(error.response?.data?.message || "Failed to update cart");
-    } finally {
-      setUpdatingItem(null);
-    }
-  };
-
-  // ================= INCREASE =================
-
-  const increaseQuantity = (item) => {
-    const productId = item.product?._id || item.product?.id || item.product;
-
-    updateQuantity(productId, item.quantity + 1);
-  };
-
-  // ================= DECREASE =================
-
-  const decreaseQuantity = (item) => {
-    const productId = item.product?._id || item.product?.id || item.product;
-
-    updateQuantity(productId, item.quantity - 1);
-  };
-
-  // ================= REMOVE ITEM =================
-
-  const removeItem = async (productId) => {
-    const token = getToken();
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      setUpdatingItem(productId);
-
-      await axios.delete(
-        `${API_URL}/cart/remove/${productId}`,
-        getAuthConfig(),
-      );
-
-      await fetchCart();
-    } catch (error) {
-      console.error("REMOVE CART ERROR:", error);
-
-      alert(error.response?.data?.message || "Failed to remove product");
-    } finally {
-      setUpdatingItem(null);
-    }
-  };
-
-  // ================= PRODUCT DATA =================
-
-  const getProductData = (item) => {
-    const product = typeof item.product === "object" ? item.product : {};
-
-    const productId = product._id || product.id || item.product;
-
-    const productName = product.name || "Product";
-
-    const productPrice =
+    return (
       product.salePrice ??
       product.regularPrice ??
       product.price ??
       item.price ??
-      0;
-
-    const productImage =
-      product.image || product.images?.[0] || item.image || "/placeholder.png";
-
-    return {
-      productId,
-      productName,
-      productPrice: Number(productPrice),
-      productImage,
-    };
+      0
+    );
   };
 
-  // ================= SUBTOTAL =================
+  // =========================
+  // PRODUCT IMAGE
+  // =========================
 
-  const subtotal = cartItems.reduce((total, item) => {
-    const { productPrice } = getProductData(item);
+  const getProductImage = (item) => {
+    const product = item.product || item;
 
-    return total + productPrice * item.quantity;
-  }, 0);
+    if (product.images && product.images.length > 0) {
+      return product.images[0].startsWith("http")
+        ? product.images[0]
+        : `http://localhost:5000${product.images[0]}`;
+    }
 
-  // ================= DELIVERY =================
+    return "/images/no-image.png";
+  };
 
-  const delivery = subtotal === 0 ? 0 : subtotal >= 999 ? 0 : 99;
+  // =========================
+  // PRODUCT NAME
+  // =========================
 
-  const total = subtotal + delivery;
+  const getProductName = (item) => {
+    const product = item.product || item;
 
-  // ================= LOGIN CHECK =================
+    return product.name || "Product";
+  };
 
-  if (!getToken()) {
+  // =========================
+  // QUANTITY
+  // =========================
+
+  const getQuantity = (item) => {
+    return item.quantity || 1;
+  };
+
+  // =========================
+  // UPDATE QUANTITY
+  // =========================
+
+  const updateQuantity = async (productId, quantity) => {
+    if (quantity < 1) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/cart/update/${productId}`,
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            quantity,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update quantity");
+      }
+
+      fetchCart();
+    } catch (error) {
+      console.error(
+        "Update quantity error:",
+        error
+      );
+    }
+  };
+
+  // =========================
+  // REMOVE ITEM
+  // =========================
+
+  const removeItem = async (productId) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/cart/remove/${productId}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove item");
+      }
+
+      setMessage("Item removed from cart");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
+
+      fetchCart();
+    } catch (error) {
+      console.error(
+        "Remove item error:",
+        error
+      );
+    }
+  };
+
+  // =========================
+  // NOT LOGGED IN
+  // =========================
+
+  if (!token) {
     return (
       <>
         <Navbar />
@@ -194,9 +210,14 @@ function Cart() {
           <div className="empty-cart">
             <h2>Please Login</h2>
 
-            <p>Login to view and manage your cart.</p>
+            <p>
+              Please login to your account to view your cart items.
+            </p>
 
-            <Link to="/login" className="continue-shopping">
+            <Link
+              to="/login"
+              className="continue-shopping"
+            >
               LOGIN
             </Link>
           </div>
@@ -207,7 +228,9 @@ function Cart() {
     );
   }
 
-  // ================= LOADING =================
+  // =========================
+  // LOADING
+  // =========================
 
   if (loading) {
     return (
@@ -215,8 +238,8 @@ function Cart() {
         <Navbar />
 
         <main className="cart-page">
-          <div className="cart-wrapper">
-            <p className="no-products">Loading cart...</p>
+          <div className="cart-loading">
+            Loading your cart...
           </div>
         </main>
 
@@ -225,164 +248,305 @@ function Cart() {
     );
   }
 
+  // =========================
+  // CART ITEMS
+  // =========================
+
+  const items = cart?.items || [];
+
+  // =========================
+  // EMPTY CART
+  // =========================
+
+  if (items.length === 0) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="cart-page">
+          <div className="empty-cart">
+            <h2>Your Cart is Empty</h2>
+
+            <p>
+              Looks like you haven't added anything to your cart yet.
+            </p>
+
+            <Link
+              to="/shop"
+              className="continue-shopping"
+            >
+              CONTINUE SHOPPING
+            </Link>
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================
+  // TOTALS
+  // =========================
+
+  const subtotal = items.reduce(
+    (total, item) => {
+      const price = getProductPrice(item);
+      const quantity = getQuantity(item);
+
+      return total + price * quantity;
+    },
+    0
+  );
+
+  const delivery =
+    subtotal === 0 || subtotal >= 999
+      ? 0
+      : 99;
+
+  const total = subtotal + delivery;
+
+  // =========================
+  // MAIN CART
+  // =========================
+
   return (
     <>
       <Navbar />
 
       <main className="cart-page">
         <div className="cart-wrapper">
+
           {/* CART TOP */}
 
           <div className="cart-top">
-            <h1>Your cart</h1>
+            <h1>Your Cart</h1>
 
-            <Link to="/shop" className="continue-shopping">
-              Continue shopping
-            </Link>
+            {message && (
+              <div className="cart-message">
+                {message}
+              </div>
+            )}
           </div>
 
-          {/* ERROR */}
+          {/* CART HEADER */}
 
-          {error && <p className="no-products">{error}</p>}
+          <div className="cart-header">
+            <span>PRODUCT</span>
+            <span>QUANTITY</span>
+            <span>TOTAL</span>
+          </div>
 
-          {/* EMPTY CART */}
+          {/* CART ITEMS */}
 
-          {!error && cartItems.length === 0 ? (
-            <div className="empty-cart">
-              <h2>Your cart is empty</h2>
+          <div className="cart-items">
 
-              <p>Looks like you haven't added anything yet.</p>
+            {items.map((item) => {
+              const product =
+                item.product || item;
+
+              const productId =
+                product._id ||
+                product.id ||
+                item.productId;
+
+              const price =
+                getProductPrice(item);
+
+              const quantity =
+                getQuantity(item);
+
+              const itemTotal =
+                price * quantity;
+
+              return (
+                <div
+                  className="cart-item"
+                  key={productId}
+                >
+
+                  {/* PRODUCT */}
+
+                  <div className="cart-product">
+
+                    <img
+                      src={getProductImage(item)}
+                      alt={getProductName(item)}
+                    />
+
+                    <div className="cart-product-info">
+
+                      <h3>
+                        {getProductName(item)}
+                      </h3>
+
+                      <p>
+                        ₹
+                        {Number(
+                          price
+                        ).toLocaleString("en-IN")}
+                      </p>
+
+                      {item.size && (
+                        <span>
+                          Size: {item.size}
+                        </span>
+                      )}
+
+                    </div>
+                  </div>
+
+                  {/* QUANTITY */}
+
+                  <div className="cart-quantity">
+
+                    <button
+                      onClick={() =>
+                        updateQuantity(
+                          productId,
+                          quantity - 1
+                        )
+                      }
+                      disabled={
+                        quantity <= 1
+                      }
+                    >
+                      −
+                    </button>
+
+                    <span>
+                      {quantity}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        updateQuantity(
+                          productId,
+                          quantity + 1
+                        )
+                      }
+                    >
+                      +
+                    </button>
+
+                  </div>
+
+                  {/* TOTAL */}
+
+                  <div className="cart-item-total">
+
+                    <span>
+                      ₹
+                      {Number(
+                        itemTotal
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </span>
+
+                    <button
+                      className="remove-btn"
+                      onClick={() =>
+                        removeItem(
+                          productId
+                        )
+                      }
+                    >
+                      REMOVE
+                    </button>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+
+          {/* BOTTOM */}
+
+          <div className="cart-bottom">
+
+            {/* ORDER SUMMARY */}
+
+            <div className="cart-summary">
+
+              <h2>
+                ORDER SUMMARY
+              </h2>
+
+              <div className="summary-row">
+
+                <span>
+                  Subtotal
+                </span>
+
+                <span>
+                  ₹
+                  {Number(
+                    subtotal
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+
+              </div>
+
+              <div className="summary-row">
+
+                <span>
+                  Delivery
+                </span>
+
+                <span>
+                  {delivery === 0
+                    ? "FREE"
+                    : `₹${delivery}`}
+                </span>
+
+              </div>
+
+              <div className="summary-total">
+
+                <span>
+                  Total
+                </span>
+
+                <span>
+                  ₹
+                  {Number(
+                    total
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+
+              </div>
+
+              <p className="delivery-note">
+                Free delivery on orders above ₹999
+              </p>
+
+              <Link
+                to="/checkout"
+                className="checkout-btn"
+              >
+                PROCEED TO CHECKOUT
+              </Link>
+
             </div>
-          ) : (
-            !error && (
-              <>
-                {/* TABLE HEADER */}
 
-                <div className="cart-header">
-                  <span>PRODUCT</span>
-                  <span>QUANTITY</span>
-                  <span>TOTAL</span>
-                </div>
+            {/* CONTINUE SHOPPING */}
 
-                {/* PRODUCTS */}
+            <Link
+              to="/shop"
+              className="cart-continue-btn"
+            >
+              CONTINUE SHOPPING
+            </Link>
 
-                <div className="cart-products">
-                  {cartItems.map((item) => {
-                    const {
-                      productId,
-                      productName,
-                      productPrice,
-                      productImage,
-                    } = getProductData(item);
+          </div>
 
-                    const itemTotal = productPrice * item.quantity;
-
-                    const isUpdating = updatingItem === productId;
-
-                    return (
-                      <div className="cart-item" key={productId}>
-                        {/* PRODUCT */}
-
-                        <div className="cart-product">
-                          <div className="cart-product-image">
-                            <Link to={`/product/${productId}`}>
-                              <img src={productImage} alt={productName} />
-                            </Link>
-                          </div>
-
-                          <div className="cart-product-info">
-                            <h3>{productName}</h3>
-
-                            <p>₹{productPrice.toLocaleString("en-IN")}</p>
-
-                            {item.size && <p>Size: {item.size}</p>}
-                          </div>
-                        </div>
-
-                        {/* QUANTITY */}
-
-                        <div className="cart-quantity-area">
-                          <div className="cart-quantity">
-                            <button
-                              type="button"
-                              onClick={() => decreaseQuantity(item)}
-                              disabled={isUpdating}
-                            >
-                              −
-                            </button>
-
-                            <span>{item.quantity}</span>
-
-                            <button
-                              type="button"
-                              onClick={() => increaseQuantity(item)}
-                              disabled={isUpdating}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <button
-                            className="remove-btn"
-                            type="button"
-                            onClick={() => removeItem(productId)}
-                            disabled={isUpdating}
-                            aria-label="Remove product"
-                            title="Remove"
-                          >
-                            🗑
-                          </button>
-                        </div>
-
-                        {/* TOTAL */}
-
-                        <p className="cart-total">
-                          ₹{itemTotal.toLocaleString("en-IN")}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* BOTTOM */}
-
-                <div className="cart-bottom">
-                  <aside className="cart-summary">
-                    <h2>ORDER SUMMARY</h2>
-
-                    <div className="summary-row">
-                      <span>SUBTOTAL</span>
-
-                      <span>₹{subtotal.toLocaleString("en-IN")}</span>
-                    </div>
-
-                    <div className="summary-row">
-                      <span>DELIVERY</span>
-
-                      <span>{delivery === 0 ? "FREE" : `₹${delivery}`}</span>
-                    </div>
-
-                    <div className="summary-divider"></div>
-
-                    <div className="summary-total">
-                      <span>TOTAL</span>
-
-                      <strong>₹{total.toLocaleString("en-IN")}</strong>
-                    </div>
-
-                    <p className="summary-note">
-                      Taxes included. Discounts and shipping calculated at
-                      checkout.
-                    </p>
-
-                    <Link to="/checkout" className="checkout-btn">
-                      PROCEED TO CHECKOUT
-                    </Link>
-                  </aside>
-                </div>
-              </>
-            )
-          )}
         </div>
       </main>
 

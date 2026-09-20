@@ -11,8 +11,7 @@ function Shop() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const searchQuery =
-    searchParams.get("search")?.toLowerCase().trim() || "";
+  const searchQuery = searchParams.get("search")?.trim() || "";
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,8 +24,15 @@ function Shop() {
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
-
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: 8,
+    totalProducts: 0,
+    totalPages: 0,
+  });
+
   const productsPerPage = 8;
 
   const getToken = () => localStorage.getItem("token");
@@ -37,32 +43,111 @@ function Shop() {
     },
   });
 
+  // =========================
+  // FETCH PRODUCTS
+  // =========================
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError("");
 
+        const params = {
+          page: currentPage,
+          limit: productsPerPage,
+        };
+
+        // SEARCH
+        if (searchQuery) {
+          params.search = searchQuery;
+        }
+
+        // AVAILABILITY
+        // "all" means no availability filter
+        if (availability !== "all") {
+          params.availability = availability;
+        }
+
+        // SORTING
+        // Price sorting gets priority over NEWEST / FEATURED
+        if (priceOrder === "low-high") {
+          params.sort = "price-low";
+        } else if (priceOrder === "high-low") {
+          params.sort = "price-high";
+        } else {
+          params.sort = sortBy;
+        }
+
+        console.log("SHOP API PARAMS:", params);
+
         const response = await axios.get(
-          `${API_URL}/products?limit=8`
+          `${API_URL}/products`,
+          { params }
         );
 
+        console.log("SHOP API RESPONSE:", response.data);
+
         setProducts(response.data.products || []);
+
+        setPagination(
+          response.data.pagination || {
+            currentPage: currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          }
+        );
       } catch (error) {
-        console.error("PRODUCT API ERROR:", error);
+        console.error(
+          "SHOP PRODUCT API ERROR:",
+          error.response?.data || error.message
+        );
 
         setError(
           error.response?.data?.message ||
             error.message ||
             "Failed to fetch products"
         );
+
+        setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [
+    searchQuery,
+    availability,
+    priceOrder,
+    sortBy,
+    currentPage,
+  ]);
+
+  // =========================
+  // FIX PAGE IF TOTAL PAGES CHANGE
+  // =========================
+
+  useEffect(() => {
+    if (
+      pagination.totalPages > 0 &&
+      currentPage > pagination.totalPages
+    ) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [pagination.totalPages, currentPage]);
+
+  // =========================
+  // FETCH WISHLIST
+  // =========================
 
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -82,7 +167,10 @@ function Shop() {
           getAuthConfig()
         );
 
-        console.log("SHOP WISHLIST RESPONSE:", response.data);
+        console.log(
+          "SHOP WISHLIST RESPONSE:",
+          response.data
+        );
 
         const wishlistProducts =
           response.data.wishlist?.products || [];
@@ -107,6 +195,10 @@ function Shop() {
     fetchWishlist();
   }, []);
 
+  // =========================
+  // WISHLIST
+  // =========================
+
   const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
@@ -119,37 +211,58 @@ function Shop() {
       return;
     }
 
-    const productId = String(product._id || product.id);
-    const isWishlisted = wishlistIds.includes(productId);
+    const productId = String(
+      product._id || product.id
+    );
+
+    const isWishlisted =
+      wishlistIds.includes(productId);
 
     try {
       setUpdatingWishlist(productId);
 
       if (isWishlisted) {
-        console.log("REMOVING FROM WISHLIST:", productId);
+        console.log(
+          "REMOVING FROM WISHLIST:",
+          productId
+        );
 
         const response = await axios.delete(
           `${API_URL}/wishlist/remove/${productId}`,
           getAuthConfig()
         );
 
-        console.log("REMOVE WISHLIST RESPONSE:", response.data);
+        console.log(
+          "REMOVE WISHLIST RESPONSE:",
+          response.data
+        );
 
         setWishlistIds((prev) =>
           prev.filter((id) => id !== productId)
         );
       } else {
-        console.log("ADDING TO WISHLIST:", productId);
+        console.log(
+          "ADDING TO WISHLIST:",
+          productId
+        );
 
         const response = await axios.post(
           `${API_URL}/wishlist/add`,
-          { productId: productId },
+          {
+            productId: productId,
+          },
           getAuthConfig()
         );
 
-        console.log("ADD WISHLIST RESPONSE:", response.data);
+        console.log(
+          "ADD WISHLIST RESPONSE:",
+          response.data
+        );
 
-        setWishlistIds((prev) => [...prev, productId]);
+        setWishlistIds((prev) => [
+          ...prev,
+          productId,
+        ]);
       }
     } catch (error) {
       console.error(
@@ -166,99 +279,9 @@ function Shop() {
     }
   };
 
-  let filteredProducts = [...products];
-
-  if (searchQuery) {
-    filteredProducts = filteredProducts.filter((product) => {
-      const productName =
-        product.name?.toLowerCase() || "";
-
-      const categoryName =
-        product.category?.name?.toLowerCase() || "";
-
-      const description =
-        product.description?.toLowerCase() || "";
-
-      return (
-        productName.includes(searchQuery) ||
-        categoryName.includes(searchQuery) ||
-        description.includes(searchQuery)
-      );
-    });
-  }
-
-  if (availability === "available") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.stock > 0
-    );
-  } else if (availability === "soldout") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.stock === 0
-    );
-  }
-
-  if (priceOrder === "low-high") {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice || a.price || 0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice || b.price || 0;
-
-      return priceA - priceB;
-    });
-  } else if (priceOrder === "high-low") {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice || a.price || 0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice || b.price || 0;
-
-      return priceB - priceA;
-    });
-  } else if (sortBy === "newest") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-    );
-  } else if (sortBy === "featured") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(a.createdAt || 0) -
-        new Date(b.createdAt || 0)
-    );
-  }
-
-  const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
-  );
-
-  const safeCurrentPage =
-    currentPage > totalPages && totalPages > 0
-      ? totalPages
-      : currentPage;
-
-  const startIndex =
-    (safeCurrentPage - 1) * productsPerPage;
-
-  const currentProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + productsPerPage
-  );
+  // =========================
+  // FILTER HANDLERS
+  // =========================
 
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
@@ -276,8 +299,19 @@ function Shop() {
     setCurrentPage(1);
   };
 
-  // Pagination click cheyyumbol page topilekku pokum
+  // =========================
+  // PAGINATION
+  // =========================
+
   const handlePageChange = (page) => {
+    if (
+      page < 1 ||
+      page > pagination.totalPages ||
+      page === currentPage
+    ) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -292,6 +326,10 @@ function Shop() {
 
       <main className="shop-page">
 
+        {/* =========================
+            HEADING
+        ========================= */}
+
         <section className="shop-heading">
           <h1>SHOP</h1>
 
@@ -303,10 +341,13 @@ function Shop() {
           )}
         </section>
 
+        {/* =========================
+            FILTER BAR
+        ========================= */}
+
         <section className="shop-filter-bar">
 
           <div className="filter-left">
-
             <span className="filter-title">
               FILTER
             </span>
@@ -323,12 +364,12 @@ function Shop() {
                 AVAILABILITY
               </option>
 
-              <option value="available">
-                AVAILABLE
+              <option value="in-stock">
+                IN STOCK
               </option>
 
-              <option value="soldout">
-                SOLD OUT
+              <option value="out-of-stock">
+                OUT OF STOCK
               </option>
             </select>
 
@@ -352,13 +393,11 @@ function Shop() {
                 HIGH TO LOW
               </option>
             </select>
-
           </div>
 
           <div className="filter-right">
 
             <div className="sort-by">
-
               <span>SORT BY:</span>
 
               <select
@@ -377,16 +416,18 @@ function Shop() {
                   FEATURED
                 </option>
               </select>
-
             </div>
 
             <span className="product-count">
-              {filteredProducts.length} PRODUCTS
+              {products.length} PRODUCTS
             </span>
 
           </div>
-
         </section>
+
+        {/* =========================
+            LOADING
+        ========================= */}
 
         {loading && (
           <p className="no-products">
@@ -394,18 +435,25 @@ function Shop() {
           </p>
         )}
 
+        {/* =========================
+            ERROR
+        ========================= */}
+
         {!loading && error && (
           <p className="no-products">
             Error: {error}
           </p>
         )}
 
+        {/* =========================
+            PRODUCTS
+        ========================= */}
+
         {!loading && !error && (
           <section className="shop-products">
 
-            {currentProducts.length > 0 ? (
-
-              currentProducts.map((product) => {
+            {products.length > 0 ? (
+              products.map((product) => {
 
                 const productId =
                   product._id || product.id;
@@ -441,6 +489,8 @@ function Shop() {
 
                     <div className="shop-product-image">
 
+                      {/* WISHLIST */}
+
                       <button
                         type="button"
                         className={`shop-wishlist-btn ${
@@ -465,6 +515,8 @@ function Shop() {
                           : "♡"}
                       </button>
 
+                      {/* SOLD OUT */}
+
                       {product.stock === 0 && (
                         <span className="sold-out">
                           SOLD OUT
@@ -480,9 +532,7 @@ function Shop() {
 
                     <div className="shop-product-info">
 
-                      <h3>
-                        {product.name}
-                      </h3>
+                      <h3>{product.name}</h3>
 
                       <p>
                         ₹
@@ -498,49 +548,46 @@ function Shop() {
                   </Link>
                 );
               })
-
             ) : (
-
               <p className="no-products">
                 No products found.
               </p>
-
             )}
 
           </section>
         )}
 
+        {/* =========================
+            BACKEND PAGINATION
+        ========================= */}
+
         {!loading &&
           !error &&
-          totalPages > 1 && (
+          pagination.totalPages > 1 && (
 
             <div className="shop-pagination">
 
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.max(
-                      safeCurrentPage - 1,
-                      1
-                    )
+                    currentPage - 1
                   )
                 }
-                disabled={
-                  safeCurrentPage === 1
-                }
+                disabled={currentPage === 1}
               >
                 ←
               </button>
 
               {Array.from(
-                { length: totalPages },
+                {
+                  length:
+                    pagination.totalPages,
+                },
                 (_, index) => (
-
                   <button
                     key={index}
                     className={
-                      safeCurrentPage ===
-                      index + 1
+                      currentPage === index + 1
                         ? "active"
                         : ""
                     }
@@ -552,22 +599,18 @@ function Shop() {
                   >
                     {index + 1}
                   </button>
-
                 )
               )}
 
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.min(
-                      safeCurrentPage + 1,
-                      totalPages
-                    )
+                    currentPage + 1
                   )
                 }
                 disabled={
-                  safeCurrentPage ===
-                  totalPages
+                  currentPage ===
+                  pagination.totalPages
                 }
               >
                 →
