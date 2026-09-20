@@ -4,11 +4,17 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
+// =========================
 // Models
+// =========================
+
 require("./models/Category");
 require("./models/Product");
 
+// =========================
 // Routes
+// =========================
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const addressRoutes = require("./routes/addressRoutes");
@@ -21,7 +27,10 @@ const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const checkoutRoutes = require("./routes/checkoutRoutes");
+
 const adminTestRoutes = require("./routes/adminTestRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+
 const contactRoutes = require("./routes/contactRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 
@@ -72,6 +81,7 @@ app.use("/api/checkout", checkoutRoutes);
 
 // Admin
 app.use("/api/admin", adminTestRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Contact
 app.use("/api/contacts", contactRoutes);
