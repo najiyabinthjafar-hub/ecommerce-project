@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-
-import logo from "../assets/logo.png";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Checkout.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -14,7 +11,9 @@ function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ================= BUY NOW DATA =================
+  // =========================================================
+  // BUY NOW
+  // =========================================================
 
   const buyNowProduct = location.state?.buyNow
     ? location.state.product
@@ -22,26 +21,27 @@ function Checkout() {
 
   const isBuyNow = Boolean(buyNowProduct);
 
-  // ================= STATES =================
+  // =========================================================
+  // STATES
+  // =========================================================
 
-  const [cartItems, setCartItems] = useState([]);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [discount, setDiscount] = useState(0);
-
-  const [couponLoading, setCouponLoading] = useState(false);
+  const [coupon, setCoupon] = useState(null);
   const [couponMessage, setCouponMessage] = useState("");
-  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
-  // COD default
   const [paymentMethod, setPaymentMethod] = useState("cod");
-
   const [billingAddress, setBillingAddress] = useState("same");
 
   const [error, setError] = useState("");
+
+  // =========================================================
+  // AUTH
+  // =========================================================
 
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -52,241 +52,258 @@ function Checkout() {
     },
   };
 
-  // ================= GET USER EMAIL =================
+  // =========================================================
+  // FETCH CART
+  // =========================================================
 
-  const getUserEmail = () => {
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    fetchCart();
+  }, [token, navigate]);
+
+  const fetchCart = async () => {
     try {
-      const user = JSON.parse(
-        localStorage.getItem("user") || "{}"
+      setLoading(true);
+      setError("");
+
+      const response = await axios.get(
+        `${API_URL}/cart`,
+        authConfig
       );
 
-      return user.email || "";
-    } catch {
-      return "";
+      setCart(response.data.cart || response.data);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("user");
+
+        navigate("/login");
+      } else {
+        setError(
+          error.response?.data?.message ||
+            "Failed to load cart."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ================= GET CART OR BUY NOW PRODUCT =================
+  // =========================================================
+  // CART HELPERS
+  // =========================================================
 
-  useEffect(() => {
-    const fetchCheckoutItems = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+  const getCartItems = () => {
+    if (isBuyNow && buyNowProduct) {
+      return [
+        {
+          product: buyNowProduct,
+          quantity: buyNowProduct.quantity || 1,
+          size: buyNowProduct.selectedSize || "",
+        },
+      ];
+    }
 
-      // ================= BUY NOW =================
+    if (!cart) {
+      return [];
+    }
 
-      if (isBuyNow && buyNowProduct) {
-        setCartItems([
-          {
-            product: buyNowProduct,
-            quantity: buyNowProduct.quantity || 1,
-            size: buyNowProduct.selectedSize || "",
-          },
-        ]);
+    return cart.items || cart.products || [];
+  };
 
-        setLoading(false);
-        return;
-      }
+  const getProduct = (item) => {
+    return item.product || item.productId || item;
+  };
 
-      // ================= CART CHECKOUT =================
+  const getQuantity = (item) => {
+    return Number(item.quantity || 1);
+  };
 
-      try {
-        setLoading(true);
-        setError("");
+  const getPrice = (item) => {
+    const product = getProduct(item);
 
-        const response = await axios.get(
-          `${API_URL}/cart`,
-          authConfig
-        );
-
-        setCartItems(
-          response.data.cart?.items || []
-        );
-      } catch (error) {
-        console.error("GET CART ERROR:", error);
-
-        setError(
-          error.response?.data?.message ||
-            "Failed to load cart"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCheckoutItems();
-  }, [token, isBuyNow, buyNowProduct]);
-
-  // ================= SUBTOTAL =================
-
-  const subtotal = cartItems.reduce(
-    (total, item) => {
-      const product = item.product || {};
-
-      const price =
-        product.salePrice ??
+    return Number(
+      product.salePrice ??
         product.regularPrice ??
         product.price ??
         item.price ??
-        0;
+        0
+    );
+  };
 
+  const cartItems = getCartItems();
+
+  // =========================================================
+  // PRICE CALCULATIONS
+  // =========================================================
+
+  const subtotal = cartItems.reduce(
+    (total, item) => {
       return (
         total +
-        Number(price) * Number(item.quantity)
+        getPrice(item) * getQuantity(item)
       );
     },
     0
   );
 
-  // ================= DELIVERY =================
-
-  const delivery =
-    subtotal === 0
-      ? 0
-      : subtotal >= 999
+  const deliveryCharge =
+    subtotal >= 999 || subtotal === 0
       ? 0
       : 99;
 
-  // ================= FINAL TOTAL =================
+  const discount = coupon?.discountAmount || 0;
 
-  const finalTotal = Math.max(
+  const totalAmount = Math.max(
     0,
-    subtotal + delivery - discount
+    subtotal + deliveryCharge - discount
   );
 
-  // ================= APPLY COUPON =================
+  // =========================================================
+  // COUPON
+  // =========================================================
 
-  const handleApplyCoupon = async () => {
+  const validateCoupon = async () => {
     const code = couponCode.trim().toUpperCase();
 
-    setCouponMessage("");
-    setCouponError("");
-
     if (!code) {
-      setCouponError(
-        "Please enter a coupon code."
-      );
+      setCouponMessage("Please enter a coupon code.");
+      setCoupon(null);
       return;
     }
 
-    setCouponLoading(true);
-
     try {
+      setCouponLoading(true);
+      setCouponMessage("");
+
       const response = await axios.get(
-        `${API_URL}/coupons/code/${code}`
+        `${API_URL}/coupons/code/${code}`,
+        authConfig
       );
 
-      const coupon =
-        response.data?.coupon ||
-        response.data?.data ||
+      const couponData =
+        response.data.coupon ||
         response.data;
 
-      if (!coupon) {
-        throw new Error("Invalid coupon");
+      if (!couponData) {
+        setCoupon(null);
+        setCouponMessage("Invalid coupon.");
+        return;
       }
 
       // Active check
-      if (coupon.isActive === false) {
-        setCouponError(
+      if (
+        couponData.active === false ||
+        couponData.isActive === false
+      ) {
+        setCoupon(null);
+        setCouponMessage(
           "This coupon is inactive."
         );
-
-        setDiscount(0);
-        setAppliedCoupon(null);
         return;
       }
 
       // Expiry check
       const expiryDate =
-        coupon.expiryDate || coupon.expiry;
+        couponData.expiryDate ||
+        couponData.expiry;
 
       if (
         expiryDate &&
         new Date(expiryDate) < new Date()
       ) {
-        setCouponError(
+        setCoupon(null);
+        setCouponMessage(
           "This coupon has expired."
         );
-
-        setDiscount(0);
-        setAppliedCoupon(null);
         return;
       }
 
       // Minimum purchase
-      if (
-        coupon.minimumPurchase &&
-        subtotal < coupon.minimumPurchase
-      ) {
-        setCouponError(
-          `Minimum purchase of ₹${coupon.minimumPurchase} is required.`
+      const minimumPurchase = Number(
+        couponData.minimumPurchase || 0
+      );
+
+      if (subtotal < minimumPurchase) {
+        setCoupon(null);
+
+        setCouponMessage(
+          `Minimum purchase should be ₹${minimumPurchase}.`
         );
 
-        setDiscount(0);
-        setAppliedCoupon(null);
         return;
       }
 
-      let calculatedDiscount = 0;
+      // Calculate discount
+      let discountAmount = 0;
 
-      // Percentage discount
-      if (
-        coupon.discountType === "percentage"
-      ) {
-        calculatedDiscount =
-          (subtotal * coupon.discountValue) /
-          100;
+      const discountType =
+        couponData.discountType ||
+        couponData.type;
 
-        const maxDiscount =
-          coupon.maxDiscount ||
-          coupon.maximumDiscount;
+      const discountValue = Number(
+        couponData.discountValue ||
+          couponData.discount ||
+          0
+      );
 
-        if (
-          maxDiscount &&
-          calculatedDiscount > maxDiscount
-        ) {
-          calculatedDiscount = maxDiscount;
-        }
+      if (discountType === "percentage") {
+        discountAmount =
+          (subtotal * discountValue) / 100;
+      } else {
+        discountAmount = discountValue;
       }
 
-      // Fixed discount
-      if (
-        coupon.discountType === "fixed"
-      ) {
-        calculatedDiscount =
-          coupon.discountValue;
+      // Maximum discount
+      if (couponData.maxDiscount) {
+        discountAmount = Math.min(
+          discountAmount,
+          Number(couponData.maxDiscount)
+        );
+      }
+
+      if (couponData.maximumDiscount) {
+        discountAmount = Math.min(
+          discountAmount,
+          Number(couponData.maximumDiscount)
+        );
       }
 
       // Discount cannot exceed subtotal
-      if (calculatedDiscount > subtotal) {
-        calculatedDiscount = subtotal;
-      }
-
-      calculatedDiscount = Math.max(
-        0,
-        calculatedDiscount
+      discountAmount = Math.min(
+        discountAmount,
+        subtotal
       );
 
-      setDiscount(calculatedDiscount);
-      setAppliedCoupon(coupon);
+      discountAmount = Math.max(
+        0,
+        discountAmount
+      );
+
+      setCoupon({
+        ...couponData,
+        discountAmount,
+      });
 
       setCouponMessage(
-        `Coupon ${code} applied successfully.`
+        `Coupon ${
+          couponData.code || code
+        } applied successfully.`
       );
     } catch (error) {
-      console.error(
-        "COUPON ERROR:",
-        error
-      );
+      console.error("Coupon error:", error);
 
-      setDiscount(0);
-      setAppliedCoupon(null);
+      setCoupon(null);
 
-      setCouponError(
+      setCouponMessage(
         error.response?.data?.message ||
-          error.response?.data?.error ||
           "Invalid coupon code."
       );
     } finally {
@@ -294,22 +311,18 @@ function Checkout() {
     }
   };
 
-  // ================= REMOVE COUPON =================
-
-  const handleRemoveCoupon = () => {
+  const removeCoupon = () => {
+    setCoupon(null);
     setCouponCode("");
-    setAppliedCoupon(null);
-    setDiscount(0);
     setCouponMessage("");
-    setCouponError("");
   };
 
-  // ================= PLACE ORDER =================
+  // =========================================================
+  // PLACE ORDER
+  // =========================================================
 
   const handlePlaceOrder = async (event) => {
     event.preventDefault();
-
-    setError("");
 
     if (!token) {
       navigate("/login");
@@ -330,49 +343,115 @@ function Checkout() {
       return;
     }
 
-    // ================= RAZORPAY UI ONLY =================
-
+    // Razorpay UI is ready, actual integration later
     if (paymentMethod === "razorpay") {
       alert(
-        "Razorpay payment integration will be available soon."
+        "Razorpay payment integration will be added later."
       );
 
       return;
     }
 
-    setPlacingOrder(true);
-
-    try {
-      const formData = new FormData(
-        event.target
+    if (paymentMethod !== "cod") {
+      alert(
+        "Online payment is not available yet. Please select Cash on Delivery."
       );
 
-      // ================= SHIPPING ADDRESS =================
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      setError("");
+
+      const formData = new FormData(
+        event.currentTarget
+      );
+
+      // =====================================================
+      // SHIPPING ADDRESS
+      // =====================================================
+
+      const firstName =
+        formData.get("firstName") || "";
+
+      const lastName =
+        formData.get("lastName") || "";
 
       const shippingAddress = {
-        fullName: `${formData.get(
-          "firstName"
-        )} ${formData.get("lastName")}`.trim(),
+        fullName:
+          `${firstName} ${lastName}`.trim(),
 
-        phone: formData.get("phone"),
-        address: formData.get("address"),
-        city: formData.get("city"),
-        state: formData.get("state"),
-        pincode: formData.get("pincode"),
+        phone:
+          formData.get("phone") || "",
+
+        address:
+          formData.get("address") || "",
+
+        apartment:
+          formData.get("apartment") || "",
+
+        city:
+          formData.get("city") || "",
+
+        state:
+          formData.get("state") || "",
+
+        pincode:
+          formData.get("pincode") || "",
+
+        country:
+          formData.get("country") ||
+          "India",
       };
 
-      // ================= ORDER ITEMS =================
+      // =====================================================
+      // VALIDATION
+      // =====================================================
+
+      if (!shippingAddress.fullName) {
+        alert("Please enter your name.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!shippingAddress.phone) {
+        alert("Please enter your phone number.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!shippingAddress.address) {
+        alert("Please enter your address.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!shippingAddress.city) {
+        alert("Please enter your city.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!shippingAddress.state) {
+        alert("Please select your state.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!shippingAddress.pincode) {
+        alert("Please enter your pincode.");
+        setPlacingOrder(false);
+        return;
+      }
+
+      // =====================================================
+      // ORDER ITEMS
+      // =====================================================
 
       const orderItems = cartItems.map(
         (item) => {
-          const product = item.product || {};
-
-          const price =
-            product.salePrice ??
-            product.regularPrice ??
-            product.price ??
-            item.price ??
-            0;
+          const product = getProduct(item);
 
           return {
             product:
@@ -380,16 +459,23 @@ function Checkout() {
               product.id ||
               item.product,
 
-            quantity: item.quantity,
+            quantity:
+              getQuantity(item),
 
-            price: price,
+            price:
+              getPrice(item),
 
-            size: item.size || "",
+            size:
+              item.size ||
+              item.selectedSize ||
+              "",
           };
         }
       );
 
-      // ================= ORDER DATA =================
+      // =====================================================
+      // ORDER DATA
+      // =====================================================
 
       const orderData = {
         user: userId,
@@ -402,9 +488,13 @@ function Checkout() {
 
         discountAmount: discount,
 
-        finalAmount: finalTotal,
+        finalAmount: totalAmount,
 
-        // COD
+        couponCode:
+          coupon?.code ||
+          couponCode.trim().toUpperCase() ||
+          null,
+
         paymentMethod: "COD",
       };
 
@@ -413,7 +503,9 @@ function Checkout() {
         orderData
       );
 
-      // ================= CREATE ORDER =================
+      // =====================================================
+      // CREATE ORDER
+      // =====================================================
 
       const response = await axios.post(
         `${API_URL}/orders`,
@@ -426,9 +518,11 @@ function Checkout() {
         response.data
       );
 
-      alert(
-        "Order placed successfully!"
-      );
+      alert("Order placed successfully!");
+
+      if (!isBuyNow) {
+        await fetchCart();
+      }
 
       navigate("/orders");
     } catch (error) {
@@ -441,34 +535,35 @@ function Checkout() {
       setError(
         error.response?.data?.error ||
           error.response?.data?.message ||
-          "Failed to place order"
+          "Failed to place order."
       );
     } finally {
       setPlacingOrder(false);
     }
   };
 
-  // ================= LOGIN REQUIRED =================
+  // =========================================================
+  // LOGIN CHECK
+  // =========================================================
 
   if (!token) {
     return (
       <>
         <Navbar />
 
-        <main className="checkout-page">
-          <section className="checkout-heading">
-            <p>CHECKOUT</p>
-
-            <h1>LOGIN REQUIRED</h1>
-
-            <span>
-              Please login before proceeding to
-              checkout.
-            </span>
-          </section>
-
+        <main className="checkout-empty-page">
           <div className="checkout-empty">
-            <Link to="/login">
+            <h2>Login Required</h2>
+
+            <p>
+              Please login before proceeding
+              to checkout.
+            </p>
+
+            <Link
+              to="/login"
+              className="checkout-shop-btn"
+            >
               LOGIN
             </Link>
           </div>
@@ -479,23 +574,59 @@ function Checkout() {
     );
   }
 
-  // ================= LOADING =================
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
       <>
         <Navbar />
 
-        <main className="checkout-page">
-          <section className="checkout-heading">
-            <p>CHECKOUT</p>
+        <div className="checkout-loading">
+          Loading checkout...
+        </div>
 
-            <h1>LOADING...</h1>
+        <Footer />
+      </>
+    );
+  }
 
-            <span>
-              Loading your products...
-            </span>
-          </section>
+  // =========================================================
+  // EMPTY CART
+  // =========================================================
+
+  if (cartItems.length === 0) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="checkout-empty-page">
+          <div className="checkout-empty-logo">
+            <img
+              src="/logo.png"
+              alt="Rizo"
+            />
+          </div>
+
+          <div className="checkout-empty">
+            <h2>
+              Your cart is empty
+            </h2>
+
+            <p>
+              Add some products to your
+              cart before checkout.
+            </p>
+
+            <button
+              onClick={() =>
+                navigate("/shop")
+              }
+            >
+              CONTINUE SHOPPING
+            </button>
+          </div>
         </main>
 
         <Footer />
@@ -503,41 +634,17 @@ function Checkout() {
     );
   }
 
-  // ================= EMPTY =================
-
-  if (cartItems.length === 0) {
-    return (
-      <main className="checkout-empty-page">
-
-        <div className="checkout-empty-logo">
-          <img src={logo} alt="Rizo" />
-        </div>
-
-        <div className="checkout-empty">
-          <h2>
-            Your cart is empty
-          </h2>
-
-          <button
-            onClick={() =>
-              navigate("/shop")
-            }
-          >
-            CONTINUE SHOPPING
-          </button>
-        </div>
-
-      </main>
-    );
-  }
-
-  // ================= MAIN CHECKOUT =================
+  // =========================================================
+  // CHECKOUT PAGE
+  // =========================================================
 
   return (
     <>
+      <Navbar />
+
       <main className="figma-checkout">
 
-        {/* ================= MOBILE BACK BUTTON ================= */}
+        {/* MOBILE BACK BUTTON */}
 
         <button
           type="button"
@@ -547,6 +654,8 @@ function Checkout() {
         >
           ←
         </button>
+
+        {/* ERROR */}
 
         {error && (
           <div className="checkout-error">
@@ -559,16 +668,22 @@ function Checkout() {
           onSubmit={handlePlaceOrder}
         >
 
-          {/* ================= LEFT SIDE ================= */}
+          {/* =================================================
+              LEFT SIDE
+          ================================================= */}
 
           <section className="delivery-section">
 
+            {/* LOGO */}
+
             <div className="checkout-logo">
               <img
-                src={logo}
+                src="/logo.png"
                 alt="Rizo"
               />
             </div>
+
+            {/* DELIVERY */}
 
             <h2 className="delivery-title">
               Delivery
@@ -577,7 +692,6 @@ function Checkout() {
             {/* COUNTRY */}
 
             <div className="checkout-field">
-
               <label>
                 Country/region
               </label>
@@ -590,7 +704,6 @@ function Checkout() {
                   India
                 </option>
               </select>
-
             </div>
 
             {/* NAME */}
@@ -598,25 +711,21 @@ function Checkout() {
             <div className="checkout-row">
 
               <div className="checkout-field">
-
                 <input
                   type="text"
                   name="firstName"
                   placeholder="First name"
                   required
                 />
-
               </div>
 
               <div className="checkout-field">
-
                 <input
                   type="text"
                   name="lastName"
                   placeholder="Last name"
                   required
                 />
-
               </div>
 
             </div>
@@ -624,43 +733,38 @@ function Checkout() {
             {/* ADDRESS */}
 
             <div className="checkout-field">
-
               <input
                 type="text"
                 name="address"
                 placeholder="Address"
                 required
               />
-
             </div>
 
-            <div className="checkout-field">
+            {/* APARTMENT */}
 
+            <div className="checkout-field">
               <input
                 type="text"
                 name="apartment"
                 placeholder="Apartment, suite, etc. (optional)"
               />
-
             </div>
 
-            {/* CITY STATE PIN */}
+            {/* CITY / STATE / PIN */}
 
             <div className="checkout-location-row">
 
               <div className="checkout-field">
-
                 <input
                   type="text"
                   name="city"
                   placeholder="City"
                   required
                 />
-
               </div>
 
               <div className="checkout-field">
-
                 <select
                   name="state"
                   defaultValue="Kerala"
@@ -686,11 +790,9 @@ function Checkout() {
                     Delhi
                   </option>
                 </select>
-
               </div>
 
               <div className="checkout-field">
-
                 <input
                   type="text"
                   name="pincode"
@@ -699,7 +801,6 @@ function Checkout() {
                   title="Please enter a valid 6-digit PIN code"
                   required
                 />
-
               </div>
 
             </div>
@@ -707,7 +808,6 @@ function Checkout() {
             {/* PHONE */}
 
             <div className="checkout-field">
-
               <input
                 type="tel"
                 name="phone"
@@ -716,20 +816,11 @@ function Checkout() {
                 title="Please enter a valid 10-digit phone number"
                 required
               />
-
             </div>
-
-            <input
-              type="hidden"
-              name="email"
-              value={getUserEmail()}
-              readOnly
-            />
 
             {/* SAVE INFO */}
 
             <label className="save-info">
-
               <input
                 type="checkbox"
                 name="saveInfo"
@@ -738,10 +829,11 @@ function Checkout() {
               <span>
                 Save this information for next time
               </span>
-
             </label>
 
-            {/* COUPON */}
+            {/* =================================================
+                COUPON
+            ================================================= */}
 
             <div className="coupon-section">
 
@@ -760,66 +852,43 @@ function Checkout() {
                       event.target.value.toUpperCase()
                     )
                   }
+                  disabled={!!coupon}
                 />
 
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  disabled={couponLoading}
-                >
-                  {couponLoading
-                    ? "Applying..."
-                    : "Apply"}
-                </button>
+                {!coupon ? (
+                  <button
+                    type="button"
+                    onClick={validateCoupon}
+                    disabled={couponLoading}
+                  >
+                    {couponLoading
+                      ? "Applying..."
+                      : "Apply"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                  >
+                    Remove
+                  </button>
+                )}
 
               </div>
 
               {couponMessage && (
-                <p
-                  style={{
-                    color: "green",
-                    marginTop: "8px",
-                  }}
-                >
+                <p className="coupon-message">
                   {couponMessage}
                 </p>
-              )}
-
-              {couponError && (
-                <p
-                  style={{
-                    color: "red",
-                    marginTop: "8px",
-                  }}
-                >
-                  {couponError}
-                </p>
-              )}
-
-              {appliedCoupon && (
-                <button
-                  type="button"
-                  onClick={
-                    handleRemoveCoupon
-                  }
-                  style={{
-                    marginTop: "8px",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    textDecoration:
-                      "underline",
-                  }}
-                >
-                  Remove Coupon
-                </button>
               )}
 
             </div>
 
           </section>
 
-          {/* ================= RIGHT SIDE ================= */}
+          {/* =================================================
+              RIGHT SIDE
+          ================================================= */}
 
           <section className="checkout-right">
 
@@ -830,7 +899,7 @@ function Checkout() {
               {cartItems.map(
                 (item, index) => {
                   const product =
-                    item.product || {};
+                    getProduct(item);
 
                   const productId =
                     product._id ||
@@ -838,11 +907,10 @@ function Checkout() {
                     index;
 
                   const price =
-                    product.salePrice ??
-                    product.regularPrice ??
-                    product.price ??
-                    item.price ??
-                    0;
+                    getPrice(item);
+
+                  const quantity =
+                    getQuantity(item);
 
                   let image =
                     product.image ||
@@ -854,11 +922,12 @@ function Checkout() {
                     image &&
                     !image.startsWith("http")
                   ) {
-                    image = `http://localhost:5000${
-                      image.startsWith("/")
-                        ? ""
-                        : "/"
-                    }${image}`;
+                    image =
+                      `http://localhost:5000${
+                        image.startsWith("/")
+                          ? ""
+                          : "/"
+                      }${image}`;
                   }
 
                   return (
@@ -878,7 +947,7 @@ function Checkout() {
                         />
 
                         <span className="product-quantity">
-                          {item.quantity}
+                          {quantity}
                         </span>
 
                       </div>
@@ -901,8 +970,7 @@ function Checkout() {
                       <strong>
                         ₹
                         {(
-                          price *
-                          item.quantity
+                          price * quantity
                         ).toLocaleString(
                           "en-IN"
                         )}
@@ -939,8 +1007,8 @@ function Checkout() {
 
                   <span>
                     Discount
-                    {appliedCoupon?.code
-                      ? ` (${appliedCoupon.code})`
+                    {coupon?.code
+                      ? ` (${coupon.code})`
                       : ""}
                   </span>
 
@@ -961,9 +1029,9 @@ function Checkout() {
                 </span>
 
                 <span className="shipping-value">
-                  {delivery === 0
+                  {deliveryCharge === 0
                     ? "FREE"
-                    : `₹${delivery}`}
+                    : `₹${deliveryCharge}`}
                 </span>
 
               </div>
@@ -993,7 +1061,7 @@ function Checkout() {
                 </span>
 
                 ₹
-                {finalTotal.toLocaleString(
+                {totalAmount.toLocaleString(
                   "en-IN"
                 )}
 
@@ -1001,7 +1069,9 @@ function Checkout() {
 
             </div>
 
-            {/* PAYMENT */}
+            {/* =================================================
+                PAYMENT
+            ================================================= */}
 
             <div className="payment-section">
 
@@ -1032,9 +1102,7 @@ function Checkout() {
                     paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "cod"
-                    )
+                    setPaymentMethod("cod")
                   }
                 />
 
@@ -1053,7 +1121,7 @@ function Checkout() {
               </label>
 
               {paymentMethod === "cod" && (
-                <div className="payment-info-box cod-info">
+                <div className="payment-info-box">
 
                   <p>
                     You can pay cash when
@@ -1120,7 +1188,9 @@ function Checkout() {
 
             </div>
 
-            {/* BILLING */}
+            {/* =================================================
+                BILLING
+            ================================================= */}
 
             <div className="billing-section">
 
@@ -1175,9 +1245,19 @@ function Checkout() {
 
               </label>
 
+              {billingAddress ===
+                "different" && (
+                <p className="checkout-note">
+                  Different billing address
+                  support can be added later.
+                </p>
+              )}
+
             </div>
 
-            {/* PLACE ORDER */}
+            {/* =================================================
+                PLACE ORDER
+            ================================================= */}
 
             <button
               type="submit"
@@ -1222,6 +1302,7 @@ function Checkout() {
           </section>
 
         </form>
+
       </main>
 
       <Footer />
