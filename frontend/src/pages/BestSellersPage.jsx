@@ -1,77 +1,49 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
 
 import "./BestSellersPage.css";
 
-import product1 from "../assets/product-8.png";
-import product2 from "../assets/product-2.png";
-import product3 from "../assets/product-1.png";
-import product4 from "../assets/product-3.png";
-import product5 from "../assets/product-4.png";
-import product6 from "../assets/product-5.png";
-import product7 from "../assets/product-6.png";
-import product8 from "../assets/product-7.png";
+const API_URL = "http://localhost:5000/api/products/best-sellers";
 
 function BestSellersPage() {
-  const products = [
-    {
-      id: 8,
-      name: "Vintage Graphic Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product1,
-    },
-    {
-      id: 2,
-      name: "Black Graphic Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product2,
-    },
-    {
-      id: 1,
-      name: "White Adrenaline Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product3,
-    },
-    {
-      id: 3,
-      name: "Oversized Graphic Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product4,
-    },
-    {
-      id: 4,
-      name: "White Printed Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product5,
-    },
-    {
-      id: 5,
-      name: "Classic Black Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product6,
-    },
-    {
-      id: 6,
-      name: "Essential White Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product7,
-    },
-    {
-      id: 7,
-      name: "Eagle Graphic Tee",
-      category: "BEST SELLER",
-      price: 946,
-      image: product8,
-    },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await axios.get(API_URL);
+
+        console.log("BEST SELLERS RESPONSE:", response.data);
+
+        setProducts(response.data.products || []);
+      } catch (error) {
+        console.error(
+          "BEST SELLERS ERROR:",
+          error.response?.data || error.message
+        );
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to load best sellers."
+        );
+
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBestSellers();
+  }, []);
 
   return (
     <>
@@ -89,18 +61,37 @@ function BestSellersPage() {
         <section className="best-sellers-page-products">
           <div className="best-sellers-page-top">
             <h2>Best Sellers</h2>
-
             <p>{products.length} Products</p>
           </div>
 
-          <div className="best-sellers-page-grid">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
-            ))}
-          </div>
+          {loading && (
+            <div className="best-sellers-loading">
+              Loading best sellers...
+            </div>
+          )}
+
+          {error && (
+            <div className="best-sellers-error">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && products.length === 0 && (
+            <div className="best-sellers-empty">
+              No best selling products available yet.
+            </div>
+          )}
+
+          {!loading && !error && products.length > 0 && (
+            <div className="best-sellers-page-grid">
+              {products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

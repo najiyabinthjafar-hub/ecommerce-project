@@ -10,6 +10,27 @@ const couponSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Coupon type
+    couponType: {
+      type: String,
+      enum: ["cart", "product", "category"],
+      default: "cart",
+    },
+
+    // Category-specific coupon
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+
+    // Product-specific coupon
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      default: null,
+    },
+
     discountType: {
       type: String,
       enum: ["percentage", "fixed"],
@@ -25,14 +46,16 @@ const couponSchema = new mongoose.Schema(
     minimumPurchase: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
-    maximumDiscount: {
+    maxDiscount: {
       type: Number,
       default: null,
+      min: 0,
     },
 
-    expiryDate: {
+    expiry: {
       type: Date,
       required: true,
     },
@@ -40,11 +63,13 @@ const couponSchema = new mongoose.Schema(
     usageLimit: {
       type: Number,
       default: null,
+      min: 0,
     },
 
     usedCount: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     isActive: {

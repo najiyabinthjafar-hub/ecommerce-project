@@ -44,19 +44,13 @@ function Cart() {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        `${API_URL}/cart`,
-        getAuthConfig()
-      );
+      const response = await axios.get(`${API_URL}/cart`, getAuthConfig());
 
       setCartItems(response.data.cart?.items || []);
     } catch (error) {
       console.error("GET CART ERROR:", error);
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to fetch cart"
-      );
+      setError(error.response?.data?.message || "Failed to fetch cart");
 
       setCartItems([]);
     } finally {
@@ -70,10 +64,7 @@ function Cart() {
 
   // ================= UPDATE QUANTITY =================
 
-  const updateQuantity = async (
-    productId,
-    newQuantity
-  ) => {
+  const updateQuantity = async (productId, newQuantity) => {
     const token = getToken();
 
     if (!token) {
@@ -94,17 +85,14 @@ function Cart() {
         {
           quantity: newQuantity,
         },
-        getAuthConfig()
+        getAuthConfig(),
       );
 
       await fetchCart();
     } catch (error) {
       console.error("UPDATE CART ERROR:", error);
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to update cart"
-      );
+      alert(error.response?.data?.message || "Failed to update cart");
     } finally {
       setUpdatingItem(null);
     }
@@ -113,29 +101,17 @@ function Cart() {
   // ================= INCREASE =================
 
   const increaseQuantity = (item) => {
-    const productId =
-      item.product?._id ||
-      item.product?.id ||
-      item.product;
+    const productId = item.product?._id || item.product?.id || item.product;
 
-    updateQuantity(
-      productId,
-      item.quantity + 1
-    );
+    updateQuantity(productId, item.quantity + 1);
   };
 
   // ================= DECREASE =================
 
   const decreaseQuantity = (item) => {
-    const productId =
-      item.product?._id ||
-      item.product?.id ||
-      item.product;
+    const productId = item.product?._id || item.product?.id || item.product;
 
-    updateQuantity(
-      productId,
-      item.quantity - 1
-    );
+    updateQuantity(productId, item.quantity - 1);
   };
 
   // ================= REMOVE ITEM =================
@@ -153,17 +129,14 @@ function Cart() {
 
       await axios.delete(
         `${API_URL}/cart/remove/${productId}`,
-        getAuthConfig()
+        getAuthConfig(),
       );
 
       await fetchCart();
     } catch (error) {
       console.error("REMOVE CART ERROR:", error);
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to remove product"
-      );
+      alert(error.response?.data?.message || "Failed to remove product");
     } finally {
       setUpdatingItem(null);
     }
@@ -172,18 +145,11 @@ function Cart() {
   // ================= PRODUCT DATA =================
 
   const getProductData = (item) => {
-    const product =
-      typeof item.product === "object"
-        ? item.product
-        : {};
+    const product = typeof item.product === "object" ? item.product : {};
 
-    const productId =
-      product._id ||
-      product.id ||
-      item.product;
+    const productId = product._id || product.id || item.product;
 
-    const productName =
-      product.name || "Product";
+    const productName = product.name || "Product";
 
     const productPrice =
       product.salePrice ??
@@ -193,10 +159,7 @@ function Cart() {
       0;
 
     const productImage =
-      product.image ||
-      product.images?.[0] ||
-      item.image ||
-      "/placeholder.png";
+      product.image || product.images?.[0] || item.image || "/placeholder.png";
 
     return {
       productId,
@@ -208,27 +171,15 @@ function Cart() {
 
   // ================= SUBTOTAL =================
 
-  const subtotal = cartItems.reduce(
-    (total, item) => {
-      const { productPrice } =
-        getProductData(item);
+  const subtotal = cartItems.reduce((total, item) => {
+    const { productPrice } = getProductData(item);
 
-      return (
-        total +
-        productPrice * item.quantity
-      );
-    },
-    0
-  );
+    return total + productPrice * item.quantity;
+  }, 0);
 
   // ================= DELIVERY =================
 
-  const delivery =
-    subtotal === 0
-      ? 0
-      : subtotal >= 999
-      ? 0
-      : 99;
+  const delivery = subtotal === 0 ? 0 : subtotal >= 999 ? 0 : 99;
 
   const total = subtotal + delivery;
 
@@ -243,14 +194,9 @@ function Cart() {
           <div className="empty-cart">
             <h2>Please Login</h2>
 
-            <p>
-              Login to view and manage your cart.
-            </p>
+            <p>Login to view and manage your cart.</p>
 
-            <Link
-              to="/login"
-              className="continue-shopping"
-            >
+            <Link to="/login" className="continue-shopping">
               LOGIN
             </Link>
           </div>
@@ -270,9 +216,7 @@ function Cart() {
 
         <main className="cart-page">
           <div className="cart-wrapper">
-            <p className="no-products">
-              Loading cart...
-            </p>
+            <p className="no-products">Loading cart...</p>
           </div>
         </main>
 
@@ -287,45 +231,27 @@ function Cart() {
 
       <main className="cart-page">
         <div className="cart-wrapper">
-
           {/* CART TOP */}
 
           <div className="cart-top">
             <h1>Your cart</h1>
 
-            <Link
-              to="/shop"
-              className="continue-shopping"
-            >
+            <Link to="/shop" className="continue-shopping">
               Continue shopping
             </Link>
           </div>
 
           {/* ERROR */}
 
-          {error && (
-            <p className="no-products">
-              {error}
-            </p>
-          )}
+          {error && <p className="no-products">{error}</p>}
 
           {/* EMPTY CART */}
 
-          {!error &&
-          cartItems.length === 0 ? (
+          {!error && cartItems.length === 0 ? (
             <div className="empty-cart">
               <h2>Your cart is empty</h2>
 
-              <p>
-                Looks like you haven't added anything yet.
-              </p>
-
-              <Link
-                to="/shop"
-                className="continue-shopping"
-              >
-                Continue shopping
-              </Link>
+              <p>Looks like you haven't added anything yet.</p>
             </div>
           ) : (
             !error && (
@@ -349,49 +275,27 @@ function Cart() {
                       productImage,
                     } = getProductData(item);
 
-                    const itemTotal =
-                      productPrice *
-                      item.quantity;
+                    const itemTotal = productPrice * item.quantity;
 
-                    const isUpdating =
-                      updatingItem === productId;
+                    const isUpdating = updatingItem === productId;
 
                     return (
-                      <div
-                        className="cart-item"
-                        key={productId}
-                      >
+                      <div className="cart-item" key={productId}>
                         {/* PRODUCT */}
 
                         <div className="cart-product">
                           <div className="cart-product-image">
-                            <Link
-                              to={`/product/${productId}`}
-                            >
-                              <img
-                                src={productImage}
-                                alt={productName}
-                              />
+                            <Link to={`/product/${productId}`}>
+                              <img src={productImage} alt={productName} />
                             </Link>
                           </div>
 
                           <div className="cart-product-info">
-                            <h3>
-                              {productName}
-                            </h3>
+                            <h3>{productName}</h3>
 
-                            <p>
-                              ₹
-                              {productPrice.toLocaleString(
-                                "en-IN"
-                              )}
-                            </p>
+                            <p>₹{productPrice.toLocaleString("en-IN")}</p>
 
-                            {item.size && (
-                              <p>
-                                Size: {item.size}
-                              </p>
-                            )}
+                            {item.size && <p>Size: {item.size}</p>}
                           </div>
                         </div>
 
@@ -401,23 +305,17 @@ function Cart() {
                           <div className="cart-quantity">
                             <button
                               type="button"
-                              onClick={() =>
-                                decreaseQuantity(item)
-                              }
+                              onClick={() => decreaseQuantity(item)}
                               disabled={isUpdating}
                             >
                               −
                             </button>
 
-                            <span>
-                              {item.quantity}
-                            </span>
+                            <span>{item.quantity}</span>
 
                             <button
                               type="button"
-                              onClick={() =>
-                                increaseQuantity(item)
-                              }
+                              onClick={() => increaseQuantity(item)}
                               disabled={isUpdating}
                             >
                               +
@@ -427,22 +325,19 @@ function Cart() {
                           <button
                             className="remove-btn"
                             type="button"
-                            onClick={() =>
-                              removeItem(productId)
-                            }
+                            onClick={() => removeItem(productId)}
                             disabled={isUpdating}
+                            aria-label="Remove product"
+                            title="Remove"
                           >
-                            REMOVE
+                            🗑
                           </button>
                         </div>
 
                         {/* TOTAL */}
 
                         <p className="cart-total">
-                          ₹
-                          {itemTotal.toLocaleString(
-                            "en-IN"
-                          )}
+                          ₹{itemTotal.toLocaleString("en-IN")}
                         </p>
                       </div>
                     );
@@ -452,35 +347,19 @@ function Cart() {
                 {/* BOTTOM */}
 
                 <div className="cart-bottom">
-                  <Link
-                    to="/shop"
-                    className="continue-shopping"
-                  >
-                    ← CONTINUE SHOPPING
-                  </Link>
-
                   <aside className="cart-summary">
                     <h2>ORDER SUMMARY</h2>
 
                     <div className="summary-row">
                       <span>SUBTOTAL</span>
 
-                      <span>
-                        ₹
-                        {subtotal.toLocaleString(
-                          "en-IN"
-                        )}
-                      </span>
+                      <span>₹{subtotal.toLocaleString("en-IN")}</span>
                     </div>
 
                     <div className="summary-row">
                       <span>DELIVERY</span>
 
-                      <span>
-                        {delivery === 0
-                          ? "FREE"
-                          : `₹${delivery}`}
-                      </span>
+                      <span>{delivery === 0 ? "FREE" : `₹${delivery}`}</span>
                     </div>
 
                     <div className="summary-divider"></div>
@@ -488,23 +367,15 @@ function Cart() {
                     <div className="summary-total">
                       <span>TOTAL</span>
 
-                      <strong>
-                        ₹
-                        {total.toLocaleString(
-                          "en-IN"
-                        )}
-                      </strong>
+                      <strong>₹{total.toLocaleString("en-IN")}</strong>
                     </div>
 
                     <p className="summary-note">
-                      Taxes included. Discounts and
-                      shipping calculated at checkout.
+                      Taxes included. Discounts and shipping calculated at
+                      checkout.
                     </p>
 
-                    <Link
-                      to="/checkout"
-                      className="checkout-btn"
-                    >
+                    <Link to="/checkout" className="checkout-btn">
                       PROCEED TO CHECKOUT
                     </Link>
                   </aside>

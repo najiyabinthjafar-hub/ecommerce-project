@@ -1,12 +1,20 @@
 const authService = require("../services/authService");
 
+// ================= REGISTER =================
+
 const register = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+    } = req.body;
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
-        message: "Name, email, phone and password are required",
+        message:
+          "Name, email, phone and password are required",
       });
     }
 
@@ -27,9 +35,14 @@ const register = async (req, res) => {
   }
 };
 
+// ================= VERIFY OTP =================
+
 const verifyOtp = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const {
+      email,
+      otp,
+    } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -37,7 +50,15 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    const result = await authService.verifyEmailOtp(email, otp);
+    const result = await authService.verifyEmailOtp(
+      email,
+      otp
+    );
+
+    // Result now contains:
+    // message
+    // token
+    // user
 
     res.status(200).json(result);
   } catch (error) {
@@ -49,9 +70,13 @@ const verifyOtp = async (req, res) => {
   }
 };
 
+// ================= RESEND OTP =================
+
 const resendOtp = async (req, res) => {
   try {
-    const { email } = req.body;
+    const {
+      email,
+    } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -71,9 +96,14 @@ const resendOtp = async (req, res) => {
   }
 };
 
+// ================= LOGIN =================
+
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password,
+    } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -96,9 +126,13 @@ const login = async (req, res) => {
   }
 };
 
+// ================= FORGOT PASSWORD =================
+
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const {
+      email,
+    } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -122,13 +156,20 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+// ================= RESET PASSWORD =================
+
 const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const {
+      email,
+      otp,
+      newPassword,
+    } = req.body;
 
     if (!email || !otp || !newPassword) {
       return res.status(400).json({
-        message: "Email, OTP and new password are required",
+        message:
+          "Email, OTP and new password are required",
       });
     }
 

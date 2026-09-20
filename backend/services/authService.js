@@ -1,9 +1,6 @@
 const bcrypt = require("bcryptjs");
-
 const User = require("../models/User");
-
 const generateOtp = require("../utils/generateOtp");
-
 const generateToken = require("../utils/generateToken");
 
 const {
@@ -85,15 +82,30 @@ const verifyEmailOtp = async (email, otp) => {
     throw new Error("Invalid OTP");
   }
 
+  // Mark email as verified
   user.isEmailVerified = true;
+
+  // Clear OTP data
   user.otp = null;
   user.otpExpiresAt = null;
   user.otpAttempts = 0;
 
   await user.save();
 
+  // Generate JWT token after successful OTP verification
+  const token = generateToken(user._id);
+
   return {
     message: "Email verified successfully",
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      profileCompleted: user.profileCompleted,
+    },
   };
 };
 
@@ -164,7 +176,6 @@ const loginUser = async ({ email, password }) => {
 
   return {
     token,
-
     user: {
       id: user._id,
       name: user.name,
@@ -225,6 +236,12 @@ const resetPassword = async ({
 
   if (user.resetOtp !== otp) {
     throw new Error("Invalid reset OTP");
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error(
+      "New password must be at least 6 characters"
+    );
   }
 
   const hashedPassword = await bcrypt.hash(

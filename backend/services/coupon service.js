@@ -1,4 +1,4 @@
-const Coupon = require("../models/Coupon");
+const Coupon = require("../models/coupon");
 
 const createCoupon = async (couponData) => {
   const existingCoupon = await Coupon.findOne({
@@ -55,3 +55,4 @@ module.exports = {
   updateCoupon,
   deleteCoupon,
 };
+
