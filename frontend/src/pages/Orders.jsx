@@ -36,6 +36,8 @@ function Orders() {
           }
         );
 
+        console.log("Orders API response:", response.data);
+
         setOrders(response.data.orders || response.data.data || []);
       } catch (error) {
         console.error("Fetch orders error:", error);
@@ -81,9 +83,7 @@ function Orders() {
 
       setOrders((previousOrders) =>
         previousOrders.map((order) =>
-          order._id === orderId
-            ? updatedOrder
-            : order
+          order._id === orderId ? updatedOrder : order
         )
       );
 
@@ -130,7 +130,7 @@ function Orders() {
           className="orders-back-btn"
           onClick={() => navigate("/profile")}
         >
-          ?� BACK TO PROFILE
+          ← BACK TO PROFILE
         </button>
 
         <section className="orders-heading">
@@ -264,14 +264,13 @@ function Orders() {
                           )}
 
                           <p>
-                            Quantity:{" "}
-                            {item.quantity}
+                            Quantity: {item.quantity}
                           </p>
 
                         </div>
 
                         <strong>
-                          ?
+                          ₹
                           {(
                             (item.price || 0) *
                             item.quantity
@@ -300,10 +299,11 @@ function Orders() {
                     <span>TOTAL</span>
 
                     <strong>
-                      ?
+                      ₹
                       {(
-                        order.totalAmount ||
-                        order.total ||
+                        order.finalAmount ??
+                        order.totalAmount ??
+                        order.total ??
                         0
                       ).toLocaleString("en-IN")}
                     </strong>
