@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const notificationService = require("./notificationService");
 
 // ================= CREATE PRODUCT =================
 
@@ -36,20 +37,6 @@ const getAllProducts = async ({
     query.category = category;
   }
 
-  // ================= PRICE FILTER =================
-
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    query.regularPrice = {};
-
-    if (minPrice !== undefined) {
-      query.regularPrice.$gte = Number(minPrice);
-    }
-
-    if (maxPrice !== undefined) {
-      query.regularPrice.$lte = Number(maxPrice);
-    }
-  }
-
   // ================= AVAILABILITY FILTER =================
 
   if (availability === "in-stock") {
@@ -60,22 +47,6 @@ const getAllProducts = async ({
     query.stock = 0;
   }
 
-  // ================= SORTING =================
-
-  let sortOption = {};
-
-  if (sort === "price-low") {
-    sortOption.regularPrice = 1;
-  }
-
-  if (sort === "price-high") {
-    sortOption.regularPrice = -1;
-  }
-
-  if (sort === "newest") {
-    sortOption.createdAt = -1;
-  }
-
   // ================= PAGINATION =================
 
   const pageNumber = Number(page) || 1;
@@ -83,24 +54,124 @@ const getAllProducts = async ({
 
   const skip = (pageNumber - 1) * limitNumber;
 
-  const products = await Product.find(query)
-    .populate({
-      path: "category",
-      populate: {
-        path: "parent",
-        select: "name slug",
+  // ================= AGGREGATION =================
+
+  const pipeline = [
+    // Apply search/category/availability filters
+    {
+      $match: query,
+    },
+
+    // ================= EFFECTIVE PRICE =================
+    // If salePrice exists and is greater than 0,
+    // use salePrice.
+    // Otherwise use regularPrice.
+
+    {
+      $addFields: {
+        effectivePrice: {
+          $cond: [
+            {
+              $and: [
+                { $ne: ["$salePrice", null] },
+                { $gt: ["$salePrice", 0] },
+              ],
+            },
+            "$salePrice",
+            "$regularPrice",
+          ],
+        },
       },
-    })
-    .sort(sortOption)
-    .skip(skip)
-    .limit(limitNumber);
+    },
+  ];
 
-  const totalProducts = await Product.countDocuments(query);
+  // ================= PRICE FILTER =================
 
-  const totalPages = Math.ceil(totalProducts / limitNumber);
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    const priceFilter = {};
+
+    if (minPrice !== undefined) {
+      priceFilter.$gte = Number(minPrice);
+    }
+
+    if (maxPrice !== undefined) {
+      priceFilter.$lte = Number(maxPrice);
+    }
+
+    pipeline.push({
+      $match: {
+        effectivePrice: priceFilter,
+      },
+    });
+  }
+
+  // ================= SORTING =================
+
+  if (sort === "price-low") {
+    pipeline.push({
+      $sort: {
+        effectivePrice: 1,
+      },
+    });
+  }
+
+  if (sort === "price-high") {
+    pipeline.push({
+      $sort: {
+        effectivePrice: -1,
+      },
+    });
+  }
+
+  if (sort === "newest") {
+    pipeline.push({
+      $sort: {
+        createdAt: -1,
+      },
+    });
+  }
+
+  // ================= PAGINATION =================
+
+  pipeline.push(
+    {
+      $facet: {
+        products: [
+          { $skip: skip },
+          { $limit: limitNumber },
+        ],
+
+        total: [
+          { $count: "count" },
+        ],
+      },
+    }
+  );
+
+  const result = await Product.aggregate(pipeline);
+
+  const products = result[0]?.products || [];
+
+  const totalProducts =
+    result[0]?.total?.[0]?.count || 0;
+
+  const totalPages = Math.ceil(
+    totalProducts / limitNumber
+  );
+
+  // ================= POPULATE CATEGORY =================
+
+  const populatedProducts = await Product.populate(products, {
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 
   return {
-    products,
+    products: populatedProducts,
+
     pagination: {
       currentPage: pageNumber,
       limit: limitNumber,
@@ -124,15 +195,21 @@ const getActiveProducts = async () => {
   });
 };
 
-// GET BEST SELLER PRODUCTS
+// ================= GET BEST SELLER PRODUCTS =================
+
 const getBestSellerProducts = async () => {
   return await Product.find({
     isBestSeller: true,
     status: "active",
-  }).populate("category");
+  }).populate({
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
 };
 
-// GET PRODUCT BY ID
 // ================= GET PRODUCT BY ID =================
 
 const getProductById = async (id) => {
@@ -148,10 +225,14 @@ const getProductById = async (id) => {
 // ================= UPDATE PRODUCT =================
 
 const updateProduct = async (id, productData) => {
-  return await Product.findByIdAndUpdate(id, productData, {
-    returnDocument: "after",
-    runValidators: true,
-  }).populate({
+  return await Product.findByIdAndUpdate(
+    id,
+    productData,
+    {
+      returnDocument: "after",
+      runValidators: true,
+    }
+  ).populate({
     path: "category",
     populate: {
       path: "parent",
@@ -169,7 +250,7 @@ const deleteProduct = async (id) => {
 // ================= UPDATE PRODUCT STOCK =================
 
 const updateProductStock = async (id, stock) => {
-  return await Product.findByIdAndUpdate(
+  const product = await Product.findByIdAndUpdate(
     id,
     { stock },
     {
@@ -183,7 +264,41 @@ const updateProductStock = async (id, stock) => {
       select: "name slug",
     },
   });
+
+  // ================= STOCK NOTIFICATIONS =================
+
+  if (product) {
+    const admin = await notificationService.getAdminUser();
+
+    if (admin) {
+      // OUT OF STOCK
+
+      if (product.stock === 0) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Product Out of Stock",
+          message: `${product.name} is out of stock.`,
+          type: "PRODUCT",
+        });
+      }
+
+      // LOW STOCK
+
+      else if (product.stock <= 5) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Low Stock Alert",
+          message: `${product.name} has only ${product.stock} items left.`,
+          type: "PRODUCT",
+        });
+      }
+    }
+  }
+
+  return product;
 };
+
+// ================= REDUCE PRODUCT STOCK =================
 
 // ================= REDUCE PRODUCT STOCK =================
 
@@ -198,7 +313,9 @@ const reduceProductStock = async (id, quantity) => {
       stock: { $gte: quantity },
     },
     {
-      $inc: { stock: -quantity },
+      $inc: {
+        stock: -quantity,
+      },
     },
     {
       returnDocument: "after",
@@ -206,8 +323,39 @@ const reduceProductStock = async (id, quantity) => {
     }
   );
 
+  // ================= STOCK NOTIFICATIONS =================
+
+  if (product) {
+    const admin = await notificationService.getAdminUser();
+
+    if (admin) {
+
+      // OUT OF STOCK
+      if (product.stock === 0) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Product Out of Stock",
+          message: `${product.name} is out of stock.`,
+          type: "PRODUCT",
+        });
+      }
+
+      // LOW STOCK
+      else if (product.stock <= 5) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Low Stock Alert",
+          message: `${product.name} has only ${product.stock} items left.`,
+          type: "PRODUCT",
+        });
+      }
+    }
+  }
+
   return product;
 };
+
+// ================= EXPORTS =================
 
 module.exports = {
   createProduct,

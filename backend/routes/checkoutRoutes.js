@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect } = require("../middleware/authMiddleware");
 const checkoutController = require("../controllers/checkoutController");
 
 const router = express.Router();
@@ -10,6 +11,6 @@ router.get("/test", (req, res) => {
   });
 });
 
-router.post("/", checkoutController.processCheckout);
+router.post("/", protect, checkoutController.processCheckout);
 
 module.exports = router;

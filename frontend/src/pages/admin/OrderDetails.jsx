@@ -1,308 +1,280 @@
-import React from "react";
+import "./Orders.css";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import "./OrderDetails.css";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api";
 
 function OrderDetails() {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // UI demo data
-  const order = {
-    id: id || "ORD-1001",
-    date: "02 Sep 2026",
-    status: "Delivered",
-    customer: "John Doe",
-    email: "john@example.com",
-    phone: "+91 98765 43210",
-    address: "Kochi, Kerala, India",
-    payment: "Paid",
-    method: "Razorpay",
-    items: [
-      {
-        id: 1,
-        name: "Premium T-Shirt",
-        category: "Men",
-        quantity: 2,
-        price: 799,
-      },
-      {
-        id: 2,
-        name: "Classic Sneakers",
-        category: "Footwear",
-        quantity: 1,
-        price: 1499,
-      },
-    ],
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          throw new Error("Authentication required");
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setOrder(
+          response.data?.order ||
+            response.data?.data ||
+            response.data
+        );
+      } catch (error) {
+        console.error("Failed to fetch order:", error);
+
+        setError(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load order details."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchOrder();
+    }
+  }, [id]);
+
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
+
+    return (
+      status.charAt(0).toUpperCase() +
+      status.slice(1).toLowerCase()
+    );
   };
 
-  const subtotal = order.items.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
+  if (loading) {
+    return (
+      <main className="orders-content">
+        <p>Loading order details...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="orders-content">
+        <button
+          className="view-btn"
+          onClick={() => navigate("/admin/orders")}
+        >
+          ← Back to Orders
+        </button>
+
+        <p style={{ color: "red", marginTop: "20px" }}>
+          {error}
+        </p>
+      </main>
+    );
+  }
+
+  if (!order) {
+    return (
+      <main className="orders-content">
+        <button
+          className="view-btn"
+          onClick={() => navigate("/admin/orders")}
+        >
+          ← Back to Orders
+        </button>
+
+        <p style={{ marginTop: "20px" }}>
+          Order not found.
+        </p>
+      </main>
+    );
+  }
+
+  const customerName =
+    order.user?.name ||
+    order.user?.fullName ||
+    order.user?.email ||
+    "Unknown Customer";
+
+  const customerEmail =
+    order.user?.email || "-";
+
+  const customerPhone =
+    order.user?.phone || "-";
+
+  const total =
+    order.finalAmount ??
+    order.totalAmount ??
+    order.total ??
+    0;
+
+  const status = formatStatus(
+    order.orderStatus || order.status
   );
 
-  const shipping = 50;
-  const total = subtotal + shipping;
+  const orderDate = order.createdAt
+    ? new Date(order.createdAt).toLocaleString("en-IN")
+    : "-";
 
   return (
-    <div className="order-details-page">
-      {/* Page Header */}
-      <div className="order-details-header">
+    <main className="orders-content">
+      <div className="orders-header">
         <div>
-          <button
-            className="back-btn"
-            onClick={() => navigate("/admin/orders")}
-          >
-            ← Back to Orders
-          </button>
-
-          <div className="title-row">
-            <div>
-              <h1>Order Details</h1>
-              <p>View complete information about this order.</p>
-            </div>
-
-            <span className="order-status">{order.status}</span>
-          </div>
+          <h1>Order Details</h1>
+          <p>
+            Order #{order._id?.slice(-6)}
+          </p>
         </div>
+
+        <button
+          className="view-btn"
+          onClick={() => navigate("/admin/orders")}
+        >
+          ← Back to Orders
+        </button>
       </div>
 
-      {/* Order Overview */}
-      <div className="order-overview">
-        <div className="overview-item">
-          <span>Order ID</span>
-          <strong>#{order.id}</strong>
-        </div>
+      {/* Order Information */}
+      <div className="order-card">
+        <h2>Order Information</h2>
 
-        <div className="overview-item">
-          <span>Order Date</span>
-          <strong>{order.date}</strong>
-        </div>
+        <p>
+          <strong>Order ID:</strong>{" "}
+          #{order._id}
+        </p>
 
-        <div className="overview-item">
-          <span>Payment</span>
-          <strong className="paid">{order.payment}</strong>
-        </div>
+        <p>
+          <strong>Date:</strong>{" "}
+          {orderDate}
+        </p>
 
-        <div className="overview-item">
-          <span>Payment Method</span>
-          <strong>{order.method}</strong>
-        </div>
+        <p>
+          <strong>Status:</strong>{" "}
+          {status}
+        </p>
+
+        <p>
+          <strong>Total:</strong>{" "}
+          ₹{Number(total).toLocaleString("en-IN")}
+        </p>
       </div>
 
-      {/* Main Grid */}
-      <div className="order-details-grid">
-        {/* Customer Details */}
-        <div className="details-card customer-card">
-          <div className="card-heading">
-            <div className="heading-icon">
-              <i className="bi bi-person"></i>
-            </div>
+      {/* Customer Information */}
+      <div
+        className="order-card"
+        style={{ marginTop: "20px" }}
+      >
+        <h2>Customer Information</h2>
 
-            <div>
-              <h2>Customer Details</h2>
-              <p>Customer information</p>
-            </div>
-          </div>
+        <p>
+          <strong>Name:</strong>{" "}
+          {customerName}
+        </p>
 
-          <div className="customer-info">
-            <div>
-              <span>Name</span>
-              <strong>{order.customer}</strong>
-            </div>
+        <p>
+          <strong>Email:</strong>{" "}
+          {customerEmail}
+        </p>
 
-            <div>
-              <span>Email</span>
-              <strong>{order.email}</strong>
-            </div>
-
-            <div>
-              <span>Phone</span>
-              <strong>{order.phone}</strong>
-            </div>
-
-            <div>
-              <span>Shipping Address</span>
-              <strong>{order.address}</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Details */}
-        <div className="details-card payment-card">
-          <div className="card-heading">
-            <div className="heading-icon payment-icon">
-              <i className="bi bi-credit-card"></i>
-            </div>
-
-            <div>
-              <h2>Payment Details</h2>
-              <p>Transaction information</p>
-            </div>
-          </div>
-
-          <div className="payment-info">
-            <div>
-              <span>Payment Status</span>
-              <strong className="paid">Paid</strong>
-            </div>
-
-            <div>
-              <span>Method</span>
-              <strong>{order.method}</strong>
-            </div>
-
-            <div>
-              <span>Shipping</span>
-              <strong>Standard Delivery</strong>
-            </div>
-          </div>
-        </div>
+        <p>
+          <strong>Phone:</strong>{" "}
+          {customerPhone}
+        </p>
       </div>
 
       {/* Products */}
-      <div className="details-card products-card">
-        <div className="products-card-header">
-          <div>
-            <h2>Ordered Products</h2>
-            <p>{order.items.length} items in this order</p>
-          </div>
-        </div>
+      <div
+        className="orders-table-container"
+        style={{ marginTop: "20px" }}
+      >
+        <h2 style={{ padding: "20px 20px 0" }}>
+          Order Items
+        </h2>
 
-        <div className="order-table-wrapper">
-          <table className="order-table">
+        {order.items?.length ? (
+          <table className="orders-table">
             <thead>
               <tr>
                 <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
                 <th>Quantity</th>
+                <th>Price</th>
                 <th>Total</th>
               </tr>
             </thead>
 
             <tbody>
-              {order.items.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    <div className="product-name">
-                      <div className="product-image">
-                        <i className="bi bi-box"></i>
-                      </div>
+              {order.items.map((item, index) => {
+                const product =
+                  item.product;
 
-                      <strong>{item.name}</strong>
-                    </div>
-                  </td>
+                const productName =
+                  product?.name ||
+                  product?.title ||
+                  "Product";
 
-                  <td>{item.category}</td>
+                const price =
+                  item.price ??
+                  product?.price ??
+                  0;
 
-                  <td>₹{item.price}</td>
+                const quantity =
+                  Number(item.quantity || 0);
 
-                  <td>{item.quantity}</td>
+                return (
+                  <tr key={item._id || index}>
+                    <td>
+                      {productName}
+                    </td>
 
-                  <td>
-                    <strong>
-                      ₹{item.price * item.quantity}
-                    </strong>
-                  </td>
-                </tr>
-              ))}
+                    <td>
+                      {quantity}
+                    </td>
+
+                    <td>
+                      ₹
+                      {Number(price).toLocaleString(
+                        "en-IN"
+                      )}
+                    </td>
+
+                    <td>
+                      ₹
+                      {Number(
+                        price * quantity
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
+        ) : (
+          <p style={{ padding: "20px" }}>
+            No items found.
+          </p>
+        )}
       </div>
-
-      {/* Bottom Section */}
-      <div className="order-bottom-grid">
-        {/* Order Timeline */}
-        <div className="details-card timeline-card">
-          <div className="card-heading">
-            <div className="heading-icon">
-              <i className="bi bi-clock-history"></i>
-            </div>
-
-            <div>
-              <h2>Order Status</h2>
-              <p>Order progress</p>
-            </div>
-          </div>
-
-          <div className="timeline">
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Order Placed</strong>
-                <span>Order has been placed successfully.</span>
-              </div>
-            </div>
-
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Processing</strong>
-                <span>Order is being prepared.</span>
-              </div>
-            </div>
-
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Shipped</strong>
-                <span>Package has been shipped.</span>
-              </div>
-            </div>
-
-            <div className="timeline-item completed">
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>Delivered</strong>
-                <span>Order delivered to customer.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Price Summary */}
-        <div className="details-card summary-card">
-          <h2>Order Summary</h2>
-
-          <div className="summary-row">
-            <span>Subtotal</span>
-            <strong>₹{subtotal}</strong>
-          </div>
-
-          <div className="summary-row">
-            <span>Shipping</span>
-            <strong>₹{shipping}</strong>
-          </div>
-
-          <div className="summary-divider"></div>
-
-          <div className="summary-total">
-            <span>Total Amount</span>
-            <strong>₹{total}</strong>
-          </div>
-
-          <button
-            className="orders-btn"
-            onClick={() => navigate("/admin/orders")}
-          >
-            View All Orders
-          </button>
-        </div>
-      </div>
-    </div>
+    </main>
   );
 }
 

@@ -11,7 +11,6 @@
 .figma-checkout-container {
   width: 100%;
   max-width: 1100px;
-
   margin: 0 auto;
 
   display: grid;
@@ -19,7 +18,6 @@
 
   align-items: stretch;
 }
-
 
 /* =========================================================
    MOBILE BACK BUTTON
@@ -29,6 +27,23 @@
   display: none;
 }
 
+/* =========================================================
+   ERROR
+========================================================= */
+
+.checkout-error {
+  width: 100%;
+  max-width: 1100px;
+  margin: 15px auto;
+  padding: 12px 16px;
+
+  background: #ffecec;
+  border: 1px solid #ffbdbd;
+  color: #c00000;
+
+  font-size: 12px;
+  box-sizing: border-box;
+}
 
 /* =========================================================
    LEFT - DELIVERY
@@ -47,7 +62,6 @@
 
   box-sizing: border-box;
 }
-
 
 /* =========================================================
    LOGO
@@ -68,10 +82,8 @@
   height: auto;
 
   display: block;
-
   object-fit: contain;
 }
-
 
 /* =========================================================
    DELIVERY TITLE
@@ -87,7 +99,6 @@
 
   color: #111111;
 }
-
 
 /* =========================================================
    FIELDS
@@ -161,7 +172,6 @@
   font-size: 10px;
 }
 
-
 /* =========================================================
    NAME
 ========================================================= */
@@ -176,7 +186,6 @@
   gap: 8px;
 }
 
-
 /* =========================================================
    CITY / STATE / PIN
 ========================================================= */
@@ -190,7 +199,6 @@
 
   gap: 8px;
 }
-
 
 /* =========================================================
    SAVE INFO
@@ -221,6 +229,90 @@
   cursor: pointer;
 }
 
+/* =========================================================
+   COUPON
+========================================================= */
+
+.coupon-section {
+  width: 100%;
+
+  margin-top: 20px;
+}
+
+.coupon-section h2 {
+  margin: 0 0 8px;
+
+  font-size: 12px;
+
+  color: #111111;
+}
+
+.discount-box {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: 1fr auto;
+
+  gap: 8px;
+
+  margin-bottom: 15px;
+}
+
+.discount-box input {
+  width: 100%;
+
+  height: 35px;
+
+  padding: 0 9px;
+
+  border: 1px solid #dddddd;
+
+  border-radius: 5px;
+
+  background: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 9px;
+
+  outline: none;
+
+  box-sizing: border-box;
+}
+
+.discount-box button {
+  height: 35px;
+
+  padding: 0 14px;
+
+  border: none;
+
+  border-radius: 5px;
+
+  background: #eeeeee;
+
+  color: #777777;
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.discount-box button:hover {
+  background: #111111;
+  color: #ffffff;
+}
+
+.coupon-message {
+  margin: 5px 0 0;
+
+  font-size: 9px;
+
+  color: #555555;
+}
 
 /* =========================================================
    RIGHT SIDE
@@ -235,7 +327,6 @@
 
   box-sizing: border-box;
 }
-
 
 /* =========================================================
    PRODUCTS
@@ -346,80 +437,6 @@
   white-space: nowrap;
 }
 
-
-/* =========================================================
-   COUPON
-========================================================= */
-
-.coupon-section {
-  width: 100%;
-
-  margin-top: 20px;
-}
-
-.coupon-section h2 {
-  margin: 0 0 8px;
-
-  font-size: 12px;
-
-  color: #111111;
-}
-
-.discount-box {
-  width: 100%;
-
-  display: grid;
-
-  grid-template-columns: 1fr auto;
-
-  gap: 8px;
-
-  margin-bottom: 15px;
-}
-
-.discount-box input {
-  width: 100%;
-
-  height: 35px;
-
-  padding: 0 9px;
-
-  border: 1px solid #dddddd;
-
-  border-radius: 5px;
-
-  background: #ffffff;
-
-  font-family: inherit;
-
-  font-size: 9px;
-
-  outline: none;
-
-  box-sizing: border-box;
-}
-
-.discount-box button {
-  height: 35px;
-
-  padding: 0 14px;
-
-  border: none;
-
-  border-radius: 5px;
-
-  background: #eeeeee;
-
-  color: #777777;
-
-  font-size: 9px;
-
-  font-weight: 600;
-
-  cursor: pointer;
-}
-
-
 /* =========================================================
    PRICE
 ========================================================= */
@@ -455,7 +472,6 @@
 .shipping-value {
   color: #777777;
 }
-
 
 /* =========================================================
    TOTAL
@@ -510,7 +526,6 @@
 
   color: #888888;
 }
-
 
 /* =========================================================
    PAYMENT
@@ -647,7 +662,6 @@
   color: #333333;
 }
 
-
 /* =========================================================
    BILLING
 ========================================================= */
@@ -715,17 +729,29 @@
   color: #333333;
 }
 
+.checkout-note {
+  margin: 8px 0;
+
+  font-size: 9px;
+
+  color: #777777;
+}
 
 /* =========================================================
    PLACE ORDER
 ========================================================= */
 
-.figma-pay-button {
+.figma-pay-button,
+.place-order-btn {
+  display: block;
+
   width: 100%;
 
-  height: 43px;
+  min-height: 43px;
 
   margin-top: 10px;
+
+  padding: 12px 20px;
 
   border: none;
 
@@ -743,25 +769,29 @@
 
   cursor: pointer;
 
+  text-align: center;
+
   transition:
     background 0.2s ease,
     transform 0.1s ease;
 }
 
-.figma-pay-button:hover {
+.figma-pay-button:hover,
+.place-order-btn:hover {
   background: #222222;
 }
 
-.figma-pay-button:active {
+.figma-pay-button:active,
+.place-order-btn:active {
   transform: scale(0.99);
 }
 
-.figma-pay-button:disabled {
+.figma-pay-button:disabled,
+.place-order-btn:disabled {
   opacity: 0.6;
 
   cursor: not-allowed;
 }
-
 
 /* =========================================================
    POLICY LINKS
@@ -800,7 +830,6 @@
 
   color: #b5b5b5;
 }
-
 
 /* =========================================================
    EMPTY
@@ -856,7 +885,16 @@
   color: #111111;
 }
 
-.checkout-empty button {
+.checkout-empty p {
+  margin: 0 0 20px;
+
+  font-size: 12px;
+
+  color: #777777;
+}
+
+.checkout-empty button,
+.checkout-shop-btn {
   height: 42px;
 
   padding: 0 25px;
@@ -874,15 +912,39 @@
   font-weight: 600;
 
   cursor: pointer;
+
+  text-decoration: none;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
 }
 
+/* =========================================================
+   LOADING
+========================================================= */
+
+.checkout-loading {
+  min-height: 70vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 14px;
+
+  color: #555555;
+}
 
 /* =========================================================
    TABLET
 ========================================================= */
 
 @media (max-width: 1000px) {
-
   .figma-checkout-container {
     grid-template-columns: 1fr 1fr;
   }
@@ -896,15 +958,11 @@
   }
 }
 
-
 /* =========================================================
    MOBILE
 ========================================================= */
 
 @media (max-width: 700px) {
-
-  /* ================= BACK ARROW ================= */
-
   .checkout-back-button {
     display: flex;
 
@@ -941,8 +999,11 @@
     transform: scale(0.9);
   }
 
+  .checkout-error {
+    margin: 10px 20px;
 
-  /* ================= MAIN ================= */
+    width: calc(100% - 40px);
+  }
 
   .figma-checkout {
     width: 100%;
@@ -966,9 +1027,6 @@
     flex-direction: column;
   }
 
-
-  /* ================= DELIVERY ================= */
-
   .delivery-section {
     width: 100%;
 
@@ -984,9 +1042,6 @@
 
     box-sizing: border-box;
   }
-
-
-  /* ================= LOGO ================= */
 
   .checkout-logo {
     width: 100%;
@@ -1008,9 +1063,6 @@
     display: block;
   }
 
-
-  /* ================= DELIVERY TITLE ================= */
-
   .delivery-title {
     margin: 0 0 16px;
 
@@ -1022,9 +1074,6 @@
 
     color: #111111;
   }
-
-
-  /* ================= INPUTS ================= */
 
   .checkout-field {
     width: 100%;
@@ -1074,9 +1123,6 @@
     font-size: 12px;
   }
 
-
-  /* ================= NAME ================= */
-
   .checkout-row {
     width: 100%;
 
@@ -1087,9 +1133,6 @@
     gap: 10px;
   }
 
-
-  /* ================= CITY / STATE / PIN ================= */
-
   .checkout-location-row {
     width: 100%;
 
@@ -1099,9 +1142,6 @@
 
     gap: 0;
   }
-
-
-  /* ================= SAVE INFO ================= */
 
   .save-info {
     display: flex;
@@ -1124,9 +1164,6 @@
     margin: 0;
   }
 
-
-  /* ================= COUPON ================= */
-
   .coupon-section {
     width: 100%;
 
@@ -1148,8 +1185,7 @@
 
     display: grid;
 
-    grid-template-columns:
-      minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
 
     gap: 8px;
 
@@ -1192,9 +1228,6 @@
     cursor: pointer;
   }
 
-
-  /* ================= RIGHT ================= */
-
   .checkout-right {
     width: 100%;
 
@@ -1204,9 +1237,6 @@
 
     box-sizing: border-box;
   }
-
-
-  /* ================= PRODUCTS ================= */
 
   .order-summary-products {
     width: 100%;
@@ -1219,8 +1249,7 @@
 
     display: grid;
 
-    grid-template-columns:
-      58px minmax(0, 1fr) auto;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
 
     align-items: center;
 
@@ -1314,9 +1343,6 @@
     white-space: nowrap;
   }
 
-
-  /* ================= PRICE ================= */
-
   .price-details {
     width: 100%;
 
@@ -1344,9 +1370,6 @@
   .price-row:last-child {
     margin-bottom: 0;
   }
-
-
-  /* ================= TOTAL ================= */
 
   .figma-total {
     width: 100%;
@@ -1394,9 +1417,6 @@
     color: #888888;
   }
 
-
-  /* ================= PAYMENT ================= */
-
   .payment-section {
     width: 100%;
   }
@@ -1426,8 +1446,7 @@
 
     display: grid;
 
-    grid-template-columns:
-      18px minmax(0, 1fr) auto;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
 
     align-items: center;
 
@@ -1523,9 +1542,6 @@
     color: #333333;
   }
 
-
-  /* ================= BILLING ================= */
-
   .billing-section {
     width: 100%;
 
@@ -1589,13 +1605,11 @@
     color: #333333;
   }
 
-
-  /* ================= PLACE ORDER ================= */
-
-  .figma-pay-button {
+  .figma-pay-button,
+  .place-order-btn {
     width: 100%;
 
-    height: 48px;
+    min-height: 48px;
 
     margin-top: 18px;
 
@@ -1616,12 +1630,10 @@
     cursor: pointer;
   }
 
-  .figma-pay-button:hover {
+  .figma-pay-button:hover,
+  .place-order-btn:hover {
     background: #222222;
   }
-
-
-  /* ================= POLICY ================= */
 
   .checkout-policy-links {
     width: 100%;
@@ -1645,13 +1657,11 @@
   }
 }
 
-
 /* =========================================================
    SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 480px) {
-
   .checkout-back-button {
     width: 34px;
     height: 34px;
@@ -1697,8 +1707,7 @@
   }
 
   .figma-product {
-    grid-template-columns:
-      52px minmax(0, 1fr) auto;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
 
     column-gap: 10px;
   }
@@ -1741,13 +1750,11 @@
   }
 }
 
-
 /* =========================================================
    VERY SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 360px) {
-
   .delivery-section {
     padding-left: 12px;
     padding-right: 12px;
@@ -1760,6 +1767,7 @@
 
   .checkout-row {
     grid-template-columns: 1fr;
+
     gap: 0;
   }
 
@@ -1774,8 +1782,7 @@
   }
 
   .figma-product {
-    grid-template-columns:
-      44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
 
     column-gap: 8px;
   }
@@ -1798,8 +1805,7 @@
   }
 
   .payment-method {
-    grid-template-columns:
-      15px minmax(0, 1fr) auto;
+    grid-template-columns: 15px minmax(0, 1fr) auto;
 
     gap: 5px;
 
