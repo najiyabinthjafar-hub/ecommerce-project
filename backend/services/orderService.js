@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
@@ -36,6 +37,35 @@ const updateOrderStatus = async (
   orderId,
   orderStatus
 ) => {
+  const existingOrder = await Order.findById(orderId);
+
+  if (!existingOrder) {
+    return null;
+  }
+
+  // Restore stock only when an order is cancelled
+  if (
+    orderStatus === "CANCELLED" &&
+    existingOrder.orderStatus !== "CANCELLED"
+  ) {
+    for (const item of existingOrder.items) {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { stock: item.quantity } },
+        { new: true }
+      );
+
+      console.log(
+        "STOCK RESTORED:",
+        item.product,
+        "Quantity:",
+        item.quantity,
+        "New Stock:",
+        updatedProduct ? updatedProduct.stock : "PRODUCT NOT FOUND"
+      );
+    }
+  }
+
   const order = await Order.findByIdAndUpdate(
     orderId,
     { orderStatus },
@@ -114,3 +144,8 @@ module.exports = {
   updateOrderStatus,
   getBestSellingProducts,
 };
+
+
+
+
+

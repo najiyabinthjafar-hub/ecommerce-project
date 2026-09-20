@@ -38,6 +38,7 @@ function Orders() {
 
         console.log("Orders API response:", response.data);
 
+
         setOrders(response.data.orders || response.data.data || []);
       } catch (error) {
         console.error("Fetch orders error:", error);
@@ -346,3 +347,5 @@ function Orders() {
 }
 
 export default Orders;
+
+
