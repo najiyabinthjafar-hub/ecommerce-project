@@ -300,6 +300,8 @@ const updateProductStock = async (id, stock) => {
 
 // ================= REDUCE PRODUCT STOCK =================
 
+// ================= REDUCE PRODUCT STOCK =================
+
 const reduceProductStock = async (id, quantity) => {
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new Error("Quantity must be a positive integer");
@@ -320,6 +322,35 @@ const reduceProductStock = async (id, quantity) => {
       runValidators: true,
     }
   );
+
+  // ================= STOCK NOTIFICATIONS =================
+
+  if (product) {
+    const admin = await notificationService.getAdminUser();
+
+    if (admin) {
+
+      // OUT OF STOCK
+      if (product.stock === 0) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Product Out of Stock",
+          message: `${product.name} is out of stock.`,
+          type: "PRODUCT",
+        });
+      }
+
+      // LOW STOCK
+      else if (product.stock <= 5) {
+        await notificationService.createNotification({
+          user: admin._id,
+          title: "Low Stock Alert",
+          message: `${product.name} has only ${product.stock} items left.`,
+          type: "PRODUCT",
+        });
+      }
+    }
+  }
 
   return product;
 };
