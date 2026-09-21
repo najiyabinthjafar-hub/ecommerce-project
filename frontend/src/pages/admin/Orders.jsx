@@ -24,6 +24,12 @@ function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   const fetchOrders = async () => {
     try {
@@ -170,6 +176,10 @@ function Orders() {
     });
   }, [orders, search, statusFilter]);
 
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const startIndex = (currentPage - 1) * ordersPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+
   const pendingOrders = orders.filter(
     (order) =>
       String(
@@ -300,7 +310,7 @@ function Orders() {
               </thead>
 
               <tbody>
-                {filteredOrders.map((order) => {
+                {paginatedOrders.map((order) => {
                   const customerName =
                     order.user?.name ||
                     order.user?.fullName ||
@@ -405,9 +415,42 @@ function Orders() {
             </table>
           )}
         </div>
-      </main>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 py-6">
+            <button
+              onClick={() =>
+                setCurrentPage((page) => Math.max(page - 1, 1))
+              }
+              disabled={currentPage === 1}
+              className="px-4 py-2 border rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(page + 1, totalPages)
+                )
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}      </main>
     </div>
   );
 }
 
 export default Orders;
+
+
+
+
+
