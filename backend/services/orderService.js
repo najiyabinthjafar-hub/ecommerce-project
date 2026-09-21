@@ -1,7 +1,8 @@
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 const notificationService = require("./notificationService");
 
-
+// ================= CREATE ORDER =================
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
@@ -29,6 +30,8 @@ const createOrder = async (orderData) => {
   return order;
 };
 
+// ================= GET USER ORDERS =================
+
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
@@ -37,7 +40,8 @@ const getOrdersByUser = async (userId) => {
   return orders;
 };
 
-// Get all customers' orders
+// ================= GET ALL ORDERS =================
+
 const getAllOrders = async () => {
   const orders = await Order.find()
     .populate("items.product")
@@ -47,30 +51,71 @@ const getAllOrders = async () => {
   return orders;
 };
 
-const getOrderById = async (orderId,userId) => {
+// ================= GET ORDER BY ID =================
+
+const getOrderById = async (orderId, userId) => {
   const order = await Order.findOne({
-  _id: orderId,
-  user: userId,
-})
+    _id: orderId,
+    user: userId,
+  })
     .populate("items.product")
     .populate("user", "-password");
 
   return order;
 };
 
-const updateOrderStatus = async (
-  orderId,
-  orderStatus
-) => {
+// ================= UPDATE ORDER STATUS =================
+
+const updateOrderStatus = async (orderId, orderStatus) => {
+  const existingOrder = await Order.findById(orderId);
+
+  if (!existingOrder) {
+    return null;
+  }
+
+  // Restore stock only when an order is cancelled
+  if (
+    orderStatus === "CANCELLED" &&
+    existingOrder.orderStatus !== "CANCELLED"
+  ) {
+    for (const item of existingOrder.items) {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        item.product,
+        {
+          $inc: {
+            stock: item.quantity,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      console.log(
+        "STOCK RESTORED:",
+        item.product,
+        "Quantity:",
+        item.quantity,
+        "New Stock:",
+        updatedProduct
+          ? updatedProduct.stock
+          : "PRODUCT NOT FOUND"
+      );
+    }
+  }
+
   const order = await Order.findByIdAndUpdate(
     orderId,
-    { orderStatus },
+    {
+      orderStatus,
+    },
     {
       new: true,
       runValidators: true,
     }
   );
 
+  // Notify customer about status change
   if (order) {
     await notificationService.createNotification({
       user: order.user,
@@ -80,9 +125,10 @@ const updateOrderStatus = async (
     });
   }
 
-
   return order;
 };
+
+// ================= BEST SELLING PRODUCTS =================
 
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
@@ -142,6 +188,7 @@ const getBestSellingProducts = async () => {
 
   return bestSellers;
 };
+
 module.exports = {
   createOrder,
   getOrdersByUser,

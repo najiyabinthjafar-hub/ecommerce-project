@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./Shop.css";
@@ -12,30 +17,45 @@ function Shop() {
   const navigate = useNavigate();
 
   const searchQuery =
-    searchParams.get("search")?.toLowerCase().trim() || "";
+    searchParams.get("search")?.toLowerCase().trim() ||
+    "";
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [wishlistIds, setWishlistIds] = useState([]);
-  const [loadingWishlist, setLoadingWishlist] = useState(true);
-  const [updatingWishlist, setUpdatingWishlist] = useState(null);
+  const [loadingWishlist, setLoadingWishlist] =
+    useState(true);
+  const [updatingWishlist, setUpdatingWishlist] =
+    useState(null);
 
-  const [availability, setAvailability] = useState("all");
-  const [priceOrder, setPriceOrder] = useState("default");
-  const [sortBy, setSortBy] = useState("newest");
+  const [availability, setAvailability] =
+    useState("all");
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [priceOrder, setPriceOrder] =
+    useState("default");
+
+  const [sortBy, setSortBy] =
+    useState("newest");
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
   const productsPerPage = 8;
 
-  const getToken = () => localStorage.getItem("token");
+  // ================= TOKEN =================
+
+  const getToken = () =>
+    localStorage.getItem("token");
 
   const getAuthConfig = () => ({
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
+
+  // ================= FETCH PRODUCTS =================
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -44,12 +64,22 @@ function Shop() {
         setError("");
 
         const response = await axios.get(
-          `${API_URL}/products?limit=8`
+          `${API_URL}/products?limit=100`
         );
 
-        setProducts(response.data.products || []);
+        console.log(
+          "PRODUCTS RESPONSE:",
+          response.data
+        );
+
+        setProducts(
+          response.data?.products || []
+        );
       } catch (error) {
-        console.error("PRODUCT API ERROR:", error);
+        console.error(
+          "PRODUCT API ERROR:",
+          error
+        );
 
         setError(
           error.response?.data?.message ||
@@ -64,6 +94,8 @@ function Shop() {
     fetchProducts();
   }, []);
 
+  // ================= FETCH WISHLIST =================
+
   useEffect(() => {
     const fetchWishlist = async () => {
       const token = getToken();
@@ -75,27 +107,39 @@ function Shop() {
       }
 
       try {
-        console.log("FETCHING SHOP WISHLIST...");
+        console.log(
+          "FETCHING SHOP WISHLIST..."
+        );
 
         const response = await axios.get(
           `${API_URL}/wishlist`,
           getAuthConfig()
         );
 
-        console.log("SHOP WISHLIST RESPONSE:", response.data);
+        console.log(
+          "SHOP WISHLIST RESPONSE:",
+          response.data
+        );
 
         const wishlistProducts =
-          response.data.wishlist?.products || [];
+          response.data?.wishlist?.products ||
+          [];
 
-        const ids = wishlistProducts.map((item) =>
-          String(item._id || item.id || item)
+        const ids = wishlistProducts.map(
+          (item) =>
+            String(
+              item?._id ||
+                item?.id ||
+                item
+            )
         );
 
         setWishlistIds(ids);
       } catch (error) {
         console.error(
           "SHOP FETCH WISHLIST ERROR:",
-          error.response?.data || error.message
+          error.response?.data ||
+            error.message
         );
 
         setWishlistIds([]);
@@ -107,54 +151,88 @@ function Shop() {
     fetchWishlist();
   }, []);
 
-  const handleWishlist = async (e, product) => {
+  // ================= WISHLIST =================
+
+  const handleWishlist = async (
+    e,
+    product
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
     const token = getToken();
 
     if (!token) {
-      alert("Please login to add products to your wishlist.");
+      alert(
+        "Please login to add products to your wishlist."
+      );
+
       navigate("/login");
       return;
     }
 
-    const productId = String(product._id || product.id);
-    const isWishlisted = wishlistIds.includes(productId);
+    const productId = String(
+      product._id || product.id
+    );
+
+    const isWishlisted =
+      wishlistIds.includes(productId);
 
     try {
       setUpdatingWishlist(productId);
 
       if (isWishlisted) {
-        console.log("REMOVING FROM WISHLIST:", productId);
-
-        const response = await axios.delete(
-          `${API_URL}/wishlist/remove/${productId}`,
-          getAuthConfig()
+        console.log(
+          "REMOVING FROM WISHLIST:",
+          productId
         );
 
-        console.log("REMOVE WISHLIST RESPONSE:", response.data);
+        const response =
+          await axios.delete(
+            `${API_URL}/wishlist/remove/${productId}`,
+            getAuthConfig()
+          );
+
+        console.log(
+          "REMOVE WISHLIST RESPONSE:",
+          response.data
+        );
 
         setWishlistIds((prev) =>
-          prev.filter((id) => id !== productId)
+          prev.filter(
+            (id) => id !== productId
+          )
         );
       } else {
-        console.log("ADDING TO WISHLIST:", productId);
-
-        const response = await axios.post(
-          `${API_URL}/wishlist/add`,
-          { productId: productId },
-          getAuthConfig()
+        console.log(
+          "ADDING TO WISHLIST:",
+          productId
         );
 
-        console.log("ADD WISHLIST RESPONSE:", response.data);
+        const response =
+          await axios.post(
+            `${API_URL}/wishlist/add`,
+            {
+              productId,
+            },
+            getAuthConfig()
+          );
 
-        setWishlistIds((prev) => [...prev, productId]);
+        console.log(
+          "ADD WISHLIST RESPONSE:",
+          response.data
+        );
+
+        setWishlistIds((prev) => [
+          ...prev,
+          productId,
+        ]);
       }
     } catch (error) {
       console.error(
         "SHOP WISHLIST ERROR:",
-        error.response?.data || error.message
+        error.response?.data ||
+          error.message
       );
 
       alert(
@@ -166,36 +244,60 @@ function Shop() {
     }
   };
 
+  // ================= FILTER PRODUCTS =================
+
   let filteredProducts = [...products];
 
   if (searchQuery) {
-    filteredProducts = filteredProducts.filter((product) => {
-      const productName =
-        product.name?.toLowerCase() || "";
+    filteredProducts =
+      filteredProducts.filter(
+        (product) => {
+          const productName =
+            product.name?.toLowerCase() ||
+            "";
 
-      const categoryName =
-        product.category?.name?.toLowerCase() || "";
+          const categoryName =
+            product.category?.name?.toLowerCase() ||
+            "";
 
-      const description =
-        product.description?.toLowerCase() || "";
+          const description =
+            product.description?.toLowerCase() ||
+            "";
 
-      return (
-        productName.includes(searchQuery) ||
-        categoryName.includes(searchQuery) ||
-        description.includes(searchQuery)
+          return (
+            productName.includes(
+              searchQuery
+            ) ||
+            categoryName.includes(
+              searchQuery
+            ) ||
+            description.includes(
+              searchQuery
+            )
+          );
+        }
       );
-    });
   }
+
+  // ================= AVAILABILITY =================
 
   if (availability === "available") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.stock > 0
-    );
-  } else if (availability === "soldout") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.stock === 0
-    );
+    filteredProducts =
+      filteredProducts.filter(
+        (product) =>
+          Number(product.stock || 0) > 0
+      );
+  } else if (
+    availability === "soldout"
+  ) {
+    filteredProducts =
+      filteredProducts.filter(
+        (product) =>
+          Number(product.stock || 0) === 0
+      );
   }
+
+  // ================= PRICE SORT =================
 
   if (priceOrder === "low-high") {
     filteredProducts.sort((a, b) => {
@@ -203,29 +305,39 @@ function Shop() {
         a.salePrice !== null &&
         a.salePrice !== undefined
           ? a.salePrice
-          : a.regularPrice || a.price || 0;
+          : a.regularPrice ||
+            a.price ||
+            0;
 
       const priceB =
         b.salePrice !== null &&
         b.salePrice !== undefined
           ? b.salePrice
-          : b.regularPrice || b.price || 0;
+          : b.regularPrice ||
+            b.price ||
+            0;
 
       return priceA - priceB;
     });
-  } else if (priceOrder === "high-low") {
+  } else if (
+    priceOrder === "high-low"
+  ) {
     filteredProducts.sort((a, b) => {
       const priceA =
         a.salePrice !== null &&
         a.salePrice !== undefined
           ? a.salePrice
-          : a.regularPrice || a.price || 0;
+          : a.regularPrice ||
+            a.price ||
+            0;
 
       const priceB =
         b.salePrice !== null &&
         b.salePrice !== undefined
           ? b.salePrice
-          : b.regularPrice || b.price || 0;
+          : b.regularPrice ||
+            b.price ||
+            0;
 
       return priceB - priceA;
     });
@@ -243,24 +355,34 @@ function Shop() {
     );
   }
 
+  // ================= PAGINATION =================
+
   const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
+    filteredProducts.length /
+      productsPerPage
   );
 
   const safeCurrentPage =
-    currentPage > totalPages && totalPages > 0
+    currentPage > totalPages &&
+    totalPages > 0
       ? totalPages
       : currentPage;
 
   const startIndex =
-    (safeCurrentPage - 1) * productsPerPage;
+    (safeCurrentPage - 1) *
+    productsPerPage;
 
-  const currentProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + productsPerPage
-  );
+  const currentProducts =
+    filteredProducts.slice(
+      startIndex,
+      startIndex + productsPerPage
+    );
 
-  const handleAvailabilityChange = (value) => {
+  // ================= FILTER HANDLERS =================
+
+  const handleAvailabilityChange = (
+    value
+  ) => {
     setAvailability(value);
     setCurrentPage(1);
   };
@@ -276,7 +398,8 @@ function Shop() {
     setCurrentPage(1);
   };
 
-  // Pagination click cheyyumbol page topilekku pokum
+  // ================= PAGE CHANGE =================
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
 
@@ -291,6 +414,7 @@ function Shop() {
       <Navbar />
 
       <main className="shop-page">
+        {/* ================= HEADING ================= */}
 
         <section className="shop-heading">
           <h1>SHOP</h1>
@@ -298,15 +422,17 @@ function Shop() {
           {searchQuery && (
             <p className="search-result-text">
               Search results for:{" "}
-              <strong>"{searchQuery}"</strong>
+              <strong>
+                "{searchQuery}"
+              </strong>
             </p>
           )}
         </section>
 
+        {/* ================= FILTER BAR ================= */}
+
         <section className="shop-filter-bar">
-
           <div className="filter-left">
-
             <span className="filter-title">
               FILTER
             </span>
@@ -352,13 +478,10 @@ function Shop() {
                 HIGH TO LOW
               </option>
             </select>
-
           </div>
 
           <div className="filter-right">
-
             <div className="sort-by">
-
               <span>SORT BY:</span>
 
               <select
@@ -377,16 +500,16 @@ function Shop() {
                   FEATURED
                 </option>
               </select>
-
             </div>
 
             <span className="product-count">
-              {filteredProducts.length} PRODUCTS
+              {filteredProducts.length}{" "}
+              PRODUCTS
             </span>
-
           </div>
-
         </section>
+
+        {/* ================= LOADING ================= */}
 
         {loading && (
           <p className="no-products">
@@ -394,128 +517,132 @@ function Shop() {
           </p>
         )}
 
+        {/* ================= ERROR ================= */}
+
         {!loading && error && (
           <p className="no-products">
             Error: {error}
           </p>
         )}
 
+        {/* ================= PRODUCTS ================= */}
+
         {!loading && !error && (
           <section className="shop-products">
-
             {currentProducts.length > 0 ? (
+              currentProducts.map(
+                (product) => {
+                  const productId =
+                    product._id ||
+                    product.id;
 
-              currentProducts.map((product) => {
+                  const productPrice =
+                    product.salePrice !==
+                      null &&
+                    product.salePrice !==
+                      undefined
+                      ? product.salePrice
+                      : product.regularPrice ||
+                        product.price ||
+                        0;
 
-                const productId =
-                  product._id || product.id;
+                  const productImage =
+                    product.images?.[0] ||
+                    product.image ||
+                    "https://via.placeholder.com/300";
 
-                const productPrice =
-                  product.salePrice !== null &&
-                  product.salePrice !== undefined
-                    ? product.salePrice
-                    : product.regularPrice ||
-                      product.price ||
-                      0;
+                  const isWishlisted =
+                    wishlistIds.includes(
+                      String(productId)
+                    );
 
-                const productImage =
-                  product.images?.[0] ||
-                  product.image ||
-                  "https://via.placeholder.com/300";
+                  const isUpdating =
+                    updatingWishlist ===
+                    String(productId);
 
-                const isWishlisted =
-                  wishlistIds.includes(
-                    String(productId)
-                  );
+                  return (
+                    <Link
+                      to={`/product/${productId}`}
+                      className="shop-product-card"
+                      key={productId}
+                    >
+                      <div className="shop-product-image">
+                        {/* WISHLIST */}
 
-                const isUpdating =
-                  updatingWishlist ===
-                  String(productId);
+                        <button
+                          type="button"
+                          className={`shop-wishlist-btn ${
+                            isWishlisted
+                              ? "active-wishlist"
+                              : ""
+                          }`}
+                          onClick={(e) =>
+                            handleWishlist(
+                              e,
+                              product
+                            )
+                          }
+                          disabled={
+                            loadingWishlist ||
+                            isUpdating
+                          }
+                          aria-label="Add to wishlist"
+                        >
+                          {isWishlisted
+                            ? "♥"
+                            : "♡"}
+                        </button>
 
-                return (
-                  <Link
-                    to={`/product/${productId}`}
-                    className="shop-product-card"
-                    key={productId}
-                  >
+                        {/* SOLD OUT */}
 
-                    <div className="shop-product-image">
-
-                      <button
-                        type="button"
-                        className={`shop-wishlist-btn ${
-                          isWishlisted
-                            ? "active-wishlist"
-                            : ""
-                        }`}
-                        onClick={(e) =>
-                          handleWishlist(
-                            e,
-                            product
-                          )
-                        }
-                        disabled={
-                          loadingWishlist ||
-                          isUpdating
-                        }
-                        aria-label="Add to wishlist"
-                      >
-                        {isWishlisted
-                          ? "♥"
-                          : "♡"}
-                      </button>
-
-                      {product.stock === 0 && (
-                        <span className="sold-out">
-                          SOLD OUT
-                        </span>
-                      )}
-
-                      <img
-                        src={productImage}
-                        alt={product.name}
-                      />
-
-                    </div>
-
-                    <div className="shop-product-info">
-
-                      <h3>
-                        {product.name}
-                      </h3>
-
-                      <p>
-                        ₹
                         {Number(
-                          productPrice
-                        ).toLocaleString(
-                          "en-IN"
+                          product.stock || 0
+                        ) === 0 && (
+                          <span className="sold-out">
+                            SOLD OUT
+                          </span>
                         )}
-                      </p>
 
-                    </div>
+                        <img
+                          src={productImage}
+                          alt={
+                            product.name
+                          }
+                        />
+                      </div>
 
-                  </Link>
-                );
-              })
+                      <div className="shop-product-info">
+                        <h3>
+                          {product.name}
+                        </h3>
 
+                        <p>
+                          ₹
+                          {Number(
+                            productPrice
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                }
+              )
             ) : (
-
               <p className="no-products">
                 No products found.
               </p>
-
             )}
-
           </section>
         )}
+
+        {/* ================= PAGINATION ================= */}
 
         {!loading &&
           !error &&
           totalPages > 1 && (
-
             <div className="shop-pagination">
-
               <button
                 onClick={() =>
                   handlePageChange(
@@ -533,9 +660,10 @@ function Shop() {
               </button>
 
               {Array.from(
-                { length: totalPages },
+                {
+                  length: totalPages,
+                },
                 (_, index) => (
-
                   <button
                     key={index}
                     className={
@@ -552,7 +680,6 @@ function Shop() {
                   >
                     {index + 1}
                   </button>
-
                 )
               )}
 
@@ -572,10 +699,8 @@ function Shop() {
               >
                 →
               </button>
-
             </div>
           )}
-
       </main>
 
       <Footer />
