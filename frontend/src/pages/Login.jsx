@@ -1,8 +1,11 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Login.css";
@@ -32,27 +35,18 @@ function Login() {
         }
       );
 
-      console.log(
-        "Login response:",
-        response.data
-      );
+      console.log("Login response:", response.data);
 
-      const { token, user } =
-        response.data;
+      const { token, user } = response.data;
 
       // Check token
       if (!token) {
-        setError(
-          "Login failed: Token not received."
-        );
+        setError("Login failed: Token not received.");
         return;
       }
 
       // Save JWT token
-      localStorage.setItem(
-        "token",
-        token
-      );
+      localStorage.setItem("token", token);
 
       // Save user details
       if (user) {
@@ -61,24 +55,20 @@ function Login() {
           JSON.stringify(user)
         );
 
-        if (user._id) {
+        if (user._id || user.id) {
           localStorage.setItem(
             "userId",
-            user._id
+            user._id || user.id
           );
         }
       }
 
       alert("Login successful!");
 
-      // Go to home page
-      navigate("/");
-
+      // Go to home page and remove login page from history
+      navigate("/", { replace: true });
     } catch (error) {
-      console.error(
-        "Login error:",
-        error
-      );
+      console.error("Login error:", error);
 
       setError(
         error.response?.data?.message ||
@@ -98,30 +88,22 @@ function Login() {
       <Navbar />
 
       <main className="login-page">
-
         <section className="login-container">
 
           {/* HEADER */}
-
           <div className="login-header">
-
             <p className="login-label">
               WELCOME BACK
             </p>
 
-            <h1>
-              LOGIN
-            </h1>
+            <h1>LOGIN</h1>
 
             <span>
-              Sign in to continue
-              shopping with us.
+              Sign in to continue shopping with us.
             </span>
-
           </div>
 
           {/* ERROR */}
-
           {error && (
             <p className="login-error-message">
               {error}
@@ -129,16 +111,13 @@ function Login() {
           )}
 
           {/* LOGIN FORM */}
-
           <form
             className="login-form"
             onSubmit={handleLogin}
           >
 
             {/* EMAIL */}
-
             <div className="login-field">
-
               <label htmlFor="email">
                 EMAIL ADDRESS
               </label>
@@ -149,20 +128,28 @@ function Login() {
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(event) =>
-                  setEmail(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setEmail(event.target.value);
+
+                  event.target.setCustomValidity("");
+                }}
+                onInvalid={(event) => {
+                  if (!event.target.value.trim()) {
+                    event.target.setCustomValidity(
+                      "Please enter your email address."
+                    );
+                  } else {
+                    event.target.setCustomValidity(
+                      "Please enter a valid email address."
+                    );
+                  }
+                }}
                 required
               />
-
             </div>
 
             {/* PASSWORD */}
-
             <div className="login-field">
-
               <label htmlFor="password">
                 PASSWORD
               </label>
@@ -173,22 +160,23 @@ function Login() {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(event) =>
-                  setPassword(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setPassword(event.target.value);
+
+                  event.target.setCustomValidity("");
+                }}
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(
+                    "Please enter your password."
+                  );
+                }}
                 required
               />
-
             </div>
 
             {/* REMEMBER + FORGOT */}
-
             <div className="login-options">
-
               <label className="remember-me">
-
                 <input
                   type="checkbox"
                   name="remember"
@@ -197,23 +185,18 @@ function Login() {
                 <span>
                   Remember me
                 </span>
-
               </label>
 
               <button
                 type="button"
                 className="forgot-password"
-                onClick={
-                  handleForgotPassword
-                }
+                onClick={handleForgotPassword}
               >
                 Forgot password?
               </button>
-
             </div>
 
             {/* LOGIN BUTTON */}
-
             <button
               type="submit"
               className="login-btn"
@@ -223,13 +206,10 @@ function Login() {
                 ? "LOGGING IN..."
                 : "LOGIN"}
             </button>
-
           </form>
 
           {/* REGISTER */}
-
           <div className="login-register">
-
             <span>
               Don't have an account?
             </span>
@@ -237,11 +217,9 @@ function Login() {
             <Link to="/register">
               CREATE ACCOUNT
             </Link>
-
           </div>
 
         </section>
-
       </main>
 
       <Footer />

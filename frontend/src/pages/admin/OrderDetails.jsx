@@ -6,8 +6,8 @@ import "./OrderDetails.css";
 const API_URL = "http://localhost:5000/api";
 
 function OrderDetails() {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -26,16 +26,37 @@ function OrderDetails() {
         setLoading(true);
         setError("");
 
-        const response = await axios.get(`${API_URL}/orders/${id}`);
+        const token = localStorage.getItem("token");
 
-        const fetchedOrder = response.data?.order;
+        if (!token) {
+          throw new Error("Authentication required");
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const fetchedOrder =
+          response.data?.order ||
+          response.data?.data ||
+          response.data;
 
         if (!fetchedOrder) {
           throw new Error("Order not found.");
         }
 
         setOrder(fetchedOrder);
-        setSelectedStatus(fetchedOrder.orderStatus || "PENDING");
+
+        setSelectedStatus(
+          fetchedOrder.orderStatus ||
+            fetchedOrder.status ||
+            "PENDING"
+        );
       } catch (error) {
         console.error("Failed to fetch order:", error);
 
@@ -66,20 +87,38 @@ function OrderDetails() {
       setError("");
       setSuccess("");
 
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
       const response = await axios.put(
         `${API_URL}/orders/${order._id}/status`,
         {
           orderStatus: selectedStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      console.log("STATUS UPDATE RESPONSE:", response.data);
+      console.log(
+        "STATUS UPDATE RESPONSE:",
+        response.data
+      );
 
       const updatedOrder = response.data?.order;
 
       if (updatedOrder) {
         setOrder(updatedOrder);
-        setSelectedStatus(updatedOrder.orderStatus || selectedStatus);
+
+        setSelectedStatus(
+          updatedOrder.orderStatus ||
+            selectedStatus
+        );
       } else {
         setOrder((prev) => ({
           ...prev,
@@ -87,16 +126,22 @@ function OrderDetails() {
         }));
       }
 
-      setSuccess("Order status updated successfully.");
+      setSuccess(
+        "Order status updated successfully."
+      );
 
       setTimeout(() => {
         setSuccess("");
       }, 3000);
     } catch (error) {
-      console.error("STATUS UPDATE ERROR:", error);
+      console.error(
+        "STATUS UPDATE ERROR:",
+        error
+      );
 
       setError(
         error.response?.data?.message ||
+          error.message ||
           "Failed to update order status."
       );
     } finally {
@@ -114,21 +159,28 @@ function OrderDetails() {
     return status
       .toString()
       .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/\b\w/g, (char) =>
+        char.toUpperCase()
+      );
   };
 
   const formatDate = (date) => {
     if (!date) return "-";
 
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
 
   const formatCurrency = (amount) => {
-    return Number(amount || 0).toLocaleString("en-IN");
+    return Number(amount || 0).toLocaleString(
+      "en-IN"
+    );
   };
 
   // =========================================================
@@ -182,7 +234,8 @@ function OrderDetails() {
       address.addressLine2,
       address.city,
       address.state,
-      address.pincode || address.zipCode,
+      address.pincode ||
+        address.zipCode,
       address.country,
     ]
       .filter(Boolean)
@@ -217,11 +270,14 @@ function OrderDetails() {
       item?.product?.category &&
       typeof item.product.category === "object"
     ) {
-      return item.product.category.name || "-";
+      return (
+        item.product.category.name || "-"
+      );
     }
 
     if (
-      typeof item?.product?.category === "string"
+      typeof item?.product?.category ===
+      "string"
     ) {
       return item.product.category;
     }
@@ -270,9 +326,14 @@ function OrderDetails() {
         item.product?.regularPrice ??
         0;
 
-      const quantity = Number(item.quantity || 0);
+      const quantity = Number(
+        item.quantity || 0
+      );
 
-      return total + Number(price) * quantity;
+      return (
+        total +
+        Number(price) * quantity
+      );
     },
     0
   );
@@ -306,7 +367,9 @@ function OrderDetails() {
   // =========================================================
 
   const currentOrderStatus =
-    order?.orderStatus || "PENDING";
+    order?.orderStatus ||
+    order?.status ||
+    "PENDING";
 
   const processingStatuses = [
     "CONFIRMED",
@@ -331,7 +394,10 @@ function OrderDetails() {
       <div className="order-details-page">
         <div className="order-loading">
           <div className="loading-spinner"></div>
-          <p>Loading order details...</p>
+
+          <p>
+            Loading order details...
+          </p>
         </div>
       </div>
     );
@@ -346,7 +412,9 @@ function OrderDetails() {
       <div className="order-details-page">
         <button
           className="back-btn"
-          onClick={() => navigate("/admin/orders")}
+          onClick={() =>
+            navigate("/admin/orders")
+          }
         >
           ← Back to Orders
         </button>
@@ -365,7 +433,8 @@ function OrderDetails() {
   }
 
   const currentStatus = formatStatus(
-    order.orderStatus
+    order.orderStatus ||
+      order.status
   );
 
   // =========================================================
@@ -395,14 +464,19 @@ function OrderDetails() {
               <h1>Order Details</h1>
 
               <p>
-                View complete information about this order.
+                View complete information
+                about this order.
               </p>
             </div>
 
             <span
               className={`order-status ${String(
-                order.orderStatus || ""
-              ).toLowerCase().replace(/_/g, "-")}`}
+                order.orderStatus ||
+                  order.status ||
+                  ""
+              )
+                .toLowerCase()
+                .replace(/_/g, "-")}`}
             >
               {currentStatus}
             </span>
@@ -415,7 +489,6 @@ function OrderDetails() {
       ===================================================== */}
 
       <div className="order-overview">
-
         <div className="overview-item">
           <span>Order ID</span>
 
@@ -454,7 +527,6 @@ function OrderDetails() {
             {formatStatus(paymentMethod)}
           </strong>
         </div>
-
       </div>
 
       {/* =====================================================
@@ -468,9 +540,7 @@ function OrderDetails() {
         ================================================= */}
 
         <div className="details-card customer-card">
-
           <div className="card-heading">
-
             <div className="heading-icon">
               <i className="bi bi-person"></i>
             </div>
@@ -478,13 +548,13 @@ function OrderDetails() {
             <div>
               <h2>Customer Details</h2>
 
-              <p>Customer information</p>
+              <p>
+                Customer information
+              </p>
             </div>
-
           </div>
 
           <div className="customer-info">
-
             <div>
               <span>Name</span>
 
@@ -516,9 +586,7 @@ function OrderDetails() {
                 {getShippingAddress()}
               </strong>
             </div>
-
           </div>
-
         </div>
 
         {/* =================================================
@@ -526,9 +594,7 @@ function OrderDetails() {
         ================================================= */}
 
         <div className="details-card payment-card">
-
           <div className="card-heading">
-
             <div className="heading-icon payment-icon">
               <i className="bi bi-credit-card"></i>
             </div>
@@ -536,13 +602,13 @@ function OrderDetails() {
             <div>
               <h2>Payment Details</h2>
 
-              <p>Transaction information</p>
+              <p>
+                Transaction information
+              </p>
             </div>
-
           </div>
 
           <div className="payment-info">
-
             <div>
               <span>Payment Status</span>
 
@@ -573,11 +639,8 @@ function OrderDetails() {
                 Standard Delivery
               </strong>
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -585,9 +648,7 @@ function OrderDetails() {
       ===================================================== */}
 
       <div className="details-card products-card">
-
         <div className="products-card-header">
-
           <div>
             <h2>Ordered Products</h2>
 
@@ -599,13 +660,10 @@ function OrderDetails() {
               in this order
             </p>
           </div>
-
         </div>
 
         <div className="order-table-wrapper">
-
           <table className="order-table">
-
             <thead>
               <tr>
                 <th>Product</th>
@@ -617,16 +675,15 @@ function OrderDetails() {
             </thead>
 
             <tbody>
-
               {items.length === 0 ? (
                 <tr>
                   <td colSpan="5">
-                    No products found in this order.
+                    No products found in this
+                    order.
                   </td>
                 </tr>
               ) : (
                 items.map((item, index) => {
-
                   const price =
                     item.price ??
                     item.salePrice ??
@@ -635,8 +692,9 @@ function OrderDetails() {
                     item.product?.regularPrice ??
                     0;
 
-                  const quantity =
-                    Number(item.quantity || 0);
+                  const quantity = Number(
+                    item.quantity || 0
+                  );
 
                   const image =
                     getProductImage(item);
@@ -649,27 +707,24 @@ function OrderDetails() {
                         index
                       }
                     >
-
                       <td>
                         <div className="product-name">
-
                           <div className="product-image">
-
                             {image ? (
                               <img
                                 src={image}
-                                alt={getProductName(item)}
+                                alt={getProductName(
+                                  item
+                                )}
                               />
                             ) : (
                               <i className="bi bi-box"></i>
                             )}
-
                           </div>
 
                           <strong>
                             {getProductName(item)}
                           </strong>
-
                         </div>
                       </td>
 
@@ -678,7 +733,10 @@ function OrderDetails() {
                       </td>
 
                       <td>
-                        ₹{formatCurrency(price)}
+                        ₹
+                        {formatCurrency(
+                          price
+                        )}
                       </td>
 
                       <td>
@@ -689,22 +747,18 @@ function OrderDetails() {
                         <strong>
                           ₹
                           {formatCurrency(
-                            Number(price) * quantity
+                            Number(price) *
+                              quantity
                           )}
                         </strong>
                       </td>
-
                     </tr>
                   );
                 })
               )}
-
             </tbody>
-
           </table>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -718,9 +772,7 @@ function OrderDetails() {
         ================================================= */}
 
         <div className="details-card timeline-card">
-
           <div className="card-heading">
-
             <div className="heading-icon">
               <i className="bi bi-clock-history"></i>
             </div>
@@ -728,23 +780,20 @@ function OrderDetails() {
             <div>
               <h2>Order Status</h2>
 
-              <p>Update order progress</p>
+              <p>
+                Update order progress
+              </p>
             </div>
-
           </div>
 
-          {/* =================================================
-              STATUS UPDATE
-          ================================================= */}
+          {/* STATUS UPDATE */}
 
           <div className="status-update-box">
-
             <label htmlFor="order-status">
               Update Status
             </label>
 
             <div className="status-update-row">
-
               <select
                 id="order-status"
                 value={selectedStatus}
@@ -754,10 +803,6 @@ function OrderDetails() {
                   )
                 }
               >
-
-                {/* Keep PENDING because current backend
-                    Order model uses PENDING */}
-
                 <option value="PENDING">
                   Pending
                 </option>
@@ -793,82 +838,75 @@ function OrderDetails() {
                 <option value="REFUNDED">
                   Refunded
                 </option>
-
               </select>
 
               <button
                 type="button"
                 className="update-status-btn"
-                onClick={handleStatusUpdate}
+                onClick={
+                  handleStatusUpdate
+                }
                 disabled={
                   updating ||
-                  selectedStatus === order.orderStatus
+                  selectedStatus ===
+                    (order.orderStatus ||
+                      order.status)
                 }
               >
                 {updating
                   ? "Updating..."
                   : "Update Status"}
               </button>
-
             </div>
-
-            {/* SUCCESS MESSAGE */}
 
             {success && (
               <div className="order-success">
-
                 <i className="bi bi-check-circle-fill"></i>
 
-                <span>{success}</span>
-
+                <span>
+                  {success}
+                </span>
               </div>
             )}
-
-            {/* ERROR MESSAGE */}
 
             {error && (
               <div className="order-error">
-
                 <i className="bi bi-exclamation-circle-fill"></i>
 
-                <span>{error}</span>
-
+                <span>
+                  {error}
+                </span>
               </div>
             )}
-
           </div>
 
-          {/* =================================================
-              TIMELINE
-          ================================================= */}
+          {/* TIMELINE */}
 
           <div className="timeline">
 
-            {/* ORDER PLACED */}
-
             <div
               className={`timeline-item ${
-                order.orderStatus
+                order.orderStatus ||
+                order.status
                   ? "completed"
                   : ""
               }`}
             >
-
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
 
               <div>
-                <strong>Order Placed</strong>
+                <strong>
+                  Order Placed
+                </strong>
 
                 <span>
-                  Order has been placed successfully.
+                  Order has been placed
+                  successfully.
                 </span>
               </div>
-
             </div>
-
-            {/* PROCESSING */}
 
             <div
               className={`timeline-item ${
@@ -879,22 +917,20 @@ function OrderDetails() {
                   : ""
               }`}
             >
-
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
 
               <div>
-                <strong>Processing</strong>
+                <strong>
+                  Processing
+                </strong>
 
                 <span>
                   Order is being prepared.
                 </span>
               </div>
-
             </div>
-
-            {/* SHIPPED */}
 
             <div
               className={`timeline-item ${
@@ -905,22 +941,20 @@ function OrderDetails() {
                   : ""
               }`}
             >
-
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
 
               <div>
-                <strong>Shipped</strong>
+                <strong>
+                  Shipped
+                </strong>
 
                 <span>
                   Package has been shipped.
                 </span>
               </div>
-
             </div>
-
-            {/* DELIVERED */}
 
             <div
               className={`timeline-item ${
@@ -930,23 +964,22 @@ function OrderDetails() {
                   : ""
               }`}
             >
-
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
 
               <div>
-                <strong>Delivered</strong>
+                <strong>
+                  Delivered
+                </strong>
 
                 <span>
-                  Order delivered to customer.
+                  Order delivered to
+                  customer.
                 </span>
               </div>
-
             </div>
-
           </div>
-
         </div>
 
         {/* =================================================
@@ -954,39 +987,32 @@ function OrderDetails() {
         ================================================= */}
 
         <div className="details-card summary-card">
-
           <h2>Order Summary</h2>
 
           <div className="summary-row">
-
             <span>Subtotal</span>
 
             <strong>
               ₹{formatCurrency(subtotal)}
             </strong>
-
           </div>
 
           <div className="summary-row">
-
             <span>Shipping</span>
 
             <strong>
               ₹{formatCurrency(shipping)}
             </strong>
-
           </div>
 
           <div className="summary-divider"></div>
 
           <div className="summary-total">
-
             <span>Total Amount</span>
 
             <strong>
               ₹{formatCurrency(totalAmount)}
             </strong>
-
           </div>
 
           <button
@@ -997,11 +1023,8 @@ function OrderDetails() {
           >
             View All Orders
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }

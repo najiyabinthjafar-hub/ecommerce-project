@@ -1,8 +1,8 @@
 const Cart = require("../models/Cart");
+const Product = require("../models/Product");
 const Coupon = require("../models/coupon");
 const Order = require("../models/Order");
 const Payment = require("../models/Payment");
-const Product = require("../models/Product");
 
 const processCheckout = async ({
   userId,
@@ -10,14 +10,21 @@ const processCheckout = async ({
   paymentMethod,
   couponCode,
 }) => {
-  // 1. Get user's cart
-  const cart = await Cart.findOne({ user: userId }).populate("items.product");
+  // 1. Validate payment method
+  if (!["COD", "RAZORPAY"].includes(paymentMethod)) {
+    throw new Error("Invalid payment method");
+  }
+
+  // 2. Get user's cart
+  const cart = await Cart.findOne({
+    user: userId,
+  }).populate("items.product");
 
   if (!cart || cart.items.length === 0) {
     throw new Error("Cart is empty");
   }
 
-  // 2. Calculate cart total
+  // 3. Calculate cart total and validate products/stock
   let totalAmount = 0;
 
   for (const item of cart.items) {
@@ -27,12 +34,16 @@ const processCheckout = async ({
       throw new Error("Product not found");
     }
 
-    // Check stock
-    if (product.stock < item.quantity) {
-      throw new Error(`Insufficient stock for ${product.name}`);
+    if (product.status !== "active") {
+      throw new Error(`${product.name} is not available`);
     }
 
-    // Use sale price if available, otherwise regular price
+    if (product.stock < item.quantity) {
+      throw new Error(
+        `Insufficient stock for ${product.name}. Available stock: ${product.stock}`
+      );
+    }
+
     const price =
       product.salePrice !== null && product.salePrice !== undefined
         ? product.salePrice
@@ -41,8 +52,9 @@ const processCheckout = async ({
     totalAmount += price * item.quantity;
   }
 
-  // 3. Apply coupon
+  // 4. Validate coupon and calculate discount
   let discountAmount = 0;
+  let appliedCoupon = null;
 
   if (couponCode) {
     const coupon = await Coupon.findOne({
@@ -54,8 +66,8 @@ const processCheckout = async ({
       throw new Error("Invalid coupon");
     }
 
-    // Check expiry
-    if (new Date() > coupon.expiryDate) {
+    // Check coupon expiry
+    if (new Date() > new Date(coupon.expiry)) {
       throw new Error("Coupon has expired");
     }
 
@@ -78,13 +90,15 @@ const processCheckout = async ({
     if (coupon.discountType === "percentage") {
       discountAmount = (totalAmount * coupon.discountValue) / 100;
 
+      // Maximum discount limit
       if (
         coupon.maximumDiscount !== null &&
+        coupon.maximumDiscount !== undefined &&
         discountAmount > coupon.maximumDiscount
       ) {
         discountAmount = coupon.maximumDiscount;
       }
-    } else {
+    } else if (coupon.discountType === "fixed") {
       discountAmount = coupon.discountValue;
 
       if (discountAmount > totalAmount) {
@@ -92,15 +106,13 @@ const processCheckout = async ({
       }
     }
 
-    // Increase coupon usage count
-    coupon.usedCount += 1;
-    await coupon.save();
+    appliedCoupon = coupon;
   }
 
-  // 4. Calculate final amount
+  // 5. Calculate final amount
   const finalAmount = totalAmount - discountAmount;
 
-  // 5. Prepare order items
+  // 6. Prepare order items
   const orderItems = cart.items.map((item) => {
     const product = item.product;
 
@@ -116,7 +128,7 @@ const processCheckout = async ({
     };
   });
 
-  // 6. Create order
+  // 7. Create order
   const order = await Order.create({
     user: userId,
     items: orderItems,
@@ -125,11 +137,11 @@ const processCheckout = async ({
     discountAmount,
     finalAmount,
     paymentMethod,
-    paymentStatus: paymentMethod === "COD" ? "PENDING" : "PENDING",
-    orderStatus: "PENDING",
+    paymentStatus: "PENDING",
+    orderStatus: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
   });
 
-  // 7. Create payment record
+  // 8. Create payment record
   const payment = await Payment.create({
     order: order._id,
     user: userId,
@@ -138,18 +150,30 @@ const processCheckout = async ({
     paymentStatus: "PENDING",
   });
 
-  // 8. Update product stock
-  for (const item of cart.items) {
-    await Product.findByIdAndUpdate(item.product._id, {
-      $inc: {
-        stock: -item.quantity,
-      },
-    });
-  }
+  // 9. Process COD checkout
+  if (paymentMethod === "COD") {
+    payment.paymentStatus = "PENDING";
+    await payment.save();
 
-  // 9. Clear cart
-  cart.items = [];
-  await cart.save();
+    // Increase coupon usage after successful order
+    if (appliedCoupon) {
+      appliedCoupon.usedCount += 1;
+      await appliedCoupon.save();
+    }
+
+    // Reduce product stock
+    for (const item of cart.items) {
+      await Product.findByIdAndUpdate(item.product._id, {
+        $inc: {
+          stock: -item.quantity,
+        },
+      });
+    }
+
+    // Clear cart
+    cart.items = [];
+    await cart.save();
+  }
 
   // 10. Return checkout result
   return {

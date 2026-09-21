@@ -1,0 +1,446 @@
+/* =========================
+   TRACKING PAGE
+========================= */
+
+.tracking-page {
+  width: 100%;
+  min-height: calc(100vh - 150px);
+
+  background: #ffffff;
+  color: #111111;
+
+  padding-top: 140px;
+  padding-bottom: 100px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   CONTAINER
+========================= */
+
+.tracking-container {
+  width: 76%;
+  max-width: 900px;
+
+  margin: 0 auto;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.tracking-header {
+  text-align: center;
+
+  margin-bottom: 55px;
+}
+
+.tracking-header span {
+  display: block;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 7px;
+  letter-spacing: 2px;
+
+  color: #777777;
+
+  margin-bottom: 12px;
+}
+
+.tracking-header h1 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 25px;
+  font-weight: 400;
+
+  color: #111111;
+}
+
+
+/* =========================
+   ORDER INFO
+========================= */
+
+.tracking-order-info {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  border-top: 1px solid #eeeeee;
+  border-bottom: 1px solid #eeeeee;
+
+  padding: 22px 0;
+
+  margin-bottom: 55px;
+}
+
+.tracking-order-info div {
+  text-align: center;
+
+  border-right: 1px solid #eeeeee;
+}
+
+.tracking-order-info div:last-child {
+  border-right: none;
+}
+
+.tracking-order-info p {
+  margin: 0 0 8px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 6px;
+  letter-spacing: 1px;
+
+  color: #888888;
+}
+
+.tracking-order-info h3 {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 8px;
+  font-weight: 400;
+
+  text-transform: capitalize;
+}
+
+
+/* =========================
+   TRACKING STEPS
+========================= */
+
+.tracking-steps {
+  width: 70%;
+
+  margin: 0 auto 60px;
+}
+
+.tracking-step {
+  display: flex;
+
+  min-height: 75px;
+}
+
+.step-left {
+  width: 30px;
+
+  position: relative;
+
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 20px;
+  height: 20px;
+
+  border: 1px solid #cccccc;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 9px;
+
+  color: #ffffff;
+
+  background: #ffffff;
+
+  position: relative;
+  z-index: 2;
+}
+
+.tracking-step.completed .step-circle {
+  background: #111111;
+  border-color: #111111;
+}
+
+.tracking-step.active .step-circle {
+  box-shadow: 0 0 0 4px #eeeeee;
+}
+
+.step-line {
+  position: absolute;
+
+  width: 1px;
+
+  height: 55px;
+
+  background: #eeeeee;
+
+  left: 10px;
+  top: 20px;
+}
+
+.step-line.filled {
+  background: #111111;
+}
+
+.step-content {
+  padding-left: 15px;
+}
+
+.step-content h3 {
+  margin: 1px 0 5px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.step-content p {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 7px;
+
+  color: #777777;
+}
+
+.current-status {
+  display: inline-block;
+
+  margin-top: 8px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 5px;
+
+  letter-spacing: 1px;
+
+  color: #111111;
+}
+
+
+/* =========================
+   ORDER ITEMS
+========================= */
+
+.tracking-products {
+  border-top: 1px solid #eeeeee;
+
+  padding-top: 30px;
+
+  margin-bottom: 35px;
+}
+
+.tracking-products h2 {
+  margin: 0 0 20px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 7px;
+  font-weight: 400;
+
+  letter-spacing: 1px;
+
+  color: #777777;
+}
+
+.tracking-product {
+  min-height: 75px;
+
+  display: flex;
+  align-items: center;
+
+  border-bottom: 1px solid #eeeeee;
+
+  padding: 10px 0;
+}
+
+.tracking-product-image {
+  width: 50px;
+  height: 60px;
+
+  background: #f8f8f8;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  flex-shrink: 0;
+}
+
+.tracking-product-image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.tracking-product-image span {
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 5px;
+
+  color: #999999;
+}
+
+.tracking-product-details {
+  margin-left: 18px;
+
+  flex: 1;
+}
+
+.tracking-product-details h3 {
+  margin: 0 0 5px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.tracking-product-details p {
+  margin: 2px 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 6px;
+
+  color: #777777;
+}
+
+.tracking-product-price {
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 8px;
+
+  color: #111111;
+}
+
+
+/* =========================
+   CANCELLED
+========================= */
+
+.cancelled-box {
+  text-align: center;
+
+  border-top: 1px solid #eeeeee;
+  border-bottom: 1px solid #eeeeee;
+
+  padding: 45px 20px;
+
+  margin-bottom: 50px;
+}
+
+.cancelled-icon {
+  width: 28px;
+  height: 28px;
+
+  margin: 0 auto 15px;
+
+  border: 1px solid #c62828;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #c62828;
+
+  font-size: 15px;
+}
+
+.cancelled-box h2 {
+  margin: 0 0 8px;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.cancelled-box p {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 7px;
+
+  color: #777777;
+}
+
+
+/* =========================
+   BACK BUTTON
+========================= */
+
+.tracking-back-btn {
+  display: block;
+
+  width: 120px;
+  height: 32px;
+
+  margin: 0 auto;
+
+  border: none;
+
+  background: #050505;
+  color: #ffffff;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 6px;
+  letter-spacing: 1px;
+
+  cursor: pointer;
+
+  border-radius: 5px;
+
+  transition: background 0.25s ease;
+}
+
+.tracking-back-btn:hover {
+  background: #292929;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .tracking-page {
+    padding-top: 110px;
+    padding-bottom: 70px;
+  }
+
+  .tracking-container {
+    width: 90%;
+  }
+
+  .tracking-header {
+    margin-bottom: 40px;
+  }
+
+  .tracking-order-info {
+    grid-template-columns: repeat(3, 1fr);
+
+    margin-bottom: 40px;
+  }
+
+  .tracking-steps {
+    width: 100%;
+  }
+
+  .tracking-product {
+    min-height: 70px;
+  }
+}

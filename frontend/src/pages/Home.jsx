@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
 import CategorySection from "../components/CategorySection";
@@ -9,6 +11,11 @@ import Newsletter from "../components/Newsletter";
 import Footer from "../components/Footer";
 
 function Home() {
+  useEffect(() => {
+    // Home page is treated as a fresh starting point
+    window.history.replaceState(null, "", "/");
+  }, []);
+
   return (
     <>
       <Navbar />

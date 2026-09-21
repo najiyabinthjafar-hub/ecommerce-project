@@ -1,9 +1,12 @@
+
 .verify-otp-page {
   min-height: 70vh;
   padding: 70px 20px;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #fff;
+  box-sizing: border-box;
 }
 
 .verify-otp-container {
@@ -13,34 +16,52 @@
 }
 
 .verify-otp-header {
-  margin-bottom: 35px;
+  margin-bottom: 30px;
 }
 
 .verify-otp-header p {
-  margin-bottom: 10px;
-  font-size: 11px;
-  letter-spacing: 2px;
+  margin: 0 0 10px;
+  font-size: 10px;
+  letter-spacing: 3px;
   color: #777;
 }
 
 .verify-otp-header h1 {
-  margin-bottom: 15px;
-  font-size: 30px;
-  font-weight: 400;
+  margin: 0 0 14px;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
 }
 
 .verify-otp-header span {
+  display: block;
   font-size: 13px;
+  line-height: 1.6;
   color: #777;
 }
 
 .otp-email {
-  margin-bottom: 20px;
+  margin: 0 0 20px;
   font-size: 13px;
   font-weight: 600;
+  color: #111;
+  word-break: break-word;
+}
+
+.otp-timer {
+  margin-bottom: 22px;
+  font-size: 12px;
+  color: #777;
+}
+
+.otp-timer strong {
+  color: #111;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .verify-otp-form {
+  width: 100%;
   text-align: left;
 }
 
@@ -51,32 +72,55 @@
 .verify-otp-field label {
   display: block;
   margin-bottom: 8px;
-  font-size: 11px;
-  letter-spacing: 1px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 600;
 }
 
 .verify-otp-field input {
   width: 100%;
-  padding: 14px;
+  height: 48px;
+  padding: 0 15px;
   border: 1px solid #ddd;
   outline: none;
   box-sizing: border-box;
+  background: #fff;
   font-size: 15px;
+  letter-spacing: 3px;
+  text-align: center;
+  transition: border-color 0.2s ease;
 }
 
 .verify-otp-field input:focus {
-  border-color: #222;
+  border-color: #111;
+}
+
+.verify-otp-field input::placeholder {
+  letter-spacing: normal;
+  color: #aaa;
+}
+
+.verify-otp-field input:disabled {
+  background: #f7f7f7;
+  cursor: not-allowed;
 }
 
 .verify-otp-btn {
   width: 100%;
-  padding: 15px;
+  height: 50px;
+  padding: 0 15px;
   border: none;
   background: #111;
-  color: white;
+  color: #fff;
   cursor: pointer;
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  transition: background 0.3s ease;
+}
+
+.verify-otp-btn:hover {
+  background: #333;
 }
 
 .verify-otp-btn:disabled {
@@ -86,16 +130,30 @@
 
 .resend-otp {
   margin-top: 25px;
-  font-size: 13px;
+  font-size: 12px;
+  color: #777;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
 }
 
 .resend-otp button {
   border: none;
   background: transparent;
-  margin-left: 8px;
+  padding: 0;
+  color: #111;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 1px;
   cursor: pointer;
   text-decoration: underline;
+}
+
+.resend-otp button:disabled {
+  color: #999;
+  cursor: not-allowed;
 }
 
 .back-login {
@@ -103,20 +161,202 @@
 }
 
 .back-login a {
-  font-size: 12px;
+  font-size: 10px;
   color: #111;
   text-decoration: none;
   font-weight: 600;
+  letter-spacing: 1.3px;
+}
+
+.back-login a:hover {
+  text-decoration: underline;
 }
 
 .otp-success-message {
-  margin-bottom: 15px;
-  color: green;
-  font-size: 13px;
+  margin: 0 0 15px;
+  padding: 10px 12px;
+  color: #28723b;
+  background: #f1f8f3;
+  border: 1px solid #cfe8d5;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .otp-error-message {
-  margin-bottom: 15px;
-  color: red;
-  font-size: 13px;
+  margin: 0 0 15px;
+  padding: 10px 12px;
+  color: #b32d2d;
+  background: #fff3f3;
+  border: 1px solid #f0caca;
+  font-size: 12px;
+  line-height: 1.5;
 }
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .verify-otp-page {
+    min-height: 70vh;
+    padding: 55px 25px;
+  }
+
+  .verify-otp-container {
+    max-width: 430px;
+  }
+
+  .verify-otp-header h1 {
+    font-size: 30px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .verify-otp-page {
+    min-height: 70vh;
+    padding: 40px 20px 50px;
+    align-items: flex-start;
+  }
+
+  .verify-otp-container {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .verify-otp-header {
+    margin-bottom: 26px;
+  }
+
+  .verify-otp-header p {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+  }
+
+  .verify-otp-header h1 {
+    font-size: 27px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .verify-otp-header span {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .otp-email {
+    font-size: 12px;
+    margin-bottom: 17px;
+  }
+
+  .otp-timer {
+    font-size: 11px;
+    margin-bottom: 20px;
+  }
+
+  .verify-otp-field {
+    margin-bottom: 18px;
+  }
+
+  .verify-otp-field label {
+    font-size: 9px;
+    margin-bottom: 7px;
+  }
+
+  .verify-otp-field input {
+    height: 45px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .verify-otp-btn {
+    height: 47px;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+  }
+
+  .otp-success-message,
+  .otp-error-message {
+    font-size: 11px;
+    padding: 9px 10px;
+  }
+
+  .resend-otp {
+    margin-top: 22px;
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .resend-otp button {
+    font-size: 10px;
+  }
+
+  .back-login {
+    margin-top: 22px;
+  }
+
+  .back-login a {
+    font-size: 9px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+  .verify-otp-page {
+    padding: 35px 15px 45px;
+  }
+
+  .verify-otp-header {
+    margin-bottom: 23px;
+  }
+
+  .verify-otp-header p {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .verify-otp-header h1 {
+    font-size: 23px;
+  }
+
+  .verify-otp-header span {
+    font-size: 11px;
+  }
+
+  .otp-email {
+    font-size: 11px;
+  }
+
+  .otp-timer {
+    font-size: 10px;
+  }
+
+  .verify-otp-field input {
+    height: 43px;
+    font-size: 13px;
+  }
+
+  .verify-otp-btn {
+    height: 44px;
+    font-size: 9px;
+  }
+
+  .resend-otp {
+    font-size: 10px;
+  }
+
+  .resend-otp button {
+    font-size: 9px;
+  }
+
+  .back-login a {
+    font-size: 8px;
+  }
+}
+

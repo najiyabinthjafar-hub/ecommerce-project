@@ -118,7 +118,6 @@ function Products() {
             childIds.push(childId);
           }
 
-          // Support nested categories
           findChildren(childId);
         }
       });
@@ -130,7 +129,7 @@ function Products() {
   };
 
   // =========================================================
-  // GET ALL CATEGORY IDS
+  // GET ALLOWED CATEGORY IDS
   // MAIN CATEGORY + ALL CHILDREN
   // =========================================================
 
@@ -147,11 +146,11 @@ function Products() {
 
   // =========================================================
   // EFFECTIVE PRICE
-  // SAME LOGIC AS BACKEND
   // =========================================================
 
   const getEffectivePrice = (product) => {
     const salePrice = Number(product.salePrice || 0);
+
     const regularPrice = Number(
       product.regularPrice || product.price || 0
     );
@@ -197,9 +196,6 @@ function Products() {
 
   // =========================================================
   // FETCH ALL PRODUCTS FROM BACKEND
-  //
-  // Used when parent category is selected because
-  // products may belong to child categories.
   // =========================================================
 
   const fetchAllProductsFromBackend = async () => {
@@ -215,20 +211,14 @@ function Products() {
         params.append("search", search.trim());
       }
 
-      // IMPORTANT:
-      // Do not send parent category here.
-      // We fetch products from backend and then
-      // filter parent + child category IDs below.
+      // Subcategory
       if (subcategory) {
         params.append("category", subcategory);
       }
 
       // Availability
       if (availability) {
-        params.append(
-          "availability",
-          availability
-        );
+        params.append("availability", availability);
       }
 
       // Sort
@@ -253,10 +243,7 @@ function Products() {
         ? data
         : data.products || data.data || [];
 
-      allProducts = [
-        ...allProducts,
-        ...list,
-      ];
+      allProducts = [...allProducts, ...list];
 
       backendTotalPages = Number(
         data.pagination?.totalPages || 1
@@ -278,31 +265,44 @@ function Products() {
 
       // =====================================================
       // CASE 1:
-      // MAIN CATEGORY SELECTED
+      // MAIN CATEGORY / BEST SELLER FILTER
       // =====================================================
 
-      if (category && !subcategory) {
+      if (
+        (category && !subcategory) ||
+        bestSeller
+      ) {
         const allProducts =
           await fetchAllProductsFromBackend();
 
-        const allowedCategoryIds =
-          getAllowedCategoryIds(category);
+        let filtered = allProducts;
 
-        let filtered = allProducts.filter(
-          (product) => {
+        // Main category
+        if (category && !subcategory) {
+          const allowedCategoryIds =
+            getAllowedCategoryIds(category);
+
+          filtered = filtered.filter((product) => {
             const productCategoryId =
               getCategoryId(product);
 
             return allowedCategoryIds.includes(
               String(productCategoryId)
             );
-          }
-        );
+          });
+        }
 
-        // ===================================================
-        // BEST SELLER FILTER
-        // ===================================================
+        // Subcategory
+        if (subcategory) {
+          filtered = filtered.filter((product) => {
+            return (
+              String(getCategoryId(product)) ===
+              String(subcategory)
+            );
+          });
+        }
 
+        // Best Seller
         if (bestSeller === "best-seller") {
           filtered = filtered.filter(
             (product) =>
@@ -310,6 +310,7 @@ function Products() {
           );
         }
 
+        // Regular Products
         if (bestSeller === "regular") {
           filtered = filtered.filter(
             (product) =>
@@ -317,46 +318,29 @@ function Products() {
           );
         }
 
-        // ===================================================
-        // SORT
-        // ===================================================
+        // Sort
+        filtered = sortProducts(filtered, sort);
 
-        filtered = sortProducts(
-          filtered,
-          sort
-        );
-
-        // ===================================================
-        // PAGINATION
-        // ===================================================
-
+        // Pagination
         setTotalProducts(filtered.length);
 
         const calculatedPages = Math.max(
           Math.ceil(
-            filtered.length /
-              PRODUCTS_PER_PAGE
+            filtered.length / PRODUCTS_PER_PAGE
           ),
           1
         );
 
-        setTotalPages(
-          calculatedPages
-        );
+        setTotalPages(calculatedPages);
 
         const startIndex =
-          (currentPage - 1) *
-          PRODUCTS_PER_PAGE;
+          (currentPage - 1) * PRODUCTS_PER_PAGE;
 
         const endIndex =
-          startIndex +
-          PRODUCTS_PER_PAGE;
+          startIndex + PRODUCTS_PER_PAGE;
 
         setProducts(
-          filtered.slice(
-            startIndex,
-            endIndex
-          )
+          filtered.slice(startIndex, endIndex)
         );
 
         return;
@@ -364,78 +348,10 @@ function Products() {
 
       // =====================================================
       // CASE 2:
-      // BEST SELLER / REGULAR WITHOUT MAIN CATEGORY
-      // =====================================================
-
-      if (bestSeller) {
-        const allProducts =
-          await fetchAllProductsFromBackend();
-
-        let filtered = allProducts;
-
-        if (bestSeller === "best-seller") {
-          filtered = filtered.filter(
-            (product) =>
-              product.isBestSeller === true
-          );
-        }
-
-        if (bestSeller === "regular") {
-          filtered = filtered.filter(
-            (product) =>
-              product.isBestSeller !== true
-          );
-        }
-
-        filtered = sortProducts(
-          filtered,
-          sort
-        );
-
-        setTotalProducts(
-          filtered.length
-        );
-
-        const calculatedPages =
-          Math.max(
-            Math.ceil(
-              filtered.length /
-                PRODUCTS_PER_PAGE
-            ),
-            1
-          );
-
-        setTotalPages(
-          calculatedPages
-        );
-
-        const startIndex =
-          (currentPage - 1) *
-          PRODUCTS_PER_PAGE;
-
-        const endIndex =
-          startIndex +
-          PRODUCTS_PER_PAGE;
-
-        setProducts(
-          filtered.slice(
-            startIndex,
-            endIndex
-          )
-        );
-
-        return;
-      }
-
-      // =====================================================
-      // CASE 3:
       // NORMAL BACKEND QUERY
-      //
-      // This is the normal backend-connected flow.
       // =====================================================
 
-      const params =
-        new URLSearchParams();
+      const params = new URLSearchParams();
 
       // Search
       if (search.trim()) {
@@ -463,10 +379,7 @@ function Products() {
 
       // Sort
       if (sort) {
-        params.append(
-          "sort",
-          sort
-        );
+        params.append("sort", sort);
       }
 
       params.append(
@@ -489,42 +402,31 @@ function Products() {
         );
       }
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
-      const productList =
-        Array.isArray(data)
-          ? data
-          : data.products ||
-            data.data ||
-            [];
+      const productList = Array.isArray(data)
+        ? data
+        : data.products || data.data || [];
 
-      setProducts(
-        productList
-      );
+      setProducts(productList);
 
       if (data.pagination) {
         setTotalProducts(
           Number(
-            data.pagination.totalProducts ||
-              0
+            data.pagination.totalProducts || 0
           )
         );
 
         setTotalPages(
           Math.max(
             Number(
-              data.pagination.totalPages ||
-                1
+              data.pagination.totalPages || 1
             ),
             1
           )
         );
       } else {
-        setTotalProducts(
-          productList.length
-        );
-
+        setTotalProducts(productList.length);
         setTotalPages(1);
       }
     } catch (error) {
@@ -638,10 +540,9 @@ function Products() {
   // =========================================================
 
   const handleDelete = async (id) => {
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this product?"
-      );
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
 
     if (!confirmDelete) {
       return;
@@ -677,9 +578,7 @@ function Products() {
         error
       );
 
-      alert(
-        "Failed to delete product."
-      );
+      alert("Failed to delete product.");
     }
   };
 
@@ -688,28 +587,21 @@ function Products() {
   // =========================================================
 
   const getProductStatus = (product) => {
-    if (
-      product.status === "inactive"
-    ) {
+    if (product.status === "inactive") {
       return {
         label: "Inactive",
-        className:
-          "status-inactive",
+        className: "status-inactive",
       };
     }
 
-    if (
-      Number(product.stock || 0) === 0
-    ) {
+    if (Number(product.stock || 0) === 0) {
       return {
         label: "Out of Stock",
         className: "status-out",
       };
     }
 
-    if (
-      Number(product.stock || 0) <= 10
-    ) {
+    if (Number(product.stock || 0) <= 10) {
       return {
         label: "Low Stock",
         className: "status-low",
@@ -728,8 +620,7 @@ function Products() {
 
   const getCategoryName = (product) => {
     if (
-      typeof product.category ===
-        "object" &&
+      typeof product.category === "object" &&
       product.category !== null
     ) {
       return (
@@ -752,15 +643,13 @@ function Products() {
   };
 
   // =========================================================
-  // PAGINATION
+  // PAGINATION PAGES
   // =========================================================
 
   const getPaginationPages = () => {
     if (totalPages <= 5) {
       return Array.from(
-        {
-          length: totalPages,
-        },
+        { length: totalPages },
         (_, index) => index + 1
       );
     }
@@ -822,9 +711,7 @@ function Products() {
         <button
           className="add-product-btn"
           onClick={() =>
-            navigate(
-              "/admin/products/add"
-            )
+            navigate("/admin/products/add")
           }
         >
           + Add Product
@@ -854,7 +741,6 @@ function Products() {
             {/* SEARCH */}
 
             <div className="products-search">
-
               <span className="search-icon">
                 <i className="bi bi-search"></i>
               </span>
@@ -871,7 +757,6 @@ function Products() {
                   setCurrentPage(1);
                 }}
               />
-
             </div>
 
             {/* FILTER ROW */}
@@ -1029,7 +914,6 @@ function Products() {
               >
                 Reset
               </button>
-
             </div>
           </div>
         </div>
@@ -1038,19 +922,21 @@ function Products() {
 
         <div className="products-table-wrapper">
 
+          {/* LOADING */}
+
           {loading ? (
             <div className="products-loading">
-
               <div className="loading-spinner"></div>
 
               <p>
                 Loading products...
               </p>
-
             </div>
           ) : products.length === 0 ? (
-            <div className="products-empty">
 
+            /* EMPTY */
+
+            <div className="products-empty">
               <div className="empty-icon">
                 <i className="bi bi-box-seam"></i>
               </div>
@@ -1063,9 +949,12 @@ function Products() {
                 Try changing your search or
                 filter options.
               </p>
-
             </div>
+
           ) : (
+
+            /* PRODUCT TABLE */
+
             <table className="products-table">
 
               <thead>
@@ -1084,7 +973,6 @@ function Products() {
 
                 {products.map(
                   (product) => {
-
                     const status =
                       getProductStatus(
                         product
@@ -1092,26 +980,21 @@ function Products() {
 
                     const image =
                       product.images &&
-                      product.images.length >
-                        0
+                      product.images.length > 0
                         ? product.images[0]
                         : null;
 
                     return (
                       <tr
-                        key={
-                          product._id
-                        }
+                        key={product._id}
                       >
 
                         {/* PRODUCT */}
 
                         <td>
-
                           <div className="product-info">
 
                             <div className="product-icon">
-
                               {image ? (
                                 <img
                                   src={image}
@@ -1122,46 +1005,36 @@ function Products() {
                               ) : (
                                 <i className="bi bi-image"></i>
                               )}
-
                             </div>
 
                             <div className="product-details">
 
                               <strong className="product-name">
-                                {
-                                  product.name
-                                }
+                                {product.name}
                               </strong>
 
                               <span className="product-sku">
-                                {
-                                  product.sku ||
-                                  "No SKU"
-                                }
+                                {product.sku ||
+                                  "No SKU"}
                               </span>
 
                             </div>
-
                           </div>
-
                         </td>
 
                         {/* CATEGORY */}
 
                         <td>
-
                           <span className="product-category">
                             {getCategoryName(
                               product
                             )}
                           </span>
-
                         </td>
 
                         {/* PRICE */}
 
                         <td>
-
                           <div className="product-price">
 
                             {product.salePrice ? (
@@ -1198,70 +1071,57 @@ function Products() {
                             )}
 
                           </div>
-
                         </td>
 
                         {/* STOCK */}
 
                         <td>
-
                           <span
                             className={
                               Number(
-                                product.stock ||
-                                  0
+                                product.stock || 0
                               ) <= 10
                                 ? "stock-low"
                                 : "stock-normal"
                             }
                           >
-                            {product.stock ??
-                              0}
+                            {product.stock ?? 0}
                           </span>
-
                         </td>
 
                         {/* STATUS */}
 
                         <td>
-
                           <span
                             className={`product-status ${status.className}`}
                           >
                             <span className="status-dot"></span>
 
-                            {
-                              status.label
-                            }
+                            {status.label}
                           </span>
-
                         </td>
 
                         {/* BEST SELLER */}
 
                         <td>
-
                           {product.isBestSeller ? (
                             <span className="best-seller-badge">
-
                               <i className="bi bi-star-fill"></i>
-
                               Best Seller
-
                             </span>
                           ) : (
                             <span className="regular-product-badge">
                               Regular
                             </span>
                           )}
-
                         </td>
 
-                        {/* ACTION */}
+                        {/* ACTIONS */}
 
                         <td>
-
                           <div className="product-actions">
+
+                            {/* VIEW */}
 
                             <button
                               className="view-btn"
@@ -1275,6 +1135,8 @@ function Products() {
                               <i className="bi bi-eye"></i>
                             </button>
 
+                            {/* EDIT */}
+
                             <button
                               className="edit-btn"
                               title="Edit"
@@ -1286,6 +1148,8 @@ function Products() {
                             >
                               <i className="bi bi-pencil"></i>
                             </button>
+
+                            {/* DELETE */}
 
                             <button
                               className="delete-btn"
@@ -1300,7 +1164,6 @@ function Products() {
                             </button>
 
                           </div>
-
                         </td>
 
                       </tr>
@@ -1309,10 +1172,8 @@ function Products() {
                 )}
 
               </tbody>
-
             </table>
           )}
-
         </div>
 
         {/* PAGINATION */}
@@ -1322,6 +1183,8 @@ function Products() {
           totalPages > 1 && (
 
             <div className="products-pagination">
+
+              {/* PREVIOUS */}
 
               <button
                 className="pagination-btn"
@@ -1338,14 +1201,14 @@ function Products() {
                 Previous
               </button>
 
+              {/* PAGE NUMBERS */}
+
               <div className="pagination-pages">
 
                 {getPaginationPages().map(
                   (page, index) => {
 
-                    if (
-                      page === "..."
-                    ) {
+                    if (page === "...") {
                       return (
                         <span
                           key={`dots-${index}`}
@@ -1360,8 +1223,7 @@ function Products() {
                       <button
                         key={page}
                         className={`page-number ${
-                          currentPage ===
-                          page
+                          currentPage === page
                             ? "active"
                             : ""
                         }`}
@@ -1378,6 +1240,8 @@ function Products() {
                 )}
 
               </div>
+
+              {/* NEXT */}
 
               <button
                 className="pagination-btn"

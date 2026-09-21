@@ -1,15 +1,21 @@
 import { useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 
-import logo from "../assets/logo.png";
+import {
+  UserRound,
+  UserRoundCheck,
+  ShoppingBag,
+  Search,
+  Heart,
+} from "lucide-react";
 
+import logo from "../assets/logo.png";
 import "./Navbar.css";
 
 function Navbar() {
   const [showSearch, setShowSearch] = useState(false);
-
   const [search, setSearch] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
 
   const navigate = useNavigate();
 
@@ -21,33 +27,74 @@ function Navbar() {
     e.preventDefault();
 
     if (search.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(search)}`);
+      navigate(
+        `/shop?search=${encodeURIComponent(search)}`
+      );
 
       setSearch("");
-
       setShowSearch(false);
+      setShowMenu(false);
     }
+  };
+
+  const closeMenu = () => {
+    setShowMenu(false);
   };
 
   return (
     <header className="navbar">
 
       {/* LOGO */}
-      <Link to="/" className="logo">
+      <Link
+        to="/"
+        replace
+        className="logo"
+        onClick={closeMenu}
+      >
         <img src={logo} alt="Rizo" />
       </Link>
 
-      {/* NAVIGATION LINKS */}
-      <nav className="nav-links">
-        <Link to="/">Home</Link>
+      {/* DESKTOP NAVIGATION LINKS */}
+      <nav
+        className={`nav-links ${
+          showMenu ? "mobile-open" : ""
+        }`}
+      >
+        <Link
+          to="/"
+          replace
+          onClick={closeMenu}
+        >
+          Home
+        </Link>
 
-        <Link to="/shop">Shop</Link>
+        <Link
+          to="/shop"
+          onClick={closeMenu}
+        >
+          Shop
+        </Link>
 
-        <Link to="/new-arrivals">New Arrivals</Link>
+        <Link
+          to="/new-arrivals"
+          onClick={closeMenu}
+        >
+          New Arrivals
+        </Link>
 
-        <Link to="/about">About</Link>
+        <Link
+          to="/about"
+          onClick={closeMenu}
+        >
+          About
+        </Link>
 
-        <Link to="/contact">Contact</Link>
+        <Link
+          to="/contact"
+          onClick={closeMenu}
+        >
+          Contact
+        </Link>
       </nav>
 
       {/* NAV ICONS */}
@@ -57,33 +104,72 @@ function Navbar() {
         <button
           type="button"
           aria-label="Search"
-          onClick={() => setShowSearch(!showSearch)}
+          onClick={() =>
+            setShowSearch(!showSearch)
+          }
         >
-          ⌕
+          <Search
+            size={14}
+            strokeWidth={1.5}
+          />
         </button>
 
-        {/* ACCOUNT ICON */}
+        {/* ACCOUNT / LOGIN ICON */}
         <Link
           to={token ? "/profile" : "/login"}
-          aria-label="Account"
+          aria-label={
+            token ? "Account" : "Login"
+          }
+          className="account-icon"
         >
-          ♙
+          {token ? (
+            <UserRoundCheck
+              size={15}
+              strokeWidth={1.5}
+            />
+          ) : (
+            <UserRound
+              size={15}
+              strokeWidth={1.5}
+            />
+          )}
         </Link>
 
-        {/* WISHLIST ICON ❤️ */}
+        {/* WISHLIST ICON */}
         <Link
           to="/wishlist"
           aria-label="Wishlist"
           className="wishlist-nav-icon"
         >
-          ♡
+          <Heart
+            size={14}
+            strokeWidth={1.5}
+          />
         </Link>
 
-        {/* CART ICON */}
-        <Link to="/cart" aria-label="Cart">
-          🛒
+        {/* CART / SHOPPING BAG ICON */}
+        <Link
+          to="/cart"
+          aria-label="Cart"
+          className="cart-nav-icon"
+        >
+          <ShoppingBag
+            size={14}
+            strokeWidth={1.5}
+          />
         </Link>
 
+        {/* MOBILE MENU BUTTON */}
+        <button
+          type="button"
+          className="menu-toggle"
+          aria-label="Menu"
+          onClick={() =>
+            setShowMenu(!showMenu)
+          }
+        >
+          {showMenu ? "✕" : "☰"}
+        </button>
       </div>
 
       {/* SEARCH BOX */}
@@ -96,17 +182,17 @@ function Navbar() {
             type="text"
             placeholder="Search products..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             autoFocus
           />
 
           <button type="submit">
             Search
           </button>
-
         </form>
       )}
-
     </header>
   );
 }

@@ -13,11 +13,16 @@ const {
 
 const router = express.Router();
 
-// Customer
+// ================= CREATE CONTACT =================
+// Customer can submit contact message
 router.post("/", createContact);
 
-// Admin
+// ================= GET ALL CONTACTS =================
+// Admin only
 router.get("/", protect, adminOnly, getAllContacts);
+
+// ================= DELETE CONTACT =================
+// Admin only
 router.delete("/:id", protect, adminOnly, deleteContact);
 
 module.exports = router;

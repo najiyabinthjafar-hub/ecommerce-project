@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Addresses.css";
 
 function Addresses() {
@@ -168,7 +166,6 @@ function Addresses() {
     setError("");
 
     // Validation
-
     if (formData.phone.length !== 10) {
       setError("Phone number must be exactly 10 digits.");
       return;
@@ -231,7 +228,6 @@ function Addresses() {
       }
 
       // Reset form
-
       setFormData({
         fullName: "",
         phone: "",
@@ -323,13 +319,6 @@ function Addresses() {
         <div className="addresses-container">
 
           <div className="addresses-header">
-            <button
-              className="back-btn"
-              onClick={() => navigate("/profile")}
-            >
-              ← BACK
-            </button>
-
             <h1>MY ADDRESSES</h1>
 
             <button
@@ -340,7 +329,9 @@ function Addresses() {
                   : handleAddAddress
               }
             >
-              {showForm ? "CLOSE" : "+ ADD ADDRESS"}
+              {showForm
+                ? "CLOSE"
+                : "+ ADD ADDRESS"}
             </button>
           </div>
 
@@ -415,7 +406,6 @@ function Addresses() {
               />
 
               <div className="address-form-buttons">
-
                 <button
                   type="submit"
                   disabled={saving}
@@ -435,7 +425,6 @@ function Addresses() {
                 >
                   CANCEL
                 </button>
-
               </div>
             </form>
           )}
@@ -452,7 +441,6 @@ function Addresses() {
 
           {!loading && (
             <div className="addresses-list">
-
               {addresses.length === 0 ? (
                 <div className="no-address">
                   <p>No addresses added yet.</p>
@@ -467,18 +455,22 @@ function Addresses() {
 
                     <p>{address.phone}</p>
 
-                    <p>{address.addressLine1}</p>
-
                     <p>
-                      {address.city}, {address.state}
+                      {address.addressLine1}
                     </p>
 
-                    <p>{address.postalCode}</p>
+                    <p>
+                      {address.city},{" "}
+                      {address.state}
+                    </p>
+
+                    <p>
+                      {address.postalCode}
+                    </p>
 
                     {/* ACTION BUTTONS */}
 
                     <div className="address-actions">
-
                       <button
                         className="edit-address-btn"
                         onClick={() =>
@@ -496,15 +488,12 @@ function Addresses() {
                       >
                         DELETE
                       </button>
-
                     </div>
                   </div>
                 ))
               )}
-
             </div>
           )}
-
         </div>
       </main>
 

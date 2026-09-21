@@ -1,7 +1,9 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Register.css";
@@ -28,6 +30,9 @@ function Register() {
       ...formData,
       [name]: value,
     });
+
+    // Remove custom browser validation message
+    event.target.setCustomValidity("");
   };
 
   const handleRegister = async (event) => {
@@ -51,9 +56,11 @@ function Register() {
         "http://localhost:5000/api/auth/register",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             name: fullName,
             email: formData.email,
@@ -66,7 +73,9 @@ function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(
+          data.message || "Registration failed"
+        );
       }
 
       // Save email for OTP verification
@@ -76,8 +85,7 @@ function Register() {
       );
 
       // Go to OTP page
-      navigate("/verify-otp");
-
+      navigate("/verify-otp", { replace: true });
     } catch (error) {
       setError(error.message);
     } finally {
@@ -116,7 +124,6 @@ function Register() {
           >
 
             {/* FIRST NAME + LAST NAME */}
-
             <div className="register-row">
 
               <div className="register-field">
@@ -131,6 +138,11 @@ function Register() {
                   placeholder="First name"
                   value={formData.firstName}
                   onChange={handleChange}
+                  onInvalid={(event) => {
+                    event.target.setCustomValidity(
+                      "Please enter your first name."
+                    );
+                  }}
                   required
                 />
               </div>
@@ -147,6 +159,11 @@ function Register() {
                   placeholder="Last name"
                   value={formData.lastName}
                   onChange={handleChange}
+                  onInvalid={(event) => {
+                    event.target.setCustomValidity(
+                      "Please enter your last name."
+                    );
+                  }}
                   required
                 />
               </div>
@@ -154,7 +171,6 @@ function Register() {
             </div>
 
             {/* EMAIL */}
-
             <div className="register-field">
               <label htmlFor="email">
                 EMAIL ADDRESS
@@ -167,12 +183,22 @@ function Register() {
                 placeholder="Enter your email address"
                 value={formData.email}
                 onChange={handleChange}
+                onInvalid={(event) => {
+                  if (!event.target.value.trim()) {
+                    event.target.setCustomValidity(
+                      "Please enter your email address."
+                    );
+                  } else {
+                    event.target.setCustomValidity(
+                      "Please enter a valid email address."
+                    );
+                  }
+                }}
                 required
               />
             </div>
 
             {/* PHONE */}
-
             <div className="register-field">
               <label htmlFor="phone">
                 PHONE NUMBER
@@ -185,12 +211,16 @@ function Register() {
                 placeholder="Enter your phone number"
                 value={formData.phone}
                 onChange={handleChange}
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(
+                    "Please enter your phone number."
+                  );
+                }}
                 required
               />
             </div>
 
             {/* PASSWORD */}
-
             <div className="register-field">
               <label htmlFor="password">
                 PASSWORD
@@ -203,12 +233,16 @@ function Register() {
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={handleChange}
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(
+                    "Please enter your password."
+                  );
+                }}
                 required
               />
             </div>
 
             {/* CONFIRM PASSWORD */}
-
             <div className="register-field">
               <label htmlFor="confirmPassword">
                 CONFIRM PASSWORD
@@ -221,16 +255,28 @@ function Register() {
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(
+                    "Please confirm your password."
+                  );
+                }}
                 required
               />
             </div>
 
             {/* TERMS */}
-
             <label className="terms-checkbox">
               <input
                 type="checkbox"
                 required
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(
+                    "Please accept the terms and conditions."
+                  );
+                }}
+                onChange={(event) => {
+                  event.target.setCustomValidity("");
+                }}
               />
 
               <span>
@@ -239,7 +285,6 @@ function Register() {
             </label>
 
             {/* BUTTON */}
-
             <button
               type="submit"
               className="register-btn"

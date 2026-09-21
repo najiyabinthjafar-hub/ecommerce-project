@@ -1,15 +1,42 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "./BestSellers.css";
 
-import product1 from "../assets/product-8.png";
-import product2 from "../assets/product-2.png";
-import product3 from "../assets/product-1.png";
+const API_URL = "http://localhost:5000/api/products/best-sellers";
 
 function BestSellers() {
   const navigate = useNavigate();
 
-  const products = [product1, product2, product3];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(API_URL);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch best sellers"
+          );
+        }
+
+        setProducts(data.products || []);
+      } catch (error) {
+        console.error("BEST SELLERS ERROR:", error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBestSellers();
+  }, []);
 
   const handleViewMore = () => {
     navigate("/best-sellers");
@@ -21,6 +48,43 @@ function BestSellers() {
       });
     }, 100);
   };
+
+  const getImageUrl = (product) => {
+    let image =
+      product.images?.[0] ||
+      product.image ||
+      "";
+
+    if (image && !image.startsWith("http")) {
+      image = `http://localhost:5000${
+        image.startsWith("/") ? "" : "/"
+      }${image}`;
+    }
+
+    return image;
+  };
+
+  if (loading) {
+    return (
+      <section className="best-sellers">
+        <div className="best-sellers-heading">
+          <h2>Best Sellers</h2>
+          <p>Loading best sellers...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+  return (
+    <section className="best-sellers">
+      <div className="best-sellers-heading">
+        <h2>Best Sellers</h2>
+        <p>No best seller products found</p>
+      </div>
+    </section>
+  );
+}
 
   return (
     <section className="best-sellers">
@@ -35,14 +99,25 @@ function BestSellers() {
       </div>
 
       <div className="best-sellers-grid">
-        {products.map((image, index) => (
-          <div className="best-seller-image" key={index}>
-            <img
-              src={image}
-              alt={`Best Seller ${index + 1}`}
-            />
-          </div>
-        ))}
+        {products.slice(0, 3).map((product) => {
+          const productId = product._id || product.id;
+
+          return (
+            <div
+              className="best-seller-image"
+              key={productId}
+              onClick={() =>
+                navigate(`/product/${productId}`)
+              }
+              style={{ cursor: "pointer" }}
+            >
+              <img
+                src={getImageUrl(product)}
+                alt={product.name || "Best Seller"}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <button

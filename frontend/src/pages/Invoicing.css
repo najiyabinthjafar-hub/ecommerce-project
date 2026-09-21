@@ -1,3 +1,4 @@
+
 /* =========================================
    INVOICE PAGE
 ========================================= */
@@ -10,16 +11,17 @@
   box-sizing: border-box;
 }
 
-
 /* =========================================
    HEADING
 ========================================= */
 
 .invoice-heading {
+  width: 100%;
   max-width: 850px;
   margin: 0 auto;
   padding: 100px 0 55px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .invoice-heading p {
@@ -34,15 +36,16 @@
   font-size: 38px;
   font-weight: 500;
   letter-spacing: -1px;
+  line-height: 1.2;
   color: #111;
 }
 
 .invoice-heading span {
+  display: block;
   font-size: 14px;
   line-height: 1.6;
   color: #666;
 }
-
 
 /* =========================================
    INVOICE CONTAINER
@@ -52,14 +55,15 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
-
 
 /* =========================================
    INVOICE CARD
 ========================================= */
 
 .invoice-card {
+  width: 100%;
   border: 1px solid #e5e5e5;
   margin-bottom: 30px;
   padding: 30px;
@@ -70,6 +74,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 20px;
   padding-bottom: 25px;
   border-bottom: 1px solid #eeeeee;
 }
@@ -101,14 +106,13 @@
   color: #111;
 }
 
-
 /* =========================================
    INVOICE DETAILS
 ========================================= */
 
 .invoice-details {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 25px;
   padding: 25px 0;
   border-bottom: 1px solid #eeeeee;
@@ -119,7 +123,6 @@
   font-weight: 500;
   color: #222;
 }
-
 
 /* =========================================
    PRODUCTS
@@ -138,13 +141,17 @@
 }
 
 .invoice-product {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   padding: 15px 0;
+  box-sizing: border-box;
 }
 
 .invoice-product-left {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -153,6 +160,7 @@
 .invoice-product img {
   width: 60px;
   height: 60px;
+  flex-shrink: 0;
   object-fit: cover;
   background: #f5f5f5;
 }
@@ -161,35 +169,40 @@
   margin: 0 0 6px;
   font-size: 14px;
   font-weight: 500;
+  line-height: 1.4;
   color: #111;
 }
 
 .invoice-product p {
   margin: 3px 0;
   font-size: 11px;
+  line-height: 1.4;
   color: #777;
 }
 
 .invoice-product > strong {
+  flex-shrink: 0;
   font-size: 14px;
   font-weight: 500;
 }
-
 
 /* =========================================
    TOTALS
 ========================================= */
 
 .invoice-footer {
+  width: 280px;
+  max-width: 100%;
   padding-top: 25px;
   margin-left: auto;
-  width: 280px;
+  box-sizing: border-box;
 }
 
 .invoice-footer > div {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
   margin-bottom: 13px;
 }
 
@@ -212,28 +225,31 @@
   color: #111;
 }
 
-
 /* =========================================
    EMPTY INVOICE
 ========================================= */
 
 .invoice-empty {
+  width: 100%;
   max-width: 600px;
   margin: 0 auto;
   padding: 80px 20px;
   text-align: center;
   border: 1px solid #eeeeee;
+  box-sizing: border-box;
 }
 
 .invoice-empty h2 {
   margin: 0 0 12px;
   font-size: 22px;
   font-weight: 500;
+  color: #111;
 }
 
 .invoice-empty p {
   margin: 0 0 25px;
   font-size: 13px;
+  line-height: 1.6;
   color: #777;
 }
 
@@ -241,30 +257,65 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   height: 42px;
   padding: 0 25px;
-
   background: #111;
   color: #fff;
-
   text-decoration: none;
   font-size: 11px;
   letter-spacing: 1px;
+  box-sizing: border-box;
 }
 
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .invoice-page {
+    padding: 0 30px 70px;
+  }
+
+  .invoice-heading {
+    padding: 80px 0 50px;
+  }
+
+  .invoice-heading h1 {
+    font-size: 34px;
+  }
+
+  .invoice-container {
+    max-width: 750px;
+  }
+
+  .invoice-card {
+    padding: 25px;
+  }
+
+  .invoice-details {
+    gap: 18px;
+  }
+}
 
 /* =========================================
-   RESPONSIVE
+   SMALL TABLET
 ========================================= */
 
 @media (max-width: 768px) {
+  .invoice-page {
+    padding: 0 20px 60px;
+  }
+
   .invoice-heading {
     padding: 70px 0 40px;
   }
 
   .invoice-heading h1 {
     font-size: 32px;
+  }
+
+  .invoice-heading span {
+    font-size: 13px;
   }
 
   .invoice-card {
@@ -274,8 +325,15 @@
   .invoice-details {
     gap: 15px;
   }
+
+  .invoice-product {
+    gap: 15px;
+  }
 }
 
+/* =========================================
+   MOBILE
+========================================= */
 
 @media (max-width: 520px) {
   .invoice-page {
@@ -286,25 +344,69 @@
     padding: 55px 0 35px;
   }
 
+  .invoice-heading p {
+    margin-bottom: 10px;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+  }
+
   .invoice-heading h1 {
+    margin-bottom: 14px;
     font-size: 27px;
   }
 
   .invoice-heading span {
-    font-size: 13px;
+    font-size: 11px;
+    line-height: 1.6;
   }
 
   .invoice-card {
     padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .invoice-card-top {
+    gap: 10px;
+    padding-bottom: 20px;
+  }
+
+  .invoice-card-top span,
+  .invoice-details span,
+  .invoice-footer span {
+    font-size: 8px;
+  }
+
+  .invoice-card-top h2 {
+    font-size: 18px;
+  }
+
+  .invoice-status strong {
+    font-size: 10px;
   }
 
   .invoice-details {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 16px;
+    padding: 20px 0;
+  }
+
+  .invoice-details strong {
+    font-size: 11px;
+  }
+
+  .invoice-products {
+    padding: 20px 0;
+  }
+
+  .invoice-products h3 {
+    margin-bottom: 12px;
+    font-size: 10px;
   }
 
   .invoice-product {
     align-items: flex-start;
+    gap: 10px;
+    padding: 12px 0;
   }
 
   .invoice-product-left {
@@ -317,14 +419,116 @@
   }
 
   .invoice-product h4 {
+    margin-bottom: 4px;
     font-size: 12px;
+  }
+
+  .invoice-product p {
+    font-size: 9px;
+  }
+
+  .invoice-product > strong {
+    font-size: 10px;
   }
 
   .invoice-footer {
     width: 100%;
+    padding-top: 20px;
+  }
+
+  .invoice-footer > div {
+    margin-bottom: 11px;
+  }
+
+  .invoice-footer strong {
+    font-size: 11px;
+  }
+
+  .invoice-grand-total {
+    padding-top: 12px;
+  }
+
+  .invoice-grand-total span,
+  .invoice-grand-total strong {
+    font-size: 13px;
+  }
+
+  .invoice-empty {
+    padding: 55px 18px;
+  }
+
+  .invoice-empty h2 {
+    font-size: 19px;
+  }
+
+  .invoice-empty p {
+    font-size: 11px;
+  }
+
+  .invoice-shop-btn {
+    width: 100%;
+    height: 40px;
+    font-size: 9px;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 360px) {
+  .invoice-page {
+    padding: 0 12px 50px;
+  }
+
+  .invoice-heading {
+    padding: 45px 0 30px;
+  }
+
+  .invoice-heading h1 {
+    font-size: 24px;
+  }
+
+  .invoice-heading span {
+    font-size: 10px;
+  }
+
+  .invoice-card {
+    padding: 15px;
   }
 
   .invoice-card-top h2 {
-    font-size: 18px;
+    font-size: 16px;
+  }
+
+  .invoice-status strong {
+    font-size: 9px;
+  }
+
+  .invoice-product img {
+    width: 45px;
+    height: 45px;
+  }
+
+  .invoice-product h4 {
+    font-size: 11px;
+  }
+
+  .invoice-product p {
+    font-size: 8px;
+  }
+
+  .invoice-product > strong {
+    font-size: 9px;
+  }
+
+  .invoice-footer strong {
+    font-size: 10px;
+  }
+
+  .invoice-grand-total span,
+  .invoice-grand-total strong {
+    font-size: 12px;
   }
 }
+
