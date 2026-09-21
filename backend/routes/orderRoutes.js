@@ -19,6 +19,16 @@ router.get("/test", (req, res) => {
 
 // CREATE ORDER
 router.post("/", protect, orderController.createOrder);
+router.post(
+  "/razorpay/create-order",
+  protect,
+  orderController.createRazorpayOrder
+);
+router.post(
+  "/razorpay/verify",
+  protect,
+  orderController.verifyRazorpayPayment
+);
 
 // BEST SELLING PRODUCTS
 router.get(
@@ -56,5 +66,6 @@ router.put(
   adminOnly,
   orderController.updateOrderStatus
 );
+
 
 module.exports = router;

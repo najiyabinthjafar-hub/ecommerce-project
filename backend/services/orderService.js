@@ -142,6 +142,53 @@ const getBestSellingProducts = async () => {
 
   return bestSellers;
 };
+
+const updateRazorpayOrder = async (
+  orderId,
+  razorpayOrderId,
+  userId
+) => {
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      user: userId,
+    },
+    {
+      razorpayOrderId: razorpayOrderId,
+    },
+    {
+      new: true,
+    }
+  );
+
+  return order;
+};
+const verifyRazorpayPayment = async (
+  orderId,
+  userId,
+  razorpayPaymentId,
+  razorpaySignature
+) => {
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      user: userId,
+    },
+    {
+      paymentStatus: "PAID",
+      orderStatus: "CONFIRMED",
+      razorpayPaymentId,
+      razorpaySignature,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  return order;
+};
+
 module.exports = {
   createOrder,
   getOrdersByUser,
@@ -149,4 +196,6 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   getBestSellingProducts,
+  updateRazorpayOrder,
+  verifyRazorpayPayment,
 };
