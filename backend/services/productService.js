@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const notificationService = require("./notificationService");
+const mongoose = require("mongoose");
 
 // ================= CREATE PRODUCT =================
 
@@ -32,10 +33,19 @@ const getAllProducts = async ({
   }
 
   // ================= CATEGORY FILTER =================
+if (category) {
+  const categoryIds = category
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean)
+    .map((id) => new mongoose.Types.ObjectId(id));
 
-  if (category) {
-    query.category = category;
+  if (categoryIds.length === 1) {
+    query.category = categoryIds[0];
+  } else {
+    query.category = { $in: categoryIds };
   }
+}
 
   // ================= AVAILABILITY FILTER =================
 
@@ -130,6 +140,15 @@ const getAllProducts = async ({
       },
     });
   }
+
+  if (sort === "featured") {
+  pipeline.push({
+    $sort: {
+      isBestSeller: -1,
+      createdAt: -1,
+    },
+  });
+}
 
   // ================= PAGINATION =================
 
