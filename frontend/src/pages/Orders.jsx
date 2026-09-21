@@ -1,77 +1,140 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Orders.css";
 
-const API_URL = "http://localhost:5000/api";
-
-const Orders = () => {
-  const navigate = useNavigate();
-
+function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const navigate = useNavigate();
+
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    window.scrollTo(0, 0);
 
-  // =========================
-  // FETCH ORDERS
-  // =========================
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
+    const fetchOrders = async () => {
       const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId");
 
-      if (!token || !userId) {
-        setOrders([]);
-        setLoading(false);
+      if (!token) {
+        navigate("/login");
         return;
       }
 
-      const response = await axios.get(
-        `${API_URL}/orders?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/orders",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch orders"
+          );
         }
-      );
 
-      console.log("ORDERS RESPONSE:", response.data);
+        setOrders(data.orders || []);
+      } catch (err) {
+        console.error("Orders API Error:", err);
+        setError(err.message || "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Backend response safe handling
-      const ordersData =
-        response.data?.orders ||
-        response.data?.data ||
-        response.data;
+    fetchOrders();
+  }, [navigate]);
 
-      setOrders(
-        Array.isArray(ordersData)
-          ? ordersData
-          : []
-      );
-    } catch (err) {
-      console.error("Error fetching orders:", err);
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
 
-      setError(
-        err.response?.data?.message ||
-          "Failed to load your orders."
-      );
-    } finally {
-      setLoading(false);
-    }
+    return status
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
   };
 
-  // =========================
-  // TRACK ORDER
-  // =========================
+  const getProductImage = (product) => {
+    if (!product) {
+      return "/images/placeholder.png";
+    }
+
+    if (product.images && product.images.length > 0) {
+      const image = product.images[0];
+
+      if (typeof image === "string") {
+        if (image.startsWith("http")) {
+          return image;
+        }
+
+        return `http://localhost:5000/${
+          image.startsWith("/") ? image.slice(1) : image
+        }`;
+      }
+
+      if (image?.url) {
+        if (image.url.startsWith("http")) {
+          return image.url;
+        }
+
+        return `http://localhost:5000${image.url}`;
+      }
+    }
+
+    if (product.image) {
+      if (product.image.startsWith("http")) {
+        return product.image;
+      }
+
+      return `http://localhost:5000${product.image}`;
+    }
+
+    return "/images/placeholder.png";
+  };
+
+  const getProductName = (product) => {
+    return product?.name || product?.title || "Product";
+  };
+
+  const getProductPrice = (item) => {
+    if (
+      item?.price !== undefined &&
+      item?.price !== null
+    ) {
+      return item.price;
+    }
+
+    if (
+      item?.product?.salePrice !== undefined &&
+      item?.product?.salePrice !== null &&
+      item.product.salePrice > 0
+    ) {
+      return item.product.salePrice;
+    }
+
+    return item?.product?.regularPrice || 0;
+  };
+
+  const getProductSize = (item) => {
+    return (
+      item?.size ||
+      item?.selectedSize ||
+      item?.variant?.size ||
+      "N/A"
+    );
+  };
+
   const handleTrackOrder = (order) => {
     navigate(`/track-order/${order._id}`, {
       state: {
@@ -80,350 +143,163 @@ const Orders = () => {
     });
   };
 
-  // =========================
-  // CANCEL ORDER
-  // =========================
-  const handleCancelOrder = async (orderId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
-
-    if (!confirmCancel) return;
-
-    try {
-      const token = localStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/orders/${orderId}/status`,
-        {
-          orderStatus: "CANCELLED",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      alert("Order cancelled successfully!");
-
-      // Refresh orders after cancellation
-      fetchOrders();
-    } catch (err) {
-      console.error("Cancel order error:", err);
-
-      alert(
-        err.response?.data?.message ||
-          "Failed to cancel order."
-      );
-    }
-  };
-
-  // =========================
-  // FORMAT STATUS
-  // =========================
-  const formatStatus = (status) => {
-    if (!status) return "Pending";
-
-    return status
-      .toLowerCase()
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (letter) =>
-        letter.toUpperCase()
-      );
-  };
-
-  // =========================
-  // PRODUCT NAME
-  // =========================
-  const getProductName = (item) => {
-    if (item?.product?.name) {
-      return item.product.name;
-    }
-
-    if (item?.productName) {
-      return item.productName;
-    }
-
-    return "Product";
-  };
-
-  // =========================
-  // PRODUCT IMAGE
-  // =========================
-  const getProductImage = (item) => {
-    if (item?.image) {
-      return item.image;
-    }
-
-    if (item?.product?.image) {
-      return item.product.image;
-    }
-
-    if (
-      item?.product?.images &&
-      item.product.images.length > 0
-    ) {
-      return item.product.images[0];
-    }
-
-    return "";
-  };
-
-  // =========================
-  // LOADING
-  // =========================
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-loading">
-            Loading your orders...
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // =========================
-  // LOGIN CHECK
-  // =========================
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-
-  if (!token || !userId) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-login">
-            <p>MY ACCOUNT</p>
-
-            <h1>My Orders</h1>
-
-            <span>
-              Please login to view your orders.
-            </span>
-
-            <Link
-              to="/login"
-              className="orders-login-btn"
-            >
-              LOGIN
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // =========================
-  // ERROR
-  // =========================
-  if (error) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-error">
-            <p>{error}</p>
-
-            <button
-              className="orders-retry"
-              onClick={fetchOrders}
-            >
-              TRY AGAIN
-            </button>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // =========================
-  // EMPTY ORDERS
-  // =========================
-  if (orders.length === 0) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-empty">
-            <h2>No Orders Yet</h2>
-
-            <p>
-              You haven't placed any orders yet.
-            </p>
-
-            <Link
-              to="/shop"
-              className="orders-shop-btn"
-            >
-              SHOP NOW
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // =========================
-  // ORDERS PAGE
-  // =========================
   return (
     <>
       <Navbar />
 
       <main className="orders-page">
+        <div className="orders-container">
 
-        {/* =========================
-            TABLE HEADER
-        ========================= */}
-        <div className="orders-table-header">
-          <span>PRODUCT</span>
-          <span>STATUS</span>
-        </div>
+          {loading && (
+            <div className="orders-message">
+              Loading your orders...
+            </div>
+          )}
 
-        {/* =========================
-            ORDERS LIST
-        ========================= */}
-        <div className="orders-list">
+          {!loading && error && (
+            <div className="orders-message error">
+              {error}
+            </div>
+          )}
 
-          {orders.map((order) => {
-            const firstItem = order.items?.[0];
+          {!loading &&
+            !error &&
+            orders.length === 0 && (
+              <div className="orders-message">
+                No orders found.
+              </div>
+            )}
 
-            const productName =
-              getProductName(firstItem);
+          {!loading &&
+            !error &&
+            orders.length > 0 && (
+              <div className="orders-content">
 
-            const productImage =
-              getProductImage(firstItem);
-
-            const quantity =
-              firstItem?.quantity || 1;
-
-            const size =
-              firstItem?.size;
-
-            const status =
-              order.orderStatus || "PENDING";
-
-            return (
-              <div
-                className="order-row"
-                key={order._id}
-              >
-
-                {/* =========================
-                    PRODUCT SECTION
-                ========================= */}
-                <div className="order-product-section">
-
-                  <div className="order-product">
-
-                    {/* PRODUCT IMAGE */}
-                    <div className="order-image">
-
-                      {productImage ? (
-                        <img
-                          src={productImage}
-                          alt={productName}
-                        />
-                      ) : (
-                        <span>
-                          No Image
-                        </span>
-                      )}
-
-                    </div>
-
-                    {/* PRODUCT DETAILS */}
-                    <div className="order-details">
-
-                      <h3>
-                        {productName}
-                      </h3>
-
-                      <p>
-                        ₹{firstItem?.price || 0}
-                      </p>
-
-                      <span>
-                        Quantity: {quantity}
-
-                        {size
-                          ? ` • Size: ${size}`
-                          : ""}
-                      </span>
-
-                    </div>
-
+                {/* HEADER */}
+                <div className="orders-header">
+                  <div className="product-heading">
+                    PRODUCT
                   </div>
 
+                  <div className="status-heading">
+                    STATUS
+                  </div>
                 </div>
 
-                {/* =========================
-                    STATUS SECTION
-                ========================= */}
-                <div className="order-status-section">
+                {/* ORDERS */}
+                <div className="orders-list">
+                  {orders.map((order) => {
+                    const status =
+                      order.orderStatus || "PENDING";
 
-                  <span
-                    className={`order-status ${status
-                      .toLowerCase()
-                      .replace(/_/g, "-")}`}
-                  >
-                    {formatStatus(status)}
-                  </span>
+                    const normalizedStatus =
+                      status.toUpperCase();
 
-                  {/* TRACK ORDER BUTTON */}
-                  <button
-                    className="track-order-btn"
-                    onClick={() =>
-                      handleTrackOrder(order)
-                    }
-                  >
-                    Track Your Order
-                  </button>
-
-                  {/* CANCEL ORDER BUTTON */}
-                  {status !== "CANCELLED" &&
-                    status !== "DELIVERED" && (
-                      <button
-                        className="cancel-order-btn"
-                        onClick={() =>
-                          handleCancelOrder(
-                            order._id
-                          )
-                        }
+                    return (
+                      <div
+                        className="order-item"
+                        key={order._id}
                       >
-                        Cancel Order
-                      </button>
-                    )}
 
+                        {/* PRODUCT */}
+                        <div className="product-section">
+                          {order.items?.map(
+                            (item, index) => {
+                              const product = item.product;
+
+                              return (
+                                <div
+                                  className="product-item"
+                                  key={
+                                    product?._id ||
+                                    `${order._id}-${index}`
+                                  }
+                                >
+                                  <img
+                                    src={getProductImage(
+                                      product
+                                    )}
+                                    alt={getProductName(
+                                      product
+                                    )}
+                                    className="product-image"
+                                    onError={(event) => {
+                                      event.currentTarget.src =
+                                        "/images/placeholder.png";
+                                    }}
+                                  />
+
+                                  <div className="product-details">
+                                    <h3>
+                                      {getProductName(
+                                        product
+                                      )}
+                                    </h3>
+
+                                    <p className="product-price">
+                                      ₹
+                                      {Number(
+                                        getProductPrice(item)
+                                      ).toLocaleString(
+                                        "en-IN"
+                                      )}
+                                    </p>
+
+                                    <p className="product-meta">
+                                      Size:{" "}
+                                      {getProductSize(item)}
+
+                                      <span>|</span>
+
+                                      Quantity:{" "}
+                                      {item.quantity || 1}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+
+                        {/* STATUS */}
+                        <div className="status-section">
+                          <span
+                            className={`status ${normalizedStatus
+                              .toLowerCase()
+                              .replace(/_/g, "-")}`}
+                          >
+                            {formatStatus(status)}
+                          </span>
+
+                          {normalizedStatus !==
+                            "CANCELLED" &&
+                            normalizedStatus !==
+                              "DELIVERED" && (
+                              <button
+                                type="button"
+                                className="track-button"
+                                onClick={() =>
+                                  handleTrackOrder(order)
+                                }
+                              >
+                                Track Your Order
+                              </button>
+                            )}
+                        </div>
+
+                      </div>
+                    );
+                  })}
                 </div>
 
               </div>
-            );
-          })}
-
+            )}
         </div>
       </main>
 
       <Footer />
     </>
   );
-};
+}
 
 export default Orders;

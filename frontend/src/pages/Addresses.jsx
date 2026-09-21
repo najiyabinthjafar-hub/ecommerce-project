@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Addresses.css";
 
 function Addresses() {
@@ -13,8 +15,6 @@ function Addresses() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // null = Add mode
-  // address object = Edit mode
   const [editingAddress, setEditingAddress] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -26,7 +26,17 @@ function Addresses() {
     postalCode: "",
   });
 
-  // ================= GET ADDRESSES =================
+  /* =========================================
+     SCROLL TO TOP WHEN PAGE OPENS
+  ========================================= */
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  /* =========================================
+     GET ADDRESSES
+  ========================================= */
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -72,7 +82,9 @@ function Addresses() {
     fetchAddresses();
   }, [navigate]);
 
-  // ================= HANDLE INPUT CHANGE =================
+  /* =========================================
+     HANDLE INPUT CHANGE
+  ========================================= */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,6 +99,7 @@ function Addresses() {
         }));
       }
 
+      setError("");
       return;
     }
 
@@ -100,6 +113,7 @@ function Addresses() {
         }));
       }
 
+      setError("");
       return;
     }
 
@@ -107,9 +121,13 @@ function Addresses() {
       ...prev,
       [name]: value,
     }));
+
+    setError("");
   };
 
-  // ================= ADD ADDRESS BUTTON =================
+  /* =========================================
+     ADD ADDRESS
+  ========================================= */
 
   const handleAddAddress = () => {
     setEditingAddress(null);
@@ -125,9 +143,17 @@ function Addresses() {
 
     setError("");
     setShowForm(true);
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
   };
 
-  // ================= EDIT ADDRESS =================
+  /* =========================================
+     EDIT ADDRESS
+  ========================================= */
 
   const handleEdit = (address) => {
     setEditingAddress(address);
@@ -144,14 +170,16 @@ function Addresses() {
     setError("");
     setShowForm(true);
 
-    // Form visible ആയ സ്ഥലത്തേക്ക് പോകാൻ
     window.scrollTo({
       top: 0,
+      left: 0,
       behavior: "smooth",
     });
   };
 
-  // ================= ADD / UPDATE ADDRESS =================
+  /* =========================================
+     SAVE / UPDATE ADDRESS
+  ========================================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,7 +193,6 @@ function Addresses() {
 
     setError("");
 
-    // Validation
     if (formData.phone.length !== 10) {
       setError("Phone number must be exactly 10 digits.");
       return;
@@ -182,7 +209,6 @@ function Addresses() {
       let url = "http://localhost:5000/api/addresses";
       let method = "POST";
 
-      // EDIT MODE
       if (editingAddress) {
         url = `http://localhost:5000/api/addresses/${editingAddress._id}`;
         method = "PUT";
@@ -210,8 +236,6 @@ function Addresses() {
 
       const savedAddress = data.address || data;
 
-      // ================= UPDATE STATE =================
-
       if (editingAddress) {
         setAddresses((prev) =>
           prev.map((address) =>
@@ -227,7 +251,6 @@ function Addresses() {
         ]);
       }
 
-      // Reset form
       setFormData({
         fullName: "",
         phone: "",
@@ -247,7 +270,9 @@ function Addresses() {
     }
   };
 
-  // ================= DELETE ADDRESS =================
+  /* =========================================
+     DELETE ADDRESS
+  ========================================= */
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
@@ -261,7 +286,9 @@ function Addresses() {
       "Are you sure you want to delete this address?"
     );
 
-    if (!confirmDelete) return;
+    if (!confirmDelete) {
+      return;
+    }
 
     try {
       setError("");
@@ -294,7 +321,9 @@ function Addresses() {
     }
   };
 
-  // ================= CANCEL FORM =================
+  /* =========================================
+     CANCEL FORM
+  ========================================= */
 
   const handleCancel = () => {
     setShowForm(false);
@@ -318,24 +347,25 @@ function Addresses() {
       <main className="addresses-page">
         <div className="addresses-container">
 
+          {/* =========================================
+              HEADER
+          ========================================= */}
+
           <div className="addresses-header">
             <h1>MY ADDRESSES</h1>
 
             <button
+              type="button"
               className="add-address-btn"
-              onClick={
-                showForm
-                  ? handleCancel
-                  : handleAddAddress
-              }
+              onClick={handleAddAddress}
             >
-              {showForm
-                ? "CLOSE"
-                : "+ ADD ADDRESS"}
+              + ADD ADDRESS
             </button>
           </div>
 
-          {/* ERROR */}
+          {/* =========================================
+              ERROR MESSAGE
+          ========================================= */}
 
           {error && (
             <p className="address-error-message">
@@ -343,7 +373,9 @@ function Addresses() {
             </p>
           )}
 
-          {/* ADD / EDIT FORM */}
+          {/* =========================================
+              ADDRESS FORM
+          ========================================= */}
 
           {showForm && (
             <form
@@ -405,6 +437,10 @@ function Addresses() {
                 required
               />
 
+              {/* =========================================
+                  FORM BUTTONS
+              ========================================= */}
+
               <div className="address-form-buttons">
                 <button
                   type="submit"
@@ -429,7 +465,9 @@ function Addresses() {
             </form>
           )}
 
-          {/* LOADING */}
+          {/* =========================================
+              LOADING
+          ========================================= */}
 
           {loading && (
             <div className="no-address">
@@ -437,7 +475,9 @@ function Addresses() {
             </div>
           )}
 
-          {/* ADDRESS LIST */}
+          {/* =========================================
+              ADDRESS LIST
+          ========================================= */}
 
           {!loading && (
             <div className="addresses-list">
@@ -451,9 +491,13 @@ function Addresses() {
                     className="address-card"
                     key={address._id}
                   >
-                    <h3>{address.fullName}</h3>
+                    <h3>
+                      {address.fullName}
+                    </h3>
 
-                    <p>{address.phone}</p>
+                    <p>
+                      {address.phone}
+                    </p>
 
                     <p>
                       {address.addressLine1}
@@ -468,10 +512,13 @@ function Addresses() {
                       {address.postalCode}
                     </p>
 
-                    {/* ACTION BUTTONS */}
+                    {/* =========================================
+                        ADDRESS ACTIONS
+                    ========================================= */}
 
                     <div className="address-actions">
                       <button
+                        type="button"
                         className="edit-address-btn"
                         onClick={() =>
                           handleEdit(address)
@@ -481,6 +528,7 @@ function Addresses() {
                       </button>
 
                       <button
+                        type="button"
                         className="delete-address-btn"
                         onClick={() =>
                           handleDelete(address._id)

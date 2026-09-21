@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
+
 import "./NewArrivalsPage.css";
+
+const API_URL = "http://localhost:5000/api";
 
 function NewArrivalsPage() {
   const location = useLocation();
@@ -15,6 +19,7 @@ function NewArrivalsPage() {
 
   const [products, setProducts] = useState([]);
   const [categoryTree, setCategoryTree] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -25,47 +30,41 @@ function NewArrivalsPage() {
 
   // ================= PAGINATION =================
   const [currentPage, setCurrentPage] = useState(1);
+
   const productsPerPage = 8;
 
-  // ================= FETCH DATA =================
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: productsPerPage,
+    totalProducts: 0,
+    totalPages: 0,
+  });
+
+  // ================= FETCH CATEGORY TREE =================
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        setLoading(true);
-        setError("");
+        const response = await fetch(
+          `${API_URL}/categories/tree`
+        );
 
-        const [categoryResponse, productResponse] =
-          await Promise.all([
-            fetch("http://localhost:5000/api/categories/tree"),
-            fetch("http://localhost:5000/api/products?limit=100"),
-          ]);
+        const data = await response.json();
 
-        const categoryData = await categoryResponse.json();
-        const productData = await productResponse.json();
-
-        if (!categoryResponse.ok) {
+        if (!response.ok) {
           throw new Error(
-            categoryData.message || "Failed to fetch categories"
+            data.message || "Failed to fetch categories"
           );
         }
 
-        if (!productResponse.ok) {
-          throw new Error(
-            productData.message || "Failed to fetch products"
-          );
-        }
-
-        setCategoryTree(categoryData.categories || []);
-        setProducts(productData.products || []);
+        setCategoryTree(data.categories || []);
       } catch (error) {
-        console.error("New Arrivals Page API Error:", error);
+        console.error("Category API Error:", error);
         setError(error.message);
-      } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchCategories();
   }, []);
 
   // ================= FIND SELECTED CATEGORY =================
@@ -82,94 +81,107 @@ function NewArrivalsPage() {
     selectedCategory?.children || []
   ).map((category) => String(category._id));
 
-  // ================= FILTER PRODUCTS =================
-  const filteredProducts = products
-    .filter((product) => {
-      // Active products only
-      if (product.status !== "active") {
-        return false;
-      }
+  // ================= FETCH PRODUCTS =================
+  useEffect(() => {
+    if (!selectedCategory || childCategoryIds.length === 0) {
+      return;
+    }
 
-      // Product must have category
-      if (!product.category) {
-        return false;
-      }
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      // Product category can be object or ID
-      const productCategoryId =
-        typeof product.category === "object"
-          ? product.category._id
-          : product.category;
+        const params = new URLSearchParams();
 
-      // Men's / Women's child categories only
-      if (
-        !childCategoryIds.includes(
-          String(productCategoryId)
-        )
-      ) {
-        return false;
-      }
+        params.append("page", currentPage);
+        params.append("limit", productsPerPage);
 
-      // ================= AVAILABILITY =================
-      if (availability === "available") {
-        return Number(product.stock || 0) > 0;
-      }
-
-      if (availability === "soldout") {
-        return Number(product.stock || 0) <= 0;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      // ================= PRICE =================
-      if (priceOrder === "low-high") {
-        return (
-          Number(a.price || 0) -
-          Number(b.price || 0)
+        // Main fashion category can contain multiple child categories.
+        // Backend should support category IDs through $in.
+        params.append(
+          "category",
+          childCategoryIds.join(",")
         );
-      }
 
-      if (priceOrder === "high-low") {
-        return (
-          Number(b.price || 0) -
-          Number(a.price || 0)
+        // Availability
+        if (availability === "available") {
+          params.append("availability", "in-stock");
+        } else if (availability === "soldout") {
+          params.append("availability", "out-of-stock");
+        }
+
+        // Price sorting
+        if (priceOrder === "low-high") {
+          params.append("sort", "price-low");
+        } else if (priceOrder === "high-low") {
+          params.append("sort", "price-high");
+        } else {
+          // New arrivals
+          params.append("sort", "newest");
+        }
+
+        const response = await fetch(
+          `${API_URL}/products?${params.toString()}`
         );
-      }
 
-      // ================= FEATURED =================
-      if (sortBy === "featured") {
-        return (
-          Number(Boolean(b.isBestSeller)) -
-          Number(Boolean(a.isBestSeller))
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch products"
+          );
+        }
+
+        setProducts(data.products || []);
+
+        setPagination(
+          data.pagination || {
+            currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          }
         );
+      } catch (error) {
+        console.error(
+          "New Arrivals Product API Error:",
+          error
+        );
+
+        setError(error.message);
+
+        setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // ================= NEWEST =================
-      return (
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-      );
-    });
-
-  // ================= PAGINATION CALCULATIONS =================
-  const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
-  );
-
-  const indexOfLastProduct =
-    currentPage * productsPerPage;
-
-  const indexOfFirstProduct =
-    indexOfLastProduct - productsPerPage;
-
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
+    fetchProducts();
+  }, [
+    selectedCategory,
+    currentPage,
+    availability,
+    priceOrder,
+    sortBy,
+  ]);
 
   // ================= CHANGE PAGE =================
   const handlePageChange = (page) => {
+    if (
+      page < 1 ||
+      page > pagination.totalPages
+    ) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -213,6 +225,7 @@ function NewArrivalsPage() {
 
         {/* ================= HEADING ================= */}
         <section className="new-arrivals-page-heading">
+
           <h1>New Arrivals</h1>
 
           <p className="new-arrivals-page-description">
@@ -224,6 +237,7 @@ function NewArrivalsPage() {
 
           {/* ================= FASHION BUTTONS ================= */}
           <div className="fashion-buttons">
+
             <button
               className={`fashion-btn ${
                 activeFashion === "MEN'S FASHION"
@@ -249,13 +263,14 @@ function NewArrivalsPage() {
             >
               Women's Fashion
             </button>
+
           </div>
         </section>
 
         {/* ================= PRODUCTS SECTION ================= */}
         <section className="new-arrivals-page-products">
 
-          {/* ================= SHOP STYLE FILTER ================= */}
+          {/* ================= FILTER BAR ================= */}
           {!loading && !error && (
             <section className="shop-filter-bar">
 
@@ -329,7 +344,7 @@ function NewArrivalsPage() {
                 </div>
 
                 <span className="product-count">
-                  {filteredProducts.length} PRODUCTS
+                  {pagination.totalProducts} PRODUCTS
                 </span>
 
               </div>
@@ -354,19 +369,21 @@ function NewArrivalsPage() {
           {/* ================= PRODUCTS ================= */}
           {!loading && !error && (
             <>
-              {filteredProducts.length > 0 ? (
+              {products.length > 0 ? (
                 <>
                   <div className="new-arrivals-page-grid">
-                    {currentProducts.map((product) => (
+
+                    {products.map((product) => (
                       <ProductCard
                         key={product._id}
                         product={product}
                       />
                     ))}
+
                   </div>
 
                   {/* ================= PAGINATION ================= */}
-                  {totalPages > 1 && (
+                  {pagination.totalPages > 1 && (
                     <div className="pagination">
 
                       <button
@@ -383,7 +400,8 @@ function NewArrivalsPage() {
 
                       {Array.from(
                         {
-                          length: totalPages,
+                          length:
+                            pagination.totalPages,
                         },
                         (_, index) => index + 1
                       ).map((page) => (
@@ -410,7 +428,8 @@ function NewArrivalsPage() {
                           )
                         }
                         disabled={
-                          currentPage === totalPages
+                          currentPage ===
+                          pagination.totalPages
                         }
                       >
                         →

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Wishlist.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -166,42 +164,6 @@ function Wishlist() {
     }
   };
 
-  // ================= CLEAR WISHLIST =================
-
-  const clearWishlist = async () => {
-    const token = getToken();
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      await axios.delete(
-        `${API_URL}/wishlist/clear`,
-        getAuthConfig()
-      );
-
-      setWishlist([]);
-
-      alert("Wishlist cleared!");
-    } catch (error) {
-      console.error(
-        "CLEAR WISHLIST ERROR:",
-        error
-      );
-
-      alert(
-        error.response?.data?.message ||
-          "Failed to clear wishlist."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ================= LOGIN CHECK =================
 
   if (!getToken()) {
@@ -211,9 +173,7 @@ function Wishlist() {
 
         <main className="wishlist-page">
           <div className="wishlist-container">
-
             <section className="wishlist-empty">
-
               <div className="empty-heart">
                 ♡
               </div>
@@ -228,9 +188,7 @@ function Wishlist() {
               <Link to="/login">
                 LOGIN
               </Link>
-
             </section>
-
           </div>
         </main>
 
@@ -248,11 +206,9 @@ function Wishlist() {
 
         <main className="wishlist-page">
           <div className="wishlist-container">
-
             <p className="no-products">
               Loading wishlist...
             </p>
-
           </div>
         </main>
 
@@ -266,7 +222,6 @@ function Wishlist() {
       <Navbar />
 
       <main className="wishlist-page">
-
         <div className="wishlist-container">
 
           {/* ================= BACK TO PROFILE ================= */}
@@ -286,13 +241,11 @@ function Wishlist() {
           {/* ================= HEADING ================= */}
 
           <section className="wishlist-heading">
-
             <h1>MY WISHLIST</h1>
 
             <span>
               Your favourite products in one place.
             </span>
-
           </section>
 
           {/* ================= ERROR ================= */}
@@ -307,7 +260,6 @@ function Wishlist() {
 
           {!error && wishlist.length === 0 && (
             <section className="wishlist-empty">
-
               <div className="empty-heart">
                 ♡
               </div>
@@ -324,7 +276,6 @@ function Wishlist() {
               <Link to="/shop">
                 START SHOPPING
               </Link>
-
             </section>
           )}
 
@@ -332,22 +283,21 @@ function Wishlist() {
 
           {!error && wishlist.length > 0 && (
             <section className="wishlist-products">
-
               {wishlist.map((product) => {
 
-                // ================= PRODUCT ID =================
+                {/* ================= PRODUCT ID ================= */}
 
                 const productId =
                   product._id || product.id;
 
-                // ================= PRODUCT IMAGE =================
+                {/* ================= PRODUCT IMAGE ================= */}
 
                 const productImage =
                   product.images?.[0] ||
                   product.image ||
                   "https://via.placeholder.com/300";
 
-                // ================= PRODUCT PRICE =================
+                {/* ================= PRODUCT PRICE ================= */}
 
                 const productPrice =
                   product.salePrice !== null &&
@@ -381,7 +331,6 @@ function Wishlist() {
                     {/* ================= PRODUCT INFO ================= */}
 
                     <div className="wishlist-info">
-
                       <h3>
                         {product.name}
                       </h3>
@@ -393,7 +342,6 @@ function Wishlist() {
                         ).toLocaleString("en-IN")}
                         /-
                       </p>
-
                     </div>
 
                     {/* ================= ACTIONS ================= */}
@@ -429,24 +377,11 @@ function Wishlist() {
                       </button>
 
                     </div>
-
                   </article>
                 );
               })}
-
-              {/* ================= CLEAR WISHLIST ================= */}
-
-              <button
-                type="button"
-                className="wishlist-remove-btn"
-                onClick={clearWishlist}
-              >
-                CLEAR WISHLIST
-              </button>
-
             </section>
           )}
-
         </div>
       </main>
 
