@@ -4,19 +4,27 @@
 
 .categories-page {
   width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
+  max-width: none;
+  min-width: 0;
+
+  margin: 0;
   padding: 0;
-  font-family: "Inter", sans-serif;
+
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
   color: #171717;
 }
-
 
 /* =========================================================
    PAGE HEADER
 ========================================================= */
 
 .category-page-header {
+  width: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -47,7 +55,6 @@
   line-height: 1.5;
   color: #888;
 }
-
 
 /* =========================================================
    HEADER BUTTONS
@@ -105,19 +112,20 @@
   font-size: 14px;
 }
 
-
 /* =========================================================
    CATEGORY STATS
 ========================================================= */
 
 .category-stats {
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
 
 .category-stat-card {
+  min-width: 0;
   min-height: 105px;
   padding: 18px;
   display: flex;
@@ -177,12 +185,13 @@
   color: #171717;
 }
 
-
 /* =========================================================
    MAIN CATEGORIES CARD
 ========================================================= */
 
 .categories-card {
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   background: #fff;
   border: 1px solid #e8e8e8;
@@ -213,7 +222,6 @@
   font-size: 12px;
   color: #929292;
 }
-
 
 /* =========================================================
    SEARCH
@@ -247,7 +255,8 @@
   color: #171717;
   font-family: inherit;
   font-size: 12px;
-  transition: border-color 0.2s ease,
+  transition:
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
@@ -260,22 +269,28 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
 }
 
-
 /* =========================================================
    TABLE WRAPPER
 ========================================================= */
 
 .categories-table-wrapper {
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .categories-table {
   width: 100%;
-  min-width: 850px;
+  max-width: 100%;
+  min-width: 0;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
 }
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
 
 .categories-table thead {
   background: #fafafa;
@@ -283,7 +298,7 @@
 
 .categories-table th {
   height: 46px;
-  padding: 0 18px;
+  padding: 0 14px;
   border-bottom: 1px solid #e9e9e9;
   text-align: left;
   white-space: nowrap;
@@ -296,11 +311,12 @@
 
 .categories-table td {
   height: 67px;
-  padding: 10px 18px;
+  padding: 10px 14px;
   border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
   font-size: 12px;
   color: #333;
+  overflow: hidden;
 }
 
 .categories-table tbody tr:last-child td {
@@ -315,7 +331,6 @@
   background: #fcfcfc;
 }
 
-
 /* =========================================================
    NUMBER
 ========================================================= */
@@ -326,7 +341,6 @@
   font-size: 11px !important;
 }
 
-
 /* =========================================================
    CATEGORY INFO
 ========================================================= */
@@ -335,7 +349,8 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  min-width: 200px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .category-icon {
@@ -354,11 +369,12 @@
 
 .category-info > div:last-child {
   min-width: 0;
+  max-width: 100%;
 }
 
 .category-info strong {
   display: block;
-  max-width: 230px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -372,6 +388,9 @@
   margin-top: 3px;
   font-size: 10px;
   color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-info small {
@@ -387,7 +406,6 @@
   font-size: 9px;
 }
 
-
 /* =========================================================
    CATEGORY TYPE
 ========================================================= */
@@ -396,6 +414,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 25px;
+  max-width: 100%;
   padding: 0 9px;
   border-radius: 20px;
   white-space: nowrap;
@@ -413,7 +432,6 @@
   color: #666;
 }
 
-
 /* =========================================================
    PRODUCT COUNT
 ========================================================= */
@@ -424,7 +442,6 @@
   color: #333;
 }
 
-
 /* =========================================================
    STATUS
 ========================================================= */
@@ -433,6 +450,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 25px;
+  max-width: 100%;
   padding: 0 9px;
   border-radius: 20px;
   white-space: nowrap;
@@ -450,7 +468,6 @@
   color: #888;
 }
 
-
 /* =========================================================
    ACTION BUTTONS
 ========================================================= */
@@ -459,6 +476,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  white-space: nowrap;
 }
 
 .category-edit-btn,
@@ -500,7 +518,6 @@
   color: #fff;
 }
 
-
 /* =========================================================
    LOADING
 ========================================================= */
@@ -530,7 +547,6 @@
     transform: rotate(360deg);
   }
 }
-
 
 /* =========================================================
    EMPTY STATE
@@ -565,7 +581,6 @@
   color: #999;
 }
 
-
 /* =========================================================
    MODAL OVERLAY
 ========================================================= */
@@ -581,7 +596,6 @@
   background: rgba(0, 0, 0, 0.48);
   backdrop-filter: blur(3px);
 }
-
 
 /* =========================================================
    MODAL
@@ -609,7 +623,6 @@
     transform: translateY(0) scale(1);
   }
 }
-
 
 /* =========================================================
    MODAL HEADER
@@ -668,7 +681,6 @@
   color: #fff;
 }
 
-
 /* =========================================================
    FORM
 ========================================================= */
@@ -693,7 +705,6 @@
   margin-left: 3px;
   color: #e14c4c;
 }
-
 
 /* =========================================================
    INPUT WRAPPER
@@ -726,7 +737,8 @@
   color: #222;
   font-family: inherit;
   font-size: 12px;
-  transition: border-color 0.2s ease,
+  transition:
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
@@ -744,7 +756,6 @@
   border-color: #999;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
 }
-
 
 /* =========================================================
    CATEGORY PREVIEW
@@ -779,6 +790,7 @@
 
 .preview-content {
   min-width: 0;
+  max-width: 100%;
 }
 
 .preview-content strong {
@@ -810,7 +822,6 @@
 .preview-content small i {
   font-size: 9px;
 }
-
 
 /* =========================================================
    MODAL ACTIONS
@@ -865,7 +876,6 @@
   font-size: 12px;
 }
 
-
 /* =========================================================
    TABLET
 ========================================================= */
@@ -876,7 +886,7 @@
   }
 
   .category-stats {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
   }
 
@@ -898,8 +908,13 @@
   .categories-card-header {
     padding: 18px;
   }
-}
 
+  .categories-table th,
+  .categories-table td {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+}
 
 /* =========================================================
    MOBILE
@@ -907,8 +922,13 @@
 
 @media (max-width: 700px) {
   .categories-page {
+    width: 100%;
     padding: 0;
   }
+
+  /* -------------------------------------------------------
+     PAGE HEADER
+  ------------------------------------------------------- */
 
   .category-page-header {
     flex-direction: column;
@@ -927,7 +947,12 @@
 
   .category-header-actions button {
     flex: 1;
+    min-width: 0;
   }
+
+  /* -------------------------------------------------------
+     STAT CARDS
+  ------------------------------------------------------- */
 
   .category-stats {
     grid-template-columns: 1fr;
@@ -937,6 +962,15 @@
 
   .category-stat-card {
     min-height: 82px;
+  }
+
+  /* -------------------------------------------------------
+     CATEGORY CARD
+  ------------------------------------------------------- */
+
+  .categories-card {
+    width: 100%;
+    border-radius: 12px;
   }
 
   .categories-card-header {
@@ -950,17 +984,95 @@
     width: 100%;
   }
 
+  /* -------------------------------------------------------
+     TABLE HORIZONTAL SCROLL
+  ------------------------------------------------------- */
+
+  .categories-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+    overflow-y: visible;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
   .categories-table {
-    min-width: 800px;
+    width: 760px;
+    min-width: 760px;
+    table-layout: fixed;
   }
 
   .categories-table th,
   .categories-table td {
-    padding-left: 13px;
-    padding-right: 13px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .categories-table th {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .categories-table td {
+    font-size: 11px;
+  }
+
+  /* -------------------------------------------------------
+     CATEGORY INFO
+  ------------------------------------------------------- */
+
+  .category-info {
+    gap: 7px;
+  }
+
+  .category-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 11px;
+  }
+
+  .category-info strong {
+    font-size: 11px;
+  }
+
+  .category-info span,
+  .category-info small {
+    font-size: 9px;
+  }
+
+  /* -------------------------------------------------------
+     TYPE / STATUS
+  ------------------------------------------------------- */
+
+  .category-type,
+  .category-status {
+    min-height: 23px;
+    padding: 0 7px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------
+     ACTIONS
+  ------------------------------------------------------- */
+
+  .category-actions {
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .category-edit-btn,
+  .category-delete-btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+
+    font-size: 11px;
   }
 }
-
 
 /* =========================================================
    SMALL MOBILE
@@ -984,6 +1096,10 @@
     flex: none;
   }
 
+  /* -------------------------------------------------------
+     STAT CARDS
+  ------------------------------------------------------- */
+
   .category-stat-card {
     padding: 14px;
   }
@@ -993,6 +1109,134 @@
     height: 38px;
     min-width: 38px;
   }
+
+  /* -------------------------------------------------------
+     CARD HEADER
+  ------------------------------------------------------- */
+
+  .categories-card-header {
+    padding: 15px;
+  }
+
+  .categories-card-header h2 {
+    font-size: 16px;
+  }
+
+  .categories-card-header p {
+    font-size: 10px;
+  }
+
+  /* -------------------------------------------------------
+     TABLE
+     
+     Keep table wide.
+     User can swipe horizontally.
+  ------------------------------------------------------- */
+
+  .categories-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+    overflow-y: visible;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .categories-table {
+    width: 760px;
+    min-width: 760px;
+    table-layout: fixed;
+  }
+
+  .categories-table th,
+  .categories-table td {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .categories-table th {
+    font-size: 9px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+
+  .categories-table td {
+    height: 60px;
+    font-size: 10px;
+  }
+
+  /* -------------------------------------------------------
+     NUMBER
+  ------------------------------------------------------- */
+
+  .category-number {
+    width: 28px;
+    font-size: 9px !important;
+  }
+
+  /* -------------------------------------------------------
+     CATEGORY INFO
+  ------------------------------------------------------- */
+
+  .category-info {
+    gap: 6px;
+  }
+
+  .category-icon {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+  }
+
+  .category-info strong {
+    font-size: 10px;
+  }
+
+  .category-info span,
+  .category-info small {
+    font-size: 8px;
+  }
+
+  /* -------------------------------------------------------
+     TYPE / STATUS
+  ------------------------------------------------------- */
+
+  .category-type,
+  .category-status {
+    min-height: 21px;
+    padding: 0 6px;
+
+    font-size: 8px;
+
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------
+     ACTIONS
+  ------------------------------------------------------- */
+
+  .category-actions {
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .category-edit-btn,
+  .category-delete-btn {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+
+    border-radius: 6px;
+  }
+
+  /* -------------------------------------------------------
+     MODAL
+  ------------------------------------------------------- */
 
   .category-modal-overlay {
     padding: 12px;

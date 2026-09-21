@@ -55,6 +55,7 @@ import AdminOrders from "./pages/admin/Orders";
 import OrderDetails from "./pages/admin/OrderDetails";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
+import ContactMessages from "./pages/admin/ContactMessages";
 
 import AdminProfile from "./pages/admin/AdminProfile";
 import AddBanner from "./pages/admin/AddBanner";
@@ -65,6 +66,8 @@ import BannerView from "./pages/admin/BannerView";
 import AddCoupon from "./pages/admin/AddCoupon";
 import ViewCoupon from "./pages/admin/ViewCoupon";
 import EditCoupon from "./pages/admin/EditCoupon";
+import CustomerDetails from "./pages/admin/CustomerDetails";
+import ContactMessageDetails from "./pages/admin/ContactMessageDetails";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -306,6 +309,15 @@ function App() {
             }
           />
 
+         <Route
+          path="/admin/customers/:id"
+           element={
+         <AdminLayout>
+          <CustomerDetails />
+        </AdminLayout>
+      }
+    />
+
           <Route
             path="/admin/orders"
             element={
@@ -369,6 +381,25 @@ function App() {
               </AdminLayout>
             }
           />
+
+         <Route
+          path="/admin/contact-messages"
+          element={
+         <AdminLayout>
+        <ContactMessages />
+         </AdminLayout>
+      }
+      />
+
+
+      <Route
+        path="/admin/contact-messages/:id"
+        element={
+       <AdminLayout>
+      <ContactMessageDetails />
+     </AdminLayout>
+      }
+      />
 
           {/* Admin Profile */}
           <Route

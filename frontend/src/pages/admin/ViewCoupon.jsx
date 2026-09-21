@@ -1,10 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ViewCoupon.css";
 
-const API_URL = "http://localhost:5000/api/coupons";
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+const COUPON_API_URL = "http://localhost:5000/api/coupons";
 const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
 function ViewCoupon() {
@@ -12,8 +10,7 @@ function ViewCoupon() {
   const { id } = useParams();
 
   const [coupon, setCoupon] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
   /* =========================================================
@@ -25,7 +22,7 @@ function ViewCoupon() {
       try {
         setLoading(true);
 
-        const response = await fetch(`${API_URL}/all`);
+        const response = await fetch(`${COUPON_API_URL}/all`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch coupons");
@@ -33,193 +30,200 @@ function ViewCoupon() {
 
         const data = await response.json();
 
-        const foundCoupon = (data.coupons || []).find(
-          (item) => item._id === id
+        const couponList = Array.isArray(data)
+          ? data
+          : data.coupons || data.data || [];
+
+        const foundCoupon = couponList.find(
+          (item) => String(item._id) === String(id)
         );
 
-        setCoupon(foundCoupon || null);
+        if (!foundCoupon) {
+          setCoupon(null);
+          return;
+        }
+
+        setCoupon(foundCoupon);
+
+        /* -----------------------------------------------------
+           Product can be populated object OR ObjectId
+        ----------------------------------------------------- */
+
+        if (foundCoupon.product) {
+          if (typeof foundCoupon.product === "object") {
+            setProduct(foundCoupon.product);
+          } else {
+            try {
+              const productResponse = await fetch(
+                `${PRODUCT_API_URL}/${foundCoupon.product}`
+              );
+
+              if (productResponse.ok) {
+                const productData = await productResponse.json();
+
+                const productResult =
+                  productData.product ||
+                  productData.data ||
+                  productData;
+
+                setProduct(productResult);
+              }
+            } catch (productError) {
+              console.error("Product fetch error:", productError);
+            }
+          }
+        }
       } catch (error) {
-        console.error("Error fetching coupon:", error);
+        console.error("Coupon fetch error:", error);
         setCoupon(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchCoupon();
-    }
+    fetchCoupon();
   }, [id]);
 
   /* =========================================================
-     FETCH CATEGORIES
+     HELPERS
   ========================================================= */
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(CATEGORY_API_URL);
+  const getCouponType = () => {
+    switch (coupon?.couponType) {
+      case "cart":
+        return "Cart Coupon";
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch categories");
-        }
+      case "category":
+        return "Category Coupon";
 
-        const data = await response.json();
+      case "product":
+        return "Product Coupon";
 
-        const categoryList = Array.isArray(data)
-          ? data
-          : data.categories || data.data || [];
+      case "general":
+        return "General Coupon";
 
-        setCategories(categoryList);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  /* =========================================================
-     FETCH PRODUCTS
-  ========================================================= */
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(
-          `${PRODUCT_API_URL}?limit=1000`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch products");
-        }
-
-        const data = await response.json();
-
-        const productList = Array.isArray(data)
-          ? data
-          : data.products || data.data || [];
-
-        setProducts(productList);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  /* =========================================================
-     GET COUPON STATUS
-  ========================================================= */
-
-  const getCouponStatus = () => {
-    if (!coupon) return "inactive";
-
-    if (coupon.expiryDate) {
-      const now = new Date();
-      const expiryDate = new Date(coupon.expiryDate);
-
-      if (expiryDate < now) {
-        return "expired";
-      }
+      default:
+        return "General Coupon";
     }
-
-    return coupon.isActive ? "active" : "inactive";
   };
 
-  /* =========================================================
-     FORMAT DISCOUNT
-  ========================================================= */
+  const getDiscountType = () => {
+    if (coupon?.discountType === "percentage") {
+      return "Percentage";
+    }
 
-  const formatDiscount = () => {
-    if (!coupon) return "-";
+    return "Fixed Amount";
+  };
+
+  const getDiscountValue = () => {
+    if (!coupon) return "—";
+
+    const value = Number(coupon.discountValue || 0);
 
     if (coupon.discountType === "percentage") {
-      return `${coupon.discountValue}%`;
+      return `${value}%`;
     }
 
-    return `₹${Number(coupon.discountValue || 0).toLocaleString(
-      "en-IN"
-    )}`;
+    return `₹${value.toLocaleString("en-IN")}`;
   };
 
-  /* =========================================================
-     FORMAT DATE
-  ========================================================= */
+  const getCategoryName = () => {
+    if (!coupon?.category) return "—";
 
-  const formatDate = (date) => {
-    if (!date) return "-";
+    if (typeof coupon.category === "object") {
+      return (
+        coupon.category.name ||
+        coupon.category.title ||
+        "Category"
+      );
+    }
 
-    return new Date(date).toLocaleDateString("en-IN", {
+    return "Category";
+  };
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "—";
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+
+    return date.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   };
 
-  /* =========================================================
-     GET COUPON TYPE
-  ========================================================= */
+  const getCouponStatus = () => {
+    if (!coupon) return "inactive";
 
-  const getCouponType = () => {
-    if (!coupon?.couponType) {
-      return "General";
+    if (coupon.expiry) {
+      const expiryDate = new Date(coupon.expiry);
+      const now = new Date();
+
+      if (expiryDate < now) {
+        return "expired";
+      }
     }
 
-    switch (coupon.couponType) {
-      case "category":
-        return "Category";
-
-      case "product":
-        return "Product";
-
-      case "general":
-      default:
-        return "General";
+    if (coupon.isActive) {
+      return "active";
     }
+
+    return "inactive";
   };
 
-  /* =========================================================
-     GET CATEGORY NAME
-  ========================================================= */
+  const getStatusText = () => {
+    const status = getCouponStatus();
 
-  const getCategoryName = () => {
-    if (!coupon?.category) {
-      return "-";
+    if (status === "expired") {
+      return "Expired";
     }
 
-    if (typeof coupon.category === "object") {
-      return coupon.category.name || "-";
+    if (status === "active") {
+      return "Active";
     }
 
-    const category = categories.find(
-      (item) => item._id === coupon.category
-    );
-
-    return category?.name || "-";
+    return "Inactive";
   };
 
-  /* =========================================================
-     GET PRODUCT NAME
-  ========================================================= */
+  const getProductImage = () => {
+    if (!product?.images || !Array.isArray(product.images)) {
+      return null;
+    }
+
+    if (product.images.length === 0) {
+      return null;
+    }
+
+    const firstImage = product.images[0];
+
+    if (typeof firstImage === "string") {
+      return firstImage;
+    }
+
+    if (typeof firstImage === "object") {
+      return (
+        firstImage.url ||
+        firstImage.secure_url ||
+        firstImage.path ||
+        firstImage.image ||
+        null
+      );
+    }
+
+    return null;
+  };
 
   const getProductName = () => {
-    if (!coupon?.product) {
-      return "-";
-    }
+    return product?.name || "Product";
+  };
 
-    if (typeof coupon.product === "object") {
-      return coupon.product.name || "-";
-    }
-
-    const product = products.find(
-      (item) => item._id === coupon.product
-    );
-
-    return product?.name || "-";
+  const getProductSku = () => {
+    return product?.sku || "—";
   };
 
   /* =========================================================
@@ -230,14 +234,14 @@ function ViewCoupon() {
     return (
       <div className="view-coupon-page">
         <div className="view-coupon-loading">
-          Loading coupon...
+          Loading coupon details...
         </div>
       </div>
     );
   }
 
   /* =========================================================
-     COUPON NOT FOUND
+     EMPTY
   ========================================================= */
 
   if (!coupon) {
@@ -253,7 +257,7 @@ function ViewCoupon() {
           </p>
 
           <button
-            className="coupon-back-btn"
+            type="button"
             onClick={() => navigate("/admin/coupons")}
           >
             <i className="bi bi-arrow-left"></i>
@@ -265,10 +269,7 @@ function ViewCoupon() {
   }
 
   const status = getCouponStatus();
-
-  /* =========================================================
-     PAGE
-  ========================================================= */
+  const productImage = getProductImage();
 
   return (
     <div className="view-coupon-page">
@@ -281,7 +282,7 @@ function ViewCoupon() {
         <h1>View Coupon</h1>
 
         <p>
-          View complete details of this coupon.
+          View complete details of this coupon
         </p>
       </div>
 
@@ -292,10 +293,12 @@ function ViewCoupon() {
       <div className="view-coupon-card">
 
         {/* ===================================================
-            COUPON TOP SECTION
+            TOP SUMMARY
         =================================================== */}
 
         <div className="view-coupon-top">
+
+          {/* Coupon info */}
 
           <div className="coupon-main-info">
 
@@ -308,7 +311,9 @@ function ViewCoupon() {
                 Coupon Code
               </span>
 
-              <h2>{coupon.code}</h2>
+              <h2>
+                {coupon.code || "—"}
+              </h2>
             </div>
 
           </div>
@@ -317,18 +322,52 @@ function ViewCoupon() {
 
           <div className={`view-status ${status}`}>
             <span className="status-dot"></span>
-
-            {status === "expired"
-              ? "Expired"
-              : status === "active"
-              ? "Active"
-              : "Inactive"}
+            {getStatusText()}
           </div>
+
+          {/* =================================================
+              PRODUCT
+          ================================================= */}
+
+          {coupon.couponType === "product" && (
+            <div className="coupon-product-summary">
+
+              <div className="coupon-product-image">
+
+                {productImage ? (
+                  <img
+                    src={productImage}
+                    alt={getProductName()}
+                  />
+                ) : (
+                  <i className="bi bi-box-seam"></i>
+                )}
+
+              </div>
+
+              <div className="coupon-product-info">
+
+                <span className="coupon-product-label">
+                  Product
+                </span>
+
+                <strong>
+                  {getProductName()}
+                </strong>
+
+                <small>
+                  SKU: {getProductSku()}
+                </small>
+
+              </div>
+
+            </div>
+          )}
 
         </div>
 
         {/* ===================================================
-            COUPON DETAILS
+            DETAILS
         =================================================== */}
 
         <div className="coupon-details-grid">
@@ -336,152 +375,214 @@ function ViewCoupon() {
           {/* Coupon Type */}
 
           <div className="coupon-detail-item">
-            <span>Coupon Type</span>
 
-            <strong>
-              {getCouponType()}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-tag"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Coupon Type</span>
+
+              <strong>
+                {getCouponType()}
+              </strong>
+            </div>
+
           </div>
 
           {/* Discount */}
 
           <div className="coupon-detail-item">
-            <span>Discount</span>
 
-            <strong>
-              {formatDiscount()}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-percent"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Discount</span>
+
+              <strong>
+                {getDiscountValue()}
+              </strong>
+            </div>
+
           </div>
 
           {/* Discount Type */}
 
           <div className="coupon-detail-item">
-            <span>Discount Type</span>
 
-            <strong>
-              {coupon.discountType === "percentage"
-                ? "Percentage"
-                : "Fixed Amount"}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-coin"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Discount Type</span>
+
+              <strong>
+                {getDiscountType()}
+              </strong>
+            </div>
+
           </div>
 
           {/* Category */}
 
           {coupon.couponType === "category" && (
             <div className="coupon-detail-item">
-              <span>Category</span>
 
-              <strong>
-                {getCategoryName()}
-              </strong>
-            </div>
-          )}
+              <div className="coupon-detail-icon">
+                <i className="bi bi-grid"></i>
+              </div>
 
-          {/* Product */}
+              <div className="coupon-detail-content">
+                <span>Category</span>
 
-          {coupon.couponType === "product" && (
-            <div className="coupon-detail-item">
-              <span>Product</span>
+                <strong>
+                  {getCategoryName()}
+                </strong>
+              </div>
 
-              <strong>
-                {getProductName()}
-              </strong>
             </div>
           )}
 
           {/* Minimum Purchase */}
 
           <div className="coupon-detail-item">
-            <span>Minimum Purchase</span>
 
-            <strong>
-              ₹
-              {Number(
-                coupon.minimumPurchase || 0
-              ).toLocaleString("en-IN")}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-cart3"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Minimum Purchase</span>
+
+              <strong>
+                ₹
+                {Number(
+                  coupon.minimumPurchase || 0
+                ).toLocaleString("en-IN")}
+              </strong>
+            </div>
+
           </div>
 
           {/* Maximum Discount */}
 
           <div className="coupon-detail-item">
-            <span>Maximum Discount</span>
 
-            <strong>
-              {coupon.maximumDiscount
-                ? `₹${Number(
-                    coupon.maximumDiscount
-                  ).toLocaleString("en-IN")}`
-                : "No Limit"}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-gift"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Maximum Discount</span>
+
+              <strong>
+                {coupon.maxDiscount
+                  ? `₹${Number(
+                      coupon.maxDiscount
+                    ).toLocaleString("en-IN")}`
+                  : "No Limit"}
+              </strong>
+            </div>
+
           </div>
 
           {/* Usage Limit */}
 
           <div className="coupon-detail-item">
-            <span>Usage Limit</span>
 
-            <strong>
-              {coupon.usageLimit || "Unlimited"}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-people"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Usage Limit</span>
+
+              <strong>
+                {coupon.usageLimit ?? "—"}
+              </strong>
+            </div>
+
           </div>
 
           {/* Used Count */}
 
           <div className="coupon-detail-item">
-            <span>Used Count</span>
 
-            <strong>
-              {coupon.usedCount || 0}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-file-earmark-text"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Used Count</span>
+
+              <strong>
+                {coupon.usedCount ?? 0}
+              </strong>
+            </div>
+
           </div>
 
           {/* Created Date */}
 
           <div className="coupon-detail-item">
-            <span>Created Date</span>
 
-            <strong>
-              {formatDate(coupon.createdAt)}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-calendar3"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Created Date</span>
+
+              <strong>
+                {formatDate(coupon.createdAt)}
+              </strong>
+            </div>
+
           </div>
 
           {/* Expiry Date */}
 
           <div className="coupon-detail-item">
-            <span>Expiry Date</span>
 
-            <strong>
-              {formatDate(coupon.expiryDate)}
-            </strong>
+            <div className="coupon-detail-icon">
+              <i className="bi bi-calendar-x"></i>
+            </div>
+
+            <div className="coupon-detail-content">
+              <span>Expiry Date</span>
+
+              <strong>
+                {formatDate(coupon.expiry)}
+              </strong>
+            </div>
+
           </div>
 
         </div>
 
         {/* ===================================================
-            ACTION BUTTONS
+            ACTIONS
         =================================================== */}
 
         <div className="view-coupon-actions">
 
-          {/* Back */}
-
           <button
+            type="button"
             className="coupon-back-btn"
             onClick={() => navigate("/admin/coupons")}
           >
             <i className="bi bi-arrow-left"></i>
-            Back
+            Back to Coupons
           </button>
 
-          {/* Edit */}
-
           <button
+            type="button"
             className="coupon-edit-btn"
             onClick={() =>
-              navigate(
-                `/admin/coupons/edit/${coupon._id}`
-              )
+              navigate(`/admin/coupons/edit/${coupon._id}`)
             }
           >
             <i className="bi bi-pencil"></i>
@@ -496,4 +597,3 @@ function ViewCoupon() {
 }
 
 export default ViewCoupon;
-

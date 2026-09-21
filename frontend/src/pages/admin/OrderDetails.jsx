@@ -26,9 +26,7 @@ function OrderDetails() {
         setLoading(true);
         setError("");
 
-        const response = await axios.get(
-          `${API_URL}/orders/${id}`
-        );
+        const response = await axios.get(`${API_URL}/orders/${id}`);
 
         const fetchedOrder = response.data?.order;
 
@@ -37,10 +35,7 @@ function OrderDetails() {
         }
 
         setOrder(fetchedOrder);
-
-        setSelectedStatus(
-          fetchedOrder.orderStatus || "PENDING"
-        );
+        setSelectedStatus(fetchedOrder.orderStatus || "PENDING");
       } catch (error) {
         console.error("Failed to fetch order:", error);
 
@@ -84,10 +79,7 @@ function OrderDetails() {
 
       if (updatedOrder) {
         setOrder(updatedOrder);
-
-        setSelectedStatus(
-          updatedOrder.orderStatus || selectedStatus
-        );
+        setSelectedStatus(updatedOrder.orderStatus || selectedStatus);
       } else {
         setOrder((prev) => ({
           ...prev,
@@ -96,6 +88,10 @@ function OrderDetails() {
       }
 
       setSuccess("Order status updated successfully.");
+
+      setTimeout(() => {
+        setSuccess("");
+      }, 3000);
     } catch (error) {
       console.error("STATUS UPDATE ERROR:", error);
 
@@ -135,17 +131,23 @@ function OrderDetails() {
     return Number(amount || 0).toLocaleString("en-IN");
   };
 
+  // =========================================================
+  // CUSTOMER HELPERS
+  // =========================================================
+
   const getCustomerName = () => {
     return (
       order?.user?.name ||
       order?.user?.fullName ||
+      order?.shippingAddress?.fullName ||
+      order?.shippingAddress?.name ||
       order?.user?.email ||
       "Unknown Customer"
     );
   };
 
   const getCustomerEmail = () => {
-    return order?.user?.email || "-";
+    return order?.user?.email || "Not available";
   };
 
   const getCustomerPhone = () => {
@@ -156,6 +158,10 @@ function OrderDetails() {
       "-"
     );
   };
+
+  // =========================================================
+  // SHIPPING ADDRESS
+  // =========================================================
 
   const getShippingAddress = () => {
     const address =
@@ -169,6 +175,7 @@ function OrderDetails() {
     }
 
     return [
+      address.fullName,
       address.name,
       address.address,
       address.addressLine1,
@@ -181,6 +188,10 @@ function OrderDetails() {
       .filter(Boolean)
       .join(", ");
   };
+
+  // =========================================================
+  // PRODUCT HELPERS
+  // =========================================================
 
   const getProductName = (item) => {
     if (
@@ -259,14 +270,9 @@ function OrderDetails() {
         item.product?.regularPrice ??
         0;
 
-      const quantity = Number(
-        item.quantity || 0
-      );
+      const quantity = Number(item.quantity || 0);
 
-      return (
-        total +
-        Number(price) * quantity
-      );
+      return total + Number(price) * quantity;
     },
     0
   );
@@ -296,6 +302,27 @@ function OrderDetails() {
     "Razorpay";
 
   // =========================================================
+  // TIMELINE STATUS HELPERS
+  // =========================================================
+
+  const currentOrderStatus =
+    order?.orderStatus || "PENDING";
+
+  const processingStatuses = [
+    "CONFIRMED",
+    "PROCESSING",
+    "SHIPPED",
+    "OUT_FOR_DELIVERY",
+    "DELIVERED",
+  ];
+
+  const shippedStatuses = [
+    "SHIPPED",
+    "OUT_FOR_DELIVERY",
+    "DELIVERED",
+  ];
+
+  // =========================================================
   // LOADING
   // =========================================================
 
@@ -303,6 +330,7 @@ function OrderDetails() {
     return (
       <div className="order-details-page">
         <div className="order-loading">
+          <div className="loading-spinner"></div>
           <p>Loading order details...</p>
         </div>
       </div>
@@ -318,15 +346,14 @@ function OrderDetails() {
       <div className="order-details-page">
         <button
           className="back-btn"
-          onClick={() =>
-            navigate("/admin/orders")
-          }
+          onClick={() => navigate("/admin/orders")}
         >
           ← Back to Orders
         </button>
 
         <div className="order-error">
           <i className="bi bi-exclamation-circle-fill"></i>
+
           <span>{error}</span>
         </div>
       </div>
@@ -340,6 +367,10 @@ function OrderDetails() {
   const currentStatus = formatStatus(
     order.orderStatus
   );
+
+  // =========================================================
+  // RETURN
+  // =========================================================
 
   return (
     <div className="order-details-page">
@@ -371,7 +402,7 @@ function OrderDetails() {
             <span
               className={`order-status ${String(
                 order.orderStatus || ""
-              ).toLowerCase()}`}
+              ).toLowerCase().replace(/_/g, "-")}`}
             >
               {currentStatus}
             </span>
@@ -432,7 +463,9 @@ function OrderDetails() {
 
       <div className="order-details-grid">
 
-        {/* CUSTOMER DETAILS */}
+        {/* =================================================
+            CUSTOMER DETAILS
+        ================================================= */}
 
         <div className="details-card customer-card">
 
@@ -444,6 +477,7 @@ function OrderDetails() {
 
             <div>
               <h2>Customer Details</h2>
+
               <p>Customer information</p>
             </div>
 
@@ -487,7 +521,9 @@ function OrderDetails() {
 
         </div>
 
-        {/* PAYMENT DETAILS */}
+        {/* =================================================
+            PAYMENT DETAILS
+        ================================================= */}
 
         <div className="details-card payment-card">
 
@@ -499,6 +535,7 @@ function OrderDetails() {
 
             <div>
               <h2>Payment Details</h2>
+
               <p>Transaction information</p>
             </div>
 
@@ -676,7 +713,9 @@ function OrderDetails() {
 
       <div className="order-bottom-grid">
 
-        {/* ORDER STATUS */}
+        {/* =================================================
+            ORDER STATUS
+        ================================================= */}
 
         <div className="details-card timeline-card">
 
@@ -688,12 +727,15 @@ function OrderDetails() {
 
             <div>
               <h2>Order Status</h2>
+
               <p>Update order progress</p>
             </div>
 
           </div>
 
-          {/* STATUS UPDATE */}
+          {/* =================================================
+              STATUS UPDATE
+          ================================================= */}
 
           <div className="status-update-box">
 
@@ -712,6 +754,10 @@ function OrderDetails() {
                   )
                 }
               >
+
+                {/* Keep PENDING because current backend
+                    Order model uses PENDING */}
+
                 <option value="PENDING">
                   Pending
                 </option>
@@ -728,6 +774,10 @@ function OrderDetails() {
                   Shipped
                 </option>
 
+                <option value="OUT_FOR_DELIVERY">
+                  Out for Delivery
+                </option>
+
                 <option value="DELIVERED">
                   Delivered
                 </option>
@@ -735,6 +785,15 @@ function OrderDetails() {
                 <option value="CANCELLED">
                   Cancelled
                 </option>
+
+                <option value="RETURNED">
+                  Returned
+                </option>
+
+                <option value="REFUNDED">
+                  Refunded
+                </option>
+
               </select>
 
               <button
@@ -743,8 +802,7 @@ function OrderDetails() {
                 onClick={handleStatusUpdate}
                 disabled={
                   updating ||
-                  selectedStatus ===
-                    order.orderStatus
+                  selectedStatus === order.orderStatus
                 }
               >
                 {updating
@@ -758,8 +816,11 @@ function OrderDetails() {
 
             {success && (
               <div className="order-success">
+
                 <i className="bi bi-check-circle-fill"></i>
+
                 <span>{success}</span>
+
               </div>
             )}
 
@@ -767,16 +828,23 @@ function OrderDetails() {
 
             {error && (
               <div className="order-error">
+
                 <i className="bi bi-exclamation-circle-fill"></i>
+
                 <span>{error}</span>
+
               </div>
             )}
 
           </div>
 
-          {/* TIMELINE */}
+          {/* =================================================
+              TIMELINE
+          ================================================= */}
 
           <div className="timeline">
+
+            {/* ORDER PLACED */}
 
             <div
               className={`timeline-item ${
@@ -785,6 +853,7 @@ function OrderDetails() {
                   : ""
               }`}
             >
+
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
@@ -796,20 +865,21 @@ function OrderDetails() {
                   Order has been placed successfully.
                 </span>
               </div>
+
             </div>
+
+            {/* PROCESSING */}
 
             <div
               className={`timeline-item ${
-                [
-                  "CONFIRMED",
-                  "PROCESSING",
-                  "SHIPPED",
-                  "DELIVERED",
-                ].includes(order.orderStatus)
+                processingStatuses.includes(
+                  currentOrderStatus
+                )
                   ? "completed"
                   : ""
               }`}
             >
+
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
@@ -821,18 +891,21 @@ function OrderDetails() {
                   Order is being prepared.
                 </span>
               </div>
+
             </div>
+
+            {/* SHIPPED */}
 
             <div
               className={`timeline-item ${
-                [
-                  "SHIPPED",
-                  "DELIVERED",
-                ].includes(order.orderStatus)
+                shippedStatuses.includes(
+                  currentOrderStatus
+                )
                   ? "completed"
                   : ""
               }`}
             >
+
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
@@ -844,16 +917,20 @@ function OrderDetails() {
                   Package has been shipped.
                 </span>
               </div>
+
             </div>
+
+            {/* DELIVERED */}
 
             <div
               className={`timeline-item ${
-                order.orderStatus ===
+                currentOrderStatus ===
                 "DELIVERED"
                   ? "completed"
                   : ""
               }`}
             >
+
               <div className="timeline-dot">
                 <i className="bi bi-check"></i>
               </div>
@@ -865,32 +942,39 @@ function OrderDetails() {
                   Order delivered to customer.
                 </span>
               </div>
+
             </div>
 
           </div>
 
         </div>
 
-        {/* ORDER SUMMARY */}
+        {/* =================================================
+            ORDER SUMMARY
+        ================================================= */}
 
         <div className="details-card summary-card">
 
           <h2>Order Summary</h2>
 
           <div className="summary-row">
+
             <span>Subtotal</span>
 
             <strong>
               ₹{formatCurrency(subtotal)}
             </strong>
+
           </div>
 
           <div className="summary-row">
+
             <span>Shipping</span>
 
             <strong>
               ₹{formatCurrency(shipping)}
             </strong>
+
           </div>
 
           <div className="summary-divider"></div>

@@ -26,27 +26,31 @@ function EditProduct() {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  /* =========================
+  /* =========================================================
      FETCH PRODUCT
-  ========================= */
+  ========================================================= */
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoadingProduct(true);
 
-        const response = await fetch(`${PRODUCT_API_URL}/${id}`);
+        const response = await fetch(
+          `${PRODUCT_API_URL}/${id}`
+        );
 
         if (!response.ok) {
           throw new Error("Failed to fetch product");
         }
 
         const data = await response.json();
+
         const p = data.product || data.data || data;
 
         setProduct({
@@ -56,11 +60,11 @@ function EditProduct() {
           regularPrice: p.regularPrice ?? "",
           salePrice: p.salePrice ?? "",
           stock: p.stock ?? "",
-          variants: Array.isArray(p.variants) ? p.variants : [],
+          variants: Array.isArray(p.variants)
+            ? p.variants
+            : [],
           description: p.description || "",
           status: p.status || "active",
-
-          // Best Seller
           isBestSeller: p.isBestSeller === true,
         });
 
@@ -68,7 +72,10 @@ function EditProduct() {
           Array.isArray(p.images) ? p.images : []
         );
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.error(
+          "Error fetching product:",
+          error
+        );
 
         alert(
           error.message || "Failed to load product."
@@ -83,19 +90,23 @@ function EditProduct() {
     }
   }, [id]);
 
-  /* =========================
+  /* =========================================================
      FETCH CATEGORIES
-  ========================= */
+  ========================================================= */
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
 
-        const response = await fetch(CATEGORY_API_URL);
+        const response = await fetch(
+          CATEGORY_API_URL
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch categories");
+          throw new Error(
+            "Failed to fetch categories"
+          );
         }
 
         const data = await response.json();
@@ -124,17 +135,17 @@ function EditProduct() {
     fetchCategories();
   }, []);
 
-  /* =========================
+  /* =========================================================
      MAIN CATEGORIES
-  ========================= */
+  ========================================================= */
 
   const mainCategories = categories.filter(
     (category) => !category.parent
   );
 
-  /* =========================
+  /* =========================================================
      GET SUBCATEGORIES
-  ========================= */
+  ========================================================= */
 
   const getSubcategories = (mainCategoryId) => {
     return categories.filter((subcategory) => {
@@ -151,9 +162,9 @@ function EditProduct() {
     });
   };
 
-  /* =========================
+  /* =========================================================
      HANDLE INPUT
-  ========================= */
+  ========================================================= */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -164,9 +175,9 @@ function EditProduct() {
     }));
   };
 
-  /* =========================
+  /* =========================================================
      SIZE SELECTION
-  ========================= */
+  ========================================================= */
 
   const handleSizeChange = (size) => {
     setProduct((prev) => {
@@ -184,9 +195,9 @@ function EditProduct() {
     });
   };
 
-  /* =========================
+  /* =========================================================
      BEST SELLER
-  ========================= */
+  ========================================================= */
 
   const handleBestSellerChange = (e) => {
     setProduct((prev) => ({
@@ -195,13 +206,14 @@ function EditProduct() {
     }));
   };
 
-  /* =========================
+  /* =========================================================
      NEW IMAGE SELECTION
-  ========================= */
+     MAXIMUM 5 IMAGES TOTAL
+  ========================================================= */
 
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(
-      e.target.files
+      e.target.files || []
     );
 
     if (!selectedFiles.length) {
@@ -243,9 +255,9 @@ function EditProduct() {
     e.target.value = "";
   };
 
-  /* =========================
+  /* =========================================================
      REMOVE EXISTING IMAGE
-  ========================= */
+  ========================================================= */
 
   const removeExistingImage = (index) => {
     setExistingImages((prev) =>
@@ -256,9 +268,9 @@ function EditProduct() {
     );
   };
 
-  /* =========================
+  /* =========================================================
      REMOVE NEW IMAGE
-  ========================= */
+  ========================================================= */
 
   const removeNewImage = (index) => {
     setNewImages((prev) =>
@@ -269,9 +281,9 @@ function EditProduct() {
     );
   };
 
-  /* =========================
+  /* =========================================================
      GENERATE SLUG
-  ========================= */
+  ========================================================= */
 
   const generateSlug = (name) => {
     return name
@@ -281,9 +293,9 @@ function EditProduct() {
       .replace(/(^-|-$)/g, "");
   };
 
-  /* =========================
+  /* =========================================================
      UPDATE PRODUCT
-  ========================= */
+  ========================================================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -318,17 +330,31 @@ function EditProduct() {
       return;
     }
 
+    if (
+      existingImages.length +
+        newImages.length >
+      5
+    ) {
+      alert(
+        "You can have a maximum of 5 images."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
-      /* =========================
+      /* =====================================================
          PRODUCT DATA
-      ========================= */
+      ===================================================== */
 
       const productData = {
         sku: product.sku.trim(),
+
         name: product.name.trim(),
+
         slug: generateSlug(product.name),
+
         category: product.category,
 
         regularPrice: Number(
@@ -349,21 +375,24 @@ function EditProduct() {
 
         status: product.status,
 
-        // Best Seller
-        isBestSeller: product.isBestSeller,
+        isBestSeller:
+          product.isBestSeller,
       };
 
-      /* =========================
+      /* =====================================================
          UPDATE PRODUCT
-      ========================= */
+      ===================================================== */
 
       const response = await fetch(
         `${PRODUCT_API_URL}/${id}`,
         {
           method: "PUT",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify(productData),
         }
       );
@@ -377,9 +406,9 @@ function EditProduct() {
         );
       }
 
-      /* =========================
+      /* =====================================================
          UPLOAD NEW IMAGES
-      ========================= */
+      ===================================================== */
 
       if (newImages.length > 0) {
         const imageFormData = new FormData();
@@ -391,13 +420,14 @@ function EditProduct() {
           );
         });
 
-        const imageResponse = await fetch(
-          `${PRODUCT_API_URL}/${id}/images`,
-          {
-            method: "POST",
-            body: imageFormData,
-          }
-        );
+        const imageResponse =
+          await fetch(
+            `${PRODUCT_API_URL}/${id}/images`,
+            {
+              method: "POST",
+              body: imageFormData,
+            }
+          );
 
         const imageData =
           await imageResponse.json();
@@ -410,10 +440,9 @@ function EditProduct() {
         }
       }
 
-      /* =========================
-         UPDATE IMAGE LIST
-         IF BACKEND SUPPORTS PUT
-      ========================= */
+      /* =====================================================
+         UPDATE EXISTING IMAGE LIST
+      ===================================================== */
 
       if (Array.isArray(existingImages)) {
         try {
@@ -422,10 +451,12 @@ function EditProduct() {
               `${PRODUCT_API_URL}/${id}/images`,
               {
                 method: "PUT",
+
                 headers: {
                   "Content-Type":
                     "application/json",
                 },
+
                 body: JSON.stringify({
                   images: existingImages,
                 }),
@@ -465,17 +496,17 @@ function EditProduct() {
     }
   };
 
-  /* =========================
+  /* =========================================================
      CANCEL
-  ========================= */
+  ========================================================= */
 
   const handleCancel = () => {
     navigate("/admin/products");
   };
 
-  /* =========================
+  /* =========================================================
      LOADING
-  ========================= */
+  ========================================================= */
 
   if (loadingProduct) {
     return (
@@ -498,23 +529,25 @@ function EditProduct() {
     );
   }
 
-  /* =========================
+  /* =========================================================
      JSX
-  ========================= */
+  ========================================================= */
 
   return (
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* HEADER */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div className="add-product-header">
           <div className="add-product-heading">
             <h1>Edit Product</h1>
 
             <p>
-              Update product details,
-              pricing, stock and images.
+              Update product details, pricing,
+              stock and images.
             </p>
           </div>
 
@@ -528,14 +561,19 @@ function EditProduct() {
           </button>
         </div>
 
-        {/* CARD */}
+        {/* =================================================
+            CARD
+        ================================================= */}
 
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
 
-            {/* SKU + NAME */}
+            {/* =================================================
+                SKU + NAME
+            ================================================= */}
 
             <div className="form-row">
+
               <div className="form-group">
                 <label htmlFor="sku">
                   SKU
@@ -566,11 +604,15 @@ function EditProduct() {
                   required
                 />
               </div>
+
             </div>
 
-            {/* CATEGORY + STOCK */}
+            {/* =================================================
+                CATEGORY + STOCK
+            ================================================= */}
 
             <div className="form-row">
+
               <div className="form-group">
                 <label htmlFor="category">
                   Category
@@ -605,8 +647,6 @@ function EditProduct() {
                           <React.Fragment
                             key={mainCategoryId}
                           >
-                            {/* MAIN CATEGORY */}
-
                             <option
                               value={
                                 mainCategoryId
@@ -617,8 +657,6 @@ function EditProduct() {
                                 mainCategory.name
                               }
                             </option>
-
-                            {/* SUBCATEGORIES */}
 
                             {subcategories.map(
                               (subcategory) => {
@@ -635,7 +673,7 @@ function EditProduct() {
                                       subcategoryId
                                     }
                                   >
-                                    {"     ↳ "}
+                                    {"   ↳ "}
                                     {
                                       subcategory.name
                                     }
@@ -650,8 +688,8 @@ function EditProduct() {
                 </select>
 
                 <small className="size-hint">
-                  Select a main category
-                  or subcategory
+                  Select a main category or
+                  subcategory.
                 </small>
               </div>
 
@@ -671,11 +709,15 @@ function EditProduct() {
                   required
                 />
               </div>
+
             </div>
 
-            {/* PRICES */}
+            {/* =================================================
+                PRICES
+            ================================================= */}
 
             <div className="form-row">
+
               <div className="form-group">
                 <label htmlFor="regularPrice">
                   Regular Price
@@ -710,9 +752,12 @@ function EditProduct() {
                   step="0.01"
                 />
               </div>
+
             </div>
 
-            {/* SIZES */}
+            {/* =================================================
+                SIZES
+            ================================================= */}
 
             <div className="form-group">
               <label>Sizes</label>
@@ -739,21 +784,34 @@ function EditProduct() {
               </div>
 
               <small className="size-hint">
-                Select the available sizes
+                Select the available sizes.
               </small>
             </div>
 
-            {/* BEST SELLER */}
+            {/* =================================================
+                BEST SELLER
+            ================================================= */}
 
             <div className="form-group best-seller-group">
-              <label className="best-seller-label">
-                Best Seller
-              </label>
+
+              <div className="best-seller-content">
+                <label className="best-seller-title">
+                  Best Seller
+                </label>
+
+                <small>
+                  Highlight this product as a
+                  best seller.
+                </small>
+              </div>
 
               <label className="best-seller-checkbox">
+
                 <input
                   type="checkbox"
-                  checked={product.isBestSeller}
+                  checked={
+                    product.isBestSeller
+                  }
                   onChange={
                     handleBestSellerChange
                   }
@@ -762,115 +820,70 @@ function EditProduct() {
                 <span>
                   Mark this product as Best Seller
                 </span>
+
               </label>
 
-              <small className="size-hint">
-                Best Seller products will appear
-                in the Best Sellers section.
-              </small>
             </div>
 
-            {/* PRODUCT IMAGES */}
+            {/* =================================================
+                PRODUCT IMAGES
+            ================================================= */}
 
             <div className="form-group product-image-full">
+
               <label htmlFor="images">
-                Product Images
+                Product Images <span>*</span>
               </label>
 
-              <input
-                type="file"
-                id="images"
-                name="images"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-              />
+              <div className="file-upload-box">
 
-              <small className="size-hint">
-                You can have up to 5 images.
-              </small>
+                <label
+                  htmlFor="images"
+                  className="choose-image-btn"
+                >
+                  <i className="bi bi-upload"></i>
+                  Choose Images
+                </label>
 
-              {/* EXISTING IMAGES */}
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  accept="image/*"
+                  multiple
+                  onChange={
+                    handleImageChange
+                  }
+                />
+
+              </div>
+
+              {/* =================================================
+                  EXISTING IMAGES
+              ================================================= */}
 
               {existingImages.length > 0 && (
-                <>
-                  <small
-                    className="size-hint"
-                    style={{
-                      marginTop: "12px",
-                    }}
-                  >
-                    Current images
-                  </small>
+                <div className="product-image-preview">
 
-                  <div className="product-image-preview">
-                    {existingImages.map(
-                      (image, index) => {
-                        const imageUrl =
-                          typeof image === "string"
-                            ? image
-                            : image?.url ||
-                              image?.secure_url ||
-                              image?.path ||
-                              "";
+                  {existingImages.map(
+                    (image, index) => {
+                      const imageUrl =
+                        typeof image === "string"
+                          ? image
+                          : image?.url ||
+                            image?.secure_url ||
+                            image?.path ||
+                            "";
 
-                        return (
-                          <div
-                            className="preview-image-box"
-                            key={`${imageUrl}-${index}`}
-                          >
-                            <img
-                              src={imageUrl}
-                              alt={`Product ${
-                                index + 1
-                              }`}
-                            />
-
-                            <button
-                              type="button"
-                              className="remove-preview-btn"
-                              onClick={() =>
-                                removeExistingImage(
-                                  index
-                                )
-                              }
-                              aria-label="Remove image"
-                            >
-                              <i className="bi bi-x"></i>
-                            </button>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* NEW IMAGES */}
-
-              {newImages.length > 0 && (
-                <>
-                  <small
-                    className="size-hint"
-                    style={{
-                      marginTop: "12px",
-                    }}
-                  >
-                    New images
-                  </small>
-
-                  <div className="product-image-preview">
-                    {newImages.map(
-                      (image, index) => (
+                      return (
                         <div
                           className="preview-image-box"
-                          key={`${image.name}-${index}`}
+                          key={`${imageUrl}-${index}`}
                         >
+
                           <img
-                            src={URL.createObjectURL(
-                              image
-                            )}
-                            alt={`New product ${
+                            src={imageUrl}
+                            alt={`Product ${
                               index + 1
                             }`}
                           />
@@ -879,7 +892,7 @@ function EditProduct() {
                             type="button"
                             className="remove-preview-btn"
                             onClick={() =>
-                              removeNewImage(
+                              removeExistingImage(
                                 index
                               )
                             }
@@ -887,15 +900,73 @@ function EditProduct() {
                           >
                             <i className="bi bi-x"></i>
                           </button>
+
+                          <span className="image-number">
+                            {index + 1}
+                          </span>
+
                         </div>
-                      )
-                    )}
-                  </div>
-                </>
+                      );
+                    }
+                  )}
+
+                </div>
               )}
+
+              {/* =================================================
+                  NEW IMAGES
+              ================================================= */}
+
+              {newImages.length > 0 && (
+                <div className="product-image-preview">
+
+                  {newImages.map(
+                    (image, index) => (
+                      <div
+                        className="preview-image-box"
+                        key={`${image.name}-${index}`}
+                      >
+
+                        <img
+                          src={URL.createObjectURL(
+                            image
+                          )}
+                          alt={`New product ${
+                            index + 1
+                          }`}
+                        />
+
+                        <button
+                          type="button"
+                          className="remove-preview-btn"
+                          onClick={() =>
+                            removeNewImage(
+                              index
+                            )
+                          }
+                          aria-label="Remove image"
+                        >
+                          <i className="bi bi-x"></i>
+                        </button>
+
+                        <span className="image-number">
+                          {existingImages.length +
+                            index +
+                            1}
+                        </span>
+
+                      </div>
+                    )
+                  )}
+
+                </div>
+              )}
+
             </div>
 
-            {/* STATUS */}
+            {/* =================================================
+                STATUS
+            ================================================= */}
 
             <div className="form-group">
               <label htmlFor="status">
@@ -918,7 +989,9 @@ function EditProduct() {
               </select>
             </div>
 
-            {/* DESCRIPTION */}
+            {/* =================================================
+                DESCRIPTION
+            ================================================= */}
 
             <div className="form-group">
               <label htmlFor="description">
@@ -935,9 +1008,12 @@ function EditProduct() {
               ></textarea>
             </div>
 
-            {/* ACTIONS */}
+            {/* =================================================
+                ACTIONS
+            ================================================= */}
 
             <div className="form-actions">
+
               <button
                 type="button"
                 className="cancel-btn"
@@ -964,6 +1040,7 @@ function EditProduct() {
                   </>
                 )}
               </button>
+
             </div>
 
           </form>

@@ -120,9 +120,9 @@ function EditCoupon() {
           throw new Error("Coupon not found");
         }
 
-        // ---------------------------------------------
-        // GET CATEGORY ID
-        // ---------------------------------------------
+        // -----------------------------------------------------
+        // CATEGORY ID
+        // -----------------------------------------------------
 
         const categoryId =
           foundCoupon.category &&
@@ -130,9 +130,9 @@ function EditCoupon() {
             ? foundCoupon.category._id
             : foundCoupon.category;
 
-        // ---------------------------------------------
-        // GET PRODUCT ID
-        // ---------------------------------------------
+        // -----------------------------------------------------
+        // PRODUCT ID
+        // -----------------------------------------------------
 
         const productId =
           foundCoupon.product &&
@@ -140,25 +140,24 @@ function EditCoupon() {
             ? foundCoupon.product._id
             : foundCoupon.product;
 
-        // ---------------------------------------------
+        // -----------------------------------------------------
         // COUPON TYPE
-        // ---------------------------------------------
+        // -----------------------------------------------------
 
         const couponType =
           foundCoupon.couponType || "cart";
 
-        // ---------------------------------------------
+        // -----------------------------------------------------
         // EXPIRY DATE
-        // Backend field = expiry
-        // ---------------------------------------------
+        // -----------------------------------------------------
 
         const formattedExpiry = foundCoupon.expiry
           ? String(foundCoupon.expiry).split("T")[0]
           : "";
 
-        // ---------------------------------------------
-        // SET FORM
-        // ---------------------------------------------
+        // -----------------------------------------------------
+        // SET FORM DATA
+        // -----------------------------------------------------
 
         setCoupon({
           code: foundCoupon.code || "",
@@ -184,7 +183,6 @@ function EditCoupon() {
           minimumPurchase:
             foundCoupon.minimumPurchase ?? "",
 
-          // Backend field = maxDiscount
           maximumDiscount:
             foundCoupon.maxDiscount ?? "",
 
@@ -199,9 +197,9 @@ function EditCoupon() {
               : true,
         });
 
-        // ---------------------------------------------
-        // PRODUCT SEARCH NAME
-        // ---------------------------------------------
+        // -----------------------------------------------------
+        // SET PRODUCT SEARCH NAME
+        // -----------------------------------------------------
 
         if (
           couponType === "product" &&
@@ -217,10 +215,14 @@ function EditCoupon() {
           }
         }
       } catch (error) {
-        console.error("Fetch coupon error:", error);
+        console.error(
+          "Fetch coupon error:",
+          error
+        );
 
         alert(
-          error.message || "Failed to load coupon"
+          error.message ||
+            "Failed to load coupon"
         );
 
         navigate("/admin/coupons");
@@ -332,6 +334,7 @@ function EditCoupon() {
         product.name
           ?.toLowerCase()
           .includes(searchValue) ||
+
         product.sku
           ?.toLowerCase()
           .includes(searchValue)
@@ -350,6 +353,21 @@ function EditCoupon() {
   );
 
   // =========================================================
+  // PRODUCT IMAGE HELPER
+  // =========================================================
+
+  const getProductImage = (product) => {
+    if (
+      product?.images &&
+      product.images.length > 0
+    ) {
+      return product.images[0];
+    }
+
+    return null;
+  };
+
+  // =========================================================
   // SELECT PRODUCT
   // =========================================================
 
@@ -359,7 +377,22 @@ function EditCoupon() {
       product: product._id,
     }));
 
-    setProductSearch(product.name || "");
+    setProductSearch(
+      product.name || ""
+    );
+  };
+
+  // =========================================================
+  // REMOVE SELECTED PRODUCT
+  // =========================================================
+
+  const handleRemoveProduct = () => {
+    setCoupon((prev) => ({
+      ...prev,
+      product: "",
+    }));
+
+    setProductSearch("");
   };
 
   // =========================================================
@@ -369,14 +402,18 @@ function EditCoupon() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ---------------------------------------------
-    // VALIDATION
-    // ---------------------------------------------
+    // -------------------------------------------------------
+    // COUPON CODE
+    // -------------------------------------------------------
 
     if (!coupon.code.trim()) {
       alert("Please enter coupon code");
       return;
     }
+
+    // -------------------------------------------------------
+    // CATEGORY
+    // -------------------------------------------------------
 
     if (
       coupon.couponType === "category" &&
@@ -386,6 +423,10 @@ function EditCoupon() {
       return;
     }
 
+    // -------------------------------------------------------
+    // PRODUCT
+    // -------------------------------------------------------
+
     if (
       coupon.couponType === "product" &&
       !coupon.product
@@ -393,6 +434,10 @@ function EditCoupon() {
       alert("Please select a product");
       return;
     }
+
+    // -------------------------------------------------------
+    // DISCOUNT VALUE
+    // -------------------------------------------------------
 
     if (
       coupon.discountValue === "" ||
@@ -404,6 +449,10 @@ function EditCoupon() {
       return;
     }
 
+    // -------------------------------------------------------
+    // PERCENTAGE
+    // -------------------------------------------------------
+
     if (
       coupon.discountType === "percentage" &&
       Number(coupon.discountValue) > 100
@@ -413,6 +462,10 @@ function EditCoupon() {
       );
       return;
     }
+
+    // -------------------------------------------------------
+    // MINIMUM PURCHASE
+    // -------------------------------------------------------
 
     if (
       coupon.minimumPurchase === "" ||
@@ -424,6 +477,10 @@ function EditCoupon() {
       return;
     }
 
+    // -------------------------------------------------------
+    // MAXIMUM DISCOUNT
+    // -------------------------------------------------------
+
     if (
       coupon.maximumDiscount === "" ||
       Number(coupon.maximumDiscount) <= 0
@@ -433,6 +490,10 @@ function EditCoupon() {
       );
       return;
     }
+
+    // -------------------------------------------------------
+    // USAGE LIMIT
+    // -------------------------------------------------------
 
     if (
       coupon.usageLimit === "" ||
@@ -444,22 +505,21 @@ function EditCoupon() {
       return;
     }
 
+    // -------------------------------------------------------
+    // EXPIRY
+    // -------------------------------------------------------
+
     if (!coupon.expiryDate) {
       alert("Please select expiry date");
       return;
     }
 
-    // ---------------------------------------------
+    // =======================================================
     // UPDATE
-    // ---------------------------------------------
+    // =======================================================
 
     try {
       setSaving(true);
-
-      // IMPORTANT:
-      // Backend schema uses:
-      // expiry
-      // maxDiscount
 
       const requestBody = {
         code: coupon.code
@@ -501,36 +561,13 @@ function EditCoupon() {
       };
 
       console.log(
-        "===================================="
-      );
-
-      console.log(
-        "UPDATE COUPON ID:",
-        id
-      );
-
-      console.log(
         "UPDATE COUPON DATA:",
         requestBody
       );
 
-      console.log(
-        "EXPIRY DATE BEING SENT:",
-        requestBody.expiry
-      );
-
-      console.log(
-        "MAX DISCOUNT BEING SENT:",
-        requestBody.maxDiscount
-      );
-
-      console.log(
-        "===================================="
-      );
-
-      // ---------------------------------------------
+      // =====================================================
       // PUT REQUEST
-      // ---------------------------------------------
+      // =====================================================
 
       const response = await fetch(
         `${COUPON_API_URL}/${id}`,
@@ -573,9 +610,9 @@ function EditCoupon() {
         );
       }
 
-      // ---------------------------------------------
+      // =====================================================
       // CHECK RESPONSE
-      // ---------------------------------------------
+      // =====================================================
 
       if (!response.ok) {
         throw new Error(
@@ -584,47 +621,17 @@ function EditCoupon() {
         );
       }
 
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "UPDATE SUCCESS RESPONSE:",
-        data
-      );
-
-      console.log(
-        "UPDATED COUPON:",
-        data?.coupon
-      );
-
-      console.log(
-        "UPDATED EXPIRY DATE:",
-        data?.coupon?.expiry
-      );
-
-      console.log(
-        "UPDATED MAX DISCOUNT:",
-        data?.coupon?.maxDiscount
-      );
-
-      console.log(
-        "===================================="
-      );
-
-      // ---------------------------------------------
+      // =====================================================
       // SUCCESS
-      // ---------------------------------------------
+      // =====================================================
 
       alert(
         data?.message ||
           "Coupon updated successfully"
       );
 
-      // Reload Coupons page
       window.location.href =
         "/admin/coupons";
-
     } catch (error) {
       console.error(
         "UPDATE COUPON ERROR:",
@@ -699,7 +706,7 @@ function EditCoupon() {
 
       </div>
 
-      {/* FORM */}
+      {/* CARD */}
 
       <div className="add-coupon-card">
 
@@ -715,7 +722,7 @@ function EditCoupon() {
 
             <div className="form-grid">
 
-              {/* CODE */}
+              {/* COUPON CODE */}
 
               <div className="form-group">
 
@@ -735,7 +742,7 @@ function EditCoupon() {
 
               </div>
 
-              {/* TYPE */}
+              {/* COUPON TYPE */}
 
               <div className="form-group">
 
@@ -773,6 +780,7 @@ function EditCoupon() {
 
               {coupon.couponType ===
                 "category" && (
+
                 <div className="form-group">
 
                   <label>
@@ -793,12 +801,14 @@ function EditCoupon() {
 
                     {categories.map(
                       (category) => (
+
                         <option
                           key={category._id}
                           value={category._id}
                         >
                           {category.name}
                         </option>
+
                       )
                     )}
 
@@ -811,12 +821,15 @@ function EditCoupon() {
 
               {coupon.couponType ===
                 "product" && (
-                <div className="form-group">
+
+                <div className="form-group product-select-group">
 
                   <label>
                     Select Product{" "}
                     <span>*</span>
                   </label>
+
+                  {/* SEARCH BOX */}
 
                   <div className="product-search-box">
 
@@ -827,23 +840,30 @@ function EditCoupon() {
                       placeholder="Search product by name or SKU..."
                       value={productSearch}
                       onChange={(e) => {
+
                         setProductSearch(
                           e.target.value
                         );
 
-                        setCoupon((prev) => ({
-                          ...prev,
-                          product: "",
-                        }));
+                        setCoupon(
+                          (prev) => ({
+                            ...prev,
+                            product: "",
+                          })
+                        );
                       }}
                     />
 
                     {productSearch && (
+
                       <button
                         type="button"
                         className="clear-product-search"
                         onClick={() => {
-                          setProductSearch("");
+
+                          setProductSearch(
+                            ""
+                          );
 
                           setCoupon(
                             (prev) => ({
@@ -855,6 +875,7 @@ function EditCoupon() {
                       >
                         <i className="bi bi-x"></i>
                       </button>
+
                     )}
 
                   </div>
@@ -862,98 +883,180 @@ function EditCoupon() {
                   {/* PRODUCT RESULTS */}
 
                   {!coupon.product && (
+
                     <div className="product-search-results">
 
-                      {filteredProducts.length >
-                      0 ? (
+                      {productSearch.trim() ===
+                      "" ? (
+
+                        <div className="product-loading">
+                          Type a product name or SKU
+                          to search
+                        </div>
+
+                      ) : filteredProducts.length >
+                        0 ? (
+
                         filteredProducts
                           .slice(0, 8)
                           .map(
-                            (product) => (
-                              <button
-                                type="button"
-                                className="product-result-item"
-                                key={product._id}
-                                onClick={() =>
-                                  handleProductSelect(
-                                    product
-                                  )
-                                }
-                              >
+                            (product) => {
 
-                                <div className="product-result-info">
+                              const image =
+                                getProductImage(
+                                  product
+                                );
 
-                                  <strong>
-                                    {product.name}
-                                  </strong>
+                              return (
 
-                                  {product.sku && (
-                                    <small>
-                                      SKU:{" "}
-                                      {
-                                        product.sku
-                                      }
-                                    </small>
-                                  )}
+                                <button
+                                  type="button"
+                                  className="product-result-item"
+                                  key={product._id}
+                                  onClick={() =>
+                                    handleProductSelect(
+                                      product
+                                    )
+                                  }
+                                >
 
-                                </div>
+                                  {/* PRODUCT IMAGE */}
 
-                                <i className="bi bi-chevron-right"></i>
+                                  <div className="product-result-image">
 
-                              </button>
-                            )
+                                    {image ? (
+
+                                      <img
+                                        src={image}
+                                        alt={
+                                          product.name
+                                        }
+                                      />
+
+                                    ) : (
+
+                                      <div className="product-no-image">
+                                        <i className="bi bi-image"></i>
+                                      </div>
+
+                                    )}
+
+                                  </div>
+
+                                  {/* PRODUCT DETAILS */}
+
+                                  <div className="product-result-info">
+
+                                    <strong>
+                                      {product.name}
+                                    </strong>
+
+                                    {product.sku && (
+
+                                      <small>
+                                        SKU:{" "}
+                                        {product.sku}
+                                      </small>
+
+                                    )}
+
+                                  </div>
+
+                                  <i className="bi bi-chevron-right product-result-arrow"></i>
+
+                                </button>
+
+                              );
+                            }
                           )
+
                       ) : (
+
                         <div className="no-products-found">
                           No products found
                         </div>
+
                       )}
 
                     </div>
+
                   )}
 
                   {/* SELECTED PRODUCT */}
 
                   {coupon.product &&
                     selectedProduct && (
+
                       <div className="selected-product-box">
 
-                        <div>
+                        <div className="selected-product-content">
 
-                          <strong>
-                            {
-                              selectedProduct.name
-                            }
-                          </strong>
+                          {/* SELECTED IMAGE */}
 
-                          {selectedProduct.sku && (
-                            <small>
-                              SKU:{" "}
+                          <div className="selected-product-image">
+
+                            {getProductImage(
+                              selectedProduct
+                            ) ? (
+
+                              <img
+                                src={getProductImage(
+                                  selectedProduct
+                                )}
+                                alt={
+                                  selectedProduct.name
+                                }
+                              />
+
+                            ) : (
+
+                              <div className="product-no-image">
+                                <i className="bi bi-image"></i>
+                              </div>
+
+                            )}
+
+                          </div>
+
+                          {/* SELECTED NAME */}
+
+                          <div className="selected-product-info">
+
+                            <strong>
                               {
-                                selectedProduct.sku
+                                selectedProduct.name
                               }
-                            </small>
-                          )}
+                            </strong>
+
+                            {selectedProduct.sku && (
+
+                              <small>
+                                SKU:{" "}
+                                {
+                                  selectedProduct.sku
+                                }
+                              </small>
+
+                            )}
+
+                          </div>
 
                         </div>
 
+                        {/* REMOVE */}
+
                         <button
                           type="button"
-                          onClick={() => {
-                            setCoupon(
-                              (prev) => ({
-                                ...prev,
-                                product: "",
-                              })
-                            );
-
-                            setProductSearch("");
-                          }}
+                          className="remove-selected-product"
+                          onClick={
+                            handleRemoveProduct
+                          }
                         >
                           <i className="bi bi-x"></i>
                         </button>
 
                       </div>
+
                     )}
 
                 </div>
@@ -1130,6 +1233,7 @@ function EditCoupon() {
               </div>
 
             </div>
+
           </div>
 
           {/* STATUS */}
@@ -1153,7 +1257,9 @@ function EditCoupon() {
               <input
                 type="checkbox"
                 name="isActive"
-                checked={coupon.isActive}
+                checked={
+                  coupon.isActive
+                }
                 onChange={handleChange}
               />
 
@@ -1171,7 +1277,9 @@ function EditCoupon() {
               type="button"
               className="cancel-coupon-btn"
               onClick={() =>
-                navigate("/admin/coupons")
+                navigate(
+                  "/admin/coupons"
+                )
               }
               disabled={saving}
             >

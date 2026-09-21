@@ -69,7 +69,11 @@ function AdminSidebar() {
           <span>Orders</span>
         </NavLink>
 
-        
+        {/* Contact Messages */}
+        <NavLink to="/admin/contact-messages">
+          <i className="bi bi-envelope"></i>
+          <span>Contact Messages</span>
+        </NavLink>
 
       </nav>
 

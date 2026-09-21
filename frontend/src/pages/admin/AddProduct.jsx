@@ -27,9 +27,9 @@ function AddProduct() {
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  // =========================================================
-  // FETCH CATEGORIES
-  // =========================================================
+  /* =========================================================
+     FETCH CATEGORIES
+  ========================================================= */
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,21 +64,23 @@ function AddProduct() {
     fetchCategories();
   }, []);
 
-  // =========================================================
-  // MAIN CATEGORIES
-  // =========================================================
+  /* =========================================================
+     MAIN CATEGORIES
+  ========================================================= */
 
   const mainCategories = categories.filter(
     (category) => !category.parent
   );
 
-  // =========================================================
-  // GET SUBCATEGORIES
-  // =========================================================
+  /* =========================================================
+     GET SUBCATEGORIES
+  ========================================================= */
 
   const getSubcategories = (mainCategoryId) => {
     return categories.filter((subcategory) => {
-      if (!subcategory.parent) return false;
+      if (!subcategory.parent) {
+        return false;
+      }
 
       const parentId =
         typeof subcategory.parent === "object"
@@ -89,9 +91,9 @@ function AddProduct() {
     });
   };
 
-  // =========================================================
-  // HANDLE INPUT
-  // =========================================================
+  /* =========================================================
+     HANDLE INPUT
+  ========================================================= */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -102,9 +104,9 @@ function AddProduct() {
     }));
   };
 
-  // =========================================================
-  // SIZE SELECTION
-  // =========================================================
+  /* =========================================================
+     SIZE SELECTION
+  ========================================================= */
 
   const handleSizeChange = (size) => {
     setProduct((prev) => {
@@ -119,9 +121,9 @@ function AddProduct() {
     });
   };
 
-  // =========================================================
-  // BEST SELLER
-  // =========================================================
+  /* =========================================================
+     BEST SELLER
+  ========================================================= */
 
   const handleBestSellerChange = (e) => {
     setProduct((prev) => ({
@@ -130,14 +132,17 @@ function AddProduct() {
     }));
   };
 
-  // =========================================================
-  // IMAGE SELECTION
-  // =========================================================
+  /* =========================================================
+     IMAGE SELECTION
+     MAXIMUM 5 IMAGES
+  ========================================================= */
 
   const handleImageChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
+    const selectedFiles = Array.from(e.target.files || []);
 
-    if (!selectedFiles.length) return;
+    if (!selectedFiles.length) {
+      return;
+    }
 
     const remainingSlots = 5 - images.length;
 
@@ -150,17 +155,20 @@ function AddProduct() {
     const filesToAdd = selectedFiles.slice(0, remainingSlots);
 
     if (selectedFiles.length > remainingSlots) {
-      alert(`Only ${remainingSlots} more image(s) can be added.`);
+      alert(
+        `You can select only ${remainingSlots} more image(s).`
+      );
     }
 
     setImages((prev) => [...prev, ...filesToAdd]);
 
+    // Allow selecting the same image again later
     e.target.value = "";
   };
 
-  // =========================================================
-  // REMOVE IMAGE
-  // =========================================================
+  /* =========================================================
+     REMOVE IMAGE
+  ========================================================= */
 
   const removeImage = (index) => {
     setImages((prev) =>
@@ -168,9 +176,9 @@ function AddProduct() {
     );
   };
 
-  // =========================================================
-  // GENERATE SLUG
-  // =========================================================
+  /* =========================================================
+     GENERATE SLUG
+  ========================================================= */
 
   const generateSlug = (name) => {
     return name
@@ -180,9 +188,9 @@ function AddProduct() {
       .replace(/(^-|-$)/g, "");
   };
 
-  // =========================================================
-  // SUBMIT PRODUCT
-  // =========================================================
+  /* =========================================================
+     SUBMIT PRODUCT
+  ========================================================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -215,35 +223,46 @@ function AddProduct() {
     try {
       setSaving(true);
 
-      // =====================================================
-      // PRODUCT DATA
-      // =====================================================
+      /* =====================================================
+         PRODUCT DATA
+      ===================================================== */
 
       const productData = {
         sku: product.sku.trim(),
+
         name: product.name.trim(),
+
         slug: generateSlug(product.name),
+
         category: product.category,
+
         regularPrice: Number(product.regularPrice),
+
         salePrice:
           product.salePrice === ""
             ? 0
             : Number(product.salePrice),
+
         stock: Number(product.stock),
+
         variants: product.variants,
+
         description: product.description.trim(),
+
         isBestSeller: product.isBestSeller,
       };
 
-      // =====================================================
-      // CREATE PRODUCT
-      // =====================================================
+      /* =====================================================
+         CREATE PRODUCT
+      ===================================================== */
 
       const response = await fetch(PRODUCT_API_URL, {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(productData),
       });
 
@@ -264,9 +283,9 @@ function AddProduct() {
         );
       }
 
-      // =====================================================
-      // UPLOAD PRODUCT IMAGES
-      // =====================================================
+      /* =====================================================
+         UPLOAD ALL PRODUCT IMAGES
+      ===================================================== */
 
       const imageFormData = new FormData();
 
@@ -293,9 +312,9 @@ function AddProduct() {
 
       alert("Product added successfully!");
 
-      // =====================================================
-      // RESET FORM
-      // =====================================================
+      /* =====================================================
+         RESET FORM
+      ===================================================== */
 
       setProduct({
         sku: "",
@@ -324,25 +343,25 @@ function AddProduct() {
     }
   };
 
-  // =========================================================
-  // CANCEL
-  // =========================================================
+  /* =========================================================
+     CANCEL
+  ========================================================= */
 
   const handleCancel = () => {
     navigate("/admin/products");
   };
 
-  // =========================================================
-  // JSX
-  // =========================================================
+  /* =========================================================
+     JSX
+  ========================================================= */
 
   return (
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* =====================================================
+        {/* =================================================
             HEADER
-        ===================================================== */}
+        ================================================= */}
 
         <div className="add-product-header">
           <div className="add-product-heading">
@@ -363,12 +382,24 @@ function AddProduct() {
           </button>
         </div>
 
-        {/* =====================================================
+        {/* =================================================
             FORM CARD
-        ===================================================== */}
+        ================================================= */}
 
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
+
+            {/* =================================================
+                PRODUCT DETAILS
+            ================================================= */}
+
+            <div className="form-section-title">
+              <h2>Product Details</h2>
+
+              <p>
+                Add the basic information for your product.
+              </p>
+            </div>
 
             {/* =================================================
                 ROW 1
@@ -397,7 +428,7 @@ function AddProduct() {
 
               <div className="form-group">
                 <label htmlFor="name">
-                  Product Name
+                  Product Name <span>*</span>
                 </label>
 
                 <input
@@ -410,6 +441,7 @@ function AddProduct() {
                   required
                 />
               </div>
+
             </div>
 
             {/* =================================================
@@ -422,7 +454,7 @@ function AddProduct() {
 
               <div className="form-group">
                 <label htmlFor="category">
-                  Category
+                  Category <span>*</span>
                 </label>
 
                 <select
@@ -451,38 +483,32 @@ function AddProduct() {
                         <React.Fragment
                           key={mainCategoryId}
                         >
-                          {/* MAIN CATEGORY */}
-
                           <option value={mainCategoryId}>
-                            ✦ {mainCategory.name}
+                            {mainCategory.name}
                           </option>
 
-                          {/* SUBCATEGORIES */}
+                          {subcategories.map((subcategory) => {
+                            const subcategoryId =
+                              subcategory._id ||
+                              subcategory.id;
 
-                          {subcategories.map(
-                            (subcategory) => {
-                              const subcategoryId =
-                                subcategory._id ||
-                                subcategory.id;
-
-                              return (
-                                <option
-                                  key={subcategoryId}
-                                  value={subcategoryId}
-                                >
-                                  {"     ↳ "}
-                                  {subcategory.name}
-                                </option>
-                              );
-                            }
-                          )}
+                            return (
+                              <option
+                                key={subcategoryId}
+                                value={subcategoryId}
+                              >
+                                {"   ↳ "}
+                                {subcategory.name}
+                              </option>
+                            );
+                          })}
                         </React.Fragment>
                       );
                     })}
                 </select>
 
                 <small className="size-hint">
-                  Select a main category or subcategory
+                  Select a main category or subcategory.
                 </small>
               </div>
 
@@ -490,7 +516,7 @@ function AddProduct() {
 
               <div className="form-group">
                 <label htmlFor="stock">
-                  Stock
+                  Stock <span>*</span>
                 </label>
 
                 <input
@@ -504,6 +530,19 @@ function AddProduct() {
                   required
                 />
               </div>
+
+            </div>
+
+            {/* =================================================
+                PRICING
+            ================================================= */}
+
+            <div className="form-section-title compact">
+              <h2>Pricing</h2>
+
+              <p>
+                Set the regular and sale price for this product.
+              </p>
             </div>
 
             {/* =================================================
@@ -516,20 +555,24 @@ function AddProduct() {
 
               <div className="form-group">
                 <label htmlFor="regularPrice">
-                  Regular Price
+                  Regular Price <span>*</span>
                 </label>
 
-                <input
-                  type="number"
-                  id="regularPrice"
-                  name="regularPrice"
-                  value={product.regularPrice}
-                  onChange={handleChange}
-                  placeholder="Enter regular price"
-                  min="0"
-                  step="0.01"
-                  required
-                />
+                <div className="price-input">
+                  <span>₹</span>
+
+                  <input
+                    type="number"
+                    id="regularPrice"
+                    name="regularPrice"
+                    value={product.regularPrice}
+                    onChange={handleChange}
+                    placeholder="Enter regular price"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
               </div>
 
               {/* SALE PRICE */}
@@ -539,26 +582,32 @@ function AddProduct() {
                   Sale Price
                 </label>
 
-                <input
-                  type="number"
-                  id="salePrice"
-                  name="salePrice"
-                  value={product.salePrice}
-                  onChange={handleChange}
-                  placeholder="Enter sale price"
-                  min="0"
-                  step="0.01"
-                />
+                <div className="price-input">
+                  <span>₹</span>
+
+                  <input
+                    type="number"
+                    id="salePrice"
+                    name="salePrice"
+                    value={product.salePrice}
+                    onChange={handleChange}
+                    placeholder="Enter sale price"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
+
             </div>
 
             {/* =================================================
                 SIZES
             ================================================= */}
 
-            <div className="form-group">
+            <div className="form-group sizes-group">
+
               <label>
-                Sizes
+                Available Sizes
               </label>
 
               <div className="size-selection">
@@ -581,8 +630,9 @@ function AddProduct() {
               </div>
 
               <small className="size-hint">
-                Select the available sizes
+                Select all sizes available for this product.
               </small>
+
             </div>
 
             {/* =================================================
@@ -590,11 +640,21 @@ function AddProduct() {
             ================================================= */}
 
             <div className="form-group best-seller-group">
-              <label className="best-seller-label">
-                Best Seller
-              </label>
+
+              <div className="best-seller-content">
+
+                <label className="best-seller-title">
+                  Best Seller
+                </label>
+
+                <small>
+                  Highlight this product as a best seller.
+                </small>
+
+              </div>
 
               <label className="best-seller-checkbox">
+
                 <input
                   type="checkbox"
                   checked={product.isBestSeller}
@@ -604,7 +664,9 @@ function AddProduct() {
                 <span>
                   Mark this product as Best Seller
                 </span>
+
               </label>
+
             </div>
 
             {/* =================================================
@@ -612,33 +674,43 @@ function AddProduct() {
             ================================================= */}
 
             <div className="form-group product-image-full">
+
               <label htmlFor="images">
-                Product Images
+                Product Images <span>*</span>
               </label>
 
-              <input
-                type="file"
-                id="images"
-                name="images"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                required={images.length === 0}
-              />
+              <div className="file-upload-box">
 
-              <small className="size-hint">
-                You can upload up to 5 images.
-              </small>
+                <label
+                  htmlFor="images"
+                  className="choose-image-btn"
+                >
+                  <i className="bi bi-upload"></i>
+                  Choose Images
+                </label>
+
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                />
+
+              </div>
 
               {/* IMAGE PREVIEW */}
 
               {images.length > 0 && (
                 <div className="product-image-preview">
+
                   {images.map((image, index) => (
                     <div
                       className="preview-image-box"
                       key={`${image.name}-${index}`}
                     >
+
                       <img
                         src={URL.createObjectURL(image)}
                         alt={`Product ${index + 1}`}
@@ -650,21 +722,31 @@ function AddProduct() {
                         onClick={() =>
                           removeImage(index)
                         }
-                        aria-label="Remove image"
+                        aria-label={`Remove image ${
+                          index + 1
+                        }`}
                       >
                         <i className="bi bi-x"></i>
                       </button>
+
+                      <span className="image-number">
+                        {index + 1}
+                      </span>
+
                     </div>
                   ))}
+
                 </div>
               )}
+
             </div>
 
             {/* =================================================
                 DESCRIPTION
             ================================================= */}
 
-            <div className="form-group">
+            <div className="form-group description-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -677,6 +759,12 @@ function AddProduct() {
                 placeholder="Enter product description"
                 rows="5"
               ></textarea>
+
+              <small className="size-hint">
+                Add a clear description of the product for
+                customers.
+              </small>
+
             </div>
 
             {/* =================================================
@@ -713,6 +801,7 @@ function AddProduct() {
               </button>
 
             </div>
+
           </form>
         </div>
       </div>
