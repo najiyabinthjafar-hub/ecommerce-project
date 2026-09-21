@@ -33,6 +33,9 @@ function AdminNotification() {
       case "PRODUCT":
         return "bi-box-seam";
 
+      case "ORDER":
+        return "bi-bag-check";
+
       default:
         return "bi-info-circle";
     }
@@ -46,6 +49,9 @@ function AdminNotification() {
     switch (type) {
       case "PRODUCT":
         return "stock";
+
+      case "ORDER":
+        return "order";
 
       default:
         return "system";
@@ -288,23 +294,27 @@ function AdminNotification() {
   };
 
   // =========================================================
-  // VIEW INVENTORY
+  // VIEW NOTIFICATION
   // =========================================================
 
-  const handleViewInventory = async (
+  const handleViewNotification = async (
     event,
-    notificationId
+    notification
   ) => {
     event.stopPropagation();
 
     // Mark notification as read
-    await handleMarkAsRead(notificationId);
+    await handleMarkAsRead(notification._id);
 
     // Close notification dropdown
     setShowNotifications(false);
 
-    // Navigate to inventory
-    navigate("/admin/inventory");
+    // Navigate according to notification type
+    if (notification.type === "PRODUCT") {
+      navigate("/admin/inventory");
+    } else if (notification.type === "ORDER") {
+      navigate("/admin/orders");
+    }
   };
 
   // =========================================================
@@ -321,6 +331,7 @@ function AdminNotification() {
 
   return (
     <div className="notification-wrapper">
+
       {/* =====================================================
           NOTIFICATION BUTTON
       ===================================================== */}
@@ -348,6 +359,7 @@ function AdminNotification() {
 
       {showNotifications && (
         <div className="notification-panel">
+
           {/* =================================================
               HEADER
           ================================================= */}
@@ -357,7 +369,7 @@ function AdminNotification() {
               <h3>Notifications</h3>
 
               <p>
-                Stock updates from your store
+                Stock and order updates from your store
               </p>
             </div>
 
@@ -377,23 +389,28 @@ function AdminNotification() {
               MARK ALL
           ================================================= */}
 
-          {unreadCount > 0 && !loading && !error && (
-            <div className="notification-actions">
-              <button
-                onClick={handleMarkAllAsRead}
-                type="button"
-              >
-                Mark all as read
-              </button>
-            </div>
-          )}
+          {unreadCount > 0 &&
+            !loading &&
+            !error && (
+              <div className="notification-actions">
+                <button
+                  onClick={handleMarkAllAsRead}
+                  type="button"
+                >
+                  Mark all as read
+                </button>
+              </div>
+            )}
 
           {/* =================================================
               NOTIFICATION LIST
           ================================================= */}
 
           <div className="notification-list">
-            {/* LOADING */}
+
+            {/* =================================================
+                LOADING
+            ================================================= */}
 
             {loading ? (
               <div className="notification-empty">
@@ -407,8 +424,12 @@ function AdminNotification() {
                   Please wait...
                 </p>
               </div>
+
             ) : error ? (
-              /* ERROR */
+
+              /* =================================================
+                 ERROR
+              ================================================= */
 
               <div className="notification-empty">
                 <i className="bi bi-exclamation-circle"></i>
@@ -427,8 +448,12 @@ function AdminNotification() {
                   Try Again
                 </button>
               </div>
+
             ) : notifications.length === 0 ? (
-              /* EMPTY */
+
+              /* =================================================
+                 EMPTY
+              ================================================= */
 
               <div className="notification-empty">
                 <i className="bi bi-bell-slash"></i>
@@ -441,8 +466,12 @@ function AdminNotification() {
                   You’re all caught up!
                 </p>
               </div>
+
             ) : (
-              /* NOTIFICATIONS */
+
+              /* =================================================
+                 NOTIFICATIONS
+              ================================================= */
 
               notifications.map((notification) => (
                 <div
@@ -460,6 +489,7 @@ function AdminNotification() {
                     }
                   }}
                 >
+
                   {/* =========================================
                       ICON
                   ========================================= */}
@@ -481,6 +511,7 @@ function AdminNotification() {
                   ========================================= */}
 
                   <div className="notification-content">
+
                     <h4>
                       {notification.title}
                     </h4>
@@ -496,17 +527,16 @@ function AdminNotification() {
                     </span>
 
                     {/* =====================================
-                        VIEW INVENTORY BUTTON
+                        PRODUCT NOTIFICATION
                     ===================================== */}
 
-                    {notification.type ===
-                      "PRODUCT" && (
+                    {notification.type === "PRODUCT" && (
                       <button
                         className="notification-view-btn"
                         onClick={(event) =>
-                          handleViewInventory(
+                          handleViewNotification(
                             event,
-                            notification._id
+                            notification
                           )
                         }
                         type="button"
@@ -516,6 +546,28 @@ function AdminNotification() {
                         <i className="bi bi-arrow-right"></i>
                       </button>
                     )}
+
+                    {/* =====================================
+                        ORDER NOTIFICATION
+                    ===================================== */}
+
+                    {notification.type === "ORDER" && (
+                      <button
+                        className="notification-view-btn"
+                        onClick={(event) =>
+                          handleViewNotification(
+                            event,
+                            notification
+                          )
+                        }
+                        type="button"
+                      >
+                        View Orders
+
+                        <i className="bi bi-arrow-right"></i>
+                      </button>
+                    )}
+
                   </div>
 
                   {/* =========================================
@@ -523,6 +575,7 @@ function AdminNotification() {
                   ========================================= */}
 
                   <div className="notification-item-actions">
+
                     {!notification.isRead && (
                       <span
                         className="notification-unread-dot"
@@ -545,10 +598,13 @@ function AdminNotification() {
                     >
                       <i className="bi bi-trash3"></i>
                     </button>
+
                   </div>
+
                 </div>
               ))
             )}
+
           </div>
 
           {/* =================================================
@@ -570,6 +626,7 @@ function AdminNotification() {
                 <i className="bi bi-x-lg"></i>
               </button>
             )}
+
         </div>
       )}
     </div>
