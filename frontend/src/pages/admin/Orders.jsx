@@ -1,12 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
 
+const ORDERS_PER_PAGE = 5;
+
 // =========================================================
-// STATUS LABELS
+// ORDER STATUS
 // =========================================================
 
 const statusLabels = {
@@ -35,6 +41,10 @@ const statusClassMap = {
   REFUNDED: "refunded",
 };
 
+// =========================================================
+// PAYMENT STATUS
+// =========================================================
+
 const paymentStatusLabels = {
   PENDING: "Pending",
   PAID: "Paid",
@@ -48,18 +58,34 @@ const paymentStatusClassMap = {
 };
 
 // =========================================================
-// COMPONENT
+// ORDERS COMPONENT
 // =========================================================
 
 const Orders = () => {
   const navigate = useNavigate();
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [orders, setOrders] = useState([]);
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [updatingId, setUpdatingId] = useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("ALL");
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [updatingId, setUpdatingId] =
+    useState("");
 
   // =========================================================
   // FETCH ORDERS
@@ -70,7 +96,8 @@ const Orders = () => {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
       if (!token) {
         setError("Authentication required");
@@ -116,12 +143,20 @@ const Orders = () => {
   };
 
   // =========================================================
-  // INITIAL LOAD
+  // INITIAL FETCH
   // =========================================================
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // =========================================================
+  // RESET PAGE WHEN FILTERS CHANGE
+  // =========================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   // =========================================================
   // CUSTOMER HELPERS
@@ -168,7 +203,9 @@ const Orders = () => {
     );
   };
 
-  const getPaymentStatusLabel = (status) => {
+  const getPaymentStatusLabel = (
+    status
+  ) => {
     return (
       paymentStatusLabels[status] ||
       status ||
@@ -176,23 +213,12 @@ const Orders = () => {
     );
   };
 
-  const getPaymentStatusClass = (status) => {
+  const getPaymentStatusClass = (
+    status
+  ) => {
     return (
       paymentStatusClassMap[status] ||
       "pending"
-    );
-  };
-
-  const formatStatus = (status) => {
-    if (!status) return "Pending";
-
-    return (
-      statusLabels[status] ||
-      String(status)
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) =>
-          char.toUpperCase()
-        )
     );
   };
 
@@ -201,9 +227,9 @@ const Orders = () => {
   // =========================================================
 
   const formatCurrency = (amount) => {
-    return `₹${Number(amount || 0).toLocaleString(
-      "en-IN"
-    )}`;
+    return `₹${Number(
+      amount || 0
+    ).toLocaleString("en-IN")}`;
   };
 
   const formatDate = (date) => {
@@ -226,13 +252,16 @@ const Orders = () => {
 
     return order.items.reduce(
       (total, item) =>
-        total + Number(item?.quantity || 0),
+        total +
+        Number(item?.quantity || 0),
       0
     );
   };
 
   const getOrderId = (order) => {
-    if (!order?._id) return "—";
+    if (!order?._id) {
+      return "—";
+    }
 
     return `ORD-${String(order._id)
       .slice(-6)
@@ -240,7 +269,7 @@ const Orders = () => {
   };
 
   // =========================================================
-  // UPDATE ORDER STATUS
+  // STATUS UPDATE
   // =========================================================
 
   const handleStatusChange = async (
@@ -251,7 +280,8 @@ const Orders = () => {
       setUpdatingId(orderId);
       setError("");
 
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
       if (!token) {
         setError("Authentication required");
@@ -274,12 +304,14 @@ const Orders = () => {
         response.data?.order;
 
       if (updatedOrder) {
-        setOrders((previousOrders) =>
-          previousOrders.map((order) =>
-            order._id === orderId
-              ? updatedOrder
-              : order
-          )
+        setOrders(
+          (previousOrders) =>
+            previousOrders.map(
+              (order) =>
+                order._id === orderId
+                  ? updatedOrder
+                  : order
+            )
         );
       } else {
         await fetchOrders();
@@ -301,13 +333,12 @@ const Orders = () => {
   };
 
   // =========================================================
-  // FILTER ORDERS
+  // FILTERED ORDERS
   // =========================================================
 
   const filteredOrders = useMemo(() => {
-    const query = search
-      .trim()
-      .toLowerCase();
+    const query =
+      search.trim().toLowerCase();
 
     return orders.filter((order) => {
       const orderId =
@@ -331,42 +362,77 @@ const Orders = () => {
 
       const matchesStatus =
         statusFilter === "ALL" ||
-        order?.orderStatus === statusFilter;
+        order?.orderStatus ===
+          statusFilter;
 
       return (
         matchesSearch &&
         matchesStatus
       );
     });
-  }, [orders, search, statusFilter]);
+  }, [
+    orders,
+    search,
+    statusFilter,
+  ]);
+
+  // =========================================================
+  // PAGINATION
+  // =========================================================
+
+  const totalPages = Math.max(
+    Math.ceil(
+      filteredOrders.length /
+        ORDERS_PER_PAGE
+    ),
+    1
+  );
+
+  const startIndex =
+    (currentPage - 1) *
+    ORDERS_PER_PAGE;
+
+  const paginatedOrders =
+    filteredOrders.slice(
+      startIndex,
+      startIndex + ORDERS_PER_PAGE
+    );
 
   // =========================================================
   // SUMMARY
   // =========================================================
 
   const summary = useMemo(() => {
-    const pending = orders.filter((order) =>
-      [
-        "PENDING_PAYMENT",
-        "PENDING",
-      ].includes(order?.orderStatus)
+    const pending = orders.filter(
+      (order) =>
+        [
+          "PENDING_PAYMENT",
+          "PENDING",
+        ].includes(
+          order?.orderStatus
+        )
     ).length;
 
-    const processing = orders.filter((order) =>
-      [
-        "CONFIRMED",
-        "PROCESSING",
-      ].includes(order?.orderStatus)
+    const processing = orders.filter(
+      (order) =>
+        [
+          "CONFIRMED",
+          "PROCESSING",
+        ].includes(
+          order?.orderStatus
+        )
     ).length;
 
     const delivered = orders.filter(
       (order) =>
-        order?.orderStatus === "DELIVERED"
+        order?.orderStatus ===
+        "DELIVERED"
     ).length;
 
     const cancelled = orders.filter(
       (order) =>
-        order?.orderStatus === "CANCELLED"
+        order?.orderStatus ===
+        "CANCELLED"
     ).length;
 
     return {
@@ -437,28 +503,33 @@ const Orders = () => {
       <div className="orders-page">
         <div className="orders-loading">
           <div className="loading-spinner"></div>
-          <p>Loading orders...</p>
+
+          <p>
+            Loading orders...
+          </p>
         </div>
       </div>
     );
   }
 
   // =========================================================
-  // PAGE
+  // UI
   // =========================================================
 
   return (
     <div className="orders-page">
 
       {/* =====================================================
-          PAGE HEADER
+          HEADER
       ===================================================== */}
 
       <div className="orders-header">
         <div>
           <h1>Orders</h1>
+
           <p>
-            Manage and track customer orders
+            Manage and track customer
+            orders
           </p>
         </div>
       </div>
@@ -476,6 +547,7 @@ const Orders = () => {
 
           <div>
             <span>Pending</span>
+
             <strong>
               {summary.pending}
             </strong>
@@ -489,6 +561,7 @@ const Orders = () => {
 
           <div>
             <span>Processing</span>
+
             <strong>
               {summary.processing}
             </strong>
@@ -502,6 +575,7 @@ const Orders = () => {
 
           <div>
             <span>Delivered</span>
+
             <strong>
               {summary.delivered}
             </strong>
@@ -515,6 +589,7 @@ const Orders = () => {
 
           <div>
             <span>Cancelled</span>
+
             <strong>
               {summary.cancelled}
             </strong>
@@ -524,7 +599,7 @@ const Orders = () => {
       </div>
 
       {/* =====================================================
-          FILTER BAR
+          TOOLBAR
       ===================================================== */}
 
       <div className="orders-toolbar">
@@ -553,14 +628,16 @@ const Orders = () => {
               )
             }
           >
-            {statusOptions.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-              >
-                {option.label}
-              </option>
-            ))}
+            {statusOptions.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              )
+            )}
           </select>
         </div>
 
@@ -572,18 +649,25 @@ const Orders = () => {
 
       {error && (
         <div className="orders-error">
+
           <i className="bi bi-exclamation-circle"></i>
 
-          <span>{error}</span>
+          <span>
+            {error}
+          </span>
 
-          <button onClick={fetchOrders}>
+          <button
+            type="button"
+            onClick={fetchOrders}
+          >
             Retry
           </button>
+
         </div>
       )}
 
       {/* =====================================================
-          ORDERS TABLE
+          TABLE CARD
       ===================================================== */}
 
       <div className="orders-table-card">
@@ -607,180 +691,215 @@ const Orders = () => {
 
             <tbody>
 
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => {
+              {paginatedOrders.length >
+              0 ? (
 
-                  const paymentStatus =
-                    order?.paymentStatus ||
-                    "PENDING";
+                paginatedOrders.map(
+                  (order) => {
 
-                  const currentStatus =
-                    String(
-                      order?.orderStatus ||
-                        order?.status ||
-                        "PENDING"
-                    ).toUpperCase();
+                    const paymentStatus =
+                      order?.paymentStatus ||
+                      "PENDING";
 
-                  return (
-                    <tr key={order._id}>
+                    const currentStatus =
+                      String(
+                        order?.orderStatus ||
+                          order?.status ||
+                          "PENDING"
+                      ).toUpperCase();
 
-                      {/* ORDER ID */}
+                    return (
+                      <tr
+                        key={order._id}
+                      >
 
-                      <td>
-                        <span className="order-id">
-                          {getOrderId(order)}
-                        </span>
-                      </td>
+                        {/* ORDER ID */}
 
-                      {/* CUSTOMER */}
+                        <td>
+                          <span className="order-id">
+                            {getOrderId(
+                              order
+                            )}
+                          </span>
+                        </td>
 
-                      <td>
-                        <div className="customer-cell">
+                        {/* CUSTOMER */}
 
-                          <div className="customer-avatar">
-                            {getCustomerName(order)
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
+                        <td>
+                          <div className="customer-cell">
 
-                          <div className="customer-info">
-
-                            <strong>
+                            <div className="customer-avatar">
                               {getCustomerName(
                                 order
-                              )}
-                            </strong>
+                              )
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
 
-                            <span>
-                              {getCustomerEmail(
-                                order
-                              ) !== "—"
-                                ? getCustomerEmail(
-                                    order
-                                  )
-                                : getCustomerPhone(
-                                    order
-                                  )}
-                            </span>
+                            <div className="customer-info">
+
+                              <strong>
+                                {getCustomerName(
+                                  order
+                                )}
+                              </strong>
+
+                              <span>
+                                {getCustomerEmail(
+                                  order
+                                ) !== "—"
+                                  ? getCustomerEmail(
+                                      order
+                                    )
+                                  : getCustomerPhone(
+                                      order
+                                    )}
+                              </span>
+
+                            </div>
 
                           </div>
+                        </td>
 
-                        </div>
-                      </td>
+                        {/* DATE */}
 
-                      {/* DATE */}
+                        <td>
+                          <span className="order-date">
+                            {formatDate(
+                              order?.createdAt ||
+                                order?.updatedAt
+                            )}
+                          </span>
+                        </td>
 
-                      <td>
-                        <span className="order-date">
-                          {formatDate(
-                            order?.createdAt ||
-                              order?.updatedAt
-                          )}
-                        </span>
-                      </td>
+                        {/* ITEMS */}
 
-                      {/* ITEMS */}
+                        <td>
+                          <span className="item-count">
+                            {getItemCount(
+                              order
+                            )}
+                          </span>
+                        </td>
 
-                      <td>
-                        <span className="item-count">
-                          {getItemCount(order)}
-                        </span>
-                      </td>
+                        {/* TOTAL */}
 
-                      {/* TOTAL */}
+                        <td>
+                          <strong className="order-total">
+                            {formatCurrency(
+                              order?.finalAmount ??
+                                order?.totalAmount ??
+                                order?.total ??
+                                0
+                            )}
+                          </strong>
+                        </td>
 
-                      <td>
-                        <strong className="order-total">
-                          {formatCurrency(
-                            order?.finalAmount ??
-                              order?.totalAmount ??
-                              order?.total ??
-                              0
-                          )}
-                        </strong>
-                      </td>
+                        {/* PAYMENT */}
 
-                      {/* PAYMENT */}
+                        <td>
+                          <span
+                            className={`payment-status ${getPaymentStatusClass(
+                              paymentStatus
+                            )}`}
+                          >
 
-                      <td>
-                        <span
-                          className={`payment-status ${getPaymentStatusClass(
-                            paymentStatus
-                          )}`}
-                        >
-                          <span className="status-dot"></span>
+                            <span className="status-dot"></span>
 
-                          {getPaymentStatusLabel(
-                            paymentStatus
-                          )}
-                        </span>
-                      </td>
+                            {getPaymentStatusLabel(
+                              paymentStatus
+                            )}
 
-                      {/* ORDER STATUS */}
+                          </span>
+                        </td>
 
-                      <td>
-                        <select
-                          className={`order-status-select ${getStatusClass(
-                            currentStatus
-                          )}`}
-                          value={currentStatus}
-                          disabled={
-                            updatingId ===
-                            order._id
-                          }
-                          onChange={(event) =>
-                            handleStatusChange(
-                              order._id,
-                              event.target.value
-                            )
-                          }
-                        >
-                          {statusOptions
-                            .filter(
-                              (option) =>
-                                option.value !==
-                                "ALL"
-                            )
-                            .map((option) => (
-                              <option
-                                key={option.value}
-                                value={
-                                  option.value
-                                }
-                              >
-                                {option.label}
-                              </option>
-                            ))}
-                        </select>
-                      </td>
+                        {/* ORDER STATUS */}
 
-                      {/* ACTION */}
+                        <td>
 
-                      <td>
-                        <button
-                          type="button"
-                          className="view-order-btn"
-                          onClick={() =>
-                            navigate(
-                              `/admin/orders/${order._id}`
-                            )
-                          }
-                          title="View Order"
-                          aria-label="View Order"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
-                      </td>
+                          <select
+                            className={`order-status-select ${getStatusClass(
+                              currentStatus
+                            )}`}
+                            value={
+                              currentStatus
+                            }
+                            disabled={
+                              updatingId ===
+                              order._id
+                            }
+                            onChange={(
+                              event
+                            ) =>
+                              handleStatusChange(
+                                order._id,
+                                event.target
+                                  .value
+                              )
+                            }
+                          >
 
-                    </tr>
-                  );
-                })
+                            {statusOptions
+                              .filter(
+                                (option) =>
+                                  option.value !==
+                                  "ALL"
+                              )
+                              .map(
+                                (option) => (
+                                  <option
+                                    key={
+                                      option.value
+                                    }
+                                    value={
+                                      option.value
+                                    }
+                                  >
+                                    {
+                                      option.label
+                                    }
+                                  </option>
+                                )
+                              )}
+
+                          </select>
+
+                        </td>
+
+                        {/* ACTION */}
+
+                        <td>
+
+                          <button
+                            type="button"
+                            className="view-order-btn"
+                            onClick={() =>
+                              navigate(
+                                `/admin/orders/${order._id}`
+                              )
+                            }
+                            title="View Order"
+                            aria-label="View Order"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )
+
               ) : (
+
                 <tr>
+
                   <td
                     colSpan="8"
                     className="orders-empty"
                   >
+
                     <div className="empty-orders">
 
                       <i className="bi bi-inbox"></i>
@@ -791,42 +910,123 @@ const Orders = () => {
 
                       <p>
                         {search ||
-                        statusFilter !== "ALL"
+                        statusFilter !==
+                          "ALL"
                           ? "Try changing your search or filter."
                           : "There are no orders available yet."}
                       </p>
 
                     </div>
+
                   </td>
+
                 </tr>
+
               )}
 
             </tbody>
+
           </table>
 
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             TABLE FOOTER
-        ================================================= */}
+        =================================================== */}
 
-        {filteredOrders.length > 0 && (
+        {filteredOrders.length >
+          0 && (
           <div className="orders-table-footer">
+
             <span>
               Showing{" "}
               <strong>
-                {filteredOrders.length}
+                {startIndex + 1}
+              </strong>
+              {" - "}
+              <strong>
+                {Math.min(
+                  startIndex +
+                    ORDERS_PER_PAGE,
+                  filteredOrders.length
+                )}
               </strong>{" "}
               of{" "}
               <strong>
-                {orders.length}
+                {filteredOrders.length}
               </strong>{" "}
               orders
             </span>
+
+          </div>
+        )}
+
+        {/* ===================================================
+            PAGINATION
+        =================================================== */}
+
+        {totalPages > 1 && (
+          <div className="orders-pagination">
+
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() =>
+                setCurrentPage(
+                  (page) =>
+                    Math.max(
+                      page - 1,
+                      1
+                    )
+                )
+              }
+              disabled={
+                currentPage === 1
+              }
+            >
+              <i className="bi bi-chevron-left"></i>
+
+              Previous
+            </button>
+
+            <div className="pagination-info">
+              Page{" "}
+              <strong>
+                {currentPage}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {totalPages}
+              </strong>
+            </div>
+
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() =>
+                setCurrentPage(
+                  (page) =>
+                    Math.min(
+                      page + 1,
+                      totalPages
+                    )
+                )
+              }
+              disabled={
+                currentPage ===
+                totalPages
+              }
+            >
+              Next
+
+              <i className="bi bi-chevron-right"></i>
+            </button>
+
           </div>
         )}
 
       </div>
+
     </div>
   );
 };

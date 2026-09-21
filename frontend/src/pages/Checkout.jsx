@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Checkout.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -35,7 +41,8 @@ function Checkout() {
   const [couponLoading, setCouponLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [billingAddress, setBillingAddress] = useState("same");
+  const [billingAddress, setBillingAddress] =
+    useState("same");
 
   const [error, setError] = useState("");
 
@@ -77,7 +84,10 @@ function Checkout() {
 
       setCart(response.data.cart || response.data);
     } catch (error) {
-      console.error("Error fetching cart:", error);
+      console.error(
+        "Error fetching cart:",
+        error
+      );
 
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
@@ -119,7 +129,11 @@ function Checkout() {
   };
 
   const getProduct = (item) => {
-    return item.product || item.productId || item;
+    return (
+      item.product ||
+      item.productId ||
+      item
+    );
   };
 
   const getQuantity = (item) => {
@@ -159,7 +173,8 @@ function Checkout() {
       ? 0
       : 99;
 
-  const discount = coupon?.discountAmount || 0;
+  const discount =
+    coupon?.discountAmount || 0;
 
   const totalAmount = Math.max(
     0,
@@ -171,11 +186,17 @@ function Checkout() {
   // =========================================================
 
   const validateCoupon = async () => {
-    const code = couponCode.trim().toUpperCase();
+    const code = couponCode
+      .trim()
+      .toUpperCase();
 
     if (!code) {
-      setCouponMessage("Please enter a coupon code.");
+      setCouponMessage(
+        "Please enter a coupon code."
+      );
+
       setCoupon(null);
+
       return;
     }
 
@@ -194,23 +215,30 @@ function Checkout() {
 
       if (!couponData) {
         setCoupon(null);
-        setCouponMessage("Invalid coupon.");
+        setCouponMessage(
+          "Invalid coupon."
+        );
+
         return;
       }
 
       // Active check
+
       if (
         couponData.active === false ||
         couponData.isActive === false
       ) {
         setCoupon(null);
+
         setCouponMessage(
           "This coupon is inactive."
         );
+
         return;
       }
 
       // Expiry check
+
       const expiryDate =
         couponData.expiryDate ||
         couponData.expiry;
@@ -220,13 +248,16 @@ function Checkout() {
         new Date(expiryDate) < new Date()
       ) {
         setCoupon(null);
+
         setCouponMessage(
           "This coupon has expired."
         );
+
         return;
       }
 
       // Minimum purchase
+
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
@@ -242,6 +273,7 @@ function Checkout() {
       }
 
       // Calculate discount
+
       let discountAmount = 0;
 
       const discountType =
@@ -254,14 +286,18 @@ function Checkout() {
           0
       );
 
-      if (discountType === "percentage") {
+      if (
+        discountType === "percentage"
+      ) {
         discountAmount =
           (subtotal * discountValue) / 100;
       } else {
-        discountAmount = discountValue;
+        discountAmount =
+          discountValue;
       }
 
       // Maximum discount
+
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -272,11 +308,14 @@ function Checkout() {
       if (couponData.maximumDiscount) {
         discountAmount = Math.min(
           discountAmount,
-          Number(couponData.maximumDiscount)
+          Number(
+            couponData.maximumDiscount
+          )
         );
       }
 
       // Discount cannot exceed subtotal
+
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -298,7 +337,10 @@ function Checkout() {
         } applied successfully.`
       );
     } catch (error) {
-      console.error("Coupon error:", error);
+      console.error(
+        "Coupon error:",
+        error
+      );
 
       setCoupon(null);
 
@@ -321,7 +363,9 @@ function Checkout() {
   // PLACE ORDER
   // =========================================================
 
-  const handlePlaceOrder = async (event) => {
+  const handlePlaceOrder = async (
+    event
+  ) => {
     event.preventDefault();
 
     if (!token) {
@@ -333,6 +377,7 @@ function Checkout() {
       setError(
         "User information not found. Please login again."
       );
+
       return;
     }
 
@@ -340,11 +385,15 @@ function Checkout() {
       setError(
         "No products available to place the order."
       );
+
       return;
     }
 
-    // Razorpay UI is ready, actual integration later
-    if (paymentMethod === "razorpay") {
+    // Razorpay
+
+    if (
+      paymentMethod === "razorpay"
+    ) {
       alert(
         "Razorpay payment integration will be added later."
       );
@@ -409,39 +458,69 @@ function Checkout() {
       // VALIDATION
       // =====================================================
 
-      if (!shippingAddress.fullName) {
-        alert("Please enter your name.");
+      if (
+        !shippingAddress.fullName
+      ) {
+        alert(
+          "Please enter your name."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
       if (!shippingAddress.phone) {
-        alert("Please enter your phone number.");
+        alert(
+          "Please enter your phone number."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
-      if (!shippingAddress.address) {
-        alert("Please enter your address.");
+      if (
+        !shippingAddress.address
+      ) {
+        alert(
+          "Please enter your address."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
       if (!shippingAddress.city) {
-        alert("Please enter your city.");
+        alert(
+          "Please enter your city."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
       if (!shippingAddress.state) {
-        alert("Please select your state.");
+        alert(
+          "Please select your state."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
-      if (!shippingAddress.pincode) {
-        alert("Please enter your pincode.");
+      if (
+        !shippingAddress.pincode
+      ) {
+        alert(
+          "Please enter your pincode."
+        );
+
         setPlacingOrder(false);
+
         return;
       }
 
@@ -449,9 +528,10 @@ function Checkout() {
       // ORDER ITEMS
       // =====================================================
 
-      const orderItems = cartItems.map(
-        (item) => {
-          const product = getProduct(item);
+      const orderItems =
+        cartItems.map((item) => {
+          const product =
+            getProduct(item);
 
           return {
             product:
@@ -470,8 +550,7 @@ function Checkout() {
               item.selectedSize ||
               "",
           };
-        }
-      );
+        });
 
       // =====================================================
       // ORDER DATA
@@ -492,7 +571,9 @@ function Checkout() {
 
         couponCode:
           coupon?.code ||
-          couponCode.trim().toUpperCase() ||
+          couponCode
+            .trim()
+            .toUpperCase() ||
           null,
 
         paymentMethod: "COD",
@@ -507,18 +588,21 @@ function Checkout() {
       // CREATE ORDER
       // =====================================================
 
-      const response = await axios.post(
-        `${API_URL}/orders`,
-        orderData,
-        authConfig
-      );
+      const response =
+        await axios.post(
+          `${API_URL}/orders`,
+          orderData,
+          authConfig
+        );
 
       console.log(
         "ORDER SUCCESS:",
         response.data
       );
 
-      alert("Order placed successfully!");
+      alert(
+        "Order placed successfully!"
+      );
 
       if (!isBuyNow) {
         await fetchCart();
@@ -553,7 +637,9 @@ function Checkout() {
 
         <main className="checkout-empty-page">
           <div className="checkout-empty">
-            <h2>Login Required</h2>
+            <h2>
+              Login Required
+            </h2>
 
             <p>
               Please login before proceeding
@@ -858,8 +944,12 @@ function Checkout() {
                 {!coupon ? (
                   <button
                     type="button"
-                    onClick={validateCoupon}
-                    disabled={couponLoading}
+                    onClick={
+                      validateCoupon
+                    }
+                    disabled={
+                      couponLoading
+                    }
                   >
                     {couponLoading
                       ? "Applying..."
@@ -868,7 +958,9 @@ function Checkout() {
                 ) : (
                   <button
                     type="button"
-                    onClick={removeCoupon}
+                    onClick={
+                      removeCoupon
+                    }
                   >
                     Remove
                   </button>
@@ -920,7 +1012,9 @@ function Checkout() {
 
                   if (
                     image &&
-                    !image.startsWith("http")
+                    !image.startsWith(
+                      "http"
+                    )
                   ) {
                     image =
                       `http://localhost:5000${
@@ -970,7 +1064,8 @@ function Checkout() {
                       <strong>
                         ₹
                         {(
-                          price * quantity
+                          price *
+                          quantity
                         ).toLocaleString(
                           "en-IN"
                         )}
@@ -1099,10 +1194,13 @@ function Checkout() {
                   name="paymentMethod"
                   value="cod"
                   checked={
-                    paymentMethod === "cod"
+                    paymentMethod ===
+                    "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod("cod")
+                    setPaymentMethod(
+                      "cod"
+                    )
                   }
                 />
 
@@ -1120,7 +1218,8 @@ function Checkout() {
 
               </label>
 
-              {paymentMethod === "cod" && (
+              {paymentMethod ===
+                "cod" && (
                 <div className="payment-info-box">
 
                   <p>
@@ -1262,11 +1361,14 @@ function Checkout() {
             <button
               type="submit"
               className="figma-pay-button"
-              disabled={placingOrder}
+              disabled={
+                placingOrder
+              }
             >
               {placingOrder
                 ? "PLACING ORDER..."
-                : paymentMethod === "cod"
+                : paymentMethod ===
+                  "cod"
                 ? "PLACE ORDER"
                 : "PAY WITH RAZORPAY"}
             </button>
