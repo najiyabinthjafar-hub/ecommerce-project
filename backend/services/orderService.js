@@ -6,12 +6,25 @@ const notificationService = require("./notificationService");
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
 
+  // Notify customer
   await notificationService.createNotification({
-  user: order.user,
-  title: "Order Created",
-  message: "Your order has been created successfully.",
-  type: "ORDER",
-});
+    user: order.user,
+    title: "Order Created",
+    message: "Your order has been created successfully.",
+    type: "ORDER",
+  });
+
+  // Notify admin
+  const admin = await notificationService.getAdminUser();
+
+  if (admin) {
+    await notificationService.createNotification({
+      user: admin._id,
+      title: "New Order",
+      message: "A new order has been placed.",
+      type: "ORDER",
+    });
+  }
 
   return order;
 };
