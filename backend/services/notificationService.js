@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const User = require("../models/User");
 
 // CREATE NOTIFICATION
 const createNotification = async (notificationData) => {
@@ -50,10 +51,16 @@ const deleteNotification = async (id, userId) => {
   });
 };
 
+// GET ADMIN USER
+const getAdminUser = async () => {
+  return await User.findOne({ role: "admin" });
+};
+
 module.exports = {
   createNotification,
   getUserNotifications,
   markAsRead,
+  getAdminUser,
   markAllAsRead,
   deleteNotification,
 };
