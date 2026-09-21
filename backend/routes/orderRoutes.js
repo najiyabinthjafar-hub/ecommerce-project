@@ -34,4 +34,10 @@ router.get("/:id", protect, orderController.getOrderById);
 // UPDATE ORDER STATUS
 router.put("/:id/status", protect, orderController.updateOrderStatus);
 
+// CUSTOMER REQUEST RETURN
+router.post("/:id/return", protect, orderController.requestReturn);
+
+// ADMIN APPROVE / REJECT RETURN
+router.put("/:id/return-status", protect, orderController.updateReturnStatus);
+
 module.exports = router;

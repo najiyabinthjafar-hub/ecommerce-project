@@ -114,6 +114,58 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "PENDING",
     },
+
+    // RETURN DETAILS
+    returnStatus: {
+      type: String,
+      enum: [
+        "NONE",
+        "REQUESTED",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED",
+      ],
+      default: "NONE",
+    },
+
+    returnReason: {
+      type: String,
+      default: "",
+    },
+
+    returnRequestedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // REFUND DETAILS
+    refundStatus: {
+      type: String,
+      enum: [
+        "NOT_APPLICABLE",
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+      ],
+      default: "NOT_APPLICABLE",
+    },
+
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    refundId: {
+      type: String,
+      default: "",
+    },
+
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
