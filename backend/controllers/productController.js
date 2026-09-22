@@ -233,20 +233,38 @@ const updateProductStock = async (req, res, next) => {
   }
 };
 
-const getBestSellerProducts = async (req, res) => {
+// GET BEST SELLERS / SEARCH / FILTER / SORT / PAGINATION
+const getBestSellerProducts = async (req, res, next) => {
   try {
-    const products = await productService.getBestSellerProducts();
+    const {
+      search,
+      category,
+      minPrice,
+      maxPrice,
+      availability,
+      sort,
+      page,
+      limit,
+    } = req.query;
+
+    const result = await productService.getBestSellers({
+      search,
+      category,
+      minPrice,
+      maxPrice,
+      availability,
+      sort,
+      page,
+      limit,
+    });
 
     res.status(200).json({
       success: true,
-      products,
+      products: result.products,
+      pagination: result.pagination,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to get best seller products",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
