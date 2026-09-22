@@ -27,12 +27,11 @@ const couponRoutes = require("./routes/couponRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const checkoutRoutes = require("./routes/checkoutRoutes");
-
 const adminTestRoutes = require("./routes/adminTestRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const contactRoutes = require("./routes/contactRoutes");
-// const notificationRoutes = require("./routes/notificationRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -87,7 +86,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/contacts", contactRoutes);
 
 // Notifications
-// app.use("/api/notifications", notificationRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // =========================
 // ROOT ROUTE
