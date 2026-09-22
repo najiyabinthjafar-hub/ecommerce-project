@@ -1,4 +1,5 @@
 const Contact = require("../models/Contact");
+const { sendContactEmail } = require("./emailService");
 
 // ================= CREATE CONTACT =================
 
@@ -8,7 +9,16 @@ const createContact = async ({
   phone,
   comment,
 }) => {
+  // Save contact message in database
   const contact = await Contact.create({
+    name,
+    email,
+    phone,
+    comment,
+  });
+
+  // Send contact message to admin email
+  await sendContactEmail({
     name,
     email,
     phone,
