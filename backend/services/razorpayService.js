@@ -1,6 +1,11 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
+console.log("RAZORPAY KEY:", process.env.RAZORPAY_KEY_ID);
+console.log(
+  "RAZORPAY SECRET EXISTS:",
+  !!process.env.RAZORPAY_KEY_SECRET
+);
 
 
 const razorpay = new Razorpay({
