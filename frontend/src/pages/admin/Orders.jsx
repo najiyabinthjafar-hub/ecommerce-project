@@ -9,7 +9,13 @@ import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
 
-const ORDERS_PER_PAGE = 5;
+const PAYMENT_STATUS_OPTIONS = [
+  "PENDING",
+  "PAID",
+  "FAILED",
+];
+
+const ORDERS_PER_PAGE = 10;
 
 // =========================================================
 // ORDER STATUS
@@ -96,12 +102,29 @@ const Orders = () => {
       setLoading(true);
       setError("");
 
-      const token =
-        localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
       if (!token) {
         setError("Authentication required");
+        setOrders([]);
         return;
+      }
+
+      const params = {
+        page: currentPage,
+        limit: ORDERS_PER_PAGE,
+      };
+
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+
+      if (statusFilter) {
+        params.orderStatus = statusFilter;
+      }
+
+      if (paymentStatusFilter) {
+        params.paymentStatus = paymentStatusFilter;
       }
 
       const response = await axios.get(
@@ -110,19 +133,24 @@ const Orders = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          params,
         }
       );
 
-      const orderList =
-        response.data?.orders ||
-        response.data?.data ||
-        response.data ||
-        [];
+      const data = response.data || {};
 
       setOrders(
-        Array.isArray(orderList)
-          ? orderList
+        Array.isArray(data.orders)
+          ? data.orders
           : []
+      );
+
+      setTotalPages(
+        Number(data.totalPages || 1)
+      );
+
+      setTotalOrders(
+        Number(data.totalOrders || 0)
       );
     } catch (error) {
       console.error(
@@ -137,6 +165,8 @@ const Orders = () => {
       );
 
       setOrders([]);
+      setTotalPages(1);
+      setTotalOrders(0);
     } finally {
       setLoading(false);
     }
@@ -148,7 +178,12 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [
+    currentPage,
+    search,
+    statusFilter,
+    paymentStatusFilter,
+  ]);
 
   // =========================================================
   // RESET PAGE WHEN FILTERS CHANGE
@@ -156,7 +191,11 @@ const Orders = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter]);
+  }, [
+    search,
+    statusFilter,
+    paymentStatusFilter,
+  ]);
 
   // =========================================================
   // CUSTOMER HELPERS
@@ -333,70 +372,15 @@ const Orders = () => {
   };
 
   // =========================================================
-  // FILTERED ORDERS
+  // SERVER-SIDE PAGINATION
   // =========================================================
 
-  const filteredOrders = useMemo(() => {
-    const query =
-      search.trim().toLowerCase();
-
-    return orders.filter((order) => {
-      const orderId =
-        getOrderId(order).toLowerCase();
-
-      const customerName =
-        getCustomerName(order).toLowerCase();
-
-      const customerEmail =
-        getCustomerEmail(order).toLowerCase();
-
-      const customerPhone =
-        getCustomerPhone(order).toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        orderId.includes(query) ||
-        customerName.includes(query) ||
-        customerEmail.includes(query) ||
-        customerPhone.includes(query);
-
-      const matchesStatus =
-        statusFilter === "ALL" ||
-        order?.orderStatus ===
-          statusFilter;
-
-      return (
-        matchesSearch &&
-        matchesStatus
-      );
-    });
-  }, [
-    orders,
-    search,
-    statusFilter,
-  ]);
-
-  // =========================================================
-  // PAGINATION
-  // =========================================================
-
-  const totalPages = Math.max(
-    Math.ceil(
-      filteredOrders.length /
-        ORDERS_PER_PAGE
-    ),
-    1
-  );
+  const filteredOrders = orders;
 
   const startIndex =
-    (currentPage - 1) *
-    ORDERS_PER_PAGE;
+    (currentPage - 1) * ORDERS_PER_PAGE;
 
-  const paginatedOrders =
-    filteredOrders.slice(
-      startIndex,
-      startIndex + ORDERS_PER_PAGE
-    );
+  const paginatedOrders = orders;
 
   // =========================================================
   // SUMMARY
@@ -449,12 +433,8 @@ const Orders = () => {
 
   const statusOptions = [
     {
-      value: "ALL",
+      value: "",
       label: "All Status",
-    },
-    {
-      value: "PENDING_PAYMENT",
-      label: "Pending Payment",
     },
     {
       value: "PENDING",
@@ -473,24 +453,12 @@ const Orders = () => {
       label: "Shipped",
     },
     {
-      value: "OUT_FOR_DELIVERY",
-      label: "Out for Delivery",
-    },
-    {
       value: "DELIVERED",
       label: "Delivered",
     },
     {
       value: "CANCELLED",
       label: "Cancelled",
-    },
-    {
-      value: "RETURNED",
-      label: "Returned",
-    },
-    {
-      value: "REFUNDED",
-      label: "Refunded",
     },
   ];
 
@@ -635,6 +603,29 @@ const Orders = () => {
                   value={option.value}
                 >
                   {option.label}
+                </option>
+              )
+            )}
+          </select>
+          <select
+            value={paymentStatusFilter}
+            onChange={(event) =>
+              setPaymentStatusFilter(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              All Payment Status
+            </option>
+
+            {PAYMENT_STATUS_OPTIONS.map(
+              (status) => (
+                <option
+                  key={status}
+                  value={status}
+                >
+                  {status}
                 </option>
               )
             )}

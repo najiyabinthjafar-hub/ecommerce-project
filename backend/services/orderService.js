@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const User = require("../models/User");
 const notificationService = require("./notificationService");
 
 // ================= CREATE ORDER =================
@@ -42,17 +43,70 @@ const getOrdersByUser = async (userId) => {
 
 // ================= GET ALL ORDERS =================
 
-const getAllOrders = async () => {
-  const orders = await Order.find()
+const getAllOrders = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  orderStatus = "",
+  paymentStatus = "",
+} = {}) => {
+  const currentPage = Math.max(parseInt(page, 10) || 1, 1);
+  const perPage = Math.max(parseInt(limit, 10) || 10, 1);
+  const skip = (currentPage - 1) * perPage;
+
+  const query = {};
+
+  if (orderStatus) {
+    query.orderStatus = orderStatus;
+  }
+
+  if (paymentStatus) {
+    query.paymentStatus = paymentStatus;
+  }
+
+  const searchText = search.trim();
+
+  if (searchText) {
+    const regex = new RegExp(searchText, "i");
+
+    const users = await User.find({
+      $or: [{ name: regex }, { email: regex }],
+    }).select("_id");
+
+    const searchConditions = [
+      {
+        user: {
+          $in: users.map((user) => user._id),
+        },
+      },
+    ];
+
+    if (/^[0-9a-fA-F]{24}$/.test(searchText)) {
+      searchConditions.push({
+        _id: searchText,
+      });
+    }
+
+    query.$or = searchConditions;
+  }
+
+  const totalOrders = await Order.countDocuments(query);
+  const totalPages = Math.ceil(totalOrders / perPage);
+
+  const orders = await Order.find(query)
     .populate("items.product")
     .populate("user", "-password")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(perPage);
 
-  return orders;
+  return {
+    orders,
+    currentPage,
+    totalPages,
+    totalOrders,
+  };
 };
-
-// ================= GET ORDER BY ID =================
-
 const getOrderById = async (orderId, userId) => {
   const order = await Order.findOne({
     _id: orderId,
@@ -130,6 +184,74 @@ const updateOrderStatus = async (orderId, orderStatus) => {
 
 // ================= BEST SELLING PRODUCTS =================
 
+
+
+
+
+const requestReturn = async (orderId, userId, reason) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  if (order.user.toString() !== userId.toString()) {
+    throw new Error("You are not authorized to request return for this order");
+  }
+
+  if (order.orderStatus !== "DELIVERED") {
+    throw new Error("Return can be requested only for delivered orders");
+  }
+
+  if (order.returnStatus !== "NONE") {
+    throw new Error("Return request already exists for this order");
+  }
+
+  if (!reason || !reason.trim()) {
+    throw new Error("Return reason is required");
+  }
+
+  order.returnStatus = "REQUESTED";
+  order.returnReason = reason.trim();
+  order.returnRequestedAt = new Date();
+
+  await order.save();
+
+  return order;
+};
+
+// ADMIN APPROVE / REJECT RETURN
+const updateReturnStatus = async (orderId, returnStatus) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return null;
+  }
+
+  if (order.returnStatus !== "REQUESTED") {
+    throw new Error("There is no pending return request for this order");
+  }
+
+  if (!["APPROVED", "REJECTED"].includes(returnStatus)) {
+    throw new Error("Invalid return status");
+  }
+
+  order.returnStatus = returnStatus;
+
+  if (returnStatus === "APPROVED") {
+    order.refundStatus = "PENDING";
+    order.refundAmount = order.finalAmount;
+  }
+
+  if (returnStatus === "REJECTED") {
+    order.refundStatus = "NOT_APPLICABLE";
+    order.refundAmount = 0;
+  }
+
+  await order.save();
+
+  return order;
+};
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
     {
@@ -241,6 +363,8 @@ module.exports = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  requestReturn,
+  updateReturnStatus,
   getBestSellingProducts,
   updateRazorpayOrder,
   verifyRazorpayPayment,
