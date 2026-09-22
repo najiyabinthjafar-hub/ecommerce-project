@@ -36,9 +36,6 @@ function ProductCard({ product }) {
     const fetchWishlist = async () => {
       const token = getToken();
 
-      console.log("FETCHING WISHLIST...");
-      console.log("TOKEN EXISTS:", !!token);
-
       if (!token) {
         setWishlistIds([]);
         return;
@@ -95,7 +92,7 @@ function ProductCard({ product }) {
       "https://via.placeholder.com/500x600?text=No+Image";
   }
 
-  // ================= PRODUCT PRICE =================
+  // ================= PRICE =================
 
   const productPrice =
     product.salePrice !== null &&
@@ -115,19 +112,10 @@ function ProductCard({ product }) {
   // ================= WISHLIST =================
 
   const handleWishlist = async (e) => {
-    console.log("❤️ HEART CLICKED");
-
     e.preventDefault();
     e.stopPropagation();
 
-    console.log("PRODUCT ID:", productId);
-    console.log("IS WISHLISTED:", isWishlisted);
-
     const token = getToken();
-
-    console.log("TOKEN:", token ? "EXISTS" : "NOT FOUND");
-
-    // User login ചെയ്തിട്ടില്ലെങ്കിൽ
 
     if (!token) {
       alert(
@@ -145,18 +133,13 @@ function ProductCard({ product }) {
       if (isWishlisted) {
         // ================= REMOVE =================
 
-        console.log(
-          "REMOVING FROM WISHLIST:",
-          productId
-        );
-
         const response = await axios.delete(
           `${API_URL}/wishlist/remove/${productId}`,
           getAuthConfig()
         );
 
         console.log(
-          "REMOVE RESPONSE:",
+          "REMOVE WISHLIST RESPONSE:",
           response.data
         );
 
@@ -168,11 +151,6 @@ function ProductCard({ product }) {
       } else {
         // ================= ADD =================
 
-        console.log(
-          "ADDING TO WISHLIST:",
-          productId
-        );
-
         const response = await axios.post(
           `${API_URL}/wishlist/add`,
           {
@@ -182,7 +160,7 @@ function ProductCard({ product }) {
         );
 
         console.log(
-          "ADD RESPONSE:",
+          "ADD WISHLIST RESPONSE:",
           response.data
         );
 
@@ -215,6 +193,7 @@ function ProductCard({ product }) {
 
   return (
     <div className="product-card">
+
       {/* WISHLIST BUTTON */}
 
       <button
@@ -224,7 +203,11 @@ function ProductCard({ product }) {
         }`}
         onClick={handleWishlist}
         disabled={updatingWishlist}
-        aria-label="Add to wishlist"
+        aria-label={
+          isWishlisted
+            ? "Remove from wishlist"
+            : "Add to wishlist"
+        }
       >
         {isWishlisted ? "♥" : "♡"}
       </button>
