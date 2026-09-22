@@ -33,35 +33,41 @@ const getAllProducts = async ({
   }
 
   // ================= CATEGORY FILTER =================
+if (category) {
+  const categoryIds = category
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean)
+    .map((id) => new mongoose.Types.ObjectId(id));
 
-  if (category) {
-    const categoryIds = category
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean)
-      .map((id) => new mongoose.Types.ObjectId(id));
-
-    if (categoryIds.length === 1) {
-      query.category = categoryIds[0];
-    } else {
-      query.category = { $in: categoryIds };
-    }
+  if (categoryIds.length === 1) {
+    query.category = categoryIds[0];
+  } else {
+    query.category = { $in: categoryIds };
   }
+}
 
   // ================= AVAILABILITY FILTER =================
 
-  if (availability === "in-stock") {
-    query.stock = { $gt: 0 };
-  }
+ if (availability === "in-stock") {
+  query.stock = { $gt: 10 };
+}
 
-  if (availability === "out-of-stock") {
-    query.stock = 0;
-  }
+if (availability === "low-stock") {
+  query.stock = {
+    $gt: 0,
+    $lte: 10,
+  };
+}
 
+if (availability === "out-of-stock") {
+  query.stock = 0;
+}
   // ================= PAGINATION =================
 
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
+
   const skip = (pageNumber - 1) * limitNumber;
 
   // ================= AGGREGATION =================
@@ -142,27 +148,30 @@ const getAllProducts = async ({
   }
 
   if (sort === "featured") {
-    pipeline.push({
-      $sort: {
-        isBestSeller: -1,
-        createdAt: -1,
-      },
-    });
-  }
+  pipeline.push({
+    $sort: {
+      isBestSeller: -1,
+      createdAt: -1,
+    },
+  });
+}
 
   // ================= PAGINATION =================
 
-  pipeline.push({
-    $facet: {
-      products: [
-        { $skip: skip },
-        { $limit: limitNumber },
-      ],
-      total: [
-        { $count: "count" },
-      ],
-    },
-  });
+  pipeline.push(
+    {
+      $facet: {
+        products: [
+          { $skip: skip },
+          { $limit: limitNumber },
+        ],
+
+        total: [
+          { $count: "count" },
+        ],
+      },
+    }
+  );
 
   const result = await Product.aggregate(pipeline);
 
@@ -187,6 +196,7 @@ const getAllProducts = async ({
 
   return {
     products: populatedProducts,
+
     pagination: {
       currentPage: pageNumber,
       limit: limitNumber,
@@ -315,6 +325,8 @@ const updateProductStock = async (id, stock) => {
 
 // ================= REDUCE PRODUCT STOCK =================
 
+// ================= REDUCE PRODUCT STOCK =================
+
 const reduceProductStock = async (id, quantity) => {
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new Error("Quantity must be a positive integer");
@@ -342,8 +354,8 @@ const reduceProductStock = async (id, quantity) => {
     const admin = await notificationService.getAdminUser();
 
     if (admin) {
-      // OUT OF STOCK
 
+      // OUT OF STOCK
       if (product.stock === 0) {
         await notificationService.createNotification({
           user: admin._id,
@@ -354,7 +366,6 @@ const reduceProductStock = async (id, quantity) => {
       }
 
       // LOW STOCK
-
       else if (product.stock <= 5) {
         await notificationService.createNotification({
           user: admin._id,
