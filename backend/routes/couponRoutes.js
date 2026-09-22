@@ -3,8 +3,19 @@ const couponController = require("../controllers/couponController");
 
 const router = express.Router();
 
-// Test route
-router.get("/", (req, res) => {
+// Get coupons with optional search and status filters
+// GET /api/coupons
+// GET /api/coupons?search=SAVE
+// GET /api/coupons?status=active
+// GET /api/coupons?status=inactive
+// GET /api/coupons?status=expired
+router.get("/", couponController.getCoupons);
+
+// Existing get-all endpoint preserved
+router.get("/all", couponController.getCoupons);
+
+// Optional test route
+router.get("/test", (req, res) => {
   res.json({
     success: true,
     message: "Coupon routes working",
@@ -13,9 +24,6 @@ router.get("/", (req, res) => {
 
 // Create coupon
 router.post("/create", couponController.createCoupon);
-
-// Get all coupons
-router.get("/all", couponController.getCoupons);
 
 // Get coupon by code
 router.get("/code/:code", couponController.getCouponByCode);
