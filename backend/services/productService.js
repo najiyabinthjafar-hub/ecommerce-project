@@ -49,14 +49,20 @@ if (category) {
 
   // ================= AVAILABILITY FILTER =================
 
-  if (availability === "in-stock") {
-    query.stock = { $gt: 0 };
-  }
+ if (availability === "in-stock") {
+  query.stock = { $gt: 10 };
+}
 
-  if (availability === "out-of-stock") {
-    query.stock = 0;
-  }
+if (availability === "low-stock") {
+  query.stock = {
+    $gt: 0,
+    $lte: 10,
+  };
+}
 
+if (availability === "out-of-stock") {
+  query.stock = 0;
+}
   // ================= PAGINATION =================
 
   const pageNumber = Number(page) || 1;
