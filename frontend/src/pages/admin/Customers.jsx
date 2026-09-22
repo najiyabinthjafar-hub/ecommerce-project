@@ -173,13 +173,12 @@ const Customers = () => {
   ========================================================= */
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-    }, 400);
+  const timer = setTimeout(() => {
+    fetchCustomers();
+  }, 400);
 
-    return () => clearTimeout(timer);
-  }, [search]);
-
+  return () => clearTimeout(timer);
+}, [page, search, sort, statusFilter]);
   /* =========================================================
      CUSTOMER ORDER MATCHING
   ========================================================= */
