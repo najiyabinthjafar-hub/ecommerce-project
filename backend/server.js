@@ -85,6 +85,7 @@ app.use("/api/admin", adminRoutes);
 
 // Contact
 app.use("/api/contacts", contactRoutes);
+app.use("/api/auth", authRoutes);
 
 // Notifications
 // app.use("/api/notifications", notificationRoutes);
