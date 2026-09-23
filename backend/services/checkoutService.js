@@ -3,6 +3,7 @@ const Product = require("../models/Product");
 const Coupon = require("../models/coupon");
 const Order = require("../models/Order");
 const Payment = require("../models/Payment");
+const razorpayService = require("./razorpayService");
 
 const processCheckout = async ({
   userId,
@@ -66,19 +67,16 @@ const processCheckout = async ({
       throw new Error("Invalid coupon");
     }
 
-    // Check coupon expiry
     if (new Date() > new Date(coupon.expiry)) {
       throw new Error("Coupon has expired");
     }
 
-    // Check minimum purchase
     if (totalAmount < coupon.minimumPurchase) {
       throw new Error(
         `Minimum purchase amount is ${coupon.minimumPurchase}`
       );
     }
 
-    // Check usage limit
     if (
       coupon.usageLimit !== null &&
       coupon.usedCount >= coupon.usageLimit
@@ -86,11 +84,9 @@ const processCheckout = async ({
       throw new Error("Coupon usage limit reached");
     }
 
-    // Calculate discount
     if (coupon.discountType === "percentage") {
       discountAmount = (totalAmount * coupon.discountValue) / 100;
 
-      // Maximum discount limit
       if (
         coupon.maximumDiscount !== null &&
         coupon.maximumDiscount !== undefined &&
@@ -155,7 +151,7 @@ const processCheckout = async ({
     payment.paymentStatus = "PENDING";
     await payment.save();
 
-    // Increase coupon usage after successful order
+    // Increase coupon usage
     if (appliedCoupon) {
       appliedCoupon.usedCount += 1;
       await appliedCoupon.save();
@@ -173,16 +169,32 @@ const processCheckout = async ({
     // Clear cart
     cart.items = [];
     await cart.save();
+
+    return {
+      order,
+      payment,
+      totalAmount,
+      discountAmount,
+      finalAmount,
+    };
   }
 
-  // 10. Return checkout result
-  return {
-    order,
-    payment,
-    totalAmount,
-    discountAmount,
-    finalAmount,
-  };
+  // 10. Process Razorpay checkout
+  if (paymentMethod === "RAZORPAY") {
+    const razorpayOrder = await razorpayService.createRazorpayOrder(
+      finalAmount,
+      order._id.toString()
+    );
+
+    return {
+      order,
+      payment,
+      razorpayOrder,
+      totalAmount,
+      discountAmount,
+      finalAmount,
+    };
+  }
 };
 
 module.exports = {
