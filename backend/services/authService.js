@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+const notificationService = require("./notificationService");
 
 const {
   sendOtpEmail,
@@ -32,17 +33,30 @@ const registerUser = async ({
 
   const otp = generateOtp();
 
-  const user = await User.create({
-    name,
-    email,
-    phone,
-    password: hashedPassword,
-    otp,
-    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    otpAttempts: 0,
-  });
+  
+const user = await User.create({
+  name,
+  email,
+  phone,
+  password: hashedPassword,
+  otp,
+  otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  otpAttempts: 0,
+});
 
-  await sendOtpEmail(email, otp);
+// Create notification for admin
+const admin = await notificationService.getAdminUser();
+
+if (admin) {
+  await notificationService.createNotification({
+    user: admin._id,
+    title: "New Customer",
+    message: `New customer ${user.name} has registered.`,
+    type: "USER",
+  });
+}
+
+await sendOtpEmail(email, otp);
 
   return {
     userId: user._id,
