@@ -263,13 +263,13 @@ const getAllOrders = async ({
     totalOrders,
   };
 };
-const getOrderById = async (orderId, userId) => {
-  const order = await Order.findOne({
-    _id: orderId,
-    user: userId,
-  })
+const getOrderById = async (orderId) => {
+  const order = await Order.findById(orderId)
     .populate("items.product")
-    .populate({ path: "user", select: "_id name email phone role status isEmailVerified profileCompleted" });
+    .populate({
+      path: "user",
+      select: "_id name email phone role status isEmailVerified profileCompleted"
+    });
 
   return order;
 };
@@ -559,5 +559,8 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
+
 
 
