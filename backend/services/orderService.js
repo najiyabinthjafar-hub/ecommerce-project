@@ -232,26 +232,44 @@ const getAllOrders = async ({
 
   const orders = await Order.find(query)
     .populate("items.product")
-    .populate("user", "-password")
+    .populate("user")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(perPage);
 
+  const safeOrders = orders.map((order) => {
+    const orderObject = order.toObject();
+
+    if (orderObject.user) {
+      orderObject.user = {
+        _id: orderObject.user._id,
+        name: orderObject.user.name,
+        email: orderObject.user.email,
+        phone: orderObject.user.phone,
+        role: orderObject.user.role,
+        status: orderObject.user.status,
+        isEmailVerified: orderObject.user.isEmailVerified,
+        profileCompleted: orderObject.user.profileCompleted,
+      };
+    }
+
+    return orderObject;
+  });
+
   return {
-    orders,
+    orders: safeOrders,
     currentPage,
     totalPages,
     totalOrders,
   };
 };
-
 const getOrderById = async (orderId, userId) => {
   const order = await Order.findOne({
     _id: orderId,
     user: userId,
   })
     .populate("items.product")
-    .populate("user", "-password");
+    .populate({ path: "user", select: "_id name email phone role status isEmailVerified profileCompleted" });
 
   return order;
 };
@@ -541,3 +559,5 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
