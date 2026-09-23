@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./AddProduct.css";
 
-const PRODUCT_API_URL = "http://localhost:5000/api/products";
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
 function EditProduct() {
   const navigate = useNavigate();
@@ -19,61 +19,58 @@ function EditProduct() {
     variants: [],
     description: "",
     status: "active",
-    images: [],
+    isBestSeller: false,
   });
 
   const [categories, setCategories] = useState([]);
-  const [newImages, setNewImages] = useState([]);
-  const [newImagePreviews, setNewImagePreviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingProduct, setLoadingProduct] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
 
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  // =========================
-  // FETCH PRODUCT
-  // =========================
+  /* =========================================================
+     FETCH PRODUCT
+  ========================================================= */
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        setLoading(true);
+        setLoadingProduct(true);
 
         const response = await fetch(
           `${PRODUCT_API_URL}/${id}`
         );
 
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch product"
-          );
+          throw new Error("Failed to fetch product");
         }
 
-        const p = data.product;
+        const data = await response.json();
+
+        const p = data.product || data.data || data;
 
         setProduct({
           sku: p.sku || "",
           name: p.name || "",
-          category:
-            p.category?._id ||
-            p.category ||
-            "",
-          regularPrice:
-            p.regularPrice ?? "",
-          salePrice:
-            p.salePrice ?? "",
-          stock:
-            p.stock ?? "",
-          variants:
-            p.variants || [],
-          description:
-            p.description || "",
-          status:
-            p.status || "active",
-          images:
-            p.images || [],
+          category: p.category?._id || p.category || "",
+          regularPrice: p.regularPrice ?? "",
+          salePrice: p.salePrice ?? "",
+          stock: p.stock ?? "",
+          variants: Array.isArray(p.variants)
+            ? p.variants
+            : [],
+          description: p.description || "",
+          status: p.status || "active",
+          isBestSeller: p.isBestSeller === true,
         });
+
+        setExistingImages(
+          Array.isArray(p.images) ? p.images : []
+        );
       } catch (error) {
         console.error(
           "Error fetching product:",
@@ -81,59 +78,94 @@ function EditProduct() {
         );
 
         alert(
-          error.message ||
-            "Failed to load product"
+          error.message || "Failed to load product."
         );
-
-        navigate("/admin/products");
       } finally {
-        setLoading(false);
+        setLoadingProduct(false);
       }
     };
 
-    fetchProduct();
-  }, [id, navigate]);
+    if (id) {
+      fetchProduct();
+    }
+  }, [id]);
 
-  // =========================
-  // FETCH CATEGORIES
-  // =========================
+  /* =========================================================
+     FETCH CATEGORIES
+  ========================================================= */
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        setLoadingCategories(true);
+
         const response = await fetch(
           CATEGORY_API_URL
         );
 
-        const data = await response.json();
-
         if (!response.ok) {
           throw new Error(
-            data.message ||
-              "Failed to fetch categories"
+            "Failed to fetch categories"
           );
         }
 
-        const categoryList = Array.isArray(data)
-          ? data
-          : data.categories ||
-            data.data ||
-            [];
+        const data = await response.json();
 
-        setCategories(categoryList);
+        if (Array.isArray(data)) {
+          setCategories(data);
+        } else if (Array.isArray(data.categories)) {
+          setCategories(data.categories);
+        } else if (Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else {
+          setCategories([]);
+        }
       } catch (error) {
         console.error(
           "Error fetching categories:",
           error
         );
+
+        alert("Failed to load categories.");
+      } finally {
+        setLoadingCategories(false);
       }
     };
 
     fetchCategories();
   }, []);
 
-  // =========================
-  // INPUT CHANGE
-  // =========================
+  /* =========================================================
+     MAIN CATEGORIES
+  ========================================================= */
+
+  const mainCategories = categories.filter(
+    (category) => !category.parent
+  );
+
+  /* =========================================================
+     GET SUBCATEGORIES
+  ========================================================= */
+
+  const getSubcategories = (mainCategoryId) => {
+    return categories.filter((subcategory) => {
+      if (!subcategory.parent) {
+        return false;
+      }
+
+      const parentId =
+        typeof subcategory.parent === "object"
+          ? subcategory.parent?._id
+          : subcategory.parent;
+
+      return parentId === mainCategoryId;
+    });
+  };
+
+  /* =========================================================
+     HANDLE INPUT
+  ========================================================= */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -143,9 +175,10 @@ function EditProduct() {
     }));
   };
 
-  // =========================
-  // SIZE CHANGE
-  // =========================
+  /* =========================================================
+     SIZE SELECTION
+  ========================================================= */
+
   const handleSizeChange = (size) => {
     setProduct((prev) => {
       const alreadySelected =
@@ -153,211 +186,203 @@ function EditProduct() {
 
       return {
         ...prev,
-
         variants: alreadySelected
           ? prev.variants.filter(
               (item) => item !== size
             )
-          : [
-              ...prev.variants,
-              size,
-            ],
+          : [...prev.variants, size],
       };
     });
   };
 
-  // =========================
-  // REMOVE EXISTING IMAGE
-  // =========================
-  const handleRemoveExistingImage = (
-    index
-  ) => {
+  /* =========================================================
+     BEST SELLER
+  ========================================================= */
+
+  const handleBestSellerChange = (e) => {
     setProduct((prev) => ({
       ...prev,
-
-      images: prev.images.filter(
-        (_, imageIndex) =>
-          imageIndex !== index
-      ),
+      isBestSeller: e.target.checked,
     }));
   };
 
-  // =========================
-  // ADD NEW IMAGES
-  // =========================
+  /* =========================================================
+     NEW IMAGE SELECTION
+     MAXIMUM 5 IMAGES TOTAL
+  ========================================================= */
+
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(
       e.target.files || []
     );
 
-    if (selectedFiles.length === 0) {
+    if (!selectedFiles.length) {
       return;
     }
 
-    // Existing new images + newly selected
     const totalImages =
-      newImages.length +
-      selectedFiles.length;
+      existingImages.length + newImages.length;
 
-    // Maximum 5 new images
-    if (totalImages > 5) {
+    const remainingSlots = 5 - totalImages;
+
+    if (remainingSlots <= 0) {
       alert(
-        `You can select a maximum of 5 new images. You already selected ${newImages.length}.`
+        "You can have a maximum of 5 images."
       );
 
-      // Clear file input
       e.target.value = "";
-
       return;
     }
 
-    // Add new images instead of replacing
+    const filesToAdd = selectedFiles.slice(
+      0,
+      remainingSlots
+    );
+
+    if (
+      selectedFiles.length > remainingSlots
+    ) {
+      alert(
+        `Only ${remainingSlots} more image(s) can be added.`
+      );
+    }
+
     setNewImages((prev) => [
       ...prev,
-      ...selectedFiles,
+      ...filesToAdd,
     ]);
 
-    // Create previews for newly selected files
-    const newPreviews =
-      selectedFiles.map((file) =>
-        URL.createObjectURL(file)
-      );
-
-    // Add previews instead of replacing
-    setNewImagePreviews((prev) => [
-      ...prev,
-      ...newPreviews,
-    ]);
-
-    // IMPORTANT:
-    // Clear input so user can select
-    // more images again
     e.target.value = "";
   };
 
-  // =========================
-  // REMOVE NEW IMAGE
-  // =========================
-  const handleRemoveNewImage = (
-    index
-  ) => {
-    // Revoke preview URL
-    const previewToRemove =
-      newImagePreviews[index];
+  /* =========================================================
+     REMOVE EXISTING IMAGE
+  ========================================================= */
 
-    if (previewToRemove) {
-      URL.revokeObjectURL(
-        previewToRemove
-      );
-    }
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) =>
+      prev.filter(
+        (_, imageIndex) =>
+          imageIndex !== index
+      )
+    );
+  };
 
-    // Remove image
+  /* =========================================================
+     REMOVE NEW IMAGE
+  ========================================================= */
+
+  const removeNewImage = (index) => {
     setNewImages((prev) =>
       prev.filter(
         (_, imageIndex) =>
           imageIndex !== index
       )
     );
-
-    // Remove preview
-    setNewImagePreviews((prev) =>
-      prev.filter(
-        (_, imageIndex) =>
-          imageIndex !== index
-      )
-    );
   };
 
-  // =========================
-  // UPDATE PRODUCT
-  // =========================
+  /* =========================================================
+     GENERATE SLUG
+  ========================================================= */
+
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  };
+
+  /* =========================================================
+     UPDATE PRODUCT
+  ========================================================= */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (saving) {
+    if (!product.name.trim()) {
+      alert("Please enter product name.");
+      return;
+    }
+
+    if (!product.category) {
+      alert("Please select a category.");
+      return;
+    }
+
+    if (product.regularPrice === "") {
+      alert("Please enter regular price.");
+      return;
+    }
+
+    if (product.stock === "") {
+      alert("Please enter stock.");
+      return;
+    }
+
+    if (
+      existingImages.length === 0 &&
+      newImages.length === 0
+    ) {
+      alert(
+        "Please keep at least one product image."
+      );
+      return;
+    }
+
+    if (
+      existingImages.length +
+        newImages.length >
+      5
+    ) {
+      alert(
+        "You can have a maximum of 5 images."
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      // =========================
-      // VALIDATION
-      // =========================
-      if (!product.sku.trim()) {
-        throw new Error(
-          "SKU is required."
-        );
-      }
+      /* =====================================================
+         PRODUCT DATA
+      ===================================================== */
 
-      if (!product.name.trim()) {
-        throw new Error(
-          "Product name is required."
-        );
-      }
-
-      if (!product.category) {
-        throw new Error(
-          "Please select a category."
-        );
-      }
-
-      // =========================
-      // GENERATE SLUG
-      // =========================
-      const slug = product.name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-
-      // =========================
-      // PRODUCT DATA
-      // =========================
       const productData = {
         sku: product.sku.trim(),
 
         name: product.name.trim(),
 
-        slug,
+        slug: generateSlug(product.name),
+
+        category: product.category,
+
+        regularPrice: Number(
+          product.regularPrice
+        ),
+
+        salePrice:
+          product.salePrice === ""
+            ? 0
+            : Number(product.salePrice),
+
+        stock: Number(product.stock),
+
+        variants: product.variants,
 
         description:
           product.description.trim(),
 
-        category:
-          product.category,
+        status: product.status,
 
-        regularPrice:
-          Number(
-            product.regularPrice
-          ),
-
-        salePrice:
-          product.salePrice === ""
-            ? null
-            : Number(
-                product.salePrice
-              ),
-
-        stock:
-          Number(product.stock),
-
-        variants:
-          product.variants,
-
-        status:
-          product.status,
-
-        // Keep current images
-        // after removing unwanted images
-        images:
-          product.images,
+        isBestSeller:
+          product.isBestSeller,
       };
 
-      // =========================
-      // STEP 1
-      // UPDATE PRODUCT DETAILS
-      // =========================
+      /* =====================================================
+         UPDATE PRODUCT
+      ===================================================== */
+
       const response = await fetch(
         `${PRODUCT_API_URL}/${id}`,
         {
@@ -368,14 +393,11 @@ function EditProduct() {
               "application/json",
           },
 
-          body: JSON.stringify(
-            productData
-          ),
+          body: JSON.stringify(productData),
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -384,21 +406,17 @@ function EditProduct() {
         );
       }
 
-      let finalImages =
-        product.images;
+      /* =====================================================
+         UPLOAD NEW IMAGES
+      ===================================================== */
 
-      // =========================
-      // STEP 2
-      // UPLOAD NEW IMAGES
-      // =========================
       if (newImages.length > 0) {
-        const formData =
-          new FormData();
+        const imageFormData = new FormData();
 
-        newImages.forEach((file) => {
-          formData.append(
+        newImages.forEach((image) => {
+          imageFormData.append(
             "images",
-            file
+            image
           );
         });
 
@@ -407,7 +425,7 @@ function EditProduct() {
             `${PRODUCT_API_URL}/${id}/images`,
             {
               method: "POST",
-              body: formData,
+              body: imageFormData,
             }
           );
 
@@ -417,98 +435,55 @@ function EditProduct() {
         if (!imageResponse.ok) {
           throw new Error(
             imageData.message ||
-              "Product updated, but image upload failed."
-          );
-        }
-
-        // Backend returns complete image array
-        const backendImages =
-          Array.isArray(
-            imageData.product?.images
-          )
-            ? imageData.product.images
-            : [];
-
-        // If backend returned complete array,
-        // use it directly
-        if (
-          backendImages.length > 0
-        ) {
-          finalImages =
-            backendImages;
-        } else {
-          // Fallback
-          const uploadedImages =
-            Array.isArray(
-              imageData.images
-            )
-              ? imageData.images
-              : [];
-
-          finalImages = [
-            ...product.images,
-            ...uploadedImages,
-          ];
-        }
-
-        // =========================
-        // STEP 3
-        // SAVE FINAL IMAGE ARRAY
-        // =========================
-        const finalUpdateResponse =
-          await fetch(
-            `${PRODUCT_API_URL}/${id}`,
-            {
-              method: "PUT",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body: JSON.stringify({
-                ...productData,
-                images:
-                  finalImages,
-              }),
-            }
-          );
-
-        const finalUpdateData =
-          await finalUpdateResponse.json();
-
-        if (
-          !finalUpdateResponse.ok
-        ) {
-          throw new Error(
-            finalUpdateData.message ||
-              "Images uploaded but final image update failed."
+              "Product updated, but new image upload failed."
           );
         }
       }
 
-      // =========================
-      // SUCCESS
-      // =========================
+      /* =====================================================
+         UPDATE EXISTING IMAGE LIST
+      ===================================================== */
+
+      if (Array.isArray(existingImages)) {
+        try {
+          const imageUpdateResponse =
+            await fetch(
+              `${PRODUCT_API_URL}/${id}/images`,
+              {
+                method: "PUT",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body: JSON.stringify({
+                  images: existingImages,
+                }),
+              }
+            );
+
+          if (!imageUpdateResponse.ok) {
+            console.warn(
+              "Existing image list could not be updated."
+            );
+          }
+        } catch (imageError) {
+          console.warn(
+            "Image list update skipped:",
+            imageError
+          );
+        }
+      }
+
       alert(
         "Product updated successfully!"
       );
 
-      // Cleanup preview URLs
-      newImagePreviews.forEach(
-        (preview) => {
-          URL.revokeObjectURL(
-            preview
-          );
-        }
-      );
-
-      navigate(
-        "/admin/products"
-      );
+      navigate("/admin/products");
     } catch (error) {
       console.error(
-        "Error updating product:",
+        "Update product error:",
         error
       );
 
@@ -521,102 +496,110 @@ function EditProduct() {
     }
   };
 
-  // =========================
-  // LOADING
-  // =========================
-  if (loading) {
+  /* =========================================================
+     CANCEL
+  ========================================================= */
+
+  const handleCancel = () => {
+    navigate("/admin/products");
+  };
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
+  if (loadingProduct) {
     return (
       <div className="add-product-page">
         <div className="add-product-content">
-          <div className="add-product-card">
-            <p>
-              Loading product...
-            </p>
+          <div
+            style={{
+              minHeight: "300px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#777",
+              fontSize: "13px",
+            }}
+          >
+            Loading product...
           </div>
         </div>
       </div>
     );
   }
 
-  // =========================
-  // UI
-  // =========================
+  /* =========================================================
+     JSX
+  ========================================================= */
+
   return (
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* HEADER */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
         <div className="add-product-header">
           <div className="add-product-heading">
-            <h1>
-              Edit Product
-            </h1>
+            <h1>Edit Product</h1>
 
             <p>
-              Update your product details
+              Update product details, pricing,
+              stock and images.
             </p>
           </div>
 
           <button
             type="button"
             className="back-products-btn"
-            onClick={() =>
-              navigate(
-                "/admin/products"
-              )
-            }
+            onClick={handleCancel}
           >
             <i className="bi bi-arrow-left"></i>
             Back to Products
           </button>
         </div>
 
-        {/* FORM CARD */}
-        <div className="add-product-card">
-          <form
-            onSubmit={handleSubmit}
-          >
+        {/* =================================================
+            CARD
+        ================================================= */}
 
-            {/* SKU + NAME */}
+        <div className="add-product-card">
+          <form onSubmit={handleSubmit}>
+
+            {/* =================================================
+                SKU + NAME
+            ================================================= */}
+
             <div className="form-row">
 
               <div className="form-group">
-                <label>
+                <label htmlFor="sku">
                   SKU
                 </label>
 
                 <input
                   type="text"
+                  id="sku"
                   name="sku"
-                  value={
-                    product.sku
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  placeholder="Example: TSH-BLK-003"
-                  required
+                  value={product.sku}
+                  onChange={handleChange}
+                  placeholder="Enter SKU"
                 />
-
-                <small className="size-hint">
-                  SKU must be unique
-                </small>
               </div>
 
               <div className="form-group">
-                <label>
+                <label htmlFor="name">
                   Product Name
                 </label>
 
                 <input
                   type="text"
+                  id="name"
                   name="name"
-                  value={
-                    product.name
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={product.name}
+                  onChange={handleChange}
                   placeholder="Enter product name"
                   required
                 />
@@ -624,63 +607,104 @@ function EditProduct() {
 
             </div>
 
-            {/* CATEGORY + STOCK */}
+            {/* =================================================
+                CATEGORY + STOCK
+            ================================================= */}
+
             <div className="form-row">
 
               <div className="form-group">
-                <label>
+                <label htmlFor="category">
                   Category
                 </label>
 
                 <select
+                  id="category"
                   name="category"
-                  value={
-                    product.category
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={product.category}
+                  onChange={handleChange}
                   required
                 >
                   <option value="">
-                    Select category
+                    {loadingCategories
+                      ? "Loading categories..."
+                      : "Select category"}
                   </option>
 
-                  {categories.map(
-                    (category) => (
-                      <option
-                        key={
-                          category._id ||
-                          category.id
-                        }
-                        value={
-                          category._id ||
-                          category.id
-                        }
-                      >
-                        {
-                          category.name
-                        }
-                      </option>
-                    )
-                  )}
+                  {!loadingCategories &&
+                    mainCategories.map(
+                      (mainCategory) => {
+                        const mainCategoryId =
+                          mainCategory._id ||
+                          mainCategory.id;
+
+                        const subcategories =
+                          getSubcategories(
+                            mainCategoryId
+                          );
+
+                        return (
+                          <React.Fragment
+                            key={mainCategoryId}
+                          >
+                            <option
+                              value={
+                                mainCategoryId
+                              }
+                            >
+                              ✦{" "}
+                              {
+                                mainCategory.name
+                              }
+                            </option>
+
+                            {subcategories.map(
+                              (subcategory) => {
+                                const subcategoryId =
+                                  subcategory._id ||
+                                  subcategory.id;
+
+                                return (
+                                  <option
+                                    key={
+                                      subcategoryId
+                                    }
+                                    value={
+                                      subcategoryId
+                                    }
+                                  >
+                                    {"   ↳ "}
+                                    {
+                                      subcategory.name
+                                    }
+                                  </option>
+                                );
+                              }
+                            )}
+                          </React.Fragment>
+                        );
+                      }
+                    )}
                 </select>
+
+                <small className="size-hint">
+                  Select a main category or
+                  subcategory.
+                </small>
               </div>
 
               <div className="form-group">
-                <label>
+                <label htmlFor="stock">
                   Stock
                 </label>
 
                 <input
                   type="number"
+                  id="stock"
                   name="stock"
-                  value={
-                    product.stock
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={product.stock}
+                  onChange={handleChange}
+                  placeholder="Enter stock quantity"
                   min="0"
                   required
                 />
@@ -688,462 +712,312 @@ function EditProduct() {
 
             </div>
 
-            {/* PRICES */}
+            {/* =================================================
+                PRICES
+            ================================================= */}
+
             <div className="form-row">
 
               <div className="form-group">
-                <label>
+                <label htmlFor="regularPrice">
                   Regular Price
                 </label>
 
                 <input
                   type="number"
+                  id="regularPrice"
                   name="regularPrice"
-                  value={
-                    product.regularPrice
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={product.regularPrice}
+                  onChange={handleChange}
+                  placeholder="Enter regular price"
                   min="0"
+                  step="0.01"
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label>
+                <label htmlFor="salePrice">
                   Sale Price
                 </label>
 
                 <input
                   type="number"
+                  id="salePrice"
                   name="salePrice"
-                  value={
-                    product.salePrice
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={product.salePrice}
+                  onChange={handleChange}
+                  placeholder="Enter sale price"
                   min="0"
-                  placeholder="Optional"
+                  step="0.01"
                 />
               </div>
 
             </div>
 
-            {/* SIZES + STATUS */}
-            <div className="form-row">
+            {/* =================================================
+                SIZES
+            ================================================= */}
 
-              <div className="form-group">
-                <label>
-                  Available Sizes
+            <div className="form-group">
+              <label>Sizes</label>
+
+              <div className="size-selection">
+                {sizes.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    className={`size-option ${
+                      product.variants.includes(
+                        size
+                      )
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleSizeChange(size)
+                    }
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+
+              <small className="size-hint">
+                Select the available sizes.
+              </small>
+            </div>
+
+            {/* =================================================
+                BEST SELLER
+            ================================================= */}
+
+            <div className="form-group best-seller-group">
+
+              <div className="best-seller-content">
+                <label className="best-seller-title">
+                  Best Seller
                 </label>
 
-                <div className="size-selection">
+                <small>
+                  Highlight this product as a
+                  best seller.
+                </small>
+              </div>
 
-                  {sizes.map(
-                    (size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        className={`size-option ${
-                          product.variants.includes(
-                            size
-                          )
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleSizeChange(
-                            size
-                          )
-                        }
+              <label className="best-seller-checkbox">
+
+                <input
+                  type="checkbox"
+                  checked={
+                    product.isBestSeller
+                  }
+                  onChange={
+                    handleBestSellerChange
+                  }
+                />
+
+                <span>
+                  Mark this product as Best Seller
+                </span>
+
+              </label>
+
+            </div>
+
+            {/* =================================================
+                PRODUCT IMAGES
+            ================================================= */}
+
+            <div className="form-group product-image-full">
+
+              <label htmlFor="images">
+                Product Images <span>*</span>
+              </label>
+
+              <div className="file-upload-box">
+
+                <label
+                  htmlFor="images"
+                  className="choose-image-btn"
+                >
+                  <i className="bi bi-upload"></i>
+                  Choose Images
+                </label>
+
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  accept="image/*"
+                  multiple
+                  onChange={
+                    handleImageChange
+                  }
+                />
+
+              </div>
+
+              {/* =================================================
+                  EXISTING IMAGES
+              ================================================= */}
+
+              {existingImages.length > 0 && (
+                <div className="product-image-preview">
+
+                  {existingImages.map(
+                    (image, index) => {
+                      const imageUrl =
+                        typeof image === "string"
+                          ? image
+                          : image?.url ||
+                            image?.secure_url ||
+                            image?.path ||
+                            "";
+
+                      return (
+                        <div
+                          className="preview-image-box"
+                          key={`${imageUrl}-${index}`}
+                        >
+
+                          <img
+                            src={imageUrl}
+                            alt={`Product ${
+                              index + 1
+                            }`}
+                          />
+
+                          <button
+                            type="button"
+                            className="remove-preview-btn"
+                            onClick={() =>
+                              removeExistingImage(
+                                index
+                              )
+                            }
+                            aria-label="Remove image"
+                          >
+                            <i className="bi bi-x"></i>
+                          </button>
+
+                          <span className="image-number">
+                            {index + 1}
+                          </span>
+
+                        </div>
+                      );
+                    }
+                  )}
+
+                </div>
+              )}
+
+              {/* =================================================
+                  NEW IMAGES
+              ================================================= */}
+
+              {newImages.length > 0 && (
+                <div className="product-image-preview">
+
+                  {newImages.map(
+                    (image, index) => (
+                      <div
+                        className="preview-image-box"
+                        key={`${image.name}-${index}`}
                       >
-                        {size}
-                      </button>
+
+                        <img
+                          src={URL.createObjectURL(
+                            image
+                          )}
+                          alt={`New product ${
+                            index + 1
+                          }`}
+                        />
+
+                        <button
+                          type="button"
+                          className="remove-preview-btn"
+                          onClick={() =>
+                            removeNewImage(
+                              index
+                            )
+                          }
+                          aria-label="Remove image"
+                        >
+                          <i className="bi bi-x"></i>
+                        </button>
+
+                        <span className="image-number">
+                          {existingImages.length +
+                            index +
+                            1}
+                        </span>
+
+                      </div>
                     )
                   )}
 
                 </div>
-
-                <small className="size-hint">
-                  {product.variants.length ===
-                  0
-                    ? "Select one or more sizes"
-                    : `${product.variants.length} size${
-                        product.variants.length >
-                        1
-                          ? "s"
-                          : ""
-                      } selected`}
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label>
-                  Status
-                </label>
-
-                <select
-                  name="status"
-                  value={
-                    product.status
-                  }
-                  onChange={
-                    handleChange
-                  }
-                >
-                  <option value="active">
-                    Active
-                  </option>
-
-                  <option value="inactive">
-                    Inactive
-                  </option>
-                </select>
-              </div>
+              )}
 
             </div>
 
-            {/* DESCRIPTION */}
-            <div className="form-group">
+            {/* =================================================
+                STATUS
+            ================================================= */}
 
-              <label>
+            <div className="form-group">
+              <label htmlFor="status">
+                Status
+              </label>
+
+              <select
+                id="status"
+                name="status"
+                value={product.status}
+                onChange={handleChange}
+              >
+                <option value="active">
+                  Active
+                </option>
+
+                <option value="inactive">
+                  Inactive
+                </option>
+              </select>
+            </div>
+
+            {/* =================================================
+                DESCRIPTION
+            ================================================= */}
+
+            <div className="form-group">
+              <label htmlFor="description">
                 Description
               </label>
 
               <textarea
+                id="description"
                 name="description"
-                value={
-                  product.description
-                }
-                onChange={
-                  handleChange
-                }
+                value={product.description}
+                onChange={handleChange}
+                placeholder="Enter product description"
                 rows="5"
-                placeholder="Add details about fabric, fit, style and care..."
-                required
-              />
-
+              ></textarea>
             </div>
 
-            {/* CURRENT IMAGES */}
-            <div className="form-group">
+            {/* =================================================
+                ACTIONS
+            ================================================= */}
 
-              <label>
-                Current Images
-              </label>
-
-              {product.images.length >
-              0 ? (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "14px",
-                    flexWrap:
-                      "wrap",
-                    marginTop:
-                      "12px",
-                  }}
-                >
-                  {product.images.map(
-                    (
-                      image,
-                      index
-                    ) => (
-                      <div
-                        key={`${image}-${index}`}
-                        style={{
-                          position:
-                            "relative",
-                          width:
-                            "110px",
-                          height:
-                            "110px",
-                          borderRadius:
-                            "10px",
-                          overflow:
-                            "hidden",
-                          border:
-                            "1px solid #ddd",
-                          background:
-                            "#f8f8f8",
-                          display:
-                            "flex",
-                          alignItems:
-                            "center",
-                          justifyContent:
-                            "center",
-                        }}
-                      >
-                        <img
-                          src={image}
-                          alt={`Product ${
-                            index +
-                            1
-                          }`}
-                          style={{
-                            width:
-                              "100%",
-                            height:
-                              "100%",
-                            objectFit:
-                              "contain",
-                            objectPosition:
-                              "center",
-                            display:
-                              "block",
-                          }}
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleRemoveExistingImage(
-                              index
-                            )
-                          }
-                          title="Remove image"
-                          style={{
-                            position:
-                              "absolute",
-                            top: "6px",
-                            right: "6px",
-                            width:
-                              "26px",
-                            height:
-                              "26px",
-                            border:
-                              "none",
-                            borderRadius:
-                              "50%",
-                            background:
-                              "#ffffff",
-                            color:
-                              "#111",
-                            cursor:
-                              "pointer",
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
-                            justifyContent:
-                              "center",
-                            boxShadow:
-                              "0 2px 8px rgba(0,0,0,0.18)",
-                            fontSize:
-                              "13px",
-                          }}
-                        >
-                          <i className="bi bi-x-lg"></i>
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    marginTop:
-                      "10px",
-                    padding:
-                      "20px",
-                    border:
-                      "1px dashed #d5d5d5",
-                    borderRadius:
-                      "8px",
-                    textAlign:
-                      "center",
-                    color:
-                      "#888",
-                    fontSize:
-                      "13px",
-                  }}
-                >
-                  No images selected.
-                </div>
-              )}
-
-              {product.images.length >
-                0 && (
-                <small className="size-hint">
-                  Click × to remove an
-                  existing image.
-                </small>
-              )}
-
-            </div>
-
-            {/* ADD NEW IMAGES */}
-            <div className="form-group">
-
-              <label>
-                Add New Images
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={
-                  handleImageChange
-                }
-              />
-
-              <small className="size-hint">
-                Select up to 5 new images.
-                You can select images multiple
-                times.
-              </small>
-
-              {/* NEW IMAGE PREVIEWS */}
-              {newImages.length >
-                0 && (
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    gap: "14px",
-                    flexWrap:
-                      "wrap",
-                    marginTop:
-                      "14px",
-                  }}
-                >
-                  {newImages.map(
-                    (
-                      file,
-                      index
-                    ) => (
-                      <div
-                        key={`${file.name}-${index}`}
-                        style={{
-                          position:
-                            "relative",
-                          width:
-                            "110px",
-                          height:
-                            "110px",
-                          borderRadius:
-                            "10px",
-                          overflow:
-                            "hidden",
-                          border:
-                            "1px solid #ddd",
-                          background:
-                            "#f8f8f8",
-                          display:
-                            "flex",
-                          alignItems:
-                            "center",
-                          justifyContent:
-                            "center",
-                        }}
-                      >
-                        <img
-                          src={
-                            newImagePreviews[
-                              index
-                            ]
-                          }
-                          alt={
-                            file.name
-                          }
-                          style={{
-                            width:
-                              "100%",
-                            height:
-                              "100%",
-                            objectFit:
-                              "contain",
-                            objectPosition:
-                              "center",
-                            display:
-                              "block",
-                          }}
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleRemoveNewImage(
-                              index
-                            )
-                          }
-                          title="Remove selected image"
-                          style={{
-                            position:
-                              "absolute",
-                            top: "6px",
-                            right: "6px",
-                            width:
-                              "26px",
-                            height:
-                              "26px",
-                            border:
-                              "none",
-                            borderRadius:
-                              "50%",
-                            background:
-                              "#ffffff",
-                            color:
-                              "#111",
-                            cursor:
-                              "pointer",
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
-                            justifyContent:
-                              "center",
-                            boxShadow:
-                              "0 2px 8px rgba(0,0,0,0.18)",
-                            fontSize:
-                              "13px",
-                          }}
-                        >
-                          <i className="bi bi-x-lg"></i>
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-
-              {newImages.length >
-                0 && (
-                <small
-                  className="size-hint"
-                  style={{
-                    display:
-                      "block",
-                    marginTop:
-                      "8px",
-                  }}
-                >
-                  {newImages.length} new
-                  image
-                  {newImages.length >
-                  1
-                    ? "s"
-                    : ""}{" "}
-                  selected
-                </small>
-              )}
-
-            </div>
-
-            {/* BUTTONS */}
             <div className="form-actions">
 
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={() =>
-                  navigate(
-                    "/admin/products"
-                  )
-                }
+                onClick={handleCancel}
                 disabled={saving}
               >
                 Cancel
@@ -1154,11 +1028,17 @@ function EditProduct() {
                 className="save-product-btn"
                 disabled={saving}
               >
-                <i className="bi bi-check-lg"></i>
-
-                {saving
-                  ? "Updating..."
-                  : "Update Product"}
+                {saving ? (
+                  <>
+                    <i className="bi bi-arrow-repeat"></i>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check-lg"></i>
+                    Update Product
+                  </>
+                )}
               </button>
 
             </div>

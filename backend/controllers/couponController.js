@@ -20,13 +20,33 @@ const createCoupon = async (req, res) => {
 
 const getCoupons = async (req, res) => {
   try {
-    const coupons = await couponService.getCoupons();
+    const {
+      search = "",
+      status = "",
+    } = req.query;
+
+    const normalizedStatus = status.trim().toLowerCase();
+    const allowedStatuses = ["", "active", "inactive", "expired"];
+
+    if (!allowedStatuses.includes(normalizedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Use active, inactive, or expired.",
+      });
+    }
+
+    const coupons = await couponService.getCoupons({
+      search,
+      status: normalizedStatus,
+    });
 
     res.status(200).json({
       success: true,
       coupons,
     });
   } catch (error) {
+    console.error("Get coupons error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to get coupons",

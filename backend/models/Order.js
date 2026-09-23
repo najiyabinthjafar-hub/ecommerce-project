@@ -101,6 +101,17 @@ const orderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
+    razorpayOrderId: {
+  type: String,
+  },
+
+razorpayPaymentId: {
+  type: String,
+},
+
+razorpaySignature: {
+  type: String,
+},
 
     orderStatus: {
       type: String,
@@ -113,6 +124,58 @@ const orderSchema = new mongoose.Schema(
         "CANCELLED",
       ],
       default: "PENDING",
+    },
+
+    // RETURN DETAILS
+    returnStatus: {
+      type: String,
+      enum: [
+        "NONE",
+        "REQUESTED",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED",
+      ],
+      default: "NONE",
+    },
+
+    returnReason: {
+      type: String,
+      default: "",
+    },
+
+    returnRequestedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // REFUND DETAILS
+    refundStatus: {
+      type: String,
+      enum: [
+        "NOT_APPLICABLE",
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+      ],
+      default: "NOT_APPLICABLE",
+    },
+
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    refundId: {
+      type: String,
+      default: "",
+    },
+
+    refundedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

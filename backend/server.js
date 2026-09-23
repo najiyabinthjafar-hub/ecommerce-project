@@ -36,6 +36,7 @@ const contactRoutes = require("./routes/contactRoutes");
 // Dashboard
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
+// Notifications
 const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
