@@ -319,6 +319,190 @@ const updateProductStock = async (id, stock) => {
   return product;
 };
 
+// ================= GET BEST SELLERS WITH FILTER / SORT / PAGINATION =================
+
+const getBestSellers = async ({
+  search,
+  category,
+  minPrice,
+  maxPrice,
+  availability,
+  sort,
+  page,
+  limit,
+}) => {
+  const query = {
+    isBestSeller: true,
+    status: "active",
+  };
+
+  // ================= SEARCH =================
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { sku: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // ================= CATEGORY =================
+
+  if (category) {
+    const categoryIds = category
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    if (categoryIds.length === 1) {
+      query.category = categoryIds[0];
+    } else {
+      query.category = { $in: categoryIds };
+    }
+  }
+
+  // ================= AVAILABILITY =================
+
+  if (availability === "in-stock") {
+    query.stock = { $gt: 0 };
+  }
+
+  if (availability === "out-of-stock") {
+    query.stock = 0;
+  }
+
+  // ================= PAGINATION =================
+
+  const pageNumber = Math.max(Number(page) || 1, 1);
+  const limitNumber = Math.max(Number(limit) || 10, 1);
+
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // ================= AGGREGATION =================
+
+  const pipeline = [
+    {
+      $match: query,
+    },
+
+    // Effective price:
+    // salePrice if available, otherwise regularPrice
+    {
+      $addFields: {
+        effectivePrice: {
+          $cond: [
+            {
+              $and: [
+                { $ne: ["$salePrice", null] },
+                { $gt: ["$salePrice", 0] },
+              ],
+            },
+            "$salePrice",
+            "$regularPrice",
+          ],
+        },
+      },
+    },
+  ];
+
+  // ================= PRICE FILTER =================
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    const priceFilter = {};
+
+    if (minPrice !== undefined) {
+      priceFilter.$gte = Number(minPrice);
+    }
+
+    if (maxPrice !== undefined) {
+      priceFilter.$lte = Number(maxPrice);
+    }
+
+    pipeline.push({
+      $match: {
+        effectivePrice: priceFilter,
+      },
+    });
+  }
+
+  // ================= SORT =================
+
+  if (sort === "price-low") {
+    pipeline.push({
+      $sort: {
+        effectivePrice: 1,
+      },
+    });
+  } else if (sort === "price-high") {
+    pipeline.push({
+      $sort: {
+        effectivePrice: -1,
+      },
+    });
+  } else if (sort === "featured") {
+    pipeline.push({
+      $sort: {
+        isBestSeller: -1,
+        createdAt: -1,
+      },
+    });
+  } else {
+    // newest is the default
+    pipeline.push({
+      $sort: {
+        createdAt: -1,
+      },
+    });
+  }
+
+  // ================= PAGINATION =================
+
+  pipeline.push({
+    $facet: {
+      products: [
+        { $skip: skip },
+        { $limit: limitNumber },
+      ],
+      total: [
+        { $count: "count" },
+      ],
+    },
+  });
+
+  const result = await Product.aggregate(pipeline);
+
+  const products = result[0]?.products || [];
+
+  const totalProducts =
+    result[0]?.total?.[0]?.count || 0;
+
+  const totalPages = Math.ceil(
+    totalProducts / limitNumber
+  );
+
+  // ================= POPULATE CATEGORY =================
+
+  const populatedProducts = await Product.populate(products, {
+    path: "category",
+    populate: {
+      path: "parent",
+      select: "name slug",
+    },
+  });
+
+  return {
+    products: populatedProducts,
+
+    pagination: {
+      currentPage: pageNumber,
+      limit: limitNumber,
+      totalProducts,
+      totalPages,
+    },
+  };
+};
+
 // ================= REDUCE PRODUCT STOCK =================
 
 const reduceProductStock = async (id, quantity) => {
@@ -383,6 +567,7 @@ module.exports = {
   getActiveProducts,
   getBestSellerProducts,
   getProductById,
+  getBestSellers,
   updateProduct,
   deleteProduct,
   updateProductStock,
