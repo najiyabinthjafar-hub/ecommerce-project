@@ -1,19 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./OrderDetails.css";
 
 const API_URL = "http://localhost:5000/api";
 
+// =========================================================
+// ORDER STATUSES
+// =========================================================
+
+const ORDER_STATUSES = [
+  {
+    value: "PENDING",
+    label: "Pending",
+  },
+  {
+    value: "CONFIRMED",
+    label: "Confirmed",
+  },
+  {
+    value: "PROCESSING",
+    label: "Processing",
+  },
+  {
+    value: "SHIPPED",
+    label: "Shipped",
+  },
+  {
+    value: "OUT_FOR_DELIVERY",
+    label: "Out for Delivery",
+  },
+  {
+    value: "DELIVERED",
+    label: "Delivered",
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+  },
+];
+
 function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [order, setOrder] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("PENDING");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState("");
+  const [fetchError, setFetchError] = useState("");
+  const [updateError, setUpdateError] = useState("");
   const [success, setSuccess] = useState("");
 
   // =========================================================
@@ -24,55 +64,180 @@ function OrderDetails() {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        setError("");
+        setFetchError("");
 
         const token = localStorage.getItem("token");
 
-        if (!token) {
-          throw new Error("Authentication required");
-        }
-
-        const response = await axios.get(
-          `${API_URL}/orders/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        console.log("=================================");
+        console.log("ORDER DETAILS ID:", id);
+        console.log(
+          "ORDER DETAILS URL:",
+          `${API_URL}/orders/${id}`
         );
+        console.log("TOKEN EXISTS:", Boolean(token));
+        console.log("=================================");
 
-        const fetchedOrder =
-          response.data?.order ||
-          response.data?.data ||
-          response.data;
-
-        if (!fetchedOrder) {
-          throw new Error("Order not found.");
+        if (!id) {
+          throw new Error("Order ID is missing.");
         }
+
+        if (!token) {
+          throw new Error(
+            "Authentication required. Please login again."
+          );
+        }
+
+        let fetchedOrder = null;
+
+        // =====================================================
+        // FIRST: TRY SINGLE ORDER API
+        // =====================================================
+
+        try {
+          const response = await axios.get(
+            `${API_URL}/orders/${id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          console.log(
+            "ORDER DETAILS RESPONSE:",
+            response.data
+          );
+
+          fetchedOrder =
+            response.data?.order ||
+            response.data?.data ||
+            response.data;
+        } catch (singleOrderError) {
+          console.error(
+            "Single order API error:",
+            singleOrderError
+          );
+
+          // ===================================================
+          // FALLBACK:
+          // GET ADMIN ORDERS AND FIND THE ORDER BY ID
+          // ===================================================
+
+          if (
+            singleOrderError.response?.status === 404
+          ) {
+            console.log(
+              "Single order API returned 404."
+            );
+
+            console.log(
+              "Trying /api/orders/all fallback..."
+            );
+
+            const allOrdersResponse =
+              await axios.get(
+                `${API_URL}/orders/all`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                  params: {
+                    page: 1,
+                    limit: 1000,
+                  },
+                }
+              );
+
+            const allOrders =
+              allOrdersResponse.data?.orders || [];
+
+            console.log(
+              "ADMIN ORDERS RESPONSE:",
+              allOrdersResponse.data
+            );
+
+            fetchedOrder = allOrders.find(
+              (item) =>
+                String(item?._id) ===
+                String(id)
+            );
+
+            console.log(
+              "ORDER FOUND FROM FALLBACK:",
+              fetchedOrder
+            );
+          } else {
+            throw singleOrderError;
+          }
+        }
+
+        // =====================================================
+        // CHECK ORDER
+        // =====================================================
+
+        if (
+          !fetchedOrder ||
+          !fetchedOrder._id
+        ) {
+          throw new Error(
+            "Order not found. The selected order may no longer exist."
+          );
+        }
+
+        // =====================================================
+        // SET ORDER
+        // =====================================================
 
         setOrder(fetchedOrder);
 
-        setSelectedStatus(
+        const fetchedStatus = String(
           fetchedOrder.orderStatus ||
             fetchedOrder.status ||
             "PENDING"
-        );
-      } catch (error) {
-        console.error("Failed to fetch order:", error);
+        ).toUpperCase();
 
-        setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to load order details."
+        setSelectedStatus(fetchedStatus);
+      } catch (error) {
+        console.error(
+          "Failed to fetch order details:",
+          error
         );
+
+        console.error(
+          "ORDER DETAILS ERROR STATUS:",
+          error.response?.status
+        );
+
+        console.error(
+          "ORDER DETAILS ERROR DATA:",
+          error.response?.data
+        );
+
+        console.error(
+          "ORDER DETAILS ERROR URL:",
+          error.config?.url
+        );
+
+        if (
+          error.response?.status === 401 ||
+          error.response?.status === 403
+        ) {
+          setFetchError(
+            "You are not authorized to view this order."
+          );
+        } else {
+          setFetchError(
+            error.response?.data?.message ||
+              error.message ||
+              "Failed to load order details."
+          );
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchOrder();
-    }
+    fetchOrder();
   }, [id]);
 
   // =========================================================
@@ -80,17 +245,31 @@ function OrderDetails() {
   // =========================================================
 
   const handleStatusUpdate = async () => {
-    if (!order?._id || !selectedStatus) return;
+    if (!order?._id || !selectedStatus) {
+      return;
+    }
+
+    const currentStatus = String(
+      order.orderStatus ||
+        order.status ||
+        "PENDING"
+    ).toUpperCase();
+
+    if (selectedStatus === currentStatus) {
+      return;
+    }
 
     try {
       setUpdating(true);
-      setError("");
+      setUpdateError("");
       setSuccess("");
 
       const token = localStorage.getItem("token");
 
       if (!token) {
-        throw new Error("Authentication required");
+        throw new Error(
+          "Authentication required. Please login again."
+        );
       }
 
       const response = await axios.put(
@@ -106,22 +285,31 @@ function OrderDetails() {
       );
 
       console.log(
-        "STATUS UPDATE RESPONSE:",
+        "ORDER STATUS UPDATE RESPONSE:",
         response.data
       );
 
-      const updatedOrder = response.data?.order;
+      const updatedOrder =
+        response.data?.order ||
+        response.data?.data ||
+        response.data;
 
-      if (updatedOrder) {
+      if (
+        updatedOrder &&
+        updatedOrder._id
+      ) {
         setOrder(updatedOrder);
 
-        setSelectedStatus(
+        const updatedStatus = String(
           updatedOrder.orderStatus ||
+            updatedOrder.status ||
             selectedStatus
-        );
+        ).toUpperCase();
+
+        setSelectedStatus(updatedStatus);
       } else {
-        setOrder((prev) => ({
-          ...prev,
+        setOrder((prevOrder) => ({
+          ...prevOrder,
           orderStatus: selectedStatus,
         }));
       }
@@ -135,11 +323,11 @@ function OrderDetails() {
       }, 3000);
     } catch (error) {
       console.error(
-        "STATUS UPDATE ERROR:",
+        "Failed to update order status:",
         error
       );
 
-      setError(
+      setUpdateError(
         error.response?.data?.message ||
           error.message ||
           "Failed to update order status."
@@ -154,10 +342,11 @@ function OrderDetails() {
   // =========================================================
 
   const formatStatus = (status) => {
-    if (!status) return "Pending";
+    if (!status) {
+      return "Pending";
+    }
 
-    return status
-      .toString()
+    return String(status)
       .replace(/_/g, " ")
       .replace(/\b\w/g, (char) =>
         char.toUpperCase()
@@ -165,9 +354,17 @@ function OrderDetails() {
   };
 
   const formatDate = (date) => {
-    if (!date) return "-";
+    if (!date) {
+      return "-";
+    }
 
-    return new Date(date).toLocaleDateString(
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "-";
+    }
+
+    return parsedDate.toLocaleDateString(
       "en-IN",
       {
         day: "2-digit",
@@ -199,7 +396,11 @@ function OrderDetails() {
   };
 
   const getCustomerEmail = () => {
-    return order?.user?.email || "Not available";
+    return (
+      order?.user?.email ||
+      order?.shippingAddress?.email ||
+      "Not available"
+    );
   };
 
   const getCustomerPhone = () => {
@@ -220,13 +421,15 @@ function OrderDetails() {
       order?.shippingAddress ||
       order?.address;
 
-    if (!address) return "-";
+    if (!address) {
+      return "-";
+    }
 
     if (typeof address === "string") {
       return address;
     }
 
-    return [
+    const addressParts = [
       address.fullName,
       address.name,
       address.address,
@@ -234,12 +437,13 @@ function OrderDetails() {
       address.addressLine2,
       address.city,
       address.state,
-      address.pincode ||
-        address.zipCode,
+      address.pincode || address.zipCode,
       address.country,
-    ]
-      .filter(Boolean)
-      .join(", ");
+    ].filter(Boolean);
+
+    return addressParts.length > 0
+      ? addressParts.join(", ")
+      : "-";
   };
 
   // =========================================================
@@ -271,13 +475,13 @@ function OrderDetails() {
       typeof item.product.category === "object"
     ) {
       return (
-        item.product.category.name || "-"
+        item.product.category.name ||
+        "-"
       );
     }
 
     if (
-      typeof item?.product?.category ===
-      "string"
+      typeof item?.product?.category === "string"
     ) {
       return item.product.category;
     }
@@ -288,7 +492,9 @@ function OrderDetails() {
   const getProductImage = (item) => {
     const product = item?.product;
 
-    if (!product) return null;
+    if (!product) {
+      return null;
+    }
 
     if (
       Array.isArray(product.images) &&
@@ -311,32 +517,36 @@ function OrderDetails() {
   };
 
   // =========================================================
-  // PRICE CALCULATION
+  // ORDER CALCULATIONS
   // =========================================================
 
-  const items = order?.items || [];
+  const items = Array.isArray(order?.items)
+    ? order.items
+    : [];
 
-  const subtotal = items.reduce(
-    (total, item) => {
-      const price =
-        item.price ??
-        item.salePrice ??
-        item.product?.salePrice ??
-        item.product?.price ??
-        item.product?.regularPrice ??
-        0;
+  const subtotal = useMemo(() => {
+    return items.reduce(
+      (total, item) => {
+        const price =
+          item?.price ??
+          item?.salePrice ??
+          item?.product?.salePrice ??
+          item?.product?.price ??
+          item?.product?.regularPrice ??
+          0;
 
-      const quantity = Number(
-        item.quantity || 0
-      );
+        const quantity = Number(
+          item?.quantity || 0
+        );
 
-      return (
-        total +
-        Number(price) * quantity
-      );
-    },
-    0
-  );
+        return (
+          total +
+          Number(price || 0) * quantity
+        );
+      },
+      0
+    );
+  }, [items]);
 
   const shipping =
     order?.shippingAmount ??
@@ -363,13 +573,21 @@ function OrderDetails() {
     "Razorpay";
 
   // =========================================================
-  // TIMELINE STATUS HELPERS
+  // CURRENT STATUS
   // =========================================================
 
-  const currentOrderStatus =
+  const currentOrderStatus = String(
     order?.orderStatus ||
-    order?.status ||
-    "PENDING";
+      order?.status ||
+      "PENDING"
+  ).toUpperCase();
+
+  const currentStatusLabel =
+    formatStatus(currentOrderStatus);
+
+  // =========================================================
+  // TIMELINE STATUS
+  // =========================================================
 
   const processingStatuses = [
     "CONFIRMED",
@@ -385,6 +603,22 @@ function OrderDetails() {
     "DELIVERED",
   ];
 
+  const isOrderPlaced =
+    Boolean(order?.createdAt);
+
+  const isProcessing =
+    processingStatuses.includes(
+      currentOrderStatus
+    );
+
+  const isShipped =
+    shippedStatuses.includes(
+      currentOrderStatus
+    );
+
+  const isDelivered =
+    currentOrderStatus === "DELIVERED";
+
   // =========================================================
   // LOADING
   // =========================================================
@@ -394,10 +628,7 @@ function OrderDetails() {
       <div className="order-details-page">
         <div className="order-loading">
           <div className="loading-spinner"></div>
-
-          <p>
-            Loading order details...
-          </p>
+          <p>Loading order details...</p>
         </div>
       </div>
     );
@@ -407,22 +638,24 @@ function OrderDetails() {
   // ERROR
   // =========================================================
 
-  if (error && !order) {
+  if (fetchError && !order) {
     return (
       <div className="order-details-page">
         <button
+          type="button"
           className="back-btn"
           onClick={() =>
             navigate("/admin/orders")
           }
         >
-          ← Back to Orders
+          <i className="bi bi-arrow-left"></i>
+          Back to Orders
         </button>
 
         <div className="order-error">
           <i className="bi bi-exclamation-circle-fill"></i>
 
-          <span>{error}</span>
+          <span>{fetchError}</span>
         </div>
       </div>
     );
@@ -431,11 +664,6 @@ function OrderDetails() {
   if (!order) {
     return null;
   }
-
-  const currentStatus = formatStatus(
-    order.orderStatus ||
-      order.status
-  );
 
   // =========================================================
   // RETURN
@@ -449,38 +677,39 @@ function OrderDetails() {
       ===================================================== */}
 
       <div className="order-details-header">
-        <div>
-          <button
-            className="back-btn"
-            onClick={() =>
-              navigate("/admin/orders")
-            }
-          >
-            ← Back to Orders
-          </button>
 
-          <div className="title-row">
-            <div>
-              <h1>Order Details</h1>
+        <button
+          type="button"
+          className="back-btn"
+          onClick={() =>
+            navigate("/admin/orders")
+          }
+        >
+          <i className="bi bi-arrow-left"></i>
+          Back to Orders
+        </button>
 
-              <p>
-                View complete information
-                about this order.
-              </p>
-            </div>
+        <div className="title-row">
 
-            <span
-              className={`order-status ${String(
-                order.orderStatus ||
-                  order.status ||
-                  ""
-              )
-                .toLowerCase()
-                .replace(/_/g, "-")}`}
-            >
-              {currentStatus}
-            </span>
+          <div>
+            <h1>Order Details</h1>
+
+            <p>
+              View complete information
+              about this order.
+            </p>
           </div>
+
+          <span
+            className={`order-status ${currentOrderStatus
+              .toLowerCase()
+              .replace(/_/g, "-")}`}
+          >
+            <span className="status-dot"></span>
+
+            {currentStatusLabel}
+          </span>
+
         </div>
       </div>
 
@@ -489,11 +718,15 @@ function OrderDetails() {
       ===================================================== */}
 
       <div className="order-overview">
+
         <div className="overview-item">
           <span>Order ID</span>
 
           <strong>
-            #{order._id?.slice(-8) || "-"}
+            #
+            {order._id
+              ? String(order._id).slice(-8)
+              : "-"}
           </strong>
         </div>
 
@@ -510,8 +743,8 @@ function OrderDetails() {
 
           <strong
             className={
-              String(paymentStatus).toLowerCase() ===
-              "paid"
+              String(paymentStatus)
+                .toUpperCase() === "PAID"
                 ? "paid"
                 : ""
             }
@@ -527,6 +760,7 @@ function OrderDetails() {
             {formatStatus(paymentMethod)}
           </strong>
         </div>
+
       </div>
 
       {/* =====================================================
@@ -535,12 +769,14 @@ function OrderDetails() {
 
       <div className="order-details-grid">
 
-        {/* =================================================
+        {/* ===================================================
             CUSTOMER DETAILS
-        ================================================= */}
+        =================================================== */}
 
         <div className="details-card customer-card">
+
           <div className="card-heading">
+
             <div className="heading-icon">
               <i className="bi bi-person"></i>
             </div>
@@ -552,9 +788,11 @@ function OrderDetails() {
                 Customer information
               </p>
             </div>
+
           </div>
 
           <div className="customer-info">
+
             <div>
               <span>Name</span>
 
@@ -586,15 +824,18 @@ function OrderDetails() {
                 {getShippingAddress()}
               </strong>
             </div>
+
           </div>
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             PAYMENT DETAILS
-        ================================================= */}
+        =================================================== */}
 
         <div className="details-card payment-card">
+
           <div className="card-heading">
+
             <div className="heading-icon payment-icon">
               <i className="bi bi-credit-card"></i>
             </div>
@@ -606,16 +847,18 @@ function OrderDetails() {
                 Transaction information
               </p>
             </div>
+
           </div>
 
           <div className="payment-info">
+
             <div>
               <span>Payment Status</span>
 
               <strong
                 className={
-                  String(paymentStatus).toLowerCase() ===
-                  "paid"
+                  String(paymentStatus)
+                    .toUpperCase() === "PAID"
                     ? "paid"
                     : ""
                 }
@@ -639,8 +882,10 @@ function OrderDetails() {
                 Standard Delivery
               </strong>
             </div>
+
           </div>
         </div>
+
       </div>
 
       {/* =====================================================
@@ -648,7 +893,9 @@ function OrderDetails() {
       ===================================================== */}
 
       <div className="details-card products-card">
+
         <div className="products-card-header">
+
           <div>
             <h2>Ordered Products</h2>
 
@@ -660,10 +907,13 @@ function OrderDetails() {
               in this order
             </p>
           </div>
+
         </div>
 
         <div className="order-table-wrapper">
+
           <table className="order-table">
+
             <thead>
               <tr>
                 <th>Product</th>
@@ -675,41 +925,56 @@ function OrderDetails() {
             </thead>
 
             <tbody>
+
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan="5">
-                    No products found in this
-                    order.
+                  <td
+                    colSpan="5"
+                    className="empty-products"
+                  >
+                    No products found in
+                    this order.
                   </td>
                 </tr>
               ) : (
                 items.map((item, index) => {
+
                   const price =
-                    item.price ??
-                    item.salePrice ??
-                    item.product?.salePrice ??
-                    item.product?.price ??
-                    item.product?.regularPrice ??
+                    item?.price ??
+                    item?.salePrice ??
+                    item?.product?.salePrice ??
+                    item?.product?.price ??
+                    item?.product?.regularPrice ??
                     0;
 
-                  const quantity = Number(
-                    item.quantity || 0
-                  );
+                  const quantity =
+                    Number(
+                      item?.quantity || 0
+                    );
 
                   const image =
                     getProductImage(item);
 
+                  const itemTotal =
+                    Number(price || 0) *
+                    quantity;
+
                   return (
                     <tr
                       key={
-                        item._id ||
-                        item.product?._id ||
+                        item?._id ||
+                        item?.product?._id ||
                         index
                       }
                     >
+
+                      {/* PRODUCT */}
+
                       <td>
                         <div className="product-name">
+
                           <div className="product-image">
+
                             {image ? (
                               <img
                                 src={image}
@@ -720,17 +985,27 @@ function OrderDetails() {
                             ) : (
                               <i className="bi bi-box"></i>
                             )}
+
                           </div>
 
                           <strong>
-                            {getProductName(item)}
+                            {getProductName(
+                              item
+                            )}
                           </strong>
+
                         </div>
                       </td>
 
+                      {/* CATEGORY */}
+
                       <td>
-                        {getProductCategory(item)}
+                        {getProductCategory(
+                          item
+                        )}
                       </td>
+
+                      {/* PRICE */}
 
                       <td>
                         ₹
@@ -739,25 +1014,31 @@ function OrderDetails() {
                         )}
                       </td>
 
+                      {/* QUANTITY */}
+
                       <td>
                         {quantity}
                       </td>
+
+                      {/* TOTAL */}
 
                       <td>
                         <strong>
                           ₹
                           {formatCurrency(
-                            Number(price) *
-                              quantity
+                            itemTotal
                           )}
                         </strong>
                       </td>
+
                     </tr>
                   );
                 })
               )}
+
             </tbody>
           </table>
+
         </div>
       </div>
 
@@ -767,12 +1048,14 @@ function OrderDetails() {
 
       <div className="order-bottom-grid">
 
-        {/* =================================================
+        {/* ===================================================
             ORDER STATUS
-        ================================================= */}
+        =================================================== */}
 
         <div className="details-card timeline-card">
+
           <div className="card-heading">
+
             <div className="heading-icon">
               <i className="bi bi-clock-history"></i>
             </div>
@@ -784,60 +1067,42 @@ function OrderDetails() {
                 Update order progress
               </p>
             </div>
+
           </div>
 
           {/* STATUS UPDATE */}
 
           <div className="status-update-box">
+
             <label htmlFor="order-status">
               Update Status
             </label>
 
             <div className="status-update-row">
+
               <select
                 id="order-status"
                 value={selectedStatus}
-                onChange={(event) =>
+                onChange={(event) => {
                   setSelectedStatus(
                     event.target.value
-                  )
-                }
+                  );
+
+                  setUpdateError("");
+                  setSuccess("");
+                }}
+                disabled={updating}
               >
-                <option value="PENDING">
-                  Pending
-                </option>
-
-                <option value="CONFIRMED">
-                  Confirmed
-                </option>
-
-                <option value="PROCESSING">
-                  Processing
-                </option>
-
-                <option value="SHIPPED">
-                  Shipped
-                </option>
-
-                <option value="OUT_FOR_DELIVERY">
-                  Out for Delivery
-                </option>
-
-                <option value="DELIVERED">
-                  Delivered
-                </option>
-
-                <option value="CANCELLED">
-                  Cancelled
-                </option>
-
-                <option value="RETURNED">
-                  Returned
-                </option>
-
-                <option value="REFUNDED">
-                  Refunded
-                </option>
+                {ORDER_STATUSES.map(
+                  (status) => (
+                    <option
+                      key={status.value}
+                      value={status.value}
+                    >
+                      {status.label}
+                    </option>
+                  )
+                )}
               </select>
 
               <button
@@ -849,45 +1114,59 @@ function OrderDetails() {
                 disabled={
                   updating ||
                   selectedStatus ===
-                    (order.orderStatus ||
-                      order.status)
+                    currentOrderStatus
                 }
               >
-                {updating
-                  ? "Updating..."
-                  : "Update Status"}
+                {updating ? (
+                  <>
+                    <span className="button-spinner"></span>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check2"></i>
+                    Update Status
+                  </>
+                )}
               </button>
+
             </div>
 
             {success && (
               <div className="order-success">
+
                 <i className="bi bi-check-circle-fill"></i>
 
                 <span>
                   {success}
                 </span>
+
               </div>
             )}
 
-            {error && (
+            {updateError && (
               <div className="order-error">
+
                 <i className="bi bi-exclamation-circle-fill"></i>
 
                 <span>
-                  {error}
+                  {updateError}
                 </span>
+
               </div>
             )}
+
           </div>
 
           {/* TIMELINE */}
 
           <div className="timeline">
 
+            {/* ORDER PLACED */}
+
             <div
               className={`timeline-item ${
-                order.orderStatus ||
-                order.status
+                isOrderPlaced
                   ? "completed"
                   : ""
               }`}
@@ -908,11 +1187,11 @@ function OrderDetails() {
               </div>
             </div>
 
+            {/* PROCESSING */}
+
             <div
               className={`timeline-item ${
-                processingStatuses.includes(
-                  currentOrderStatus
-                )
+                isProcessing
                   ? "completed"
                   : ""
               }`}
@@ -932,11 +1211,11 @@ function OrderDetails() {
               </div>
             </div>
 
+            {/* SHIPPED */}
+
             <div
               className={`timeline-item ${
-                shippedStatuses.includes(
-                  currentOrderStatus
-                )
+                isShipped
                   ? "completed"
                   : ""
               }`}
@@ -956,10 +1235,11 @@ function OrderDetails() {
               </div>
             </div>
 
+            {/* DELIVERED */}
+
             <div
               className={`timeline-item ${
-                currentOrderStatus ===
-                "DELIVERED"
+                isDelivered
                   ? "completed"
                   : ""
               }`}
@@ -979,52 +1259,65 @@ function OrderDetails() {
                 </span>
               </div>
             </div>
+
           </div>
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             ORDER SUMMARY
-        ================================================= */}
+        =================================================== */}
 
         <div className="details-card summary-card">
+
           <h2>Order Summary</h2>
 
           <div className="summary-row">
+
             <span>Subtotal</span>
 
             <strong>
               ₹{formatCurrency(subtotal)}
             </strong>
+
           </div>
 
           <div className="summary-row">
+
             <span>Shipping</span>
 
             <strong>
               ₹{formatCurrency(shipping)}
             </strong>
+
           </div>
 
           <div className="summary-divider"></div>
 
           <div className="summary-total">
+
             <span>Total Amount</span>
 
             <strong>
               ₹{formatCurrency(totalAmount)}
             </strong>
+
           </div>
 
           <button
+            type="button"
             className="orders-btn"
             onClick={() =>
               navigate("/admin/orders")
             }
           >
+            <i className="bi bi-arrow-left"></i>
             View All Orders
           </button>
+
         </div>
+
       </div>
+
     </div>
   );
 }
