@@ -1,5 +1,8 @@
 const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
+
 const User = require("../models/User");
+
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
 
@@ -7,6 +10,12 @@ const {
   sendOtpEmail,
   sendResetOtpEmail,
 } = require("./emailService");
+
+// ================= GOOGLE CLIENT =================
+
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID
+);
 
 // ================= REGISTER USER =================
 
@@ -37,8 +46,12 @@ const registerUser = async ({
     email,
     phone,
     password: hashedPassword,
+
     otp,
-    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    otpExpiresAt: new Date(
+      Date.now() + 10 * 60 * 1000
+    ),
+
     otpAttempts: 0,
   });
 
@@ -46,7 +59,8 @@ const registerUser = async ({
 
   return {
     userId: user._id,
-    message: "Registration successful. OTP sent to your email.",
+    message:
+      "Registration successful. OTP sent to your email.",
   };
 };
 
@@ -77,6 +91,7 @@ const verifyEmailOtp = async (email, otp) => {
 
   if (user.otp !== otp) {
     user.otpAttempts += 1;
+
     await user.save();
 
     throw new Error("Invalid OTP");
@@ -85,19 +100,21 @@ const verifyEmailOtp = async (email, otp) => {
   // Mark email as verified
   user.isEmailVerified = true;
 
-  // Clear OTP data
+  // Clear OTP
   user.otp = null;
   user.otpExpiresAt = null;
   user.otpAttempts = 0;
 
   await user.save();
 
-  // Generate JWT token after successful OTP verification
+  // Generate JWT
   const token = generateToken(user._id);
 
   return {
     message: "Email verified successfully",
+
     token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -134,10 +151,15 @@ const resendOtp = async (email) => {
 
   await user.save();
 
-  // Temporary debugging
   console.log("OTP email:", email);
-  console.log("EMAIL_USER loaded:", !!process.env.EMAIL_USER);
-  console.log("EMAIL_PASS loaded:", !!process.env.EMAIL_PASS);
+  console.log(
+    "EMAIL_USER loaded:",
+    !!process.env.EMAIL_USER
+  );
+  console.log(
+    "EMAIL_PASS loaded:",
+    !!process.env.EMAIL_PASS
+  );
 
   await sendOtpEmail(email, otp);
 
@@ -148,7 +170,10 @@ const resendOtp = async (email) => {
 
 // ================= LOGIN USER =================
 
-const loginUser = async ({ email, password }) => {
+const loginUser = async ({
+  email,
+  password,
+}) => {
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -156,11 +181,20 @@ const loginUser = async ({ email, password }) => {
   }
 
   if (!user.isEmailVerified) {
-    throw new Error("Please verify your email first");
+    throw new Error(
+      "Please verify your email first"
+    );
   }
 
   if (user.status !== "active") {
     throw new Error("Your account is blocked");
+  }
+
+  // Google-only user may not have password
+  if (!user.password) {
+    throw new Error(
+      "This account uses Google Login. Please continue with Google."
+    );
   }
 
   const passwordMatch = await bcrypt.compare(
@@ -176,6 +210,153 @@ const loginUser = async ({ email, password }) => {
 
   return {
     token,
+
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      profileCompleted: user.profileCompleted,
+    },
+  };
+};
+
+// ================= GOOGLE LOGIN =================
+
+const googleLogin = async (idToken) => {
+  if (!idToken) {
+    throw new Error("Google ID token is required");
+  }
+
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error(
+      "GOOGLE_CLIENT_ID is not configured"
+    );
+  }
+
+  // ================= VERIFY GOOGLE TOKEN =================
+
+  let ticket;
+
+  try {
+    ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+  } catch (error) {
+    console.error(
+      "GOOGLE TOKEN VERIFICATION ERROR:",
+      error.message
+    );
+
+    throw new Error(
+      "Invalid Google authentication token"
+    );
+  }
+
+  const payload = ticket.getPayload();
+
+  if (!payload) {
+    throw new Error(
+      "Unable to read Google account information"
+    );
+  }
+
+  const {
+    sub: googleId,
+    email,
+    email_verified,
+    name,
+  } = payload;
+
+  // ================= GOOGLE EMAIL CHECK =================
+
+  if (!email) {
+    throw new Error(
+      "Google account email not available"
+    );
+  }
+
+  if (!email_verified) {
+    throw new Error(
+      "Google email is not verified"
+    );
+  }
+
+  // ================= FIND USER =================
+
+  // First try googleId
+  let user = await User.findOne({
+    googleId,
+  });
+
+  // If googleId doesn't exist,
+  // check whether same email already exists
+  if (!user) {
+    user = await User.findOne({
+      email: email.toLowerCase(),
+    });
+  }
+
+  // ================= EXISTING USER =================
+
+  if (user) {
+    // Check account status
+    if (user.status !== "active") {
+      throw new Error("Your account is blocked");
+    }
+
+    // If this existing account doesn't have googleId,
+    // connect Google account to existing account.
+    if (!user.googleId) {
+      user.googleId = googleId;
+    }
+
+    // Google has verified the email
+    user.isEmailVerified = true;
+
+    // Update name only if missing
+    if (!user.name && name) {
+      user.name = name;
+    }
+
+    await user.save();
+  }
+
+  // ================= CREATE NEW USER =================
+
+  if (!user) {
+    user = await User.create({
+      name: name || "Google User",
+
+      email: email.toLowerCase(),
+
+      googleId,
+
+      // Google user will complete phone later
+      phone: null,
+
+      // Google user does not need password
+      password: null,
+
+      role: "user",
+
+      isEmailVerified: true,
+
+      profileCompleted: false,
+
+      status: "active",
+    });
+  }
+
+  // ================= GENERATE EXISTING JWT =================
+
+  const token = generateToken(user._id);
+
+  return {
+    token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -209,7 +390,8 @@ const forgotPassword = async (email) => {
   await sendResetOtpEmail(email, otp);
 
   return {
-    message: "Password reset OTP sent to your email",
+    message:
+      "Password reset OTP sent to your email",
   };
 };
 
@@ -226,7 +408,10 @@ const resetPassword = async ({
     throw new Error("User not found");
   }
 
-  if (!user.resetOtp || !user.resetOtpExpiresAt) {
+  if (
+    !user.resetOtp ||
+    !user.resetOtpExpiresAt
+  ) {
     throw new Error("Reset OTP not found");
   }
 
@@ -266,6 +451,7 @@ module.exports = {
   verifyEmailOtp,
   resendOtp,
   loginUser,
+  googleLogin,
   forgotPassword,
   resetPassword,
 };
