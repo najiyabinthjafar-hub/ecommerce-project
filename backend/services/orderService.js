@@ -2,11 +2,148 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const notificationService = require("./notificationService");
+const productService = require("./productService");
+
+// ================= STOCK HELPERS =================
+
+const getProductId = (item) => {
+  if (!item) return null;
+  return item.product?._id || item.product;
+};
+
+const validateStockAvailability = async (items = []) => {
+  for (const item of items) {
+    const productId = getProductId(item);
+    const quantity = Number(item.quantity);
+
+    if (!productId) {
+      throw new Error("Product is required for each order item");
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error("Quantity must be a positive integer");
+    }
+
+    const product = await Product.findById(productId).select("name stock");
+
+    if (!product) {
+      throw new Error(`Product not found: ${productId}`);
+    }
+
+    if (product.stock < quantity) {
+      throw new Error(
+        `Not enough stock for ${product.name}. Available stock: ${product.stock}, requested: ${quantity}`
+      );
+    }
+  }
+};
+
+const restoreStock = async (items = []) => {
+  for (const item of items) {
+    const productId = getProductId(item);
+    const quantity = Number(item.quantity);
+
+    if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
+      continue;
+    }
+
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        productId,
+        {
+          $inc: {
+            stock: quantity,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      console.log(
+        "STOCK RESTORED:",
+        productId,
+        "Quantity:",
+        quantity,
+        "New Stock:",
+        updatedProduct ? updatedProduct.stock : "PRODUCT NOT FOUND"
+      );
+    } catch (error) {
+      console.error(
+        "Failed to restore stock:",
+        productId,
+        error.message
+      );
+    }
+  }
+};
+
+const reduceStockForItems = async (items = []) => {
+  const reducedItems = [];
+
+  try {
+    for (const item of items) {
+      const productId = getProductId(item);
+      const quantity = Number(item.quantity);
+
+      const product = await productService.reduceProductStock(
+        productId,
+        quantity
+      );
+
+      if (!product) {
+        throw new Error(
+          `Not enough stock for product ${productId}`
+        );
+      }
+
+      reducedItems.push({
+        product: productId,
+        quantity,
+      });
+    }
+
+    return reducedItems;
+  } catch (error) {
+    if (reducedItems.length > 0) {
+      await restoreStock(reducedItems);
+    }
+
+    throw error;
+  }
+};
 
 // ================= CREATE ORDER =================
 
 const createOrder = async (orderData) => {
-  const order = await Order.create(orderData);
+  const items = orderData.items || [];
+  const paymentMethod = String(
+    orderData.paymentMethod || ""
+  ).toUpperCase();
+
+  // Validate stock before creating any order.
+  await validateStockAvailability(items);
+
+  let reducedItems = [];
+
+  // COD: reduce stock immediately.
+  if (paymentMethod === "COD") {
+    reducedItems = await reduceStockForItems(items);
+  }
+
+  // Razorpay: do NOT reduce stock here.
+  // Stock will be reduced only after successful payment.
+  let order;
+
+  try {
+    order = await Order.create(orderData);
+  } catch (error) {
+    if (reducedItems.length > 0) {
+      await restoreStock(reducedItems);
+    }
+
+    throw error;
+  }
 
   // Notify customer
   await notificationService.createNotification({
@@ -107,6 +244,7 @@ const getAllOrders = async ({
     totalOrders,
   };
 };
+
 const getOrderById = async (orderId, userId) => {
   const order = await Order.findOne({
     _id: orderId,
@@ -127,35 +265,25 @@ const updateOrderStatus = async (orderId, orderStatus) => {
     return null;
   }
 
-  // Restore stock only when an order is cancelled
+  const paymentMethod = String(
+    existingOrder.paymentMethod || ""
+  ).toUpperCase();
+
+  // Restore stock only if stock was previously deducted.
+  // COD -> stock deducted when order was created.
+  // Razorpay -> stock deducted only after payment became PAID.
+  const stockWasDeducted =
+    paymentMethod === "COD" ||
+    (paymentMethod === "RAZORPAY" &&
+      existingOrder.paymentStatus === "PAID") ||
+    (!paymentMethod && existingOrder.orderStatus !== "PENDING");
+
   if (
     orderStatus === "CANCELLED" &&
-    existingOrder.orderStatus !== "CANCELLED"
+    existingOrder.orderStatus !== "CANCELLED" &&
+    stockWasDeducted
   ) {
-    for (const item of existingOrder.items) {
-      const updatedProduct = await Product.findByIdAndUpdate(
-        item.product,
-        {
-          $inc: {
-            stock: item.quantity,
-          },
-        },
-        {
-          new: true,
-        }
-      );
-
-      console.log(
-        "STOCK RESTORED:",
-        item.product,
-        "Quantity:",
-        item.quantity,
-        "New Stock:",
-        updatedProduct
-          ? updatedProduct.stock
-          : "PRODUCT NOT FOUND"
-      );
-    }
+    await restoreStock(existingOrder.items);
   }
 
   const order = await Order.findByIdAndUpdate(
@@ -183,10 +311,6 @@ const updateOrderStatus = async (orderId, orderStatus) => {
 };
 
 // ================= BEST SELLING PRODUCTS =================
-
-
-
-
 
 const requestReturn = async (orderId, userId, reason) => {
   const order = await Order.findById(orderId);
@@ -252,6 +376,7 @@ const updateReturnStatus = async (orderId, returnStatus) => {
 
   return order;
 };
+
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
     {
@@ -331,30 +456,77 @@ const updateRazorpayOrder = async (
 
   return order;
 };
+
 const verifyRazorpayPayment = async (
   orderId,
   userId,
   razorpayPaymentId,
   razorpaySignature
 ) => {
-  const order = await Order.findOneAndUpdate(
-    {
-      _id: orderId,
-      user: userId,
-    },
-    {
-      paymentStatus: "PAID",
-      orderStatus: "CONFIRMED",
-      razorpayPaymentId,
-      razorpaySignature,
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
+  const existingOrder = await Order.findOne({
+    _id: orderId,
+    user: userId,
+  });
+
+  if (!existingOrder) {
+    return null;
+  }
+
+  // Prevent duplicate payment callbacks from reducing stock twice.
+  if (existingOrder.paymentStatus === "PAID") {
+    return existingOrder;
+  }
+
+  const paymentMethod = String(
+    existingOrder.paymentMethod || ""
+  ).toUpperCase();
+
+  if (paymentMethod === "COD") {
+    throw new Error(
+      "Razorpay payment verification is allowed only for Razorpay orders"
+    );
+  }
+
+  // Razorpay: reduce stock only after successful payment verification.
+  const reducedItems = await reduceStockForItems(
+    existingOrder.items || []
   );
 
-  return order;
+  try {
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        user: userId,
+        paymentStatus: { $ne: "PAID" },
+      },
+      {
+        paymentStatus: "PAID",
+        orderStatus: "CONFIRMED",
+        razorpayPaymentId,
+        razorpaySignature,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    // Another payment callback may have completed first.
+    // Restore the stock reduced by this callback.
+    if (!order) {
+      await restoreStock(reducedItems);
+
+      return await Order.findOne({
+        _id: orderId,
+        user: userId,
+      });
+    }
+
+    return order;
+  } catch (error) {
+    await restoreStock(reducedItems);
+    throw error;
+  }
 };
 
 module.exports = {
