@@ -16,17 +16,30 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Normal registration -> required
+    // Google registration -> can be empty initially
     phone: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
+      default: null,
     },
 
+    // Normal registration -> password exists
+    // Google registration -> password can be empty initially
     password: {
       type: String,
-      required: true,
       minlength: 6,
+      default: null,
+    },
+
+    // Google account unique ID
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
     },
 
     role: {
