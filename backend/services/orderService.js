@@ -1,11 +1,22 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const notificationService = require("./notificationService");
+const productService = require("./productService");
 
 // ================= CREATE ORDER =================
 
 const createOrder = async (orderData) => {
   const order = await Order.create(orderData);
+
+  // Reduce product stock for each order item
+  if (order.paymentMethod === "COD") {
+    for (const item of order.items) {
+      await productService.reduceProductStock(
+        item.product,
+        item.quantity
+      );
+    }
+  }
 
   // Notify customer
   await notificationService.createNotification({
@@ -29,7 +40,6 @@ const createOrder = async (orderData) => {
 
   return order;
 };
-
 // ================= GET USER ORDERS =================
 
 const getOrdersByUser = async (userId) => {
