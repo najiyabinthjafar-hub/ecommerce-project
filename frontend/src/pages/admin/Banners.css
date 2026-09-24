@@ -1,4 +1,3 @@
-
 /* =========================================================
    BANNERS PAGE
 ========================================================= */
@@ -7,16 +6,24 @@
   width: 100%;
   min-height: 100%;
   padding: 4px 0 30px;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  color: #1a1a1a;
   box-sizing: border-box;
+
+  font-family:
+    "Inter",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  color: #1a1a1a;
 }
+
 
 /* =========================================================
    HEADER
 ========================================================= */
 
 .banners-header {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -24,22 +31,31 @@
   margin-bottom: 22px;
 }
 
+.banners-header-content {
+  min-width: 0;
+}
+
 .banners-header-content h1 {
   margin: 0;
+
   font-size: 26px;
   line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.4px;
+
   color: #151515;
 }
 
 .banners-header-content p {
   margin: 6px 0 0;
+
   font-size: 13px;
   line-height: 1.5;
   font-weight: 400;
+
   color: #777;
 }
+
 
 /* =========================================================
    ADD BANNER BUTTON
@@ -50,18 +66,27 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   min-height: 40px;
   padding: 0 17px;
+
   border: 1px solid #111;
   border-radius: 7px;
+
   background: #111;
   color: #fff;
+
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
+
   cursor: pointer;
-  transition: all 0.2s ease;
   white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .add-banner-btn i {
@@ -78,54 +103,76 @@
   transform: translateY(0);
 }
 
+
 /* =========================================================
    MAIN CARD
 ========================================================= */
 
 .banners-card {
   width: 100%;
+
   background: #fff;
+
   border: 1px solid #e7e7e7;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.035);
+
   overflow: hidden;
 }
+
 
 /* =========================================================
    CARD HEADER
 ========================================================= */
 
 .banners-card-header {
+  width: 100%;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
+
   padding: 17px 20px;
+
   border-bottom: 1px solid #ededed;
+
   background: #fff;
+
+  box-sizing: border-box;
 }
 
 .banners-card-header > div:first-child {
   min-width: 130px;
+  flex-shrink: 0;
 }
 
 .banners-card-header h2 {
   margin: 0;
+
   font-size: 17px;
   line-height: 1.3;
   font-weight: 650;
   letter-spacing: -0.15px;
+
   color: #181818;
 }
 
 .banner-count {
   display: inline-block;
+
   margin-top: 4px;
+
   font-size: 12px;
   line-height: 1.4;
   font-weight: 500;
+
   color: #8a8a8a;
 }
+
 
 /* =========================================================
    FILTERS
@@ -134,38 +181,85 @@
 .banner-filters {
   display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: flex-end;
+
+  gap: 8px;
+
+  margin-left: auto;
+
+  min-width: 0;
+  flex-shrink: 1;
 }
+
+
+/* =========================================================
+   SEARCH FIELD
+========================================================= */
 
 .banner-search {
   position: relative;
+
   width: 230px;
+  height: 36px;
+
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .banner-search i {
   position: absolute;
+
   left: 11px;
   top: 50%;
+
+  width: auto;
+  height: auto;
+
+  margin: 0;
+  padding: 0;
+
   transform: translateY(-50%);
+
   color: #999;
+  background: transparent;
+
   font-size: 12px;
+  line-height: 1;
+
+  display: block;
+
+  z-index: 5;
+
   pointer-events: none;
 }
 
 .banner-search input {
+  position: relative;
+
+  z-index: 1;
+
   width: 100%;
   height: 36px;
-  padding: 0 11px 0 32px;
+
+  padding: 0 34px 0 32px;
+
   border: 1px solid #dedede;
   border-radius: 6px;
+
   outline: none;
+
   background: #fff;
   color: #333;
+
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
+
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .banner-search input::placeholder {
@@ -175,23 +269,119 @@
 
 .banner-search input:focus {
   border-color: #999;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.04);
 }
 
+
+/* =========================================================
+   CLEAR SEARCH BUTTON
+========================================================= */
+
+.clear-search-btn {
+  position: absolute;
+
+  top: 50%;
+  right: 8px;
+
+  width: 20px;
+  height: 20px;
+
+  padding: 0;
+  margin: 0;
+
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #999;
+
+  font-size: 13px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  z-index: 6;
+}
+
+.clear-search-btn:hover {
+  background: #f2f2f2;
+  color: #555;
+}
+
+.clear-search-btn i {
+  position: static;
+
+  width: auto;
+  height: auto;
+
+  margin: 0;
+  padding: 0;
+
+  transform: none;
+
+  color: inherit;
+  background: transparent;
+
+  font-size: 12px;
+  line-height: 1;
+
+  display: block;
+}
+
+
+/* =========================================================
+   STATUS FILTER
+========================================================= */
+
 .banner-status-filter {
-  height: 36px;
+  width: 125px;
   min-width: 125px;
-  padding: 0 30px 0 11px;
+  height: 36px;
+
+  padding: 0 28px 0 10px;
+
   border: 1px solid #dedede;
   border-radius: 6px;
+
   outline: none;
+
   background: #fff;
   color: #444;
+
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
+
   cursor: pointer;
+
+  box-sizing: border-box;
+
+  flex-shrink: 0;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+.banner-status-filter:hover {
+  border-color: #c5c5c5;
+}
+
+.banner-status-filter:focus {
+  border-color: #999;
+
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.04);
+}
+
 
 /* =========================================================
    TABLE WRAPPER
@@ -200,9 +390,13 @@
 .banners-table-container,
 .banners-table-wrapper {
   width: 100%;
+
   overflow-x: auto;
   overflow-y: hidden;
+
+  -webkit-overflow-scrolling: touch;
 }
+
 
 /* =========================================================
    TABLE
@@ -211,7 +405,9 @@
 .banners-table {
   width: 100%;
   min-width: 850px;
+
   border-collapse: collapse;
+
   table-layout: auto;
 }
 
@@ -221,26 +417,37 @@
 
 .banners-table th {
   height: 43px;
+
   padding: 0 14px;
+
   border-bottom: 1px solid #e5e5e5;
+
   text-align: left;
   white-space: nowrap;
+
   font-size: 11px;
   line-height: 1.3;
   font-weight: 650;
+
   letter-spacing: 0.35px;
   text-transform: uppercase;
+
   color: #707070;
 }
 
 .banners-table td {
   height: 67px;
+
   padding: 9px 14px;
+
   border-bottom: 1px solid #f0f0f0;
+
   vertical-align: middle;
+
   font-size: 13px;
   line-height: 1.45;
   font-weight: 400;
+
   color: #333;
 }
 
@@ -256,17 +463,22 @@
   border-bottom: none;
 }
 
+
 /* =========================================================
    NUMBER
 ========================================================= */
 
 .banner-number {
   width: 45px;
+
   text-align: center !important;
+
   color: #999 !important;
+
   font-size: 12px !important;
   font-weight: 500 !important;
 }
+
 
 /* =========================================================
    BANNER IMAGE
@@ -275,10 +487,15 @@
 .banner-image-wrapper {
   width: 86px;
   height: 48px;
+
   border-radius: 6px;
+
   overflow: hidden;
+
   background: #f4f4f4;
+
   border: 1px solid #e8e8e8;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -287,7 +504,9 @@
 .banner-image {
   width: 100%;
   height: 100%;
+
   display: block;
+
   object-fit: cover;
 }
 
@@ -295,9 +514,11 @@
 .banner-no-image {
   width: 100%;
   height: 100%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   color: #aaa;
   background: #f6f6f6;
 }
@@ -306,6 +527,7 @@
 .banner-no-image i {
   font-size: 18px;
 }
+
 
 /* =========================================================
    TITLE
@@ -319,29 +541,41 @@
 .banner-title strong,
 .banner-title-cell strong {
   display: block;
+
   max-width: 260px;
+
   overflow: hidden;
+
   text-overflow: ellipsis;
   white-space: nowrap;
+
   font-size: 13px;
   line-height: 1.4;
   font-weight: 600;
+
   color: #202020;
 }
 
 .banner-title span,
 .banner-title-cell span {
   display: block;
+
   max-width: 260px;
+
   margin-top: 3px;
+
   overflow: hidden;
+
   text-overflow: ellipsis;
   white-space: nowrap;
+
   font-size: 11px;
   line-height: 1.4;
   font-weight: 400;
+
   color: #8a8a8a;
 }
+
 
 /* =========================================================
    STATUS
@@ -350,25 +584,35 @@
 .banner-status {
   display: inline-flex;
   align-items: center;
+
   gap: 6px;
+
   min-height: 24px;
+
   padding: 0 9px;
+
   border-radius: 20px;
+
   white-space: nowrap;
+
   font-size: 11px;
   line-height: 1;
   font-weight: 600;
+
   letter-spacing: 0.1px;
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
+
   border-radius: 50%;
+
   display: inline-block;
 }
 
-/* Active */
+
+/* ACTIVE */
 
 .banner-status.active {
   background: #edf8f0;
@@ -379,7 +623,8 @@
   background: #2e9b4b;
 }
 
-/* Inactive */
+
+/* INACTIVE */
 
 .banner-status.inactive {
   background: #f2f2f2;
@@ -390,7 +635,8 @@
   background: #999;
 }
 
-/* Expired */
+
+/* EXPIRED */
 
 .banner-status.expired {
   background: #fff4e8;
@@ -401,6 +647,7 @@
   background: #d67a20;
 }
 
+
 /* =========================================================
    DATE
 ========================================================= */
@@ -408,10 +655,13 @@
 .banners-table td:nth-child(5),
 .banners-table td:nth-child(6) {
   white-space: nowrap;
+
   color: #666;
+
   font-size: 12px;
   font-weight: 400;
 }
+
 
 /* =========================================================
    ACTIONS
@@ -421,8 +671,11 @@
   display: flex !important;
   align-items: center;
   justify-content: flex-start;
+
   gap: 6px;
+
   flex-wrap: nowrap !important;
+
   white-space: nowrap;
 }
 
@@ -431,53 +684,79 @@
 .delete-banner-btn {
   width: 30px;
   height: 30px;
+
   min-width: 30px;
+
   padding: 0;
+
   border-radius: 6px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   font-family: inherit;
   font-size: 12px;
+
   cursor: pointer;
+
   transition: all 0.18s ease;
 }
 
+
+/* VIEW */
+
 .view-banner-btn {
   border: 1px solid #dedede;
+
   background: #fff;
   color: #555;
 }
 
 .view-banner-btn:hover {
   background: #f5f5f5;
+
   border-color: #cfcfcf;
+
   color: #222;
 }
 
+
+/* EDIT */
+
 .edit-banner-btn {
   border: 1px solid #dedede;
+
   background: #fff;
   color: #555;
 }
 
 .edit-banner-btn:hover {
   background: #f5f5f5;
+
   border-color: #cfcfcf;
+
   color: #222;
 }
 
+
+/* DELETE */
+
 .delete-banner-btn {
   border: 1px solid #eadede;
+
   background: #fff;
   color: #c85b5b;
 }
 
 .delete-banner-btn:hover {
   background: #fff3f3;
+
   border-color: #dfbcbc;
+
   color: #b33e3e;
 }
+
 
 /* =========================================================
    LOADING
@@ -485,13 +764,17 @@
 
 .banners-loading {
   min-height: 300px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 13px;
   font-weight: 500;
+
   color: #777;
 }
+
 
 /* =========================================================
    EMPTY STATE
@@ -499,41 +782,54 @@
 
 .banners-empty {
   min-height: 270px;
+
   padding: 35px 20px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-direction: column;
+
   text-align: center;
 }
 
 .banners-empty > i {
   width: 52px;
   height: 52px;
+
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   background: #f5f5f5;
   color: #999;
+
   font-size: 21px;
 }
 
 .banners-empty h3 {
   margin: 12px 0 5px;
+
   font-size: 16px;
   line-height: 1.3;
   font-weight: 600;
+
   color: #333;
 }
 
 .banners-empty p {
   margin: 0;
+
   font-size: 12px;
   line-height: 1.5;
   font-weight: 400;
+
   color: #888;
 }
+
 
 /* =========================================================
    UPLOAD INFO
@@ -542,20 +838,28 @@
 .banner-upload-info {
   display: flex;
   align-items: center;
+
   gap: 12px;
+
   padding: 13px 18px;
+
   background: #fafafa;
+
   border-bottom: 1px solid #ededed;
 }
 
 .banner-upload-icon {
   width: 34px;
   height: 34px;
+
   flex-shrink: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border-radius: 7px;
+
   background: #f0f0f0;
   color: #555;
 }
@@ -567,27 +871,33 @@
 .banner-upload-text {
   display: flex;
   align-items: center;
+
   gap: 10px;
+
   flex-wrap: wrap;
 }
 
 .banner-upload-text strong {
   font-size: 12px;
   font-weight: 600;
+
   color: #333;
 }
 
 .banner-upload-text span {
   font-size: 11px;
   font-weight: 400;
+
   color: #888;
 }
 
 .info-separator {
   width: 1px;
   height: 14px;
+
   background: #d8d8d8;
 }
+
 
 /* =========================================================
    FOCUS / ACCESSIBILITY
@@ -603,11 +913,13 @@
   outline-offset: 2px;
 }
 
+
 /* =========================================================
    LARGE TABLET
 ========================================================= */
 
 @media (max-width: 1100px) {
+
   .banners-header-content h1 {
     font-size: 24px;
   }
@@ -627,46 +939,77 @@
   }
 }
 
+
 /* =========================================================
    TABLET
 ========================================================= */
 
 @media (max-width: 800px) {
+
   .banners-header {
     align-items: flex-start;
   }
 
   .banners-card-header {
     align-items: flex-start;
+
     flex-direction: column;
+
+    gap: 14px;
+  }
+
+  .banners-card-header > div:first-child {
+    width: 100%;
   }
 
   .banner-filters {
     width: 100%;
+
+    margin-left: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
   }
 
   .banner-search {
-    flex: 1;
     width: auto;
+
+    flex: 1;
+
+    min-width: 0;
   }
 
   .banner-status-filter {
-    min-width: 120px;
+    width: 115px;
+    min-width: 115px;
+
+    flex-shrink: 0;
   }
 }
+
 
 /* =========================================================
    MOBILE
 ========================================================= */
 
 @media (max-width: 600px) {
+
   .banners-page {
     padding: 2px 0 25px;
   }
 
+
+  /* HEADER */
+
   .banners-header {
     flex-direction: column;
+
+    align-items: stretch;
+
     gap: 14px;
+
     margin-bottom: 16px;
   }
 
@@ -680,8 +1023,13 @@
 
   .add-banner-btn {
     width: 100%;
+
+    min-height: 40px;
     height: 40px;
   }
+
+
+  /* CARD */
 
   .banners-card {
     border-radius: 8px;
@@ -689,21 +1037,68 @@
 
   .banners-card-header {
     padding: 14px;
+
+    gap: 12px;
   }
+
+
+  /* FILTER ROW */
 
   .banner-filters {
-    flex-direction: column;
-    align-items: stretch;
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: center;
+
     gap: 8px;
+
+    margin-left: 0;
   }
+
+
+  /* SEARCH */
 
   .banner-search {
-    width: 100%;
+    width: auto;
+
+    height: 36px;
+
+    flex: 1;
+
+    min-width: 0;
   }
 
-  .banner-status-filter {
+  .banner-search input {
     width: 100%;
+    height: 36px;
+
+    font-size: 12px;
+
+    padding-left: 31px;
+    padding-right: 32px;
   }
+
+
+  /* STATUS */
+
+  .banner-status-filter {
+    width: 110px;
+    min-width: 110px;
+
+    height: 34px;
+
+    flex-shrink: 0;
+
+    padding: 0 22px 0 9px;
+
+    font-size: 11px;
+  }
+
+
+  /* UPLOAD */
 
   .banner-upload-info {
     align-items: flex-start;
@@ -711,7 +1106,9 @@
 
   .banner-upload-text {
     flex-direction: column;
+
     align-items: flex-start;
+
     gap: 3px;
   }
 
@@ -720,11 +1117,13 @@
   }
 }
 
+
 /* =========================================================
    SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 400px) {
+
   .banners-header-content h1 {
     font-size: 20px;
   }
@@ -732,6 +1131,52 @@
   .banners-card-header h2 {
     font-size: 16px;
   }
+
+
+  /* FILTERS */
+
+  .banner-filters {
+    gap: 7px;
+  }
+
+
+  /* SEARCH */
+
+  .banner-search {
+    height: 34px;
+  }
+
+  .banner-search input {
+    height: 34px;
+
+    font-size: 11px;
+
+    padding-left: 29px;
+    padding-right: 30px;
+  }
+
+  .banner-search i {
+    left: 10px;
+
+    font-size: 11px;
+  }
+
+
+  /* STATUS */
+
+  .banner-status-filter {
+    width: 105px;
+    min-width: 105px;
+
+    height: 34px;
+
+    padding: 0 20px 0 9px;
+
+    font-size: 11px;
+  }
+
+
+  /* TABLE */
 
   .banners-table {
     min-width: 800px;
@@ -742,6 +1187,9 @@
     height: 43px;
   }
 
+
+  /* ACTIONS */
+
   .banner-actions {
     gap: 4px;
   }
@@ -751,7 +1199,163 @@
   .delete-banner-btn {
     width: 28px;
     height: 28px;
+
     min-width: 28px;
   }
 }
 
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 350px) {
+
+  .banners-card-header {
+    padding: 12px;
+  }
+
+  .banner-filters {
+    gap: 6px;
+  }
+
+  .banner-status-filter {
+    width: 98px;
+    min-width: 98px;
+
+    padding-left: 8px;
+    padding-right: 18px;
+  }
+
+  .banner-search input {
+    padding-left: 27px;
+    padding-right: 28px;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE STATUS DROPDOWN - FINAL POLISH
+   Keeps the existing Banners styling unchanged.
+========================================================= */
+
+.banner-status-filter {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   TABLET STATUS DROPDOWN
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .banner-status-filter {
+    flex: 0 0 115px;
+
+    width: 115px;
+    min-width: 115px;
+    max-width: 115px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE STATUS DROPDOWN
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .banner-filters {
+    width: 100%;
+
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+
+    flex-wrap: nowrap;
+  }
+
+  .banner-search {
+    flex: 1 1 auto;
+
+    width: auto;
+
+    min-width: 0;
+  }
+
+  .banner-status-filter {
+    flex: 0 0 110px;
+
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+
+    height: 34px;
+
+    padding-left: 9px;
+    padding-right: 22px;
+
+    font-size: 11px;
+  }
+}
+
+
+/* =========================================================
+   390px / SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+
+  .banner-filters {
+    gap: 7px;
+  }
+
+  .banner-search {
+    min-width: 0;
+  }
+
+  .banner-status-filter {
+    flex: 0 0 105px;
+
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+
+    height: 34px;
+
+    padding-left: 9px;
+    padding-right: 20px;
+
+    font-size: 11px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 350px) {
+
+  .banner-filters {
+    gap: 6px;
+  }
+
+  .banner-status-filter {
+    flex: 0 0 98px;
+
+    width: 98px;
+    min-width: 98px;
+    max-width: 98px;
+
+    padding-left: 8px;
+    padding-right: 18px;
+
+    font-size: 10.5px;
+  }
+}

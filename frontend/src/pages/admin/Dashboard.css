@@ -1,213 +1,310 @@
 /* =========================================================
-   DASHBOARD PAGE
-========================================================= */
+   RIZO ADMIN DASHBOARD
+   ========================================================= */
 
 .dashboard-page,
 .dashboard-page * {
   box-sizing: border-box;
 }
 
+/* =========================================================
+   PAGE
+   ========================================================= */
+
 .dashboard-page {
   width: 100%;
   max-width: 1500px;
-  margin: 0 auto;
-  padding: 0 0 32px;
   min-width: 0;
-  color: #111111;
+
+  margin: 0 auto;
+  padding: 28px 30px 40px;
+
+  color: #171717;
+  background: #f7f7f8;
+
   font-family:
     "Inter",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
+    Arial,
     sans-serif;
+
+  overflow-x: hidden;
+}
+
+.dashboard-page button,
+.dashboard-page select {
+  font-family: inherit;
 }
 
 /* =========================================================
    HEADER
-========================================================= */
+   ========================================================= */
 
 .dashboard-header {
   width: 100%;
+  min-width: 0;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.dashboard-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.dashboard-header > div {
   min-width: 0;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: 27px;
-  line-height: 1.2;
-  font-weight: 750;
-  letter-spacing: -0.5px;
+
   color: #111111;
+
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  letter-spacing: -0.7px;
 }
 
 .dashboard-header p {
-  margin: 6px 0 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #777777;
-}
+  margin: 7px 0 0;
 
-.dashboard-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  color: #777777;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 /* =========================================================
-   PERIOD DROPDOWN
-========================================================= */
+   REFRESH BUTTON
+   ========================================================= */
 
-.dashboard-period-control {
-  height: 40px;
-  min-width: 135px;
+.dashboard-refresh-btn {
+  flex: 0 0 auto;
 
-  display: flex;
+  min-height: 40px;
+
+  padding: 0 15px;
+
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+
   gap: 8px;
 
-  padding: 0 11px;
+  border: 1px solid #dddddf;
+  border-radius: 10px;
 
   background: #ffffff;
-  border: 1px solid #dedede;
-  border-radius: 8px;
+  color: #222222;
 
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.dashboard-period-control:hover {
-  border-color: #bcbcbc;
-}
-
-.dashboard-period-control:focus-within {
-  border-color: #111111;
-  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
-}
-
-.dashboard-period-control i:first-child {
-  font-size: 14px;
-  color: #555555;
-}
-
-.dashboard-period-control i:last-child {
-  font-size: 10px;
-  color: #777777;
-  pointer-events: none;
-}
-
-.dashboard-period-control select {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-
-  border: none;
-  outline: none;
-  background: transparent;
-
-  color: #111111;
   font-size: 12px;
   font-weight: 600;
 
   cursor: pointer;
-  appearance: none;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.dashboard-period-control select:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.dashboard-refresh-btn i {
+  font-size: 15px;
+}
+
+.dashboard-refresh-btn:hover {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* =========================================================
    ERROR
-========================================================= */
+   ========================================================= */
 
 .dashboard-error {
   width: 100%;
-  min-height: 46px;
+  min-width: 0;
 
   display: flex;
   align-items: center;
+
   gap: 10px;
 
-  margin-bottom: 16px;
-  padding: 10px 14px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
 
-  border: 1px solid #f0cccc;
-  border-radius: 9px;
+  border: 1px solid #f0c8c8;
+  border-radius: 10px;
 
-  background: #fff7f7;
+  background: #fff5f5;
   color: #b42318;
 
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .dashboard-error i {
+  flex: 0 0 auto;
   font-size: 16px;
 }
 
 .dashboard-error span {
-  flex: 1;
   min-width: 0;
+  flex: 1;
 }
 
 .dashboard-error button {
-  flex-shrink: 0;
+  flex: 0 0 auto;
 
-  border: none;
-  background: #111111;
+  padding: 6px 12px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: #b42318;
   color: #ffffff;
 
-  padding: 7px 13px;
-  border-radius: 6px;
-
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 
   cursor: pointer;
 }
 
 /* =========================================================
-   STAT CARDS
-========================================================= */
+   LOADING
+   ========================================================= */
+
+.dashboard-loading {
+  min-height: 420px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  color: #777777;
+  font-size: 13px;
+}
+
+.dashboard-loading p {
+  margin: 0;
+}
+
+.dashboard-spinner {
+  width: 30px;
+  height: 30px;
+
+  border: 3px solid #e5e5e5;
+  border-top-color: #111111;
+
+  border-radius: 50%;
+
+  animation: dashboardSpin 0.8s linear infinite;
+}
+
+@keyframes dashboardSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
 
 .dashboard-stats {
   width: 100%;
+  min-width: 0;
 
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
 
-  margin-bottom: 16px;
+  /*
+     IMPORTANT:
+     Desktop = ALL 5 CARDS IN ONE ROW
+  */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 20px;
 }
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
 
 .stat-card {
   min-width: 0;
-  min-height: 92px;
+
+  padding: 17px;
+
+  border: 1px solid #e8e8ea;
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.035);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+
+  border-color: #dddddf;
+
+  box-shadow:
+    0 9px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* =========================================================
+   STAT TOP
+   ========================================================= */
+
+.stat-card-top {
+  min-width: 0;
 
   display: flex;
   align-items: center;
-  gap: 12px;
 
-  padding: 15px;
-
-  background: #ffffff;
-  border: 1px solid #e7e7e7;
-  border-radius: 11px;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025);
+  gap: 10px;
 }
+
+.stat-label {
+  min-width: 0;
+
+  color: #707070;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   DASHBOARD STAT ICONS
+   ========================================================= */
 
 .stat-icon {
   width: 40px;
@@ -218,1061 +315,1082 @@
   align-items: center;
   justify-content: center;
 
-  border-radius: 9px;
-  font-size: 17px;
+  border-radius: 11px;
+
+  font-size: 18px;
+  line-height: 1;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.stat-icon.products {
-  background: #f0f0f0;
-  color: #111111;
+
+
+.stat-icon-products {
+  background: #eef4ff !important;
+  color: #377dff !important;
 }
 
-.stat-icon.active {
-  background: #ecfdf3;
-  color: #15803d;
+.stat-icon-products i {
+  color: #377dff !important;
 }
 
-.stat-icon.categories {
-  background: #f5f3ff;
-  color: #7c3aed;
+
+
+.stat-icon-categories {
+  background: #f3efff !important;
+  color: #7557d9 !important;
 }
 
-.stat-icon.coupons {
-  background: #fff7ed;
-  color: #ea580c;
+.stat-icon-categories i {
+  color: #7557d9 !important;
 }
 
-.stat-icon.customers {
-  background: #eff6ff;
-  color: #2563eb;
+
+
+.stat-icon-customers {
+  background: #edf9f4 !important;
+  color: #20966d !important;
 }
 
-.stat-icon.orders {
-  background: #f5f5f5;
-  color: #333333;
+.stat-icon-customers i {
+  color: #20966d !important;
 }
 
-.stat-icon.pending {
-  background: #fffbeb;
-  color: #d97706;
+
+
+.stat-icon-orders {
+  background: #fff5e7 !important;
+  color: #d88900 !important;
 }
 
-.stat-icon.delivered {
-  background: #ecfdf3;
-  color: #16a34a;
+.stat-icon-orders i {
+  color: #d88900 !important;
 }
 
-.stat-icon.cancelled {
-  background: #fef2f2;
-  color: #dc2626;
+
+
+.stat-icon-revenue {
+  background: #edf8ee !important;
+  color: #319342 !important;
 }
 
-.stat-icon.revenue {
-  background: #f4f4f5;
-  color: #111111;
+.stat-icon-revenue i {
+  color: #319342 !important;
 }
 
-.stat-content {
+/* =========================================================
+   ICON HOVER
+   ========================================================= */
+
+.stat-card:hover .stat-icon {
+  transform: translateY(-2px);
+}
+/* =========================================================
+   STAT VALUE
+   ========================================================= */
+
+.stat-value {
   min-width: 0;
-}
 
-.stat-content p {
-  margin: 0 0 5px;
+  margin-top: 15px;
 
-  font-size: 11px;
-  line-height: 1.3;
+  color: #111111;
 
-  color: #777777;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.15;
+
+  letter-spacing: -0.6px;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.stat-content h2 {
-  margin: 0;
-
-  font-size: 20px;
-  line-height: 1;
-
-  font-weight: 750;
-  color: #111111;
+.revenue-value {
+  font-size: 21px;
+  letter-spacing: -0.4px;
 }
 
 /* =========================================================
-   COMMON DASHBOARD CARD
-========================================================= */
+   STAT BOTTOM
+   ========================================================= */
+
+.stat-bottom {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  min-height: 15px;
+
+  margin-top: 9px;
+
+  color: #8a8a8a;
+
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.stat-bottom span {
+  min-width: 0;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   MAIN GRID
+   ========================================================= */
+
+.dashboard-main-grid {
+  width: 100%;
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.65fr)
+    minmax(320px, 0.85fr);
+
+  gap: 20px;
+
+  align-items: stretch;
+}
+
+/* =========================================================
+   COMMON CARD
+   ========================================================= */
 
 .dashboard-card {
   min-width: 0;
 
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 13px;
+  border: 1px solid #e8e8ea;
+  border-radius: 18px;
 
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.025);
+  background: #ffffff;
+
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.035);
 
   overflow: hidden;
 }
 
-.card-header {
-  min-height: 65px;
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.dashboard-card-header {
+  min-width: 0;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 20px 20px 0;
+}
+
+.dashboard-card-header > div {
+  min-width: 0;
+}
+
+.dashboard-card-header h2 {
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: #171717;
+
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.3;
+
+  letter-spacing: -0.25px;
+}
+
+.dashboard-card-header h2 i {
+  font-size: 15px;
+}
+
+.dashboard-card-header p {
+  margin: 6px 0 0;
+
+  color: #898989;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   RESPONSIVE DROPDOWN
+   ========================================================= */
+
+.dashboard-period-select {
+  width: 145px;
+  min-width: 145px;
+  max-width: 100%;
+  height: 40px;
+
+  flex: 0 1 auto;
+
+  padding: 0 34px 0 12px;
+
+  border: 1px solid #dddddf;
+  border-radius: 10px;
+
+  background-color: #ffffff;
+  color: #333333;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-period-select:hover {
+  border-color: #bcbcc0;
+}
+
+.dashboard-period-select:focus {
+  border-color: #111111;
+
+  box-shadow:
+    0 0 0 3px rgba(17, 17, 17, 0.06);
+}
+
+/* =========================================================
+   REVENUE TOTAL
+   ========================================================= */
+
+.revenue-total {
+  min-width: 0;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 15px;
+  gap: 18px;
 
-  padding: 16px 18px;
+  margin: 18px 20px 0;
+  padding: 14px 15px;
 
-  border-bottom: 1px solid #eeeeee;
+  border: 1px solid #ededee;
+  border-radius: 12px;
+
+  background: #f8f8f9;
 }
 
-.card-header > div:first-child {
+.revenue-total > div {
   min-width: 0;
-}
 
-.card-header h3 {
-  margin: 0;
-
-  font-size: 16px;
-  line-height: 1.25;
-
-  font-weight: 750;
-  color: #111111;
-}
-
-.card-header p {
-  margin: 4px 0 0;
-
-  font-size: 11px;
-  line-height: 1.4;
-
-  color: #858585;
-}
-
-.chart-period-label {
-  flex-shrink: 0;
-
-  padding: 5px 9px;
-
-  border: 1px solid #e5e5e5;
-  border-radius: 6px;
-
-  background: #fafafa;
-  color: #555555;
-
-  font-size: 10px;
-  font-weight: 650;
-}
-
-/* =========================================================
-   REVENUE + ORDER GRAPH
-========================================================= */
-
-.dashboard-chart-grid {
-  width: 100%;
-
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.chart-summary {
-  padding: 13px 18px 0;
-}
-
-.chart-summary > div {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+
+  gap: 4px;
 }
 
-.chart-summary span {
+.revenue-total span {
+  color: #777777;
+
   font-size: 10px;
-  color: #888888;
+  font-weight: 600;
 }
 
-.chart-summary strong {
-  font-size: 20px;
-  font-weight: 750;
+.revenue-total strong {
   color: #111111;
+
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.revenue-highest-info {
+  text-align: right;
 }
 
 /* =========================================================
-   BAR CHART
-========================================================= */
+   REVENUE CHART CONTAINER
+   ========================================================= */
 
-.bar-chart {
-  height: 255px;
+.revenue-chart-container {
+  width: 100%;
+  min-width: 0;
 
   display: flex;
-  gap: 9px;
 
-  padding: 17px 18px 15px;
+  margin-top: 18px;
+  padding: 0 20px 20px;
 }
 
-.chart-y-labels {
-  width: 38px;
-  flex: 0 0 38px;
+/* =========================================================
+   REVENUE Y AXIS
+   ========================================================= */
+
+.revenue-y-axis {
+  width: 62px;
+  min-width: 62px;
+
+  height: 290px;
 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 
-  padding: 1px 0 23px;
-}
+  padding: 4px 8px 29px 0;
 
-.chart-y-labels span {
+  color: #8b8b8b;
+
   font-size: 9px;
-  color: #8a8a8a;
+  font-weight: 500;
 
   text-align: right;
+}
+
+.revenue-y-axis span {
   white-space: nowrap;
 }
 
-.chart-bars-area {
+/* =========================================================
+   REVENUE CHART
+   ========================================================= */
+
+.revenue-chart {
   position: relative;
 
-  flex: 1;
+  flex: 1 1 auto;
+
   min-width: 0;
-  height: 100%;
+  min-height: 290px;
+  height: 290px;
+
+  display: flex;
+  align-items: flex-end;
+
+  gap: 14px;
+
+  padding: 18px 12px 8px;
+
+  border: 1px solid #eeeeef;
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(248, 248, 249, 0.7),
+      rgba(255, 255, 255, 1)
+    );
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cfcfd2 transparent;
 }
 
-.chart-grid-lines {
+.revenue-chart::-webkit-scrollbar {
+  height: 7px;
+}
+
+.revenue-chart::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.revenue-chart::-webkit-scrollbar-thumb {
+  background: #d0d0d2;
+  border-radius: 20px;
+}
+
+/* =========================================================
+   GRID LINES
+   ========================================================= */
+
+.revenue-grid-lines {
   position: absolute;
-  inset: 0;
+
+  top: 18px;
+  right: 0;
+  bottom: 39px;
+  left: 0;
 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 
   pointer-events: none;
+
+  z-index: 0;
 }
 
-.chart-grid-lines span {
-  display: block;
+.revenue-grid-lines span {
   width: 100%;
+  height: 1px;
 
-  border-top: 1px dashed #eeeeee;
+  background: #eeeeef;
 }
 
-.chart-bars {
+/* =========================================================
+   REVENUE BAR ITEM
+   ========================================================= */
+
+.revenue-bar-item {
   position: relative;
+
   z-index: 2;
 
-  width: 100%;
+  width: 48px;
+  min-width: 48px;
+
   height: 100%;
 
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-
-  gap: 5px;
-}
-
-.bar-column {
-  position: relative;
-
-  min-width: 0;
-  flex: 1;
-  height: 100%;
+  flex: 0 0 48px;
 
   display: flex;
-  align-items: center;
   flex-direction: column;
+  align-items: center;
   justify-content: flex-end;
+
+  gap: 7px;
 }
 
-.bar-value {
-  min-height: 15px;
+/* =========================================================
+   REVENUE VALUE
+   ========================================================= */
 
-  margin-bottom: 3px;
+.revenue-bar-value {
+  width: 100%;
 
-  font-size: 8px;
   color: #777777;
 
+  font-size: 8px;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  text-align: center;
+
   white-space: nowrap;
+  overflow: visible;
 }
 
-.bar-track {
-  position: relative;
+/* =========================================================
+   BAR WRAPPER
+   ========================================================= */
 
-  width: min(34px, 70%);
-  flex: 1;
-  min-height: 0;
+.revenue-bar-wrapper {
+  width: 48px;
+  height: 210px;
+
+  flex: 0 0 210px;
 
   display: flex;
   align-items: flex-end;
   justify-content: center;
-
-  background: #f5f5f5;
-
-  border-radius: 6px 6px 0 0;
-  overflow: hidden;
 }
+
+/* =========================================================
+   BAR
+   ========================================================= */
 
 .revenue-bar {
-  width: 100%;
-  min-height: 0;
+  width: 29px;
+  min-height: 7px;
 
-  background: #111111;
+  border-radius: 7px 7px 3px 3px;
 
-  border-radius: 6px 6px 0 0;
+  background:
+    linear-gradient(
+      180deg,
+      #343434 0%,
+      #171717 55%,
+      #050505 100%
+    );
 
-  transition: height 0.3s ease;
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.12);
+
+  cursor: pointer;
+
+  transition:
+    width 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.bar-label {
-  height: 19px;
+.revenue-bar:hover {
+  width: 34px;
 
-  padding-top: 6px;
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.16);
+}
+
+.revenue-bar-item.highest .revenue-bar {
+  width: 33px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #111111 0%,
+      #000000 100%
+    );
+
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.revenue-bar-item.highest .revenue-bar-value {
+  color: #111111;
+  font-weight: 800;
+}
+
+/* =========================================================
+   BAR LABEL
+   ========================================================= */
+
+.revenue-bar-label {
+  display: block;
+
+  width: 100%;
+
+  color: #777777;
 
   font-size: 9px;
-  color: #777777;
+  font-weight: 600;
+
+  line-height: 1;
+
+  text-align: center;
 
   white-space: nowrap;
 }
 
-.chart-empty {
-  position: absolute;
-  inset: 0;
+/* =========================================================
+   SECTION LOADING
+   ========================================================= */
+
+.dashboard-section-loading {
+  min-height: 310px;
 
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 
-  color: #999999;
-  font-size: 12px;
-}
+  gap: 11px;
 
-/* =========================================================
-   ORDER LINE GRAPH
-========================================================= */
-
-.line-chart {
-  height: 255px;
-
-  display: flex;
-  gap: 10px;
-
-  padding: 17px 18px 15px;
-}
-
-.line-chart-y {
-  width: 22px;
-  flex: 0 0 22px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  padding-bottom: 23px;
-}
-
-.line-chart-y span {
-  font-size: 9px;
-  color: #8a8a8a;
-
-  text-align: right;
-}
-
-.line-chart-area {
-  position: relative;
-
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-}
-
-.order-line-bars {
-  position: relative;
-  z-index: 2;
-
-  width: 100%;
-  height: 100%;
-
-  display: flex;
-  justify-content: space-between;
-
-  gap: 5px;
-}
-
-.order-line-column {
-  position: relative;
-
-  min-width: 0;
-  flex: 1;
-  height: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-
-  flex-direction: column;
-}
-
-.order-line-fill {
-  width: 2px;
-  max-height: calc(100% - 20px);
-
-  background: #d0d0d0;
-
-  border-radius: 2px 2px 0 0;
-
-  transition: height 0.3s ease;
-}
-
-.order-line-point {
-  position: absolute;
-  left: 50%;
-  z-index: 5;
-
-  transform: translate(-50%, 50%);
-
-  width: 9px;
-  height: 9px;
-
-  border: 2px solid #111111;
-  border-radius: 50%;
-
-  background: #ffffff;
-}
-
-.order-line-point span {
-  position: absolute;
-
-  left: 50%;
-  bottom: 9px;
-
-  transform: translateX(-50%);
-
-  font-size: 8px;
-  color: #555555;
-
-  white-space: nowrap;
-}
-
-.order-line-label {
-  height: 19px;
-
-  padding-top: 6px;
-
-  font-size: 9px;
   color: #777777;
 
-  white-space: nowrap;
+  font-size: 11px;
 }
 
 /* =========================================================
-   ORDER STATUS + STOCK
-========================================================= */
+   EMPTY
+   ========================================================= */
 
-.dashboard-middle-grid {
-  width: 100%;
+.dashboard-empty {
+  min-height: 250px;
 
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 9px;
+
+  padding: 25px;
+
+  color: #999999;
+
+  text-align: center;
 }
 
-.dashboard-middle-grid > .dashboard-card {
-  min-height: 420px;
+.dashboard-empty i {
+  font-size: 28px;
+}
+
+.dashboard-empty p {
+  margin: 0;
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dashboard-empty.small {
+  min-height: 90px;
 }
 
 /* =========================================================
-   ORDER STATUS CONTENT
-========================================================= */
+   ORDER STATUS CARD
+   ========================================================= */
 
-.order-summary-content {
-  width: 100%;
-  min-height: 355px;
+.order-status-card {
+  min-width: 0;
+}
 
-  display: grid;
+/* =========================================================
+   ORDER STATUS
+   DONUT TOP
+   DETAILS BOTTOM
+   ========================================================= */
 
-  grid-template-columns: 205px minmax(0, 1fr);
+.order-status-content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
 
   align-items: center;
 
   gap: 22px;
 
-  padding: 24px 22px;
+  padding: 24px 20px 22px;
 }
 
 /* =========================================================
-   ORDER DONUT
-========================================================= */
+   DONUT
+   ========================================================= */
 
-.order-chart-section {
-  width: 100%;
-  height: 300px;
+.order-status-donut {
+  width: 175px;
+  height: 175px;
 
-  display: flex;
-  flex-direction: column;
+  flex: 0 0 175px;
 
-  align-items: center;
-  justify-content: center;
-
-  padding: 0;
-
-  overflow: visible;
-}
-
-.order-donut {
   position: relative;
-
-  width: 160px;
-  height: 160px;
-
-  flex: 0 0 160px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   border-radius: 50%;
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-/*
-  Important:
-  Donut background is normally provided inline
-  from React using conic-gradient.
-*/
-
-.order-donut::before {
+.order-status-donut::after {
   content: "";
 
   position: absolute;
 
-  width: 100px;
-  height: 100px;
+  inset: 8px;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   DONUT CENTER
+   ========================================================= */
+
+.order-status-donut-center {
+  width: 108px;
+  height: 108px;
+
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
   border-radius: 50%;
 
   background: #ffffff;
+
+  box-shadow:
+    inset 0 0 0 1px #ededee,
+    0 5px 16px rgba(0, 0, 0, 0.07);
 }
 
-.order-donut-center {
-  position: relative;
-  z-index: 3;
+.order-status-donut-center strong {
+  color: #111111;
 
-  width: 105px;
+  font-size: 23px;
+  font-weight: 800;
 
-  display: flex;
-  flex-direction: column;
+  line-height: 1.1;
+}
 
-  align-items: center;
-  justify-content: center;
+.order-status-donut-center span {
+  margin-top: 5px;
+
+  color: #8a8a8a;
+
+  font-size: 9px;
+  font-weight: 600;
 
   text-align: center;
 }
 
-.order-donut-center strong {
-  font-size: 25px;
-  line-height: 1;
-
-  font-weight: 800;
-
-  color: #111111;
-}
-
-.order-donut-center span {
-  margin-top: 7px;
-
-  font-size: 9px;
-
-  color: #777777;
-}
-
 /* =========================================================
    ORDER STATUS LIST
-========================================================= */
+   DETAILS UNDER DONUT
+   ========================================================= */
 
 .order-status-list {
   width: 100%;
   min-width: 0;
 
-  display: flex;
-  flex-direction: column;
+  display: grid;
 
-  justify-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 
-  padding: 4px 0 0;
-
-  gap: 14px;
+  gap: 8px;
 }
 
-.order-status-item {
-  width: 100%;
-
-  display: flex;
-  align-items: flex-start;
-
-  gap: 10px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-
-  flex: 0 0 8px;
-
-  margin-top: 5px;
-
-  border-radius: 50%;
-}
-
-.status-info {
-  flex: 1;
+.order-status-row {
   min-width: 0;
-}
-
-.status-name-row {
-  width: 100%;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 12px;
+  gap: 10px;
+
+  padding: 9px 10px;
+
+  border: 1px solid #eeeeef;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.status-name-row span {
+.order-status-row:hover {
+  background: #fafafa;
+  border-color: #e2e2e4;
+}
+
+.order-status-name {
   min-width: 0;
 
-  font-size: 11px;
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
 
   color: #555555;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.order-status-name > span:last-child {
+  min-width: 0;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.status-name-row strong {
-  flex-shrink: 0;
+.order-status-row strong {
+  flex: 0 0 auto;
+
+  color: #171717;
 
   font-size: 11px;
-
-  color: #111111;
-
-  font-weight: 700;
-}
-
-.status-progress {
-  width: 100%;
-  height: 5px;
-
-  margin-top: 6px;
-
-  overflow: hidden;
-
-  border-radius: 10px;
-
-  background: #eeeeee;
-}
-
-.status-progress span {
-  display: block;
-
-  height: 100%;
-
-  border-radius: inherit;
-
-  transition: width 0.3s ease;
+  font-weight: 800;
 }
 
 /* =========================================================
-   STOCK ALERTS
-========================================================= */
+   STATUS DOT
+   ========================================================= */
 
-.stock-alert-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.status-dot {
+  width: 9px;
+  height: 9px;
 
-  gap: 11px;
+  flex: 0 0 9px;
 
-  padding: 18px 18px 12px;
+  border-radius: 50%;
 }
 
-.stock-alert-box {
+.status-pending {
+  background: #f2a900;
+}
+
+.status-confirmed {
+  background: #4285e8;
+}
+
+.status-processing {
+  background: #7567df;
+}
+
+.status-shipped {
+  background: #21a68b;
+}
+
+.status-delivered {
+  background: #5fc442;
+}
+
+.status-cancelled {
+  background: #e96b6b;
+}
+
+/* =========================================================
+   STOCK GRID
+   ========================================================= */
+
+.dashboard-stock-grid {
+  width: 100%;
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+
+  margin-top: 20px;
+}
+
+/* =========================================================
+   STOCK CARD
+   ========================================================= */
+
+.stock-card {
+  min-width: 0;
+
+  padding-bottom: 18px;
+}
+
+/* =========================================================
+   STOCK COUNT
+   ========================================================= */
+
+.stock-count {
+  min-width: 38px;
+  height: 30px;
+
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.stock-count.low {
+  background: #fff5df;
+  color: #c77a00;
+}
+
+.stock-count.out {
+  background: #fff0f0;
+  color: #c83b3b;
+}
+
+/* =========================================================
+   STOCK LIST
+   ========================================================= */
+
+.stock-list {
+  min-width: 0;
+
+  display: grid;
+
+  gap: 7px;
+
+  padding: 0 20px;
+}
+
+.stock-item {
   min-width: 0;
 
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  gap: 10px;
+  gap: 14px;
 
-  padding: 12px;
+  padding: 10px 11px;
 
-  border: 1px solid;
+  border: 1px solid #eeeeef;
   border-radius: 9px;
-}
-
-.stock-alert-box.out {
-  border-color: #f3d1d1;
-  background: #fff8f8;
-}
-
-.stock-alert-box.low {
-  border-color: #f2dfb9;
-  background: #fffaf0;
-}
-
-.stock-alert-icon {
-  width: 38px;
-  height: 38px;
-
-  flex: 0 0 38px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
-
-  font-size: 16px;
-}
-
-.stock-alert-box.out .stock-alert-icon {
-  background: #ffe6e6;
-  color: #dc2626;
-}
-
-.stock-alert-box.low .stock-alert-icon {
-  background: #fff0ce;
-  color: #d97706;
-}
-
-.stock-alert-box span {
-  display: block;
-
-  font-size: 10px;
-
-  color: #777777;
-}
-
-.stock-alert-box strong {
-  display: block;
-
-  margin-top: 2px;
-
-  font-size: 18px;
-  line-height: 1;
-
-  color: #111111;
-}
-
-.stock-product-list {
-  max-height: 235px;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  padding: 0 18px 10px;
-}
-
-.stock-product-item {
-  min-height: 54px;
-
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  border-top: 1px solid #f0f0f0;
-}
-
-.stock-product-icon {
-  width: 36px;
-  height: 36px;
-
-  flex: 0 0 36px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 7px;
-
-  background: #f5f5f5;
-  color: #777777;
-
-  font-size: 14px;
 }
 
 .stock-product-info {
   min-width: 0;
   flex: 1;
-}
-
-.stock-product-info strong {
-  display: block;
-
-  overflow: hidden;
-
-  color: #333333;
-
-  font-size: 11px;
-  font-weight: 650;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.stock-product-info span {
-  display: block;
-
-  margin-top: 2px;
-
-  color: #999999;
-
-  font-size: 9px;
-}
-
-.stock-warning {
-  flex-shrink: 0;
-
-  padding: 5px 8px;
-
-  border-radius: 6px;
-
-  background: #fff2d8;
-  color: #b76a00;
-
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.stock-empty {
-  min-height: 120px;
 
   display: flex;
   flex-direction: column;
 
-  align-items: center;
-  justify-content: center;
+  gap: 3px;
+}
+
+.stock-product-info strong {
+  min-width: 0;
+
+  color: #333333;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stock-product-info span {
+  min-width: 0;
 
   color: #999999;
+
+  font-size: 9px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.stock-empty i {
-  font-size: 25px;
-  color: #22a05a;
+.stock-value {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: baseline;
+
+  gap: 3px;
+
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.stock-empty p {
-  margin: 7px 0 0;
+.stock-value small {
+  font-size: 8px;
+}
 
-  font-size: 11px;
+.stock-value.low {
+  color: #c77a00;
+}
+
+.stock-value.out {
+  color: #c83b3b;
 }
 
 /* =========================================================
-   VIEW ALL BUTTON
-========================================================= */
+   STOCK VIEW BUTTON
+   ========================================================= */
 
-.view-all-btn {
-  flex-shrink: 0;
+.stock-view-btn {
+  width: calc(100% - 40px);
 
+  min-height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  margin: 16px 20px 0;
+
+  border: 1px solid #dddddf;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #222222;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.stock-view-btn:hover {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   RECENT ORDERS
+   ========================================================= */
+
+.recent-orders-card {
+  width: 100%;
+
+  margin-top: 20px;
+}
+
+/* =========================================================
+   VIEW ALL
+   ========================================================= */
+
+.dashboard-view-all {
   display: inline-flex;
   align-items: center;
 
   gap: 6px;
 
-  padding: 6px 0;
+  padding: 5px 0;
 
-  border: none;
+  border: 0;
 
   background: transparent;
+  color: #222222;
 
-  color: #111111;
-
-  font-size: 11px;
-  font-weight: 650;
+  font-size: 10px;
+  font-weight: 700;
 
   cursor: pointer;
 }
 
-.view-all-btn i {
-  font-size: 12px;
-
+.dashboard-view-all i {
   transition: transform 0.2s ease;
 }
 
-.view-all-btn:hover i {
+.dashboard-view-all:hover i {
   transform: translateX(3px);
 }
 
 /* =========================================================
-   BEST SELLING + RECENT ORDERS
-========================================================= */
-
-.dashboard-bottom-grid {
-  width: 100%;
-
-  display: grid;
-
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-
-  gap: 16px;
-}
-
-/* =========================================================
-   BEST SELLING
-========================================================= */
-
-.best-selling-list {
-  max-height: 430px;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  padding: 4px 18px 12px;
-}
-
-.best-selling-item {
-  min-height: 62px;
-
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  border-bottom: 1px solid #eeeeee;
-}
-
-.best-selling-item:last-child {
-  border-bottom: none;
-}
-
-.best-selling-rank {
-  width: 28px;
-  flex: 0 0 28px;
-
-  color: #777777;
-
-  font-size: 10px;
-  font-weight: 750;
-}
-
-.best-selling-product-icon {
-  width: 42px;
-  height: 42px;
-
-  flex: 0 0 42px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  border: 1px solid #eeeeee;
-  border-radius: 8px;
-
-  background: #f7f7f7;
-
-  color: #999999;
-}
-
-.best-selling-product-icon img {
-  width: 100%;
-  height: 100%;
-
-  display: block;
-
-  object-fit: cover;
-}
-
-.best-selling-product-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.best-selling-product-info strong {
-  display: block;
-
-  overflow: hidden;
-
-  font-size: 11px;
-  font-weight: 650;
-
-  color: #222222;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.best-selling-product-info span {
-  display: block;
-
-  margin-top: 3px;
-
-  font-size: 9px;
-
-  color: #999999;
-}
-
-.best-selling-product-price {
-  flex-shrink: 0;
-
-  color: #111111;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.best-selling-empty {
-  min-height: 260px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-direction: column;
-
-  text-align: center;
-
-  color: #999999;
-}
-
-.best-selling-empty i {
-  font-size: 30px;
-  margin-bottom: 8px;
-}
-
-.best-selling-empty h4 {
-  margin: 0;
-
-  font-size: 13px;
-
-  color: #555555;
-}
-
-.best-selling-empty p {
-  max-width: 230px;
-
-  margin: 6px 0 0;
-
-  font-size: 10px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   RECENT ORDERS
-========================================================= */
-
-.recent-orders-card {
-  min-width: 0;
-}
+   ORDERS TABLE
+   ========================================================= */
 
 .orders-table-wrapper {
-  width: 100%;
+  width: calc(100% - 40px);
+
+  margin: 18px 20px 20px;
+
+  border: 1px solid #eeeeef;
+  border-radius: 12px;
 
   overflow-x: auto;
   overflow-y: hidden;
@@ -1280,20 +1398,28 @@
   scrollbar-width: thin;
 }
 
-.orders-table {
-  width: 100%;
+.orders-table-wrapper::-webkit-scrollbar {
+  height: 7px;
+}
 
-  min-width: 700px;
+.orders-table-wrapper::-webkit-scrollbar-thumb {
+  background: #d0d0d2;
+  border-radius: 20px;
+}
+
+.dashboard-orders-table {
+  width: 100%;
+  min-width: 760px;
 
   border-collapse: collapse;
 
   table-layout: fixed;
 }
 
-.orders-table th {
-  padding: 11px 12px;
+.dashboard-orders-table th {
+  padding: 12px 13px;
 
-  border-bottom: 1px solid #e7e7e7;
+  border-bottom: 1px solid #eeeeef;
 
   background: #fafafa;
 
@@ -1307,75 +1433,112 @@
   white-space: nowrap;
 }
 
-.orders-table td {
-  padding: 12px;
+.dashboard-orders-table td {
+  padding: 12px 13px;
 
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #f1f1f2;
 
-  color: #444444;
+  color: #555555;
 
   font-size: 10px;
 
   vertical-align: middle;
 }
 
-.orders-table tbody tr:last-child td {
-  border-bottom: none;
+.dashboard-orders-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-.orders-table td strong {
-  color: #111111;
-  font-weight: 700;
+.dashboard-orders-table tbody tr:hover {
+  background: #fafafa;
 }
 
-.customer-cell {
+/* =========================================================
+   TABLE WIDTHS
+   ========================================================= */
+
+.dashboard-orders-table th:nth-child(1),
+.dashboard-orders-table td:nth-child(1) {
+  width: 13%;
+}
+
+.dashboard-orders-table th:nth-child(2),
+.dashboard-orders-table td:nth-child(2) {
+  width: 26%;
+}
+
+.dashboard-orders-table th:nth-child(3),
+.dashboard-orders-table td:nth-child(3) {
+  width: 15%;
+}
+
+.dashboard-orders-table th:nth-child(4),
+.dashboard-orders-table td:nth-child(4) {
+  width: 14%;
+}
+
+.dashboard-orders-table th:nth-child(5),
+.dashboard-orders-table td:nth-child(5) {
+  width: 15%;
+}
+
+.dashboard-orders-table th:nth-child(6),
+.dashboard-orders-table td:nth-child(6) {
+  width: 17%;
+}
+
+/* =========================================================
+   ORDER CUSTOMER
+   ========================================================= */
+
+.order-customer {
   min-width: 0;
 
   display: flex;
-  align-items: center;
+  flex-direction: column;
 
-  gap: 7px;
+  gap: 3px;
 }
 
-.customer-cell > span {
+.order-customer strong {
   min-width: 0;
 
-  overflow: hidden;
+  color: #333333;
+
+  font-size: 10px;
 
   white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.customer-avatar {
-  width: 27px;
-  height: 27px;
+.order-customer span {
+  min-width: 0;
 
-  flex: 0 0 27px;
+  color: #999999;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 8px;
 
-  border-radius: 50%;
-
-  background: #111111;
-  color: #ffffff;
-
-  font-size: 9px;
-  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.order-status {
-  display: inline-flex;
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
 
+.payment-status,
+.order-status-badge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  min-width: 65px;
+  min-height: 23px;
 
-  padding: 5px 8px;
+  padding: 0 8px;
 
-  border-radius: 20px;
+  border-radius: 6px;
 
   font-size: 8px;
   font-weight: 700;
@@ -1383,384 +1546,819 @@
   white-space: nowrap;
 }
 
-/* =========================================================
-   ORDER STATUS
-========================================================= */
-
-.order-status.pending {
-  background: #fff7df;
-  color: #b76a00;
+.payment-status.paid,
+.payment-status.completed,
+.payment-status.success,
+.payment-status.successful {
+  background: #eaf8ef;
+  color: #20804b;
 }
 
-.order-status.confirmed {
-  background: #f1eaff;
-  color: #7040c9;
+.payment-status.pending {
+  background: #fff5df;
+  color: #b97900;
 }
 
-.order-status.processing {
-  background: #fff0e5;
-  color: #c65a00;
+.payment-status.failed,
+.payment-status.cancelled,
+.payment-status.refunded {
+  background: #fff0f0;
+  color: #c33d3d;
 }
 
-.order-status.shipped {
-  background: #eaf3ff;
-  color: #2563eb;
+.order-status-badge.pending {
+  background: #fff5df;
+  color: #b97900;
 }
 
-.order-status.delivered {
-  background: #eaf9ef;
-  color: #18864b;
+.order-status-badge.confirmed {
+  background: #edf4ff;
+  color: #3978d1;
 }
 
-.order-status.cancelled {
-  background: #ffeded;
-  color: #c62828;
+.order-status-badge.processing {
+  background: #f1eeff;
+  color: #6958c9;
 }
 
-/* =========================================================
-   PAYMENT
-========================================================= */
-
-.order-status.payment-paid {
-  background: #eaf9ef;
-  color: #18864b;
+.order-status-badge.shipped {
+  background: #eaf8f5;
+  color: #208d73;
 }
 
-.order-status.payment-pending {
-  background: #fff7df;
-  color: #b76a00;
+.order-status-badge.delivered {
+  background: #eaf8ef;
+  color: #23834b;
 }
 
-.order-status.payment-failed {
-  background: #ffeded;
-  color: #c62828;
-}
-
-.order-status.payment-refunded {
-  background: #f1eaff;
-  color: #7040c9;
+.order-status-badge.cancelled {
+  background: #fff0f0;
+  color: #c33d3d;
 }
 
 /* =========================================================
-   EMPTY TABLE
-========================================================= */
+   MINI SUMMARY
+   ========================================================= */
 
-.empty-table {
-  height: 170px;
+.dashboard-mini-grid {
+  width: 100%;
+  min-width: 0;
 
-  text-align: center !important;
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-top: 20px;
 }
 
-.empty-table i {
+.mini-summary-card {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 15px 16px;
+
+  border: 1px solid #e8e8ea;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.03);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mini-summary-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.06);
+}
+
+.mini-summary-card > div:last-child {
+  min-width: 0;
+}
+
+.mini-summary-card span {
   display: block;
 
-  margin-bottom: 8px;
+  color: #808080;
 
-  font-size: 25px;
+  font-size: 9px;
+  font-weight: 600;
 
-  color: #aaaaaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.empty-table span {
-  color: #999999;
+.mini-summary-card strong {
+  display: block;
 
-  font-size: 11px;
+  margin-top: 4px;
+
+  color: #171717;
+
+  font-size: 19px;
+  font-weight: 800;
 }
 
-/* =========================================================
-   LOADING
-========================================================= */
+.mini-summary-icon {
+  width: 40px;
+  height: 40px;
 
-.dashboard-loading {
-  min-height: 450px;
+  flex: 0 0 40px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  flex-direction: column;
+  border-radius: 11px;
 
-  gap: 12px;
+  font-size: 17px;
 }
 
-.dashboard-loading p {
-  margin: 0;
-
-  color: #777777;
-
-  font-size: 13px;
+.mini-summary-card.pending .mini-summary-icon {
+  background: #fff5df;
+  color: #c77a00;
 }
 
-.dashboard-spinner,
-.mini-spinner {
-  border: 3px solid #eeeeee;
-
-  border-top-color: #111111;
-
-  border-radius: 50%;
-
-  animation: dashboardSpin 0.8s linear infinite;
+.mini-summary-card.delivered .mini-summary-icon {
+  background: #eaf8ef;
+  color: #23834b;
 }
 
-.dashboard-spinner {
-  width: 32px;
-  height: 32px;
+.mini-summary-card.cancelled .mini-summary-icon {
+  background: #fff0f0;
+  color: #c33d3d;
 }
 
-.mini-spinner {
-  width: 15px;
-  height: 15px;
-
-  border-width: 2px;
-}
-
-@keyframes dashboardSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.period-loading {
-  position: fixed;
-
-  right: 24px;
-  bottom: 20px;
-
-  z-index: 100;
-
-  display: flex;
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 9px 13px;
-
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-
-  background: #ffffff;
-
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-
-  color: #555555;
-
-  font-size: 11px;
+.mini-summary-card.paid .mini-summary-icon {
+  background: #edf4ff;
+  color: #3978d1;
 }
 
 /* =========================================================
-   RESPONSIVE - 1200
-========================================================= */
+   1200px
+   ========================================================= */
 
 @media (max-width: 1200px) {
-  .dashboard-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .order-summary-content {
-    grid-template-columns: 165px minmax(0, 1fr);
-
-    gap: 14px;
-
-    padding: 25px 16px;
-  }
-
-  .order-chart-section {
-    height: 285px;
-  }
-
-  .order-donut {
-    width: 145px;
-    height: 145px;
-
-    flex-basis: 145px;
-  }
-
-  .order-donut::before {
-    width: 91px;
-    height: 91px;
-  }
-
-  .order-status-list {
-    padding-top: 6px;
-  }
-}
-
-/* =========================================================
-   RESPONSIVE - 1000
-========================================================= */
-
-@media (max-width: 1000px) {
-  .dashboard-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .dashboard-chart-grid,
-  .dashboard-middle-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-bottom-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-middle-grid > .dashboard-card {
-    min-height: 390px;
-  }
-
-  .order-summary-content {
-    grid-template-columns: 190px minmax(0, 1fr);
-
-    min-height: 330px;
-
-    padding: 28px 22px;
-  }
-
-  .order-chart-section {
-    height: 275px;
-  }
-}
-
-/* =========================================================
-   RESPONSIVE - 700
-========================================================= */
-
-@media (max-width: 700px) {
   .dashboard-page {
-    padding-bottom: 25px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
-  .dashboard-header {
-    align-items: flex-start;
-
-    flex-direction: column;
-
-    gap: 12px;
-  }
-
-  .dashboard-header-actions {
-    width: 100%;
-  }
-
-  .dashboard-period-control {
-    width: 100%;
-    max-width: 190px;
-  }
+  /*
+     Keep 5 cards in one row.
+     Smaller card sizing allows them to fit.
+  */
 
   .dashboard-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-
     gap: 10px;
   }
 
   .stat-card {
-    padding: 13px;
-  }
-
-  .dashboard-chart-grid,
-  .dashboard-middle-grid,
-  .dashboard-bottom-grid {
-    gap: 12px;
-
-    margin-bottom: 12px;
-  }
-
-  .card-header {
     padding: 14px;
   }
 
-  .bar-chart,
-  .line-chart {
-    padding-left: 12px;
-    padding-right: 12px;
+  .stat-icon {
+    width: 37px;
+    height: 37px;
+
+    flex-basis: 37px;
+
+    border-radius: 10px;
+
+    font-size: 16px;
   }
 
-  .bar-value {
-    font-size: 7px;
+  .stat-label {
+    font-size: 10px;
   }
 
-  /* =======================================================
-     ORDER STATUS MOBILE
-  ======================================================= */
-
-  .dashboard-middle-grid > .dashboard-card {
-    min-height: 0;
+  .stat-value {
+    font-size: 22px;
   }
 
-  .order-summary-content {
-    grid-template-columns: 1fr;
-
-    gap: 15px;
-
-    min-height: 0;
-
-    padding: 24px 18px 21px;
+  .revenue-value {
+    font-size: 19px;
   }
 
-  .order-chart-section {
-    height: 190px;
-
-    padding-top: 4px;
-  }
-
-  .order-donut {
-    width: 145px;
-    height: 145px;
-
-    flex-basis: 145px;
-  }
-
-  .order-donut::before {
-    width: 91px;
-    height: 91px;
-  }
-
-  .order-status-list {
-    width: 100%;
-
-    padding-top: 2px;
-
-    gap: 13px;
-  }
-
-  .stock-alert-summary {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .stock-product-list {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .best-selling-list {
-    padding-left: 14px;
-    padding-right: 14px;
+  .dashboard-main-grid {
+    grid-template-columns:
+      minmax(0, 1.4fr)
+      minmax(300px, 0.9fr);
   }
 }
 
 /* =========================================================
-   RESPONSIVE - 480
-========================================================= */
+   1050px
+   ========================================================= */
 
-@media (max-width: 480px) {
+@media (max-width: 1050px) {
+  /*
+     At this width 5 cards remain one row,
+     but the main content becomes one column.
+  */
+
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-stats {
+    gap: 9px;
+  }
+
+  .stat-card {
+    padding: 13px 11px;
+  }
+
+  .stat-card-top {
+    gap: 7px;
+  }
+
+  .stat-icon {
+    width: 35px;
+    height: 35px;
+
+    flex-basis: 35px;
+
+    font-size: 15px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+  }
+
+  .stat-value {
+    font-size: 21px;
+  }
+
+  .revenue-value {
+    font-size: 17px;
+  }
+
+  .stat-bottom {
+    font-size: 8px;
+  }
+
+  /*
+     Donut + details still vertical
+  */
+
+  .order-status-content {
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+
+  .order-status-donut {
+    width: 175px;
+    height: 175px;
+  }
+}
+
+/* =========================================================
+   900px
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .dashboard-page {
+    padding: 22px 20px 32px;
+  }
+
+  /*
+     Tablet:
+     5 cards -> 2 columns
+  */
+
+  .dashboard-stats {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+
+    flex-basis: 40px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .stat-value {
+    font-size: 25px;
+  }
+
+  .revenue-value {
+    font-size: 21px;
+  }
+
+  .dashboard-stock-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-mini-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   700px
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .dashboard-page {
+    padding: 20px 15px 28px;
+  }
+
+  /* HEADER */
+
   .dashboard-header {
-    margin-bottom: 16px;
+    align-items: flex-start;
+
+    gap: 12px;
   }
 
   .dashboard-header h1 {
-    font-size: 23px;
+    font-size: 24px;
   }
 
   .dashboard-header p {
     font-size: 11px;
   }
 
+  /* DROPDOWN */
+
+  .dashboard-card-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 13px;
+
+    padding: 18px 17px 0;
+  }
+
+  .dashboard-period-select {
+    width: 100%;
+    min-width: 0;
+
+    height: 40px;
+
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* REVENUE */
+
+  .revenue-total {
+    margin: 15px 17px 0;
+  }
+
+  .revenue-chart-container {
+    margin-top: 15px;
+
+    padding:
+      0
+      12px
+      17px;
+  }
+
+  .revenue-y-axis {
+    width: 50px;
+    min-width: 50px;
+
+    height: 275px;
+  }
+
+  .revenue-chart {
+    height: 275px;
+    min-height: 275px;
+
+    gap: 11px;
+  }
+
+  .revenue-bar-wrapper {
+    height: 195px;
+    flex-basis: 195px;
+  }
+
+  /* DONUT */
+
+  .order-status-content {
+    gap: 22px;
+
+    padding:
+      24px
+      17px
+      20px;
+  }
+
+  .order-status-donut {
+    width: 175px;
+    height: 175px;
+
+    flex-basis: 175px;
+  }
+
+  .order-status-list {
+    width: 100%;
+  }
+
+  /* STOCK */
+
+  .stock-list {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .stock-view-btn {
+    width: calc(100% - 34px);
+
+    margin-left: 17px;
+    margin-right: 17px;
+  }
+
+  /* ORDERS */
+
+  .orders-table-wrapper {
+    width: calc(100% - 34px);
+
+    margin-left: 17px;
+    margin-right: 17px;
+  }
+
+  /* MINI */
+
+  .dashboard-mini-grid {
+    gap: 12px;
+  }
+}
+
+/* =========================================================
+   560px
+   ========================================================= */
+
+@media (max-width: 560px) {
+  /*
+     Mobile:
+     5 cards -> one column
+  */
+
   .dashboard-stats {
     grid-template-columns: 1fr;
+
+    gap: 12px;
   }
 
   .stat-card {
-    min-height: 78px;
+    padding: 15px;
+  }
+
+  .stat-value {
+    font-size: 25px;
+  }
+
+  .revenue-value {
+    font-size: 21px;
+  }
+
+  /* Revenue total */
+
+  .revenue-total {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+  .revenue-highest-info {
+    width: 100%;
+
+    text-align: left;
+  }
+
+  /* Mini cards */
+
+  .dashboard-mini-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   480px
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .dashboard-page {
+    padding:
+      17px
+      12px
+      25px;
+  }
+
+  /* HEADER */
+
+  .dashboard-header {
+    margin-bottom: 18px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 22px;
+  }
+
+  .dashboard-header p {
+    font-size: 10px;
+  }
+
+  /* REFRESH */
+
+  .dashboard-refresh-btn {
+    width: 38px;
+    height: 38px;
+
+    min-height: 38px;
+
+    padding: 0;
+  }
+
+  .dashboard-refresh-btn span {
+    display: none;
+  }
+
+  /* CARD */
+
+  .dashboard-card {
+    border-radius: 14px;
+  }
+
+  .dashboard-card-header {
+    padding:
+      16px
+      14px
+      0;
+  }
+
+  .dashboard-card-header h2 {
+    font-size: 14px;
+  }
+
+  .dashboard-card-header p {
+    font-size: 10px;
+  }
+
+  /* DROPDOWN */
+
+  .dashboard-period-select {
+    width: 100%;
+
+    height: 38px;
+
+    font-size: 10px;
+  }
+
+  /* REVENUE */
+
+  .revenue-total {
+    margin:
+      13px
+      14px
+      0;
+
+    padding: 12px;
+  }
+
+  .revenue-total strong {
+    font-size: 17px;
+  }
+
+  .revenue-chart-container {
+    margin-top: 13px;
+
+    padding:
+      0
+      10px
+      14px;
+  }
+
+  .revenue-y-axis {
+    width: 46px;
+    min-width: 46px;
+
+    height: 255px;
+
+    font-size: 8px;
+  }
+
+  .revenue-chart {
+    height: 255px;
+    min-height: 255px;
+
+    gap: 9px;
+
+    padding:
+      13px
+      8px
+      7px;
+
+    border-radius: 11px;
+  }
+
+  .revenue-bar-item {
+    width: 40px;
+    min-width: 40px;
+    flex-basis: 40px;
+  }
+
+  .revenue-bar-wrapper {
+    width: 40px;
+
+    height: 178px;
+    flex-basis: 178px;
+  }
+
+  .revenue-bar {
+    width: 25px;
+  }
+
+  .revenue-bar:hover {
+    width: 29px;
+  }
+
+  .revenue-bar-item.highest .revenue-bar {
+    width: 29px;
+  }
+
+  .revenue-bar-value {
+    font-size: 7px;
+  }
+
+  .revenue-bar-label {
+    font-size: 8px;
+  }
+
+  /* DONUT */
+
+  .order-status-content {
+    padding:
+      20px
+      14px
+      17px;
+
+    gap: 18px;
+  }
+
+  .order-status-donut {
+    width: 160px;
+    height: 160px;
+
+    flex-basis: 160px;
+  }
+
+  .order-status-donut-center {
+    width: 98px;
+    height: 98px;
+  }
+
+  .order-status-donut-center strong {
+    font-size: 21px;
+  }
+
+  .order-status-donut-center span {
+    font-size: 8px;
+  }
+
+  /*
+     Two-column details under donut
+  */
+
+  .order-status-list {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 7px;
+  }
+
+  .order-status-row {
+    padding:
+      8px;
+
+    gap: 7px;
+  }
+
+  .order-status-name {
+    gap: 6px;
+
+    font-size: 9px;
+  }
+
+  .order-status-row strong {
+    font-size: 10px;
+  }
+
+  /* STOCK */
+
+  .stock-list {
+    padding:
+      0
+      14px;
+  }
+
+  .stock-item {
+    padding: 9px;
+
+    gap: 8px;
+  }
+
+  .stock-product-info strong {
+    font-size: 9px;
+  }
+
+  .stock-product-info span {
+    font-size: 8px;
+  }
+
+  .stock-value {
+    font-size: 11px;
+  }
+
+  .stock-view-btn {
+    width: calc(100% - 28px);
+
+    margin:
+      14px
+      14px
+      0;
+
+    min-height: 36px;
+  }
+
+  /* ORDERS */
+
+  .recent-orders-card {
+    margin-top: 14px;
+  }
+
+  .orders-table-wrapper {
+    width: calc(100% - 28px);
+
+    margin:
+      14px
+      14px
+      14px;
+  }
+
+  /* MINI */
+
+  .dashboard-mini-grid {
+    gap: 12px;
+  }
+}
+
+/* =========================================================
+   390px
+   ========================================================= */
+
+@media (max-width: 390px) {
+  .dashboard-page {
+    padding:
+      15px
+      10px
+      22px;
+  }
+
+  /* HEADER */
+
+  .dashboard-header h1 {
+    font-size: 21px;
+  }
+
+  .dashboard-header p {
+    font-size: 9px;
+  }
+
+  /* SUMMARY */
+
+  .stat-card {
+    padding: 13px;
   }
 
   .stat-icon {
@@ -1770,580 +2368,174 @@
     flex-basis: 37px;
   }
 
-  .stat-content h2 {
-    font-size: 18px;
+  .stat-value {
+    font-size: 23px;
   }
 
-  .dashboard-card {
-    border-radius: 10px;
+  .revenue-value {
+    font-size: 19px;
   }
 
-  .card-header {
-    min-height: 60px;
+  /* CARD HEADER */
 
-    padding: 13px;
+  .dashboard-card-header {
+    padding:
+      15px
+      13px
+      0;
   }
 
-  .card-header h3 {
-    font-size: 14px;
-  }
-
-  .card-header p {
-    font-size: 10px;
-  }
-
-  .chart-period-label {
-    padding: 4px 7px;
-
-    font-size: 9px;
-  }
-
-  .chart-summary {
-    padding-left: 13px;
-    padding-right: 13px;
-  }
-
-  .bar-chart,
-  .line-chart {
-    height: 225px;
-  }
-
-  /* =======================================================
-     ORDER STATUS - 480
-  ======================================================= */
-
-  .order-summary-content {
-    padding: 21px 15px 19px;
-
-    gap: 15px;
-  }
-
-  .order-chart-section {
-    height: 165px;
-  }
-
-  .order-donut {
-    width: 135px;
-    height: 135px;
-
-    flex-basis: 135px;
-  }
-
-  .order-donut::before {
-    width: 84px;
-    height: 84px;
-  }
-
-  .order-donut-center strong {
-    font-size: 22px;
-  }
-
-  .order-donut-center span {
-    margin-top: 6px;
-
-    font-size: 8px;
-  }
-
-  .order-status-list {
-    gap: 12px;
-  }
-
-  .status-name-row span,
-  .status-name-row strong {
-    font-size: 10px;
-  }
-
-  .status-progress {
-    height: 5px;
-
-    margin-top: 5px;
-  }
-
-  .stock-alert-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .stock-alert-box {
-    padding: 10px;
-  }
-
-  .best-selling-item {
-    min-height: 58px;
-  }
-
-  .best-selling-product-icon {
-    width: 38px;
-    height: 38px;
-
-    flex-basis: 38px;
-  }
-
-  .best-selling-product-price {
-    font-size: 10px;
-  }
-
-  .view-all-btn {
-    font-size: 9px;
-  }
-
-  .period-loading {
-    right: 12px;
-    bottom: 12px;
-  }
-}
-
-/* =========================================================
-   RESPONSIVE - 390
-========================================================= */
-
-@media (max-width: 390px) {
-  .dashboard-page {
-    width: 100%;
-    max-width: 100%;
-
-    padding-bottom: 22px;
-  }
-
-  .dashboard-header {
-    margin-bottom: 14px;
-
-    gap: 10px;
-  }
-
-  .dashboard-header h1 {
-    font-size: 21px;
-  }
-
-  .dashboard-header p {
-    font-size: 10px;
-  }
-
-  .dashboard-header-actions {
-    width: 100%;
-  }
-
-  .dashboard-period-control {
-    width: 100%;
-    max-width: 170px;
-    min-width: 150px;
-
-    height: 39px;
-  }
-
-  /* =======================================================
-     STAT CARDS
-  ======================================================= */
-
-  .dashboard-stats {
-    grid-template-columns: 1fr;
-
-    gap: 9px;
-
-    margin-bottom: 12px;
-  }
-
-  .stat-card {
-    min-height: 74px;
-
-    gap: 10px;
-
-    padding: 11px 12px;
-  }
-
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-
-    flex-basis: 36px;
-
-    border-radius: 8px;
-
-    font-size: 15px;
-  }
-
-  .stat-content p {
-    margin-bottom: 4px;
-
-    font-size: 10px;
-  }
-
-  .stat-content h2 {
-    font-size: 17px;
-  }
-
-  /* =======================================================
-     CARDS
-  ======================================================= */
-
-  .dashboard-card {
-    width: 100%;
-
-    border-radius: 9px;
-  }
-
-  .card-header {
-    min-height: 58px;
-
-    gap: 8px;
-
-    padding: 12px;
-  }
-
-  .card-header h3 {
+  .dashboard-card-header h2 {
     font-size: 13px;
   }
 
-  .card-header p {
-    max-width: 180px;
-
+  .dashboard-card-header p {
     font-size: 9px;
   }
 
-  .chart-period-label {
-    flex-shrink: 0;
+  /* DROPDOWN */
 
-    padding: 4px 6px;
-
-    font-size: 8px;
-  }
-
-  /* =======================================================
-     CHARTS
-  ======================================================= */
-
-  .dashboard-chart-grid,
-  .dashboard-middle-grid,
-  .dashboard-bottom-grid {
-    gap: 10px;
-
-    margin-bottom: 10px;
-  }
-
-  .chart-summary {
-    padding: 11px 12px 0;
-  }
-
-  .chart-summary strong {
-    font-size: 18px;
-  }
-
-  .bar-chart,
-  .line-chart {
-    height: 215px;
-
-    padding: 14px 10px 12px;
-  }
-
-  .chart-y-labels {
-    width: 31px;
-    flex-basis: 31px;
-  }
-
-  .chart-y-labels span,
-  .line-chart-y span {
-    font-size: 8px;
-  }
-
-  .line-chart-y {
-    width: 19px;
-    flex-basis: 19px;
-  }
-
-  .bar-track {
-    width: min(25px, 65%);
-  }
-
-  .bar-label,
-  .order-line-label {
-    font-size: 8px;
-  }
-
-  /* =======================================================
-     ORDER STATUS
-  ======================================================= */
-
-  .order-summary-content {
-    grid-template-columns: 1fr;
-
+  .dashboard-period-select {
     width: 100%;
 
-    padding: 19px 13px 17px;
+    height: 37px;
 
-    gap: 12px;
+    font-size: 10px;
   }
 
-  .order-chart-section {
-    width: 100%;
+  /* REVENUE */
+
+  .revenue-total {
+    margin:
+      12px
+      13px
+      0;
+  }
+
+  .revenue-chart-container {
+    padding:
+      0
+      8px
+      13px;
+  }
+
+  .revenue-y-axis {
+    width: 42px;
+    min-width: 42px;
+  }
+
+  .revenue-chart {
+    height: 240px;
+    min-height: 240px;
+  }
+
+  .revenue-bar-wrapper {
+    height: 165px;
+    flex-basis: 165px;
+  }
+
+  /* DONUT */
+
+  .order-status-content {
+    padding:
+      18px
+      13px
+      15px;
+  }
+
+  .order-status-donut {
+    width: 145px;
     height: 145px;
 
-    padding: 0;
+    flex-basis: 145px;
   }
 
-  .order-donut {
-    width: 120px;
-    height: 120px;
-
-    flex-basis: 120px;
+  .order-status-donut-center {
+    width: 89px;
+    height: 89px;
   }
 
-  .order-donut::before {
-    width: 75px;
-    height: 75px;
-  }
-
-  .order-donut-center {
-    width: 90px;
-  }
-
-  .order-donut-center strong {
-    font-size: 21px;
-  }
-
-  .order-donut-center span {
-    margin-top: 5px;
-
-    font-size: 8px;
+  .order-status-donut-center strong {
+    font-size: 19px;
   }
 
   .order-status-list {
-    width: 100%;
-
-    padding: 0;
-
-    gap: 10px;
+    gap: 6px;
   }
 
-  .order-status-item {
-    gap: 8px;
+  .order-status-row {
+    padding:
+      7px
+      7px;
   }
 
-  .status-dot {
-    width: 7px;
-    height: 7px;
-
-    flex-basis: 7px;
-
-    margin-top: 4px;
-  }
-
-  .status-name-row {
-    gap: 8px;
-  }
-
-  .status-name-row span,
-  .status-name-row strong {
-    font-size: 10px;
-  }
-
-  .status-progress {
-    height: 4px;
-
-    margin-top: 5px;
-  }
-
-  /* =======================================================
-     STOCK
-  ======================================================= */
-
-  .stock-alert-summary {
-    grid-template-columns: 1fr;
-
-    gap: 8px;
-
-    padding: 12px;
-  }
-
-  .stock-alert-box {
-    padding: 9px;
-  }
-
-  .stock-alert-icon {
-    width: 34px;
-    height: 34px;
-
-    flex-basis: 34px;
-  }
-
-  .stock-product-list {
-    max-height: 220px;
-
-    padding: 0 12px 8px;
-  }
-
-  .stock-product-item {
-    min-height: 52px;
-
-    gap: 8px;
-  }
-
-  .stock-product-icon {
-    width: 34px;
-    height: 34px;
-
-    flex-basis: 34px;
-  }
-
-  /* =======================================================
-     BEST SELLING
-  ======================================================= */
-
-  .best-selling-list {
-    max-height: 360px;
-
-    padding: 2px 12px 10px;
-  }
-
-  .best-selling-item {
-    min-height: 57px;
-
-    gap: 8px;
-  }
-
-  .best-selling-rank {
-    width: 22px;
-    flex-basis: 22px;
-
-    font-size: 9px;
-  }
-
-  .best-selling-product-icon {
-    width: 36px;
-    height: 36px;
-
-    flex-basis: 36px;
-  }
-
-  .best-selling-product-info strong {
-    font-size: 10px;
-  }
-
-  .best-selling-product-info span {
+  .order-status-name {
     font-size: 8px;
   }
 
-  .best-selling-product-price {
+  .order-status-row strong {
     font-size: 9px;
   }
 
-  /* =======================================================
-     RECENT ORDERS
-  ======================================================= */
+  /* STOCK */
 
-  .recent-orders-card {
-    width: 100%;
-    min-width: 0;
+  .stock-list {
+    padding:
+      0
+      13px;
   }
+
+  .stock-view-btn {
+    width: calc(100% - 26px);
+
+    margin-left: 13px;
+    margin-right: 13px;
+  }
+
+  /* ORDERS */
 
   .orders-table-wrapper {
-    width: 100%;
+    width: calc(100% - 26px);
 
-    overflow-x: auto;
-    overflow-y: hidden;
-
-    -webkit-overflow-scrolling: touch;
+    margin-left: 13px;
+    margin-right: 13px;
   }
 
-  .orders-table {
-    width: 680px;
-    min-width: 680px;
-  }
+  /* MINI */
 
-  .orders-table th {
-    padding: 9px 10px;
-
-    font-size: 8px;
-  }
-
-  .orders-table td {
-    padding: 10px;
-
-    font-size: 9px;
-  }
-
-  .customer-avatar {
-    width: 25px;
-    height: 25px;
-
-    flex-basis: 25px;
-
-    font-size: 8px;
-  }
-
-  .order-status {
-    min-width: 60px;
-
-    padding: 4px 7px;
-
-    font-size: 7px;
-  }
-
-  /* =======================================================
-     EMPTY STATE
-  ======================================================= */
-
-  .empty-table {
-    height: 150px;
-  }
-
-  .empty-table i {
-    font-size: 22px;
-  }
-
-  .empty-table span {
-    font-size: 10px;
-  }
-
-  /* =======================================================
-     LOADING
-  ======================================================= */
-
-  .period-loading {
-    right: 10px;
-    bottom: 10px;
-
-    padding: 8px 10px;
-
-    font-size: 10px;
+  .dashboard-mini-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 /* =========================================================
-   VERY SMALL DEVICES
-========================================================= */
+   ACCESSIBILITY
+   ========================================================= */
 
-@media (max-width: 340px) {
-  .dashboard-header h1 {
-    font-size: 19px;
+.dashboard-refresh-btn:focus-visible,
+.stock-view-btn:focus-visible,
+.dashboard-view-all:focus-visible,
+.dashboard-period-select:focus-visible,
+.dashboard-error button:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-spinner {
+    animation: none;
   }
 
-  .dashboard-period-control {
-    max-width: 155px;
-    min-width: 140px;
-  }
-
-  .order-summary-content {
-    padding-left: 11px;
-    padding-right: 11px;
-  }
-
-  .order-donut {
-    width: 112px;
-    height: 112px;
-
-    flex-basis: 112px;
-  }
-
-  .order-donut::before {
-    width: 70px;
-    height: 70px;
-  }
-
-  .order-donut-center strong {
-    font-size: 19px;
-  }
-
-  .status-name-row span,
-  .status-name-row strong {
-    font-size: 9px;
+  .stat-card,
+  .mini-summary-card,
+  .dashboard-refresh-btn,
+  .stock-view-btn,
+  .revenue-bar,
+  .dashboard-view-all i {
+    transition: none;
   }
 }
