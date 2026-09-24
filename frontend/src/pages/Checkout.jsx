@@ -1,20 +1,14 @@
 import { useEffect, useState } from "react";
-
 import { Link, useNavigate, useLocation } from "react-router-dom";
-
 import axios from "axios";
-
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
-
 import "./Checkout.css";
 
 const API_URL = "http://localhost:5000/api";
 
 function Checkout() {
   const navigate = useNavigate();
-
   const location = useLocation();
 
   // =========================================================
@@ -32,21 +26,28 @@ function Checkout() {
   // =========================================================
 
   const [cart, setCart] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [placingOrder, setPlacingOrder] = useState(false);
 
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: "",
+    phone: "",
+    address: "",
+    apartment: "",
+    city: "",
+    state: "Kerala",
+    pincode: "",
+  });
+
   const [couponCode, setCouponCode] = useState("");
-
   const [coupon, setCoupon] = useState(null);
-
   const [couponMessage, setCouponMessage] = useState("");
-
   const [couponLoading, setCouponLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
-
   const [billingAddress, setBillingAddress] = useState("same");
 
   const [error, setError] = useState("");
@@ -56,7 +57,6 @@ function Checkout() {
   // =========================================================
 
   const token = localStorage.getItem("token");
-
   const userId = localStorage.getItem("userId");
 
   const authConfig = {
@@ -78,7 +78,8 @@ function Checkout() {
 
       const script = document.createElement("script");
 
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.src =
+        "https://checkout.razorpay.com/v1/checkout.js";
 
       script.onload = () => {
         resolve(true);
@@ -93,7 +94,7 @@ function Checkout() {
   };
 
   // =========================================================
-  // FETCH CART
+  // FETCH CART + ADDRESSES
   // =========================================================
 
   useEffect(() => {
@@ -103,12 +104,16 @@ function Checkout() {
     }
 
     fetchCart();
+    fetchAddresses();
   }, [token, navigate]);
+
+  // =========================================================
+  // FETCH CART
+  // =========================================================
 
   const fetchCart = async () => {
     try {
       setLoading(true);
-
       setError("");
 
       const response = await axios.get(
@@ -122,9 +127,7 @@ function Checkout() {
 
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
-
         localStorage.removeItem("userId");
-
         localStorage.removeItem("user");
 
         navigate("/login");
@@ -140,6 +143,92 @@ function Checkout() {
   };
 
   // =========================================================
+  // FETCH SAVED ADDRESSES
+  // =========================================================
+
+  const fetchAddresses = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/addresses`,
+        authConfig
+      );
+
+      const addressList =
+        response.data.addresses ||
+        response.data ||
+        [];
+
+      setAddresses(addressList);
+
+      // Select default address automatically
+      const defaultAddress = addressList.find(
+        (address) => address.isDefault
+      );
+
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress._id);
+
+        setShippingAddress({
+          fullName: defaultAddress.fullName || "",
+          phone: defaultAddress.phone || "",
+          address: defaultAddress.addressLine1 || "",
+          apartment: defaultAddress.addressLine2 || "",
+          city: defaultAddress.city || "",
+          state: defaultAddress.state || "Kerala",
+          pincode: defaultAddress.postalCode || "",
+        });
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching addresses:",
+        error
+      );
+    }
+  };
+
+  // =========================================================
+  // SELECT SAVED ADDRESS
+  // =========================================================
+
+  const handleAddressChange = (event) => {
+    const addressId = event.target.value;
+
+    setSelectedAddressId(addressId);
+
+    if (!addressId) {
+      setShippingAddress({
+        fullName: "",
+        phone: "",
+        address: "",
+        apartment: "",
+        city: "",
+        state: "Kerala",
+        pincode: "",
+      });
+
+      return;
+    }
+
+    const address = addresses.find(
+      (item) => item._id === addressId
+    );
+
+    if (!address) {
+      return;
+    }
+
+    setShippingAddress({
+      fullName: address.fullName || "",
+      phone: address.phone || "",
+      address: address.addressLine1 || "",
+      apartment: address.addressLine2 || "",
+      city: address.city || "",
+      state: address.state || "Kerala",
+      pincode: address.postalCode || "",
+    });
+  };
+
+  // =========================================================
   // CART HELPERS
   // =========================================================
 
@@ -148,9 +237,7 @@ function Checkout() {
       return [
         {
           product: buyNowProduct,
-
           quantity: buyNowProduct.quantity || 1,
-
           size: buyNowProduct.selectedSize || "",
         },
       ];
@@ -219,16 +306,15 @@ function Checkout() {
     const code = couponCode.trim().toUpperCase();
 
     if (!code) {
-      setCouponMessage("Please enter a coupon code.");
-
+      setCouponMessage(
+        "Please enter a coupon code."
+      );
       setCoupon(null);
-
       return;
     }
 
     try {
       setCouponLoading(true);
-
       setCouponMessage("");
 
       const response = await axios.get(
@@ -242,14 +328,11 @@ function Checkout() {
 
       if (!couponData) {
         setCoupon(null);
-
         setCouponMessage("Invalid coupon.");
-
         return;
       }
 
       // Active check
-
       if (
         couponData.active === false ||
         couponData.isActive === false
@@ -264,7 +347,6 @@ function Checkout() {
       }
 
       // Expiry check
-
       const expiryDate =
         couponData.expiryDate ||
         couponData.expiry;
@@ -283,7 +365,6 @@ function Checkout() {
       }
 
       // Minimum purchase
-
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
@@ -299,7 +380,6 @@ function Checkout() {
       }
 
       // Calculate discount
-
       let discountAmount = 0;
 
       const discountType =
@@ -320,7 +400,6 @@ function Checkout() {
       }
 
       // Maximum discount
-
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -336,7 +415,6 @@ function Checkout() {
       }
 
       // Discount cannot exceed subtotal
-
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -349,7 +427,6 @@ function Checkout() {
 
       setCoupon({
         ...couponData,
-
         discountAmount,
       });
 
@@ -359,7 +436,10 @@ function Checkout() {
         } applied successfully.`
       );
     } catch (error) {
-      console.error("Coupon error:", error);
+      console.error(
+        "Coupon error:",
+        error
+      );
 
       setCoupon(null);
 
@@ -372,17 +452,18 @@ function Checkout() {
     }
   };
 
+  // =========================================================
+  // REMOVE COUPON
+  // =========================================================
+
   const removeCoupon = () => {
     setCoupon(null);
-
     setCouponCode("");
-
     setCouponMessage("");
   };
 
   // =========================================================
   // CREATE ORDER DATA
-  // FIXED: receive actual form instead of event
   // =========================================================
 
   const getOrderData = (form) => {
@@ -398,7 +479,7 @@ function Checkout() {
     const lastName =
       formData.get("lastName") || "";
 
-    const shippingAddress = {
+    const shippingAddressData = {
       fullName:
         `${firstName} ${lastName}`.trim(),
 
@@ -429,37 +510,37 @@ function Checkout() {
     // VALIDATION
     // =======================================================
 
-    if (!shippingAddress.fullName) {
+    if (!shippingAddressData.fullName) {
       throw new Error(
         "Please enter your name."
       );
     }
 
-    if (!shippingAddress.phone) {
+    if (!shippingAddressData.phone) {
       throw new Error(
         "Please enter your phone number."
       );
     }
 
-    if (!shippingAddress.address) {
+    if (!shippingAddressData.address) {
       throw new Error(
         "Please enter your address."
       );
     }
 
-    if (!shippingAddress.city) {
+    if (!shippingAddressData.city) {
       throw new Error(
         "Please enter your city."
       );
     }
 
-    if (!shippingAddress.state) {
+    if (!shippingAddressData.state) {
       throw new Error(
         "Please select your state."
       );
     }
 
-    if (!shippingAddress.pincode) {
+    if (!shippingAddressData.pincode) {
       throw new Error(
         "Please enter your pincode."
       );
@@ -502,7 +583,8 @@ function Checkout() {
 
       items: orderItems,
 
-      shippingAddress,
+      shippingAddress:
+        shippingAddressData,
 
       totalAmount: subtotal,
 
@@ -524,19 +606,16 @@ function Checkout() {
 
   // =========================================================
   // RAZORPAY PAYMENT
-  // FIXED: receive actual form instead of event
   // =========================================================
 
-  const handleRazorpayPayment = async (form) => {
+  const handleRazorpayPayment = async (
+    form
+  ) => {
     try {
       setPlacingOrder(true);
-
       setError("");
 
-      // -----------------------------------------------------
-      // Load Razorpay checkout script
-      // -----------------------------------------------------
-
+      // Load Razorpay
       const razorpayLoaded =
         await loadRazorpayScript();
 
@@ -546,10 +625,7 @@ function Checkout() {
         );
       }
 
-      // -----------------------------------------------------
       // Prepare order data
-      // -----------------------------------------------------
-
       const orderData =
         getOrderData(form);
 
@@ -558,9 +634,9 @@ function Checkout() {
         orderData
       );
 
-      // -----------------------------------------------------
+      // =====================================================
       // STEP 1: CREATE MONGODB ORDER
-      // -----------------------------------------------------
+      // =====================================================
 
       const mongoOrderResponse =
         await axios.post(
@@ -586,16 +662,15 @@ function Checkout() {
       const mongoOrderId =
         mongoOrder._id;
 
-      // -----------------------------------------------------
+      // =====================================================
       // STEP 2: CREATE RAZORPAY ORDER
-      // -----------------------------------------------------
+      // =====================================================
 
       const razorpayOrderResponse =
         await axios.post(
           `${API_URL}/orders/razorpay/create-order`,
           {
             amount: totalAmount,
-
             orderId: mongoOrderId,
           },
           authConfig
@@ -615,12 +690,13 @@ function Checkout() {
         );
       }
 
-      // -----------------------------------------------------
-      // STEP 3: GET PUBLIC RAZORPAY KEY
-      // -----------------------------------------------------
+      // =====================================================
+      // STEP 3: GET RAZORPAY KEY
+      // =====================================================
 
       const razorpayKey =
-        import.meta.env.VITE_RAZORPAY_KEY_ID;
+        import.meta.env
+          .VITE_RAZORPAY_KEY_ID;
 
       if (!razorpayKey) {
         throw new Error(
@@ -628,17 +704,19 @@ function Checkout() {
         );
       }
 
-      // -----------------------------------------------------
+      // =====================================================
       // STEP 4: OPEN RAZORPAY CHECKOUT
-      // -----------------------------------------------------
+      // =====================================================
 
       const options = {
         key: razorpayKey,
 
-        amount: razorpayOrder.amount,
+        amount:
+          razorpayOrder.amount,
 
         currency:
-          razorpayOrder.currency || "INR",
+          razorpayOrder.currency ||
+          "INR",
 
         name: "Rizo",
 
@@ -657,9 +735,9 @@ function Checkout() {
               razorpayResponse
             );
 
-            // ------------------------------------------------
+            // =================================================
             // STEP 5: VERIFY PAYMENT
-            // ------------------------------------------------
+            // =================================================
 
             const verifyResponse =
               await axios.post(
@@ -710,8 +788,10 @@ function Checkout() {
             );
 
             setError(
-              error.response?.data?.message ||
-                error.response?.data?.error ||
+              error.response?.data
+                ?.message ||
+                error.response?.data
+                  ?.error ||
                 "Payment verification failed."
             );
           } finally {
@@ -754,7 +834,9 @@ function Checkout() {
       };
 
       const razorpay =
-        new window.Razorpay(options);
+        new window.Razorpay(
+          options
+        );
 
       razorpay.on(
         "payment.failed",
@@ -794,17 +876,17 @@ function Checkout() {
 
   // =========================================================
   // PLACE ORDER
-  // FIXED: capture form before async operations
   // =========================================================
 
-  const handlePlaceOrder = async (event) => {
+  const handlePlaceOrder = async (
+    event
+  ) => {
     event.preventDefault();
 
     const form = event.currentTarget;
 
     if (!token) {
       navigate("/login");
-
       return;
     }
 
@@ -812,7 +894,6 @@ function Checkout() {
       setError(
         "User information not found. Please login again."
       );
-
       return;
     }
 
@@ -820,7 +901,6 @@ function Checkout() {
       setError(
         "No products available to place the order."
       );
-
       return;
     }
 
@@ -831,7 +911,9 @@ function Checkout() {
     if (
       paymentMethod === "razorpay"
     ) {
-      await handleRazorpayPayment(form);
+      await handleRazorpayPayment(
+        form
+      );
 
       return;
     }
@@ -850,7 +932,6 @@ function Checkout() {
 
     try {
       setPlacingOrder(true);
-
       setError("");
 
       const orderData =
@@ -920,8 +1001,8 @@ function Checkout() {
             </h2>
 
             <p>
-              Please login before proceeding
-              to checkout.
+              Please login before
+              proceeding to checkout.
             </p>
 
             <Link
@@ -1038,6 +1119,42 @@ function Checkout() {
 
           <section className="delivery-section">
 
+            {/* SAVED ADDRESS */}
+
+            {addresses.length > 0 && (
+              <div className="form-group saved-address-group">
+                <label>
+                  Select Saved Address
+                </label>
+
+                <select
+                  value={selectedAddressId}
+                  onChange={
+                    handleAddressChange
+                  }
+                >
+                  <option value="">
+                    Select an address
+                  </option>
+
+                  {addresses.map(
+                    (address) => (
+                      <option
+                        key={address._id}
+                        value={address._id}
+                      >
+                        {address.fullName} -{" "}
+                        {
+                          address.addressLine1
+                        }
+                        ,{" "}
+                        {address.city}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+            )}
 
             {/* DELIVERY */}
 
@@ -1071,6 +1188,13 @@ function Checkout() {
                   type="text"
                   name="firstName"
                   placeholder="First name"
+                  defaultValue={
+                    shippingAddress.fullName
+                      .split(" ")[0] || ""
+                  }
+                  key={
+                    `first-${selectedAddressId}`
+                  }
                   required
                 />
               </div>
@@ -1080,6 +1204,15 @@ function Checkout() {
                   type="text"
                   name="lastName"
                   placeholder="Last name"
+                  defaultValue={
+                    shippingAddress.fullName
+                      .split(" ")
+                      .slice(1)
+                      .join(" ")
+                  }
+                  key={
+                    `last-${selectedAddressId}`
+                  }
                   required
                 />
               </div>
@@ -1093,6 +1226,12 @@ function Checkout() {
                 type="text"
                 name="address"
                 placeholder="Address"
+                defaultValue={
+                  shippingAddress.address
+                }
+                key={
+                  `address-${selectedAddressId}`
+                }
                 required
               />
             </div>
@@ -1104,6 +1243,12 @@ function Checkout() {
                 type="text"
                 name="apartment"
                 placeholder="Apartment, suite, etc. (optional)"
+                defaultValue={
+                  shippingAddress.apartment
+                }
+                key={
+                  `apartment-${selectedAddressId}`
+                }
               />
             </div>
 
@@ -1116,6 +1261,12 @@ function Checkout() {
                   type="text"
                   name="city"
                   placeholder="City"
+                  defaultValue={
+                    shippingAddress.city
+                  }
+                  key={
+                    `city-${selectedAddressId}`
+                  }
                   required
                 />
               </div>
@@ -1123,7 +1274,13 @@ function Checkout() {
               <div className="checkout-field">
                 <select
                   name="state"
-                  defaultValue="Kerala"
+                  defaultValue={
+                    shippingAddress.state ||
+                    "Kerala"
+                  }
+                  key={
+                    `state-${selectedAddressId}`
+                  }
                   required
                 >
                   <option value="Kerala">
@@ -1155,6 +1312,12 @@ function Checkout() {
                   placeholder="PIN code"
                   pattern="[0-9]{6}"
                   title="Please enter a valid 6-digit PIN code"
+                  defaultValue={
+                    shippingAddress.pincode
+                  }
+                  key={
+                    `pincode-${selectedAddressId}`
+                  }
                   required
                 />
               </div>
@@ -1170,6 +1333,12 @@ function Checkout() {
                 placeholder="Phone"
                 pattern="[0-9]{10}"
                 title="Please enter a valid 10-digit phone number"
+                defaultValue={
+                  shippingAddress.phone
+                }
+                key={
+                  `phone-${selectedAddressId}`
+                }
                 required
               />
             </div>
@@ -1214,8 +1383,12 @@ function Checkout() {
                 {!coupon ? (
                   <button
                     type="button"
-                    onClick={validateCoupon}
-                    disabled={couponLoading}
+                    onClick={
+                      validateCoupon
+                    }
+                    disabled={
+                      couponLoading
+                    }
                   >
                     {couponLoading
                       ? "Applying..."
@@ -1224,7 +1397,9 @@ function Checkout() {
                 ) : (
                   <button
                     type="button"
-                    onClick={removeCoupon}
+                    onClick={
+                      removeCoupon
+                    }
                   >
                     Remove
                   </button>
@@ -1317,7 +1492,8 @@ function Checkout() {
 
                         {item.size && (
                           <small>
-                            Size: {item.size}
+                            Size:{" "}
+                            {item.size}
                           </small>
                         )}
 
@@ -1345,6 +1521,7 @@ function Checkout() {
             <div className="price-details">
 
               <div className="price-row">
+
                 <span>
                   Subtotal
                 </span>
@@ -1355,6 +1532,7 @@ function Checkout() {
                     "en-IN"
                   )}
                 </span>
+
               </div>
 
               {discount > 0 && (
@@ -1457,7 +1635,9 @@ function Checkout() {
                     paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod("cod")
+                    setPaymentMethod(
+                      "cod"
+                    )
                   }
                 />
 
@@ -1475,12 +1655,15 @@ function Checkout() {
 
               </label>
 
-              {paymentMethod === "cod" && (
+              {paymentMethod ===
+                "cod" && (
                 <div className="payment-info-box">
+
                   <p>
                     You can pay cash when
                     your order is delivered.
                   </p>
+
                 </div>
               )}
 
@@ -1528,11 +1711,13 @@ function Checkout() {
               {paymentMethod ===
                 "razorpay" && (
                 <div className="payment-info-box">
+
                   <p>
                     You will be redirected to
                     Razorpay secure payment
                     checkout.
                   </p>
+
                 </div>
               )}
 

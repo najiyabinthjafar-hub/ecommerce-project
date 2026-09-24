@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 import "./Orders.css";
+
+const API_URL = "http://localhost:5000/api";
 
 function Orders() {
   const [orders, setOrders] = useState([]);
@@ -13,41 +16,59 @@ function Orders() {
 
   const navigate = useNavigate();
 
+  // =========================================================
+  // FETCH ORDERS
+  // =========================================================
   useEffect(() => {
     window.scrollTo(0, 0);
 
     const fetchOrders = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       try {
-        const response = await fetch(
-          "http://localhost:5000/api/orders",
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders`,
           {
-            method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
             },
           }
         );
 
-        const data = await response.json();
+        console.log(
+          "Orders API response:",
+          response.data
+        );
 
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch orders"
-          );
+        setOrders(
+          response.data.orders ||
+            response.data.data ||
+            []
+        );
+      } catch (error) {
+        console.error(
+          "Fetch orders error:",
+          error
+        );
+
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("user");
+
+          navigate("/login");
+          return;
         }
 
-        setOrders(data.orders || []);
-      } catch (err) {
-        console.error("Orders API Error:", err);
-        setError(err.message || "Something went wrong");
+        setError(
+          error.response?.data?.message ||
+            "Failed to load your orders."
+        );
       } finally {
         setLoading(false);
       }
@@ -56,21 +77,34 @@ function Orders() {
     fetchOrders();
   }, [navigate]);
 
+  // =========================================================
+  // FORMAT STATUS
+  // =========================================================
   const formatStatus = (status) => {
-    if (!status) return "Pending";
+    if (!status) {
+      return "Pending";
+    }
 
     return status
       .replace(/_/g, " ")
       .toLowerCase()
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
   };
 
+  // =========================================================
+  // PRODUCT IMAGE
+  // =========================================================
   const getProductImage = (product) => {
     if (!product) {
       return "/images/placeholder.png";
     }
 
-    if (product.images && product.images.length > 0) {
+    if (
+      product.images &&
+      product.images.length > 0
+    ) {
       const image = product.images[0];
 
       if (typeof image === "string") {
@@ -78,9 +112,12 @@ function Orders() {
           return image;
         }
 
-        return `http://localhost:5000/${
-          image.startsWith("/") ? image.slice(1) : image
-        }`;
+        return `${API_URL.replace(
+          "/api",
+          ""
+        )}/${image.startsWith("/")
+          ? image.slice(1)
+          : image}`;
       }
 
       if (image?.url) {
@@ -88,31 +125,49 @@ function Orders() {
           return image.url;
         }
 
-        return `http://localhost:5000${image.url}`;
+        return `${API_URL.replace(
+          "/api",
+          ""
+        )}${image.url}`;
       }
     }
 
     if (product.image) {
-      if (product.image.startsWith("http")) {
+      if (
+        product.image.startsWith("http")
+      ) {
         return product.image;
       }
 
-      return `http://localhost:5000${product.image}`;
+      return `${API_URL.replace(
+        "/api",
+        ""
+      )}${product.image}`;
     }
 
     return "/images/placeholder.png";
   };
 
+  // =========================================================
+  // PRODUCT NAME
+  // =========================================================
   const getProductName = (product) => {
-    return product?.name || product?.title || "Product";
+    return (
+      product?.name ||
+      product?.title ||
+      "Product"
+    );
   };
 
+  // =========================================================
+  // PRODUCT PRICE
+  // =========================================================
   const getProductPrice = (item) => {
     if (
       item?.price !== undefined &&
       item?.price !== null
     ) {
-      return item.price;
+      return Number(item.price);
     }
 
     if (
@@ -120,12 +175,19 @@ function Orders() {
       item?.product?.salePrice !== null &&
       item.product.salePrice > 0
     ) {
-      return item.product.salePrice;
+      return Number(
+        item.product.salePrice
+      );
     }
 
-    return item?.product?.regularPrice || 0;
+    return Number(
+      item?.product?.regularPrice || 0
+    );
   };
 
+  // =========================================================
+  // PRODUCT SIZE
+  // =========================================================
   const getProductSize = (item) => {
     return (
       item?.size ||
@@ -135,86 +197,270 @@ function Orders() {
     );
   };
 
+  // =========================================================
+  // TRACK ORDER
+  // =========================================================
   const handleTrackOrder = (order) => {
-    navigate(`/track-order/${order._id}`, {
-      state: {
-        order: order,
-      },
-    });
+    navigate(
+      `/track-order/${order._id}`,
+      {
+        state: {
+          order: order,
+        },
+      }
+    );
   };
 
+  // =========================================================
+  // CANCEL ORDER
+  // =========================================================
+  const handleCancelOrder = async (
+    orderId
+  ) => {
+    const confirmCancel =
+      window.confirm(
+        "Are you sure you want to cancel this order?"
+      );
+
+    if (!confirmCancel) {
+      return;
+    }
+
+    try {
+      const token =
+        localStorage.getItem("token");
+
+      const response =
+        await axios.put(
+          `${API_URL}/orders/${orderId}/status`,
+          {
+            orderStatus: "CANCELLED",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+      const updatedOrder =
+        response.data.order ||
+        response.data.data;
+
+      setOrders(
+        (previousOrders) =>
+          previousOrders.map(
+            (order) =>
+              order._id === orderId
+                ? updatedOrder
+                : order
+          )
+      );
+
+      alert(
+        "Your order has been cancelled."
+      );
+    } catch (error) {
+      console.error(
+        "Cancel order error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to cancel order."
+      );
+    }
+  };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+
+        <main className="orders-page">
+          <section className="orders-heading">
+
+            <p>YOUR ACCOUNT</p>
+
+            <h1>MY ORDERS</h1>
+
+            <span>
+              Loading your orders...
+            </span>
+
+          </section>
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =========================================================
+  // PAGE
+  // =========================================================
   return (
     <>
       <Navbar />
 
       <main className="orders-page">
+
         <div className="orders-container">
 
-          {loading && (
-            <div className="orders-message">
-              Loading your orders...
-            </div>
+          {/* =================================================
+              HEADING
+          ================================================= */}
+          <section className="orders-heading">
+
+            <p>YOUR ACCOUNT</p>
+
+            <h1>MY ORDERS</h1>
+
+            <span>
+              View your recent orders and
+              order details.
+            </span>
+
+          </section>
+
+          {/* =================================================
+              ERROR
+          ================================================= */}
+          {error && (
+            <section className="orders-empty">
+
+              <h2>{error}</h2>
+
+            </section>
           )}
 
-          {!loading && error && (
-            <div className="orders-message error">
-              {error}
-            </div>
-          )}
-
-          {!loading &&
-            !error &&
+          {/* =================================================
+              NO ORDERS
+          ================================================= */}
+          {!error &&
             orders.length === 0 && (
-              <div className="orders-message">
-                No orders found.
-              </div>
+              <section className="orders-empty">
+
+                <h2>
+                  No orders yet
+                </h2>
+
+                <p>
+                  You haven't placed any
+                  orders yet.
+                </p>
+
+                <Link to="/shop">
+                  START SHOPPING
+                </Link>
+
+              </section>
             )}
 
-          {!loading &&
-            !error &&
+          {/* =================================================
+              ORDERS
+          ================================================= */}
+          {!error &&
             orders.length > 0 && (
-              <div className="orders-content">
+              <section className="orders-list">
 
-                {/* HEADER */}
-                <div className="orders-header">
-                  <div className="product-heading">
-                    PRODUCT
-                  </div>
+                {orders.map((order) => {
 
-                  <div className="status-heading">
-                    STATUS
-                  </div>
-                </div>
+                  const status =
+                    order.orderStatus ||
+                    "PENDING";
 
-                {/* ORDERS */}
-                <div className="orders-list">
-                  {orders.map((order) => {
-                    const status =
-                      order.orderStatus || "PENDING";
+                  const normalizedStatus =
+                    status.toUpperCase();
 
-                    const normalizedStatus =
-                      status.toUpperCase();
+                  return (
+                    <article
+                      className="order-card"
+                      key={order._id}
+                    >
 
-                    return (
-                      <div
-                        className="order-item"
-                        key={order._id}
-                      >
+                      {/* =====================================
+                          ORDER HEADER
+                      ===================================== */}
+                      <div className="order-header">
 
-                        {/* PRODUCT */}
-                        <div className="product-section">
-                          {order.items?.map(
-                            (item, index) => {
-                              const product = item.product;
+                        <div>
+                          <span>
+                            ORDER ID
+                          </span>
 
-                              return (
-                                <div
-                                  className="product-item"
-                                  key={
-                                    product?._id ||
-                                    `${order._id}-${index}`
-                                  }
-                                >
+                          <strong>
+                            #{order._id}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            DATE
+                          </span>
+
+                          <strong>
+                            {order.createdAt
+                              ? new Date(
+                                  order.createdAt
+                                ).toLocaleDateString(
+                                  "en-IN"
+                                )
+                              : "N/A"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            STATUS
+                          </span>
+
+                          <strong
+                            className={`order-status ${
+                              status
+                                .toLowerCase()
+                                .replace(
+                                  /\s+/g,
+                                  "-"
+                                )
+                            }`}
+                          >
+                            {formatStatus(
+                              status
+                            )}
+                          </strong>
+                        </div>
+
+                      </div>
+
+                      {/* =====================================
+                          ORDER PRODUCTS
+                      ===================================== */}
+                      <div className="order-products">
+
+                        {order.items?.map(
+                          (
+                            item,
+                            index
+                          ) => {
+
+                            const product =
+                              item.product ||
+                              {};
+
+                            return (
+                              <div
+                                className="order-product"
+                                key={`${order._id}-${index}`}
+                              >
+
+                                {/* PRODUCT IMAGE */}
+                                <div className="order-product-image">
+
                                   <img
                                     src={getProductImage(
                                       product
@@ -222,79 +468,168 @@ function Orders() {
                                     alt={getProductName(
                                       product
                                     )}
-                                    className="product-image"
-                                    onError={(event) => {
+                                    onError={(
+                                      event
+                                    ) => {
                                       event.currentTarget.src =
                                         "/images/placeholder.png";
                                     }}
                                   />
 
-                                  <div className="product-details">
-                                    <h3>
-                                      {getProductName(
-                                        product
-                                      )}
-                                    </h3>
-
-                                    <p className="product-price">
-                                      ₹
-                                      {Number(
-                                        getProductPrice(item)
-                                      ).toLocaleString(
-                                        "en-IN"
-                                      )}
-                                    </p>
-
-                                    <p className="product-meta">
-                                      Size:{" "}
-                                      {getProductSize(item)}
-
-                                      <span>|</span>
-
-                                      Quantity:{" "}
-                                      {item.quantity || 1}
-                                    </p>
-                                  </div>
                                 </div>
-                              );
-                            }
-                          )}
-                        </div>
 
-                        {/* STATUS */}
-                        <div className="status-section">
-                          <span
-                            className={`status ${normalizedStatus
-                              .toLowerCase()
-                              .replace(/_/g, "-")}`}
-                          >
-                            {formatStatus(status)}
+                                {/* PRODUCT DETAILS */}
+                                <div className="product-details">
+
+                                  <h3>
+                                    {getProductName(
+                                      product
+                                    )}
+                                  </h3>
+
+                                  <p className="product-price">
+                                    ₹
+                                    {getProductPrice(
+                                      item
+                                    ).toLocaleString(
+                                      "en-IN"
+                                    )}
+                                  </p>
+
+                                  <p className="product-meta">
+                                    Size:{" "}
+                                    {getProductSize(
+                                      item
+                                    )}
+
+                                    <span>
+                                      |
+                                    </span>
+
+                                    Quantity:{" "}
+                                    {item.quantity ||
+                                      1}
+                                  </p>
+
+                                </div>
+
+                                {/* ITEM TOTAL */}
+                                <strong className="product-item-total">
+                                  ₹
+                                  {(
+                                    getProductPrice(
+                                      item
+                                    ) *
+                                    Number(
+                                      item.quantity ||
+                                        1
+                                    )
+                                  ).toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </strong>
+
+                              </div>
+                            );
+                          }
+                        )}
+
+                      </div>
+
+                      {/* =====================================
+                          ORDER FOOTER
+                      ===================================== */}
+                      <div className="order-footer">
+
+                        <div>
+                          <span>
+                            PAYMENT
                           </span>
 
-                          {normalizedStatus !==
-                            "CANCELLED" &&
-                            normalizedStatus !==
-                              "DELIVERED" && (
+                          <strong>
+                            {order.paymentMethod ||
+                              "COD"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            TOTAL
+                          </span>
+
+                          <strong>
+                            ₹
+                            {Number(
+                              order.finalAmount ??
+                                order.totalAmount ??
+                                order.total ??
+                                0
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </strong>
+                        </div>
+
+                      </div>
+
+                      {/* =====================================
+                          ORDER ACTIONS
+                      ===================================== */}
+                      <div className="order-actions">
+
+                        {normalizedStatus !==
+                          "CANCELLED" &&
+                          normalizedStatus !==
+                            "DELIVERED" && (
+                            <>
                               <button
                                 type="button"
                                 className="track-button"
                                 onClick={() =>
-                                  handleTrackOrder(order)
+                                  handleTrackOrder(
+                                    order
+                                  )
                                 }
                               >
                                 Track Your Order
                               </button>
-                            )}
-                        </div>
+
+                              <button
+                                type="button"
+                                className="cancel-order-btn"
+                                onClick={() =>
+                                  handleCancelOrder(
+                                    order._id
+                                  )
+                                }
+                              >
+                                CANCEL ORDER
+                              </button>
+                            </>
+                          )}
 
                       </div>
-                    );
-                  })}
-                </div>
 
-              </div>
+                    </article>
+                  );
+                })}
+
+              </section>
             )}
+
         </div>
+
+        {/* =================================================
+            BACK BUTTON
+        ================================================= */}
+        <button
+          type="button"
+          className="orders-back-button"
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
+
       </main>
 
       <Footer />

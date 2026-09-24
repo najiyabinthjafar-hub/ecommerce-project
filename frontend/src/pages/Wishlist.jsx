@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Wishlist.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -21,7 +23,6 @@ function Wishlist() {
     useState(null);
 
   // ================= TOKEN =================
-
   const getToken = () => {
     return localStorage.getItem("token");
   };
@@ -35,7 +36,6 @@ function Wishlist() {
   };
 
   // ================= FETCH WISHLIST =================
-
   const fetchWishlist = async () => {
     const token = getToken();
 
@@ -76,13 +76,11 @@ function Wishlist() {
   };
 
   // ================= FETCH ON PAGE LOAD =================
-
   useEffect(() => {
     fetchWishlist();
   }, []);
 
   // ================= REMOVE FROM WISHLIST =================
-
   const removeFromWishlist = async (productId) => {
     const token = getToken();
 
@@ -119,12 +117,13 @@ function Wishlist() {
   };
 
   // ================= ADD TO CART =================
-
   const addToCart = async (product) => {
     const token = getToken();
 
     if (!token) {
-      alert("Please login to add products to your cart.");
+      alert(
+        "Please login to add products to your cart."
+      );
       navigate("/login");
       return;
     }
@@ -165,7 +164,6 @@ function Wishlist() {
   };
 
   // ================= LOGIN CHECK =================
-
   if (!getToken()) {
     return (
       <>
@@ -173,7 +171,9 @@ function Wishlist() {
 
         <main className="wishlist-page">
           <div className="wishlist-container">
+
             <section className="wishlist-empty">
+
               <div className="empty-heart">
                 ♡
               </div>
@@ -188,7 +188,9 @@ function Wishlist() {
               <Link to="/login">
                 LOGIN
               </Link>
+
             </section>
+
           </div>
         </main>
 
@@ -198,7 +200,6 @@ function Wishlist() {
   }
 
   // ================= LOADING =================
-
   if (loading) {
     return (
       <>
@@ -206,9 +207,11 @@ function Wishlist() {
 
         <main className="wishlist-page">
           <div className="wishlist-container">
+
             <p className="no-products">
               Loading wishlist...
             </p>
+
           </div>
         </main>
 
@@ -222,10 +225,10 @@ function Wishlist() {
       <Navbar />
 
       <main className="wishlist-page">
+
         <div className="wishlist-container">
 
           {/* ================= BACK TO PROFILE ================= */}
-
           {showBackToProfile && (
             <button
               type="button"
@@ -239,17 +242,17 @@ function Wishlist() {
           )}
 
           {/* ================= HEADING ================= */}
-
           <section className="wishlist-heading">
+
             <h1>YOUR WISHLIST</h1>
 
             <span>
               Your favourite products in one place.
             </span>
+
           </section>
 
           {/* ================= ERROR ================= */}
-
           {error && (
             <p className="no-products">
               {error}
@@ -257,9 +260,9 @@ function Wishlist() {
           )}
 
           {/* ================= EMPTY WISHLIST ================= */}
-
           {!error && wishlist.length === 0 && (
             <section className="wishlist-empty">
+
               <div className="empty-heart">
                 ♡
               </div>
@@ -276,29 +279,27 @@ function Wishlist() {
               <Link to="/shop">
                 START SHOPPING
               </Link>
+
             </section>
           )}
 
           {/* ================= WISHLIST PRODUCTS ================= */}
-
           {!error && wishlist.length > 0 && (
             <section className="wishlist-products">
+
               {wishlist.map((product) => {
 
-                {/* ================= PRODUCT ID ================= */}
-
+                // ================= PRODUCT ID =================
                 const productId =
                   product._id || product.id;
 
-                {/* ================= PRODUCT IMAGE ================= */}
-
+                // ================= PRODUCT IMAGE =================
                 const productImage =
                   product.images?.[0] ||
                   product.image ||
                   "https://via.placeholder.com/300";
 
-                {/* ================= PRODUCT PRICE ================= */}
-
+                // ================= PRODUCT PRICE =================
                 const productPrice =
                   product.salePrice !== null &&
                   product.salePrice !== undefined
@@ -317,7 +318,6 @@ function Wishlist() {
                   >
 
                     {/* ================= PRODUCT IMAGE ================= */}
-
                     <Link
                       to={`/product/${productId}`}
                       className="wishlist-image"
@@ -329,8 +329,8 @@ function Wishlist() {
                     </Link>
 
                     {/* ================= PRODUCT INFO ================= */}
-
                     <div className="wishlist-info">
+
                       <h3>
                         {product.name}
                       </h3>
@@ -339,13 +339,15 @@ function Wishlist() {
                         ₹{" "}
                         {Number(
                           productPrice
-                        ).toLocaleString("en-IN")}
+                        ).toLocaleString(
+                          "en-IN"
+                        )}
                         /-
                       </p>
+
                     </div>
 
                     {/* ================= ACTIONS ================= */}
-
                     <div className="wishlist-actions">
 
                       <button
@@ -377,12 +379,16 @@ function Wishlist() {
                       </button>
 
                     </div>
+
                   </article>
                 );
               })}
+
             </section>
           )}
+
         </div>
+
       </main>
 
       <Footer />

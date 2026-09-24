@@ -68,4 +68,10 @@ router.put(
 );
 
 
+// CUSTOMER REQUEST RETURN
+router.post("/:id/return", protect, orderController.requestReturn);
+
+// ADMIN APPROVE / REJECT RETURN
+router.put("/:id/return-status", protect, orderController.updateReturnStatus);
+
 module.exports = router;

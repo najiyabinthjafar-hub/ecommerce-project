@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./Shop.css";
@@ -17,13 +18,23 @@ function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // =========================
+  // WISHLIST
+  // =========================
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loadingWishlist, setLoadingWishlist] = useState(true);
   const [updatingWishlist, setUpdatingWishlist] = useState(null);
 
+  // =========================
+  // FILTERS
+  // =========================
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
+
+  // =========================
+  // PAGINATION
+  // =========================
   const [currentPage, setCurrentPage] = useState(1);
 
   const [pagination, setPagination] = useState({
@@ -35,6 +46,9 @@ function Shop() {
 
   const productsPerPage = 8;
 
+  // =========================
+  // AUTH HELPERS
+  // =========================
   const getToken = () => localStorage.getItem("token");
 
   const getAuthConfig = () => ({
@@ -46,7 +60,6 @@ function Shop() {
   // =========================
   // FETCH PRODUCTS
   // =========================
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -64,13 +77,11 @@ function Shop() {
         }
 
         // AVAILABILITY
-        // "all" means no availability filter
         if (availability !== "all") {
           params.availability = availability;
         }
 
         // SORTING
-        // Price sorting gets priority over NEWEST / FEATURED
         if (priceOrder === "low-high") {
           params.sort = "price-low";
         } else if (priceOrder === "high-low") {
@@ -81,10 +92,9 @@ function Shop() {
 
         console.log("SHOP API PARAMS:", params);
 
-        const response = await axios.get(
-          `${API_URL}/products`,
-          { params }
-        );
+        const response = await axios.get(`${API_URL}/products`, {
+          params,
+        });
 
         console.log("SHOP API RESPONSE:", response.data);
 
@@ -135,7 +145,6 @@ function Shop() {
   // =========================
   // FIX PAGE IF TOTAL PAGES CHANGE
   // =========================
-
   useEffect(() => {
     if (
       pagination.totalPages > 0 &&
@@ -148,7 +157,6 @@ function Shop() {
   // =========================
   // FETCH WISHLIST
   // =========================
-
   useEffect(() => {
     const fetchWishlist = async () => {
       const token = getToken();
@@ -196,9 +204,8 @@ function Shop() {
   }, []);
 
   // =========================
-  // WISHLIST
+  // WISHLIST HANDLER
   // =========================
-
   const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
@@ -221,6 +228,7 @@ function Shop() {
     try {
       setUpdatingWishlist(productId);
 
+      // REMOVE FROM WISHLIST
       if (isWishlisted) {
         console.log(
           "REMOVING FROM WISHLIST:",
@@ -240,7 +248,10 @@ function Shop() {
         setWishlistIds((prev) =>
           prev.filter((id) => id !== productId)
         );
-      } else {
+      }
+
+      // ADD TO WISHLIST
+      else {
         console.log(
           "ADDING TO WISHLIST:",
           productId
@@ -282,7 +293,6 @@ function Shop() {
   // =========================
   // FILTER HANDLERS
   // =========================
-
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
     setCurrentPage(1);
@@ -302,7 +312,6 @@ function Shop() {
   // =========================
   // PAGINATION
   // =========================
-
   const handlePageChange = (page) => {
     if (
       page < 1 ||
@@ -329,7 +338,6 @@ function Shop() {
         {/* =========================
             HEADING
         ========================= */}
-
         <section className="shop-heading">
           <h1>SHOP</h1>
 
@@ -344,10 +352,10 @@ function Shop() {
         {/* =========================
             FILTER BAR
         ========================= */}
-
         <section className="shop-filter-bar">
 
           <div className="filter-left">
+
             <span className="filter-title">
               FILTER
             </span>
@@ -393,11 +401,13 @@ function Shop() {
                 HIGH TO LOW
               </option>
             </select>
+
           </div>
 
           <div className="filter-right">
 
             <div className="sort-by">
+
               <span>SORT BY:</span>
 
               <select
@@ -416,19 +426,22 @@ function Shop() {
                   FEATURED
                 </option>
               </select>
+
             </div>
 
             <span className="product-count">
-              {products.length} PRODUCTS
+              {pagination.totalProducts ||
+                products.length}{" "}
+              PRODUCTS
             </span>
 
           </div>
+
         </section>
 
         {/* =========================
             LOADING
         ========================= */}
-
         {loading && (
           <p className="no-products">
             Loading products...
@@ -438,7 +451,6 @@ function Shop() {
         {/* =========================
             ERROR
         ========================= */}
-
         {!loading && error && (
           <p className="no-products">
             Error: {error}
@@ -448,11 +460,11 @@ function Shop() {
         {/* =========================
             PRODUCTS
         ========================= */}
-
         {!loading && !error && (
           <section className="shop-products">
 
             {products.length > 0 ? (
+
               products.map((product) => {
 
                 const productId =
@@ -490,7 +502,6 @@ function Shop() {
                     <div className="shop-product-image">
 
                       {/* WISHLIST */}
-
                       <button
                         type="button"
                         className={`shop-wishlist-btn ${
@@ -524,7 +535,9 @@ function Shop() {
 
                     <div className="shop-product-info">
 
-                      <h3>{product.name}</h3>
+                      <h3>
+                        {product.name}
+                      </h3>
 
                       <p>
                         ₹
@@ -540,10 +553,13 @@ function Shop() {
                   </Link>
                 );
               })
+
             ) : (
+
               <p className="no-products">
                 No products found.
               </p>
+
             )}
 
           </section>
@@ -552,7 +568,6 @@ function Shop() {
         {/* =========================
             BACKEND PAGINATION
         ========================= */}
-
         {!loading &&
           !error &&
           pagination.totalPages > 1 && (
@@ -565,7 +580,9 @@ function Shop() {
                     currentPage - 1
                   )
                 }
-                disabled={currentPage === 1}
+                disabled={
+                  currentPage === 1
+                }
               >
                 ←
               </button>
@@ -576,10 +593,12 @@ function Shop() {
                     pagination.totalPages,
                 },
                 (_, index) => (
+
                   <button
                     key={index}
                     className={
-                      currentPage === index + 1
+                      currentPage ===
+                      index + 1
                         ? "active"
                         : ""
                     }
@@ -591,6 +610,7 @@ function Shop() {
                   >
                     {index + 1}
                   </button>
+
                 )
               )}
 
