@@ -50,20 +50,21 @@ const getAllProducts = async ({
 
   // ================= AVAILABILITY FILTER =================
 
- if (availability === "in-stock") {
-  query.stock = { $gt: 10 };
-}
+  if (availability === "in-stock") {
+    query.stock = { $gt: 10 };
+  }
 
-if (availability === "low-stock") {
-  query.stock = {
-    $gt: 0,
-    $lte: 10,
-  };
-}
+  if (availability === "low-stock") {
+    query.stock = {
+      $gt: 0,
+      $lte: 10,
+    };
+  }
 
-if (availability === "out-of-stock") {
-  query.stock = 0;
-}
+  if (availability === "out-of-stock") {
+    query.stock = 0;
+  }
+
   // ================= PAGINATION =================
 
   const pageNumber = Number(page) || 1;
@@ -376,7 +377,6 @@ const getBestSellers = async ({
 
   const pageNumber = Math.max(Number(page) || 1, 1);
   const limitNumber = Math.max(Number(limit) || 10, 1);
-
   const skip = (pageNumber - 1) * limitNumber;
 
   // ================= AGGREGATION =================
@@ -388,6 +388,7 @@ const getBestSellers = async ({
 
     // Effective price:
     // salePrice if available, otherwise regularPrice
+
     {
       $addFields: {
         effectivePrice: {
@@ -449,6 +450,7 @@ const getBestSellers = async ({
     });
   } else {
     // newest is the default
+
     pipeline.push({
       $sort: {
         createdAt: -1,
@@ -493,7 +495,6 @@ const getBestSellers = async ({
 
   return {
     products: populatedProducts,
-
     pagination: {
       currentPage: pageNumber,
       limit: limitNumber,

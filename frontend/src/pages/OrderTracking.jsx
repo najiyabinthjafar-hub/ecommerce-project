@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./OrderTracking.css";
 
@@ -8,12 +8,15 @@ const OrderTracking = () => {
 
   const order = location.state?.order;
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   if (!order) {
     return (
       <div className="tracking-page">
         <div className="tracking-empty">
           <h2>Order Not Found</h2>
-
           <p>Tracking information is not available.</p>
 
           <button
@@ -121,6 +124,7 @@ const OrderTracking = () => {
             </p>
           </div>
         ) : (
+
           /* TRACKING STEPS */
           <div className="tracking-steps">
             {steps.map((step, index) => {
@@ -135,6 +139,7 @@ const OrderTracking = () => {
                   key={step.key}
                 >
                   <div className="step-left">
+
                     <div className="step-circle">
                       {completed ? "✓" : ""}
                     </div>

@@ -17,6 +17,7 @@ function ChangePassword() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -56,10 +57,12 @@ function ChangePassword() {
         `${API_URL}/users/change-password`,
         {
           method: "PUT",
+
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify({
             currentPassword,
             newPassword,
@@ -86,7 +89,6 @@ function ChangePassword() {
       setTimeout(() => {
         navigate("/profile");
       }, 1500);
-
     } catch (error) {
       console.error("CHANGE PASSWORD ERROR:", error);
 
@@ -103,9 +105,8 @@ function ChangePassword() {
       <Navbar />
 
       <main className="change-password-page">
-        <div className="change-password-container">
 
-          
+        <div className="change-password-container">
 
           <h1>CHANGE PASSWORD</h1>
 
@@ -129,6 +130,7 @@ function ChangePassword() {
             className="change-password-form"
             onSubmit={handleSubmit}
           >
+
             <div className="password-field">
               <label>CURRENT PASSWORD</label>
 
@@ -183,9 +185,20 @@ function ChangePassword() {
                 ? "UPDATING PASSWORD..."
                 : "UPDATE PASSWORD"}
             </button>
+
           </form>
 
+          {/* BACK BUTTON */}
+          <button
+            type="button"
+            className="password-back-btn"
+            onClick={() => navigate("/profile")}
+          >
+             BACK
+          </button>
+
         </div>
+
       </main>
 
       <Footer />
