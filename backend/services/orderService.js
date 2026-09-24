@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const notificationService = require("./notificationService");
@@ -597,6 +598,14 @@ const verifyRazorpayPayment = async (
       });
     }
 
+    // Clear cart only after Razorpay payment is successfully verified
+    const cart = await Cart.findOne({ user: userId });
+
+    if (cart) {
+      cart.items = [];
+      await cart.save();
+    }
+
     return order;
   } catch (error) {
     await restoreStock(reducedItems);
@@ -616,13 +625,5 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
-
-
-
-
-
-
-
-
 
 
