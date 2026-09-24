@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -55,6 +56,11 @@ function FAQs() {
     },
   ];
 
+  // Scroll to top when page opens
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const toggleFAQ = (index) => {
     setActiveIndex(activeIndex === index ? null : index);
   };
@@ -66,7 +72,6 @@ function FAQs() {
       <main className="faqs-page">
 
         {/* HEADING */}
-
         <section className="faqs-heading">
           <p>HELP CENTER</p>
 
@@ -77,11 +82,8 @@ function FAQs() {
           </span>
         </section>
 
-
         {/* FAQ LIST */}
-
         <section className="faqs-container">
-
           {faqs.map((faq, index) => (
             <div
               className={`faq-item ${
@@ -105,29 +107,24 @@ function FAQs() {
                   <p>{faq.answer}</p>
                 </div>
               )}
-
             </div>
           ))}
-
         </section>
 
-
         {/* SUPPORT SECTION */}
-
         <section className="faq-support">
-
           <p>STILL NEED HELP?</p>
 
           <h2>WE'RE HERE FOR YOU</h2>
 
           <span>
-            Can't find the answer you're looking for? Our support team is ready to help.
+            Can't find the answer you're looking for? Our support team is ready
+            to help.
           </span>
 
           <a href="/contact">
             CONTACT US →
           </a>
-
         </section>
 
       </main>

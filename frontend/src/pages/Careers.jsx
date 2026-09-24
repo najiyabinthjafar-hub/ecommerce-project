@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -28,6 +30,11 @@ function Careers() {
     },
   ];
 
+  // Scroll to top when page opens
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleApply = (jobTitle) => {
     alert(`Application for ${jobTitle} will be available soon!`);
   };
@@ -37,8 +44,8 @@ function Careers() {
       <Navbar />
 
       <main className="careers-page">
-        {/* HERO */}
 
+        {/* HERO */}
         <section className="careers-heading">
           <p>JOIN RIZO</p>
 
@@ -50,7 +57,6 @@ function Careers() {
         </section>
 
         {/* ABOUT */}
-
         <section className="careers-intro">
           <h2>WORK WITH US</h2>
 
@@ -62,11 +68,13 @@ function Careers() {
         </section>
 
         {/* BENEFITS */}
-
         <section className="career-benefits">
+
           <div className="benefit-card">
             <span>✦</span>
+
             <h3>Creative Environment</h3>
+
             <p>
               Work with passionate people who love fashion and creativity.
             </p>
@@ -74,7 +82,9 @@ function Careers() {
 
           <div className="benefit-card">
             <span>✦</span>
+
             <h3>Career Growth</h3>
+
             <p>
               Learn new skills and grow your career with our team.
             </p>
@@ -82,25 +92,35 @@ function Careers() {
 
           <div className="benefit-card">
             <span>✦</span>
+
             <h3>Great Team</h3>
+
             <p>
               Be part of a supportive and friendly working environment.
             </p>
           </div>
+
         </section>
 
         {/* JOB OPENINGS */}
-
         <section className="jobs-section">
+
           <div className="jobs-heading">
             <p>OPPORTUNITIES</p>
+
             <h2>OPEN POSITIONS</h2>
           </div>
 
           <div className="jobs-container">
+
             {jobs.map((job) => (
-              <article className="job-card" key={job.id}>
+              <article
+                className="job-card"
+                key={job.id}
+              >
+
                 <div className="job-info">
+
                   <h3>{job.title}</h3>
 
                   <div className="job-details">
@@ -108,6 +128,7 @@ function Careers() {
                     <span>{job.location}</span>
                     <span>{job.type}</span>
                   </div>
+
                 </div>
 
                 <button
@@ -117,14 +138,17 @@ function Careers() {
                 >
                   APPLY NOW
                 </button>
+
               </article>
             ))}
+
           </div>
+
         </section>
 
         {/* CONTACT */}
-
         <section className="careers-contact">
+
           <h2>DON'T SEE THE RIGHT ROLE?</h2>
 
           <p>
@@ -138,7 +162,9 @@ function Careers() {
           >
             SEND YOUR RESUME
           </a>
+
         </section>
+
       </main>
 
       <Footer />

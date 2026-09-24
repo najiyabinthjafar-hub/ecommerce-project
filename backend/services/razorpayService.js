@@ -8,7 +8,7 @@ const razorpay = new Razorpay({
 
 const createRazorpayOrder = async (amount, receipt) => {
   const options = {
-    amount: Math.round(amount * 100),
+    amount: Math.round(amount * 100), // ₹ → paise
     currency: "INR",
     receipt,
   };
@@ -32,12 +32,30 @@ const verifyPaymentSignature = (
 };
 
 const createRefund = async (paymentId, amount) => {
-  const refund = await razorpay.payments.refund(paymentId, {
-    amount: Math.round(amount * 100),
-    speed: "normal",
-  });
+  try {
+    const refund = await razorpay.payments.refund(paymentId, {
+      amount: Math.round(amount * 100),
+    });
 
-  return refund;
+    console.log("Razorpay refund created:", refund);
+
+    return refund;
+  } catch (error) {
+    console.error(
+      "Razorpay refund error:",
+      JSON.stringify(error, null, 2)
+    );
+
+    const razorpayError = error.error || {};
+
+    const message =
+      razorpayError.description ||
+      error.description ||
+      error.message ||
+      "Unknown Razorpay refund error";
+
+    throw new Error(message);
+  }
 };
 
 module.exports = {

@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
-
 import { Link, useParams } from "react-router-dom";
-
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./Category.css";
@@ -22,18 +19,27 @@ function Category() {
   const [error, setError] = useState("");
 
   // ================= FILTERS =================
-
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
 
   // ================= PAGINATION =================
-
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
 
-  // ================= FETCH CATEGORY + PRODUCTS =================
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: productsPerPage,
+    totalProducts: 0,
+    totalPages: 0,
+  });
 
+  // ================= RESET PAGE WHEN CATEGORY CHANGES =================
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [slug, subcategorySlug]);
+
+  // ================= FETCH CATEGORY + PRODUCTS =================
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -43,7 +49,6 @@ function Category() {
         setError("");
 
         // ================= FETCH CATEGORY TREE =================
-
         const categoryResponse = await axios.get(
           `${API_URL}/categories/tree`
         );
@@ -66,19 +71,10 @@ function Category() {
 
         setCategories(childCategories);
 
-        // ================= FETCH PRODUCTS =================
-
-        const productResponse = await axios.get(
-          `${API_URL}/products?limit=100`
-        );
-
-        const allProducts =
-          productResponse.data.products || [];
-
+        // ================= FIND CATEGORY IDS =================
         let allowedCategoryIds = [];
 
         // ================= SUBCATEGORY PAGE =================
-
         if (subcategorySlug) {
           const selectedSubcategory =
             childCategories.find(
@@ -96,40 +92,79 @@ function Category() {
         }
 
         // ================= MAIN CATEGORY PAGE =================
-
         else {
-          allowedCategoryIds =
-            childCategories.map((category) =>
-              String(category._id)
-            );
+          allowedCategoryIds = childCategories.map(
+            (category) => String(category._id)
+          );
         }
 
-        // ================= CATEGORY PRODUCTS =================
+        // ================= PRODUCT API PARAMS =================
+        const params = {
+          page: currentPage,
+          limit: productsPerPage,
+        };
 
-        const categoryProducts =
-          allProducts.filter((product) => {
-            if (product.status !== "active") {
-              return false;
-            }
+        // ================= CATEGORY FILTER =================
+        if (allowedCategoryIds.length > 0) {
+          params.category =
+            allowedCategoryIds.join(",");
+        } else {
+          // If category has no children,
+          // use the main category itself.
+          params.category = String(foundCategory._id);
+        }
 
-            if (!product.category) {
-              return false;
-            }
+        // ================= AVAILABILITY =================
+        if (availability === "available") {
+          params.availability = "in-stock";
+        } else if (availability === "soldout") {
+          params.availability = "out-of-stock";
+        }
 
-            const productCategoryId =
-              typeof product.category === "object"
-                ? product.category._id
-                : product.category;
+        // ================= SORTING =================
+        if (priceOrder === "low-high") {
+          params.sort = "price-low";
+        } else if (priceOrder === "high-low") {
+          params.sort = "price-high";
+        } else {
+          params.sort = sortBy;
+        }
 
-            return allowedCategoryIds.includes(
-              String(productCategoryId)
-            );
-          });
+        console.log(
+          "CATEGORY API PARAMS:",
+          params
+        );
 
-        setProducts(categoryProducts);
-        setCurrentPage(1);
+        // ================= FETCH PRODUCTS =================
+        const productResponse = await axios.get(
+          `${API_URL}/products`,
+          {
+            params,
+          }
+        );
+
+        console.log(
+          "CATEGORY PRODUCT API RESPONSE:",
+          productResponse.data
+        );
+
+        setProducts(
+          productResponse.data.products || []
+        );
+
+        setPagination(
+          productResponse.data.pagination || {
+            currentPage: currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          }
+        );
       } catch (error) {
-        console.error("CATEGORY ERROR:", error);
+        console.error(
+          "CATEGORY ERROR:",
+          error.response?.data || error.message
+        );
 
         setError(
           error.response?.data?.message ||
@@ -138,103 +173,42 @@ function Category() {
         );
 
         setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategoryData();
-  }, [slug, subcategorySlug]);
+  }, [
+    slug,
+    subcategorySlug,
+    availability,
+    priceOrder,
+    sortBy,
+    currentPage,
+  ]);
 
-  // ================= FILTER PRODUCTS =================
-
-  let filteredProducts = [...products];
-
-  // ================= AVAILABILITY =================
-
-  if (availability === "available") {
-    filteredProducts = filteredProducts.filter(
-      (product) => Number(product.stock) > 0
-    );
-  } else if (availability === "soldout") {
-    filteredProducts = filteredProducts.filter(
-      (product) => Number(product.stock) === 0
-    );
-  }
-
-  // ================= PRICE SORT =================
-
-  if (priceOrder === "low-high") {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice || a.price || 0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice || b.price || 0;
-
-      return priceA - priceB;
-    });
-  } else if (priceOrder === "high-low") {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice || a.price || 0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice || b.price || 0;
-
-      return priceB - priceA;
-    });
-  }
-
-  // ================= SORT BY =================
-
-  else if (sortBy === "newest") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-    );
-  } else if (sortBy === "featured") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(a.createdAt || 0) -
-        new Date(b.createdAt || 0)
-    );
-  }
-
-  // ================= PAGINATION =================
-
-  const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
-  );
-
-  const safeCurrentPage =
-    currentPage > totalPages && totalPages > 0
-      ? totalPages
-      : currentPage;
-
-  const startIndex =
-    (safeCurrentPage - 1) * productsPerPage;
-
-  const currentProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + productsPerPage
-  );
+  // ================= FIX PAGE IF TOTAL PAGES CHANGE =================
+  useEffect(() => {
+    if (
+      pagination.totalPages > 0 &&
+      currentPage > pagination.totalPages
+    ) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [
+    pagination.totalPages,
+    currentPage,
+  ]);
 
   // ================= FILTER HANDLERS =================
-
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
     setCurrentPage(1);
@@ -251,9 +225,16 @@ function Category() {
     setCurrentPage(1);
   };
 
-  // ================= PAGINATION HANDLER =================
-
+  // ================= PAGINATION =================
   const handlePageChange = (page) => {
+    if (
+      page < 1 ||
+      page > pagination.totalPages ||
+      page === currentPage
+    ) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -263,7 +244,6 @@ function Category() {
   };
 
   // ================= LOADING =================
-
   if (loading) {
     return (
       <>
@@ -281,7 +261,6 @@ function Category() {
   }
 
   // ================= ERROR =================
-
   if (error) {
     return (
       <>
@@ -299,26 +278,22 @@ function Category() {
   }
 
   // ================= SELECTED SUBCATEGORY =================
-
   const selectedSubcategory = categories.find(
     (category) =>
       category.slug === subcategorySlug
   );
 
   // ================= PAGE TITLE =================
-
   const pageTitle = selectedSubcategory
     ? `All Products in ${selectedSubcategory.name}`
     : currentCategory?.name;
 
   // ================= PAGE DESCRIPTION =================
-
   const pageDescription = selectedSubcategory
     ? `Explore all products in ${selectedSubcategory.name}.`
     : `Explore our ${currentCategory?.name} collection.`;
 
   // ================= RETURN =================
-
   return (
     <>
       <Navbar />
@@ -326,7 +301,6 @@ function Category() {
       <main className="category-page">
 
         {/* ================= HEADING ================= */}
-
         <section className="category-page-heading">
           <h1>{pageTitle}</h1>
 
@@ -336,11 +310,9 @@ function Category() {
         </section>
 
         {/* ================= SUBCATEGORIES ================= */}
-
         {categories.length > 0 && (
           <section className="subcategory-section">
             <div className="subcategory-list">
-
               {categories.map((category) => (
                 <Link
                   key={category._id}
@@ -354,13 +326,11 @@ function Category() {
                   {category.name}
                 </Link>
               ))}
-
             </div>
           </section>
         )}
 
         {/* ================= FILTER BAR ================= */}
-
         <section className="category-filter-bar">
 
           <div className="category-filter-left">
@@ -369,6 +339,7 @@ function Category() {
               FILTER
             </span>
 
+            {/* AVAILABILITY */}
             <select
               value={availability}
               onChange={(e) =>
@@ -382,14 +353,15 @@ function Category() {
               </option>
 
               <option value="available">
-                AVAILABLE
+                IN STOCK
               </option>
 
               <option value="soldout">
-                SOLD OUT
+                OUT OF STOCK
               </option>
             </select>
 
+            {/* PRICE */}
             <select
               value={priceOrder}
               onChange={(e) =>
@@ -415,8 +387,8 @@ function Category() {
 
           <div className="category-filter-right">
 
+            {/* SORT */}
             <div className="category-sort-by">
-
               <span>SORT BY:</span>
 
               <select
@@ -435,33 +407,32 @@ function Category() {
                   FEATURED
                 </option>
               </select>
-
             </div>
 
+            {/* PRODUCT COUNT */}
             <span className="category-product-count">
-              {filteredProducts.length} PRODUCTS
+              {products.length} PRODUCTS
             </span>
 
           </div>
-
         </section>
 
         {/* ================= PRODUCTS ================= */}
-
         <section className="category-page-products">
 
-          {currentProducts.length > 0 ? (
+          {products.length > 0 ? (
 
             <div className="category-page-grid">
 
-              {currentProducts.map((product) => {
+              {products.map((product) => {
 
                 const productId =
                   product._id || product.id;
 
                 const productPrice =
                   product.salePrice !== null &&
-                  product.salePrice !== undefined
+                  product.salePrice !== undefined &&
+                  product.salePrice > 0
                     ? product.salePrice
                     : product.regularPrice ||
                       product.price ||
@@ -496,14 +467,7 @@ function Category() {
 
                     <div className="category-product-image">
 
-                      {Number(product.stock) === 0 && (
-                        <span className="sold-out">
-                          SOLD OUT
-                        </span>
-                      )}
-
-                      {/* ================= WISHLIST ================= */}
-
+                      {/* WISHLIST */}
                       <button
                         type="button"
                         className="category-wishlist-btn"
@@ -516,6 +480,7 @@ function Category() {
                         ♡
                       </button>
 
+                      {/* PRODUCT IMAGE */}
                       <img
                         src={productImage}
                         alt={product.name}
@@ -525,7 +490,9 @@ function Category() {
 
                     <div className="category-product-info">
 
-                      <h3>{product.name}</h3>
+                      <h3>
+                        {product.name}
+                      </h3>
 
                       <p className="product-price">
                         ₹{" "}
@@ -553,36 +520,31 @@ function Category() {
           )}
 
           {/* ================= PAGINATION ================= */}
-
-          {totalPages > 1 && (
+          {pagination.totalPages > 1 && (
 
             <div className="category-pagination">
 
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.max(
-                      safeCurrentPage - 1,
-                      1
-                    )
+                    currentPage - 1
                   )
                 }
-                disabled={
-                  safeCurrentPage === 1
-                }
+                disabled={currentPage === 1}
               >
                 ←
               </button>
 
               {Array.from(
-                { length: totalPages },
+                {
+                  length:
+                    pagination.totalPages,
+                },
                 (_, index) => (
-
                   <button
                     key={index}
                     className={
-                      safeCurrentPage ===
-                      index + 1
+                      currentPage === index + 1
                         ? "active"
                         : ""
                     }
@@ -594,22 +556,18 @@ function Category() {
                   >
                     {index + 1}
                   </button>
-
                 )
               )}
 
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.min(
-                      safeCurrentPage + 1,
-                      totalPages
-                    )
+                    currentPage + 1
                   )
                 }
                 disabled={
-                  safeCurrentPage ===
-                  totalPages
+                  currentPage ===
+                  pagination.totalPages
                 }
               >
                 →
@@ -619,7 +577,6 @@ function Category() {
           )}
 
         </section>
-
       </main>
 
       <Footer />
@@ -628,3 +585,5 @@ function Category() {
 }
 
 export default Category;
+
+

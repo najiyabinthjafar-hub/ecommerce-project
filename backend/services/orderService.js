@@ -1,14 +1,16 @@
 const Order = require("../models/Order");
+const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
+
 const notificationService = require("./notificationService");
 const productService = require("./productService");
 const razorpayService = require("./razorpayService");
 
-// ================= STOCK HELPERS =================
-
+// ================= STOCK HELPERS ==========
 const getProductId = (item) => {
   if (!item) return null;
+
   return item.product?._id || item.product;
 };
 
@@ -25,7 +27,9 @@ const validateStockAvailability = async (items = []) => {
       throw new Error("Quantity must be a positive integer");
     }
 
-    const product = await Product.findById(productId).select("name stock");
+    const product = await Product.findById(productId).select(
+      "name stock"
+    );
 
     if (!product) {
       throw new Error(`Product not found: ${productId}`);
@@ -44,7 +48,11 @@ const restoreStock = async (items = []) => {
     const productId = getProductId(item);
     const quantity = Number(item.quantity);
 
-    if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
+    if (
+      !productId ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
       continue;
     }
 
@@ -67,7 +75,9 @@ const restoreStock = async (items = []) => {
         "Quantity:",
         quantity,
         "New Stock:",
-        updatedProduct ? updatedProduct.stock : "PRODUCT NOT FOUND"
+        updatedProduct
+          ? updatedProduct.stock
+          : "PRODUCT NOT FOUND"
       );
     } catch (error) {
       console.error(
@@ -114,26 +124,30 @@ const reduceStockForItems = async (items = []) => {
   }
 };
 
-// ================= CREATE ORDER =================
-
+// ================= CREATE ORDER ==========
 const createOrder = async (orderData) => {
+  console.log("CREATE ORDER SERVICE HIT:", {
+    user: orderData.user,
+    paymentMethod: orderData.paymentMethod,
+  });
   const items = orderData.items || [];
+
   const paymentMethod = String(
     orderData.paymentMethod || ""
   ).toUpperCase();
 
-  // Validate stock before creating any order.
+  // Validate stock before creating any order
   await validateStockAvailability(items);
 
   let reducedItems = [];
 
-  // COD: reduce stock immediately.
+  // COD: reduce stock immediately
   if (paymentMethod === "COD") {
     reducedItems = await reduceStockForItems(items);
   }
 
-  // Razorpay: do NOT reduce stock here.
-  // Stock will be reduced only after successful payment.
+  // Razorpay: stock will be reduced
+  // only after successful payment
   let order;
 
   try {
@@ -146,7 +160,19 @@ const createOrder = async (orderData) => {
     throw error;
   }
 
-  // Notify customer
+    // Clear cart only after a COD order is successfully created
+  if (paymentMethod === "COD") {
+    console.log("COD CART CLEAR: START");
+    const cart = await Cart.findOne({ user: order.user });
+    console.log("COD CART BEFORE CLEAR:", cart ? cart.items.length : "NO CART");
+
+    if (cart) {
+      cart.items = [];
+      await cart.save();
+      console.log("COD CART CLEAR: SUCCESS");
+    }
+  }
+// Notify customer
   await notificationService.createNotification({
     user: order.user,
     title: "Order Created",
@@ -169,8 +195,7 @@ const createOrder = async (orderData) => {
   return order;
 };
 
-// ================= GET USER ORDERS =================
-
+// ================= GET USER ORDERS ==========
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
@@ -179,8 +204,7 @@ const getOrdersByUser = async (userId) => {
   return orders;
 };
 
-// ================= GET ALL ORDERS =================
-
+// ================= GET ALL ORDERS ==========
 const getAllOrders = async ({
   page = 1,
   limit = 10,
@@ -188,8 +212,16 @@ const getAllOrders = async ({
   orderStatus = "",
   paymentStatus = "",
 } = {}) => {
-  const currentPage = Math.max(parseInt(page, 10) || 1, 1);
-  const perPage = Math.max(parseInt(limit, 10) || 10, 1);
+  const currentPage = Math.max(
+    parseInt(page, 10) || 1,
+    1
+  );
+
+  const perPage = Math.max(
+    parseInt(limit, 10) || 10,
+    1
+  );
+
   const skip = (currentPage - 1) * perPage;
 
   const query = {};
@@ -249,8 +281,10 @@ const getAllOrders = async ({
         phone: orderObject.user.phone,
         role: orderObject.user.role,
         status: orderObject.user.status,
-        isEmailVerified: orderObject.user.isEmailVerified,
-        profileCompleted: orderObject.user.profileCompleted,
+        isEmailVerified:
+          orderObject.user.isEmailVerified,
+        profileCompleted:
+          orderObject.user.profileCompleted,
       };
     }
 
@@ -264,20 +298,25 @@ const getAllOrders = async ({
     totalOrders,
   };
 };
+
+// ================= GET ORDER BY ID ==========
 const getOrderById = async (orderId) => {
   const order = await Order.findById(orderId)
     .populate("items.product")
     .populate({
       path: "user",
-      select: "_id name email phone role status isEmailVerified profileCompleted"
+      select:
+        "_id name email phone role status isEmailVerified profileCompleted",
     });
 
   return order;
 };
 
-// ================= UPDATE ORDER STATUS =================
-
-const updateOrderStatus = async (orderId, orderStatus) => {
+// ================= UPDATE ORDER STATUS ==========
+const updateOrderStatus = async (
+  orderId,
+  orderStatus
+) => {
   const existingOrder = await Order.findById(orderId);
 
   if (!existingOrder) {
@@ -289,13 +328,15 @@ const updateOrderStatus = async (orderId, orderStatus) => {
   ).toUpperCase();
 
   // Restore stock only if stock was previously deducted.
+  //
   // COD -> stock deducted when order was created.
   // Razorpay -> stock deducted only after payment became PAID.
   const stockWasDeducted =
     paymentMethod === "COD" ||
     (paymentMethod === "RAZORPAY" &&
       existingOrder.paymentStatus === "PAID") ||
-    (!paymentMethod && existingOrder.orderStatus !== "PENDING");
+    (!paymentMethod &&
+      existingOrder.orderStatus !== "PENDING");
 
   if (
     orderStatus === "CANCELLED" &&
@@ -329,9 +370,12 @@ const updateOrderStatus = async (orderId, orderStatus) => {
   return order;
 };
 
-// ================= BEST SELLING PRODUCTS =================
-
-const requestReturn = async (orderId, userId, reason) => {
+// ================= REQUEST RETURN ==========
+const requestReturn = async (
+  orderId,
+  userId,
+  reason
+) => {
   const order = await Order.findById(orderId);
 
   if (!order) {
@@ -339,15 +383,21 @@ const requestReturn = async (orderId, userId, reason) => {
   }
 
   if (order.user.toString() !== userId.toString()) {
-    throw new Error("You are not authorized to request return for this order");
+    throw new Error(
+      "You are not authorized to request return for this order"
+    );
   }
 
   if (order.orderStatus !== "DELIVERED") {
-    throw new Error("Return can be requested only for delivered orders");
+    throw new Error(
+      "Return can be requested only for delivered orders"
+    );
   }
 
   if (order.returnStatus !== "NONE") {
-    throw new Error("Return request already exists for this order");
+    throw new Error(
+      "Return request already exists for this order"
+    );
   }
 
   if (!reason || !reason.trim()) {
@@ -363,8 +413,11 @@ const requestReturn = async (orderId, userId, reason) => {
   return order;
 };
 
-// ADMIN APPROVE / REJECT RETURN
-const updateReturnStatus = async (orderId, returnStatus) => {
+// ================= ADMIN APPROVE / REJECT RETURN ==========
+const updateReturnStatus = async (
+  orderId,
+  returnStatus
+) => {
   const order = await Order.findById(orderId);
 
   if (!order) {
@@ -372,7 +425,9 @@ const updateReturnStatus = async (orderId, returnStatus) => {
   }
 
   if (order.returnStatus !== "REQUESTED") {
-    throw new Error("There is no pending return request for this order");
+    throw new Error(
+      "There is no pending return request for this order"
+    );
   }
 
   if (!["APPROVED", "REJECTED"].includes(returnStatus)) {
@@ -392,6 +447,7 @@ const updateReturnStatus = async (orderId, returnStatus) => {
   }
 
   // APPROVED
+
   if (order.paymentMethod !== "RAZORPAY") {
     order.returnStatus = "APPROVED";
     order.refundStatus = "NOT_APPLICABLE";
@@ -403,20 +459,29 @@ const updateReturnStatus = async (orderId, returnStatus) => {
   }
 
   if (order.paymentStatus !== "PAID") {
-    throw new Error("Razorpay refund is possible only for a paid order");
+    throw new Error(
+      "Razorpay refund is possible only for a paid order"
+    );
   }
 
   if (!order.razorpayPaymentId) {
-    throw new Error("Razorpay payment ID not found for this order");
+    throw new Error(
+      "Razorpay payment ID not found for this order"
+    );
   }
 
   if (order.refundId) {
-    throw new Error("Refund has already been created for this order");
+    throw new Error(
+      "Refund has already been created for this order"
+    );
   }
 
   const refundAmount = Number(order.finalAmount);
 
-  if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+  if (
+    !Number.isFinite(refundAmount) ||
+    refundAmount <= 0
+  ) {
     throw new Error("Invalid refund amount");
   }
 
@@ -429,11 +494,16 @@ const updateReturnStatus = async (orderId, returnStatus) => {
     order.returnStatus = "APPROVED";
     order.refundAmount = refundAmount;
     order.refundId = refund.id || "";
+
     order.refundStatus =
-      refund.status === "processed" ? "COMPLETED" : "PROCESSING";
+      refund.status === "processed"
+        ? "COMPLETED"
+        : "PROCESSING";
 
     if (refund.created_at) {
-      order.refundedAt = new Date(refund.created_at * 1000);
+      order.refundedAt = new Date(
+        refund.created_at * 1000
+      );
     } else {
       order.refundedAt = new Date();
     }
@@ -442,16 +512,23 @@ const updateReturnStatus = async (orderId, returnStatus) => {
 
     return order;
   } catch (error) {
-    console.error("Razorpay refund failed:", error.message);
+    console.error(
+      "Razorpay refund failed:",
+      error.message
+    );
 
     order.returnStatus = "REQUESTED";
     order.refundStatus = "PENDING";
 
     await order.save();
 
-    throw new Error(`Razorpay refund failed: ${error.message}`);
+    throw new Error(
+      `Razorpay refund failed: ${error.message}`
+    );
   }
 };
+
+// ================= BEST SELLING PRODUCTS ==========
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
     {
@@ -462,11 +539,9 @@ const getBestSellingProducts = async () => {
         },
       },
     },
-
     {
       $unwind: "$items",
     },
-
     {
       $group: {
         _id: "$items.product",
@@ -475,17 +550,14 @@ const getBestSellingProducts = async () => {
         },
       },
     },
-
     {
       $sort: {
         totalSold: -1,
       },
     },
-
     {
       $limit: 10,
     },
-
     {
       $lookup: {
         from: "products",
@@ -494,11 +566,9 @@ const getBestSellingProducts = async () => {
         as: "product",
       },
     },
-
     {
       $unwind: "$product",
     },
-
     {
       $project: {
         _id: 0,
@@ -511,6 +581,7 @@ const getBestSellingProducts = async () => {
   return bestSellers;
 };
 
+// ================= UPDATE RAZORPAY ORDER ==========
 const updateRazorpayOrder = async (
   orderId,
   razorpayOrderId,
@@ -522,7 +593,7 @@ const updateRazorpayOrder = async (
       user: userId,
     },
     {
-      razorpayOrderId: razorpayOrderId,
+      razorpayOrderId,
     },
     {
       new: true,
@@ -532,6 +603,7 @@ const updateRazorpayOrder = async (
   return order;
 };
 
+// ================= VERIFY RAZORPAY PAYMENT ==========
 const verifyRazorpayPayment = async (
   orderId,
   userId,
@@ -547,7 +619,7 @@ const verifyRazorpayPayment = async (
     return null;
   }
 
-  // Prevent duplicate payment callbacks from reducing stock twice.
+  // Prevent duplicate payment callbacks
   if (existingOrder.paymentStatus === "PAID") {
     return existingOrder;
   }
@@ -562,7 +634,8 @@ const verifyRazorpayPayment = async (
     );
   }
 
-  // Razorpay: reduce stock only after successful payment verification.
+  // Razorpay: reduce stock only after
+  // successful payment verification.
   const reducedItems = await reduceStockForItems(
     existingOrder.items || []
   );
@@ -587,7 +660,7 @@ const verifyRazorpayPayment = async (
     );
 
     // Another payment callback may have completed first.
-    // Restore the stock reduced by this callback.
+    // Restore stock reduced by this callback.
     if (!order) {
       await restoreStock(reducedItems);
 
@@ -597,6 +670,17 @@ const verifyRazorpayPayment = async (
       });
     }
 
+    // Clear cart only after successful
+    // Razorpay payment verification
+    const cart = await Cart.findOne({
+      user: userId,
+    });
+
+    if (cart) {
+      cart.items = [];
+      await cart.save();
+    }
+
     return order;
   } catch (error) {
     await restoreStock(reducedItems);
@@ -604,6 +688,7 @@ const verifyRazorpayPayment = async (
   }
 };
 
+// ================= EXPORTS ==========
 module.exports = {
   createOrder,
   getOrdersByUser,
@@ -616,13 +701,4 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
-
-
-
-
-
-
-
-
-
 
