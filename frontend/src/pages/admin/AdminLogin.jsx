@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import logo from "../../assets/rizo-logo.png";
-
 import "./AdminLogin.css";
 
 function AdminLogin() {
@@ -10,13 +8,11 @@ function AdminLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
     setLoading(true);
 
@@ -25,11 +21,9 @@ function AdminLogin() {
         "http://localhost:5000/api/auth/login",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email,
             password,
@@ -45,34 +39,28 @@ function AdminLogin() {
         );
       }
 
-      /* Check admin role */
-
+      // Check admin role
       if (data.user?.role !== "admin") {
         throw new Error(
           "You are not authorized as an admin"
         );
       }
 
-      /* Save JWT token */
-
+      // Save JWT token
       localStorage.setItem("token", data.token);
 
-      /* Save user details */
-
+      // Save user details
       localStorage.setItem(
         "user",
         JSON.stringify(data.user)
       );
 
-      /* Navigate to admin dashboard */
-
+      // Navigate to admin dashboard
       navigate("/admin/dashboard", {
         replace: true,
       });
-
     } catch (error) {
       setError(error.message || "Login failed");
-
     } finally {
       setLoading(false);
     }
@@ -80,41 +68,29 @@ function AdminLogin() {
 
   return (
     <div className="admin-login-page">
-
       <div className="admin-login-card">
 
         {/* Logo */}
-
         <div className="login-brand">
-
           <img
             src={logo}
             alt="RIZO Logo"
             className="rizo-logo"
           />
-
           <h1>RIZO</h1>
-
           <p>Admin Panel</p>
-
         </div>
 
         {/* Heading */}
-
         <div className="login-heading">
-
           <h2>Welcome Back</h2>
-
           <p>Login to manage your store</p>
-
         </div>
 
         {/* Login Form */}
-
         <form onSubmit={handleSubmit}>
 
           <div className="login-group">
-
             <label>Email Address</label>
 
             <input
@@ -126,11 +102,9 @@ function AdminLogin() {
               }
               required
             />
-
           </div>
 
           <div className="login-group">
-
             <label>Password</label>
 
             <input
@@ -142,34 +116,29 @@ function AdminLogin() {
               }
               required
             />
-
           </div>
 
           {/* Error Message */}
-
           {error && (
             <p className="login-error">
               {error}
             </p>
           )}
 
-          {/* Options */}
-
+          {/* Forgot Password */}
           <div className="login-options">
-
-            <label>
-              <input type="checkbox" />
-              Remember me
-            </label>
-
-            <span className="forgot-password">
+            <button
+              type="button"
+              className="forgot-password"
+              onClick={() =>
+                navigate("/admin/forgot-password")
+              }
+            >
               Forgot Password?
-            </span>
-
+            </button>
           </div>
 
           {/* Login Button */}
-
           <button
             type="submit"
             className="admin-login-btn"
@@ -181,9 +150,7 @@ function AdminLogin() {
           </button>
 
         </form>
-
       </div>
-
     </div>
   );
 }

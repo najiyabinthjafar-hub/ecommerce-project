@@ -68,11 +68,28 @@ const getOrders = async (req, res) => {
 // GET ALL CUSTOMERS' ORDERS
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      orderStatus = "",
+      paymentStatus = "",
+    } = req.query;
+
+    const result = await orderService.getAllOrders({
+      page,
+      limit,
+      search,
+      orderStatus,
+      paymentStatus,
+    });
 
     res.status(200).json({
       success: true,
-      orders,
+      orders: result.orders,
+      currentPage: result.currentPage,
+      totalPages: result.totalPages,
+      totalOrders: result.totalOrders,
     });
   } catch (error) {
     console.error("Get all orders error:", error);
@@ -84,8 +101,6 @@ const getAllOrders = async (req, res) => {
     });
   }
 };
-
-// GET SINGLE ORDER
 const getOrderById = async (req, res) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -115,9 +130,19 @@ const getOrderById = async (req, res) => {
 // UPDATE ORDER STATUS
 const updateOrderStatus = async (req, res) => {
   try {
+    const orderStatus =
+      req.body.orderStatus || req.body.status;
+
+    if (!orderStatus) {
+      return res.status(400).json({
+        success: false,
+        message: "Order status is required",
+      });
+    }
+
     const order = await orderService.updateOrderStatus(
       req.params.id,
-      req.body.orderStatus
+      orderStatus
     );
 
     if (!order) {
@@ -142,27 +167,6 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
-
-// GET BEST SELLING PRODUCTS
-const getBestSellingProducts = async (req, res) => {
-  try {
-    const products = await orderService.getBestSellingProducts();
-
-    res.status(200).json({
-      success: true,
-      products,
-    });
-  } catch (error) {
-    console.error("Get best selling products error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to get best selling products",
-      error: error.message,
-    });
-  }
-};
-// CREATE RAZORPAY TEST ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
     const { amount, orderId } = req.body;
@@ -288,6 +292,76 @@ const verifyRazorpayPayment = async (req, res) => {
     });
   }
 };
+const requestReturn = async (req, res) => {
+  try {
+    const order = await orderService.requestReturn(
+      req.params.id,
+      req.user._id,
+      req.body.reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Return request submitted successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Request return error:", error);
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ADMIN APPROVE / REJECT RETURN
+const updateReturnStatus = async (req, res) => {
+  try {
+    const order = await orderService.updateReturnStatus(
+      req.params.id,
+      req.body.returnStatus
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Return ${req.body.returnStatus.toLowerCase()} successfully`,
+      order,
+    });
+  } catch (error) {
+    console.error("Update return status error:", error);
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+const getBestSellingProducts = async (req, res) => {
+  try {
+    const products = await orderService.getBestSellingProducts();
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    console.error("Get best selling products error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get best selling products",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   createOrder,
   getOrders,
@@ -297,4 +371,7 @@ module.exports = {
   updateOrderStatus,
   getOrderById,
   verifyRazorpayPayment,
+  requestReturn,
+  updateReturnStatus,
 };
+

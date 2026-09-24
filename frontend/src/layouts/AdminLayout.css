@@ -1,26 +1,57 @@
-/* =========================================
+/* =========================================================
    ADMIN LAYOUT
-========================================= */
+========================================================= */
 
 .admin-layout,
 .admin-layout * {
   box-sizing: border-box;
 }
 
+/* =========================================================
+   HTML / BODY / ROOT
+========================================================= */
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  background: #f6f7f9;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* =========================================================
+   MAIN ADMIN LAYOUT
+========================================================= */
+
 .admin-layout {
   width: 100%;
   min-height: 100vh;
   display: flex;
   background: #f6f7f9;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+
+  /* Allow normal browser scrolling */
+  overflow: visible;
 }
 
-/* =========================================
+/* =========================================================
    MAIN AREA
-========================================= */
+========================================================= */
 
 .admin-main {
   flex: 1;
+  width: calc(100% - 250px);
   min-width: 0;
   min-height: 100vh;
 
@@ -30,24 +61,26 @@
   flex-direction: column;
 
   background: #f6f7f9;
+
+  /* Allow page to grow naturally */
+  overflow: visible;
 }
 
-/* =========================================
+/* =========================================================
    NAVBAR
-========================================= */
+========================================================= */
 
 .admin-main > .admin-navbar {
   flex-shrink: 0;
 }
 
-/* =========================================
+/* =========================================================
    CONTENT AREA
-========================================= */
+========================================================= */
 
 .admin-content {
   width: 100%;
   min-width: 0;
-
   min-height: calc(100vh - 64px);
 
   margin-top: 64px;
@@ -55,21 +88,26 @@
 
   background: #f6f7f9;
 
-  overflow-x: hidden;
+  /* Browser handles vertical scrolling */
+  overflow: visible;
+
+  box-sizing: border-box;
 }
 
-/* =========================================
+/* =========================================================
    PAGE WIDTH
-========================================= */
+========================================================= */
 
 .admin-content > * {
   width: 100%;
-  max-width: none;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-/* =========================================
+/* =========================================================
    COMMON TYPOGRAPHY
-========================================= */
+========================================================= */
 
 .admin-content h1 {
   margin: 0 0 8px;
@@ -109,26 +147,28 @@
   line-height: 1.5;
 }
 
-/* =========================================
+/* =========================================================
    TABLE
-========================================= */
+========================================================= */
 
 .admin-content table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
 }
 
-/* =========================================
+/* =========================================================
    IMAGES
-========================================= */
+========================================================= */
 
 .admin-content img {
   max-width: 100%;
+  height: auto;
 }
 
-/* =========================================
+/* =========================================================
    FORMS
-========================================= */
+========================================================= */
 
 .admin-content input,
 .admin-content select,
@@ -137,12 +177,13 @@
   font-family: inherit;
 }
 
-/* =========================================
+/* =========================================================
    LAPTOP
-========================================= */
+========================================================= */
 
 @media (max-width: 1100px) {
   .admin-main {
+    width: calc(100% - 250px);
     margin-left: 250px;
   }
 
@@ -151,12 +192,13 @@
   }
 }
 
-/* =========================================
+/* =========================================================
    TABLET
-========================================= */
+========================================================= */
 
 @media (max-width: 800px) {
   .admin-main {
+    width: calc(100% - 220px);
     margin-left: 220px;
   }
 
@@ -173,48 +215,98 @@
   }
 }
 
-/* =========================================
+/* =========================================================
    MOBILE
-========================================= */
+========================================================= */
 
 @media (max-width: 600px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100%;
+    height: auto;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* -------------------------------------------------------
+     MOBILE LAYOUT
+  ------------------------------------------------------- */
+
   .admin-layout {
     width: 100%;
     min-height: 100vh;
+
+    height: auto;
+
     display: block;
+
+    /* Normal browser scrolling */
+    overflow: visible;
   }
+
+  /* -------------------------------------------------------
+     MOBILE MAIN
+  ------------------------------------------------------- */
 
   .admin-main {
     width: 100%;
+    min-width: 0;
     min-height: 100vh;
+
+    height: auto;
 
     margin-left: 0;
 
-    display: flex;
-    flex-direction: column;
+    display: block;
+
+    /* No nested vertical scroll */
+    overflow: visible;
   }
+
+  /* -------------------------------------------------------
+     MOBILE CONTENT
+  ------------------------------------------------------- */
 
   .admin-content {
     width: 100%;
     min-width: 0;
 
     min-height: calc(100vh - 62px);
+    height: auto;
 
     margin-top: 62px;
+
     padding: 20px 16px 80px;
 
+    /* Browser handles vertical scrolling */
     overflow: visible;
+
+    box-sizing: border-box;
   }
 
   .admin-content > * {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
   }
 
   .admin-content img {
     max-width: 100%;
     height: auto;
   }
+
+  /* -------------------------------------------------------
+     MOBILE TYPOGRAPHY
+  ------------------------------------------------------- */
 
   .admin-content h1 {
     font-size: 23px;
@@ -231,18 +323,61 @@
   .admin-content p {
     font-size: 12px;
   }
+
+  /* -------------------------------------------------------
+     RESPONSIVE HORIZONTAL SCROLL
+     
+     Only wide table wrappers scroll horizontally.
+     Vertical scrolling remains with the browser.
+  ------------------------------------------------------- */
+
+  .admin-content [class*="table-wrapper"] {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+    overflow-y: visible;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-content [class*="table-wrapper"] table {
+    max-width: none;
+  }
 }
 
-/* =========================================
+/* =========================================================
    SMALL MOBILE
-========================================= */
+========================================================= */
 
 @media (max-width: 400px) {
   .admin-content {
-    padding: 18px 12px 30px;
+    padding: 18px 12px 70px;
   }
 
   .admin-content h1 {
     font-size: 21px;
+  }
+
+  .admin-content h2 {
+    font-size: 16px;
+  }
+
+  .admin-content h3 {
+    font-size: 13px;
+  }
+
+  .admin-content p {
+    font-size: 11px;
+  }
+
+  /* Keep horizontal scroll only for wide tables */
+  .admin-content [class*="table-wrapper"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+
+    -webkit-overflow-scrolling: touch;
   }
 }
