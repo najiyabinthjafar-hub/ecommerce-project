@@ -5,6 +5,7 @@ const User = require("../models/User");
 
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+const notificationService = require("./notificationService");
 
 const {
   sendOtpEmail,
@@ -41,6 +42,28 @@ const registerUser = async ({
 
   const otp = generateOtp();
 
+feature/milhaj-product-filter
+  
+const user = await User.create({
+  name,
+  email,
+  phone,
+  password: hashedPassword,
+  otp,
+  otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  otpAttempts: 0,
+});
+
+// Create notification for admin
+const admin = await notificationService.getAdminUser();
+
+if (admin) {
+  await notificationService.createNotification({
+    user: admin._id,
+    title: "New Customer",
+    message: `New customer ${user.name} has registered.`,
+    type: "USER",
+    
   const user = await User.create({
     name,
     email,
@@ -53,9 +76,11 @@ const registerUser = async ({
     ),
 
     otpAttempts: 0,
+ main
   });
+}
 
-  await sendOtpEmail(email, otp);
+await sendOtpEmail(email, otp);
 
   return {
     userId: user._id,
