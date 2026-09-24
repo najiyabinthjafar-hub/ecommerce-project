@@ -3,6 +3,7 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const notificationService = require("./notificationService");
 const productService = require("./productService");
+const razorpayService = require("./razorpayService");
 
 // ================= STOCK HELPERS =================
 
@@ -378,23 +379,79 @@ const updateReturnStatus = async (orderId, returnStatus) => {
     throw new Error("Invalid return status");
   }
 
-  order.returnStatus = returnStatus;
-
-  if (returnStatus === "APPROVED") {
-    order.refundStatus = "PENDING";
-    order.refundAmount = order.finalAmount;
-  }
-
   if (returnStatus === "REJECTED") {
+    order.returnStatus = "REJECTED";
     order.refundStatus = "NOT_APPLICABLE";
     order.refundAmount = 0;
+    order.refundId = "";
+    order.refundedAt = null;
+
+    await order.save();
+
+    return order;
   }
 
-  await order.save();
+  // APPROVED
+  if (order.paymentMethod !== "RAZORPAY") {
+    order.returnStatus = "APPROVED";
+    order.refundStatus = "NOT_APPLICABLE";
+    order.refundAmount = 0;
 
-  return order;
+    await order.save();
+
+    return order;
+  }
+
+  if (order.paymentStatus !== "PAID") {
+    throw new Error("Razorpay refund is possible only for a paid order");
+  }
+
+  if (!order.razorpayPaymentId) {
+    throw new Error("Razorpay payment ID not found for this order");
+  }
+
+  if (order.refundId) {
+    throw new Error("Refund has already been created for this order");
+  }
+
+  const refundAmount = Number(order.finalAmount);
+
+  if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+    throw new Error("Invalid refund amount");
+  }
+
+  try {
+    const refund = await razorpayService.createRefund(
+      order.razorpayPaymentId,
+      refundAmount
+    );
+
+    order.returnStatus = "APPROVED";
+    order.refundAmount = refundAmount;
+    order.refundId = refund.id || "";
+    order.refundStatus =
+      refund.status === "processed" ? "COMPLETED" : "PROCESSING";
+
+    if (refund.created_at) {
+      order.refundedAt = new Date(refund.created_at * 1000);
+    } else {
+      order.refundedAt = new Date();
+    }
+
+    await order.save();
+
+    return order;
+  } catch (error) {
+    console.error("Razorpay refund failed:", error.message);
+
+    order.returnStatus = "REQUESTED";
+    order.refundStatus = "PENDING";
+
+    await order.save();
+
+    throw new Error(`Razorpay refund failed: ${error.message}`);
+  }
 };
-
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
     {
@@ -559,6 +616,11 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
+
+
+
 
 
 

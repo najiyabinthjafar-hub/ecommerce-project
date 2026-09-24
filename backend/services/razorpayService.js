@@ -1,13 +1,6 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
-console.log("RAZORPAY KEY:", process.env.RAZORPAY_KEY_ID);
-console.log(
-  "RAZORPAY SECRET EXISTS:",
-  !!process.env.RAZORPAY_KEY_SECRET
-);
-
-
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -15,7 +8,7 @@ const razorpay = new Razorpay({
 
 const createRazorpayOrder = async (amount, receipt) => {
   const options = {
-    amount: Math.round(amount * 100), // ₹ → paise
+    amount: Math.round(amount * 100),
     currency: "INR",
     receipt,
   };
@@ -38,8 +31,17 @@ const verifyPaymentSignature = (
   return generatedSignature === razorpaySignature;
 };
 
+const createRefund = async (paymentId, amount) => {
+  const refund = await razorpay.payments.refund(paymentId, {
+    amount: Math.round(amount * 100),
+    speed: "normal",
+  });
+
+  return refund;
+};
 
 module.exports = {
   createRazorpayOrder,
   verifyPaymentSignature,
+  createRefund,
 };
