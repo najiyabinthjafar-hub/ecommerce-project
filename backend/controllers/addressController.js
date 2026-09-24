@@ -1,5 +1,7 @@
 const addressService = require("../services/addressService");
 
+// ================= GET ADDRESSES =================
+
 const getAddresses = async (req, res) => {
   try {
     const addresses = await addressService.getAddresses(
@@ -10,11 +12,15 @@ const getAddresses = async (req, res) => {
       addresses,
     });
   } catch (error) {
+    console.error("GET ADDRESSES ERROR:", error);
+
     res.status(500).json({
       message: error.message,
     });
   }
 };
+
+// ================= ADD ADDRESS =================
 
 const addAddress = async (req, res) => {
   try {
@@ -28,11 +34,15 @@ const addAddress = async (req, res) => {
       address,
     });
   } catch (error) {
+    console.error("ADD ADDRESS ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
   }
 };
+
+// ================= UPDATE ADDRESS =================
 
 const updateAddress = async (req, res) => {
   try {
@@ -47,11 +57,15 @@ const updateAddress = async (req, res) => {
       address,
     });
   } catch (error) {
+    console.error("UPDATE ADDRESS ERROR:", error);
+
     res.status(400).json({
       message: error.message,
     });
   }
 };
+
+// ================= DELETE ADDRESS =================
 
 const deleteAddress = async (req, res) => {
   try {
@@ -64,11 +78,15 @@ const deleteAddress = async (req, res) => {
       message: "Address deleted successfully",
     });
   } catch (error) {
+    console.error("DELETE ADDRESS ERROR:", error);
+
     res.status(404).json({
       message: error.message,
     });
   }
 };
+
+// ================= SET DEFAULT ADDRESS =================
 
 const setDefaultAddress = async (req, res) => {
   try {
@@ -82,6 +100,8 @@ const setDefaultAddress = async (req, res) => {
       address,
     });
   } catch (error) {
+    console.error("SET DEFAULT ADDRESS ERROR:", error);
+
     res.status(404).json({
       message: error.message,
     });
