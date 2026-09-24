@@ -1,9 +1,20 @@
 const Category = require("../models/Category");
 
-const getAllCategories = async () => {
-  return await Category.find();
-};
+const getAllCategories = async ({ search, status } = {}) => {
+  const query = {};
 
+  // Search by category name
+  if (search) {
+    query.name = { $regex: search, $options: "i" };
+  }
+
+  // Status filter
+  if (status && status !== "all") {
+    query.status = status;
+  }
+
+  return await Category.find(query);
+};
 
 const getCategoryTree = async () => {
   const categories = await Category.find({ status: "active" });

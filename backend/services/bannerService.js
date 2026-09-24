@@ -6,8 +6,20 @@ const createBanner = async (bannerData) => {
 };
 
 // GET ALL BANNERS
-const getAllBanners = async () => {
-  return await Banner.find();
+const getAllBanners = async ({ search, status } = {}) => {
+  const query = {};
+
+  // Search by banner title
+  if (search) {
+    query.title = { $regex: search, $options: "i" };
+  }
+
+  // Status filter
+  if (status && status !== "all") {
+    query.status = status;
+  }
+
+  return await Banner.find(query);
 };
 
 // GET BANNER BY ID

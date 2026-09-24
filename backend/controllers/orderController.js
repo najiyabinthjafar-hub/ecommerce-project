@@ -1,4 +1,5 @@
 const orderService = require("../services/orderService");
+const razorpayService = require("../services/razorpayService");
 
 // CREATE ORDER
 const createOrder = async (req, res) => {
@@ -99,8 +100,6 @@ const getAllOrders = async (req, res) => {
     });
   }
 };
-
-// GET SINGLE ORDER
 const getOrderById = async (req, res) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -130,7 +129,8 @@ const getOrderById = async (req, res) => {
 // UPDATE ORDER STATUS
 const updateOrderStatus = async (req, res) => {
   try {
-    const orderStatus = req.body.orderStatus || req.body.status;
+    const orderStatus =
+      req.body.orderStatus || req.body.status;
 
     if (!orderStatus) {
       return res.status(400).json({
@@ -166,8 +166,131 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
+const createRazorpayOrder = async (req, res) => {
+  try {
+    const { amount, orderId } = req.body;
 
-// CUSTOMER REQUEST RETURN
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid amount is required",
+      });
+    }
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "MongoDB order ID is required",
+      });
+    }
+
+    const receipt = `receipt_${Date.now()}`;
+
+    // Create order in Razorpay
+    const razorpayOrder =
+      await razorpayService.createRazorpayOrder(
+        amount,
+        receipt
+      );
+
+    // Save Razorpay order ID in MongoDB order
+    const updatedOrder =
+      await orderService.updateRazorpayOrder(
+        orderId,
+        razorpayOrder.id,
+        req.user._id
+      );
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "MongoDB order not found",
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Razorpay order created successfully",
+      order: razorpayOrder,
+      mongoOrder: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Razorpay order error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create Razorpay order",
+      error: error.message,
+    });
+  }
+};
+
+const verifyRazorpayPayment = async (req, res) => {
+  try {
+    const {
+      orderId,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    if (
+      !orderId ||
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment details are required",
+      });
+    }
+
+    // Step 1: Verify Razorpay signature
+    const isValid = razorpayService.verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed",
+      });
+    }
+
+    // Step 2: Update MongoDB order
+    const order = await orderService.verifyRazorpayPayment(
+      orderId,
+      req.user._id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Step 3: Send success response
+    res.status(200).json({
+      success: true,
+      message: "Payment verified and order confirmed successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Payment verification error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Payment verification failed",
+      error: error.message,
+    });
+  }
+};
 const requestReturn = async (req, res) => {
   try {
     const order = await orderService.requestReturn(
@@ -220,8 +343,6 @@ const updateReturnStatus = async (req, res) => {
     });
   }
 };
-
-// GET BEST SELLING PRODUCTS
 const getBestSellingProducts = async (req, res) => {
   try {
     const products = await orderService.getBestSellingProducts();
@@ -240,14 +361,16 @@ const getBestSellingProducts = async (req, res) => {
     });
   }
 };
-
 module.exports = {
   createOrder,
   getOrders,
   getAllOrders,
   getBestSellingProducts,
+  createRazorpayOrder,
   updateOrderStatus,
   getOrderById,
+  verifyRazorpayPayment,
   requestReturn,
   updateReturnStatus,
 };
+

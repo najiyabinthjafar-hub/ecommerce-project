@@ -1,19 +1,13 @@
-import "./Orders.css";
-import AdminSidebar from "../../components/admin/AdminSidebar";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
-
-const STATUS_OPTIONS = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-];
 
 const PAYMENT_STATUS_OPTIONS = [
   "PENDING",
@@ -21,31 +15,87 @@ const PAYMENT_STATUS_OPTIONS = [
   "FAILED",
 ];
 
-function Orders() {
+const ORDERS_PER_PAGE = 10;
+
+// =========================================================
+// ORDER STATUS
+// =========================================================
+
+const statusLabels = {
+  PENDING_PAYMENT: "Pending Payment",
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for Delivery",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  RETURNED: "Returned",
+  REFUNDED: "Refunded",
+};
+
+const statusClassMap = {
+  PENDING_PAYMENT: "pending",
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  PROCESSING: "processing",
+  SHIPPED: "shipped",
+  OUT_FOR_DELIVERY: "out-for-delivery",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+  RETURNED: "returned",
+  REFUNDED: "refunded",
+};
+
+// =========================================================
+// PAYMENT STATUS
+// =========================================================
+
+const paymentStatusLabels = {
+  PENDING: "Pending",
+  PAID: "Paid",
+  FAILED: "Failed",
+};
+
+const paymentStatusClassMap = {
+  PENDING: "pending",
+  PAID: "paid",
+  FAILED: "failed",
+};
+
+// =========================================================
+// ORDERS COMPONENT
+// =========================================================
+
+const Orders = () => {
   const navigate = useNavigate();
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [orders, setOrders] = useState([]);
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [updatingId, setUpdatingId] = useState("");
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
+  const [statusFilter, setStatusFilter] =
+    useState("ALL");
 
-  const ordersPerPage = 10;
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
-  const formatStatus = (status) => {
-    if (!status) return "Pending";
+  const [loading, setLoading] =
+    useState(true);
 
-    return (
-      String(status).charAt(0).toUpperCase() +
-      String(status).slice(1).toLowerCase()
-    );
-  };
+  const [error, setError] =
+    useState("");
+
+  const [updatingId, setUpdatingId] =
+    useState("");
+
+  // =========================================================
+  // FETCH ORDERS
+  // =========================================================
 
   const fetchOrders = async () => {
     try {
@@ -62,7 +112,7 @@ function Orders() {
 
       const params = {
         page: currentPage,
-        limit: ordersPerPage,
+        limit: ORDERS_PER_PAGE,
       };
 
       if (search.trim()) {
@@ -87,20 +137,20 @@ function Orders() {
         }
       );
 
-      const data = response.data;
+      const data = response.data || {};
 
       setOrders(
-        Array.isArray(data?.orders)
+        Array.isArray(data.orders)
           ? data.orders
           : []
       );
 
       setTotalPages(
-        Number(data?.totalPages || 1)
+        Number(data.totalPages || 1)
       );
 
       setTotalOrders(
-        Number(data?.totalOrders || 0)
+        Number(data.totalOrders || 0)
       );
     } catch (error) {
       console.error(
@@ -122,6 +172,10 @@ function Orders() {
     }
   };
 
+  // =========================================================
+  // INITIAL FETCH
+  // =========================================================
+
   useEffect(() => {
     fetchOrders();
   }, [
@@ -131,6 +185,10 @@ function Orders() {
     paymentStatusFilter,
   ]);
 
+  // =========================================================
+  // RESET PAGE WHEN FILTERS CHANGE
+  // =========================================================
+
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -138,6 +196,120 @@ function Orders() {
     statusFilter,
     paymentStatusFilter,
   ]);
+
+  // =========================================================
+  // CUSTOMER HELPERS
+  // =========================================================
+
+  const getCustomerName = (order) => {
+    return (
+      order?.user?.name ||
+      order?.user?.fullName ||
+      order?.shippingAddress?.fullName ||
+      order?.shippingAddress?.name ||
+      "Unknown Customer"
+    );
+  };
+
+  const getCustomerEmail = (order) => {
+    return order?.user?.email || "—";
+  };
+
+  const getCustomerPhone = (order) => {
+    return (
+      order?.user?.phone ||
+      order?.shippingAddress?.phone ||
+      "—"
+    );
+  };
+
+  // =========================================================
+  // STATUS HELPERS
+  // =========================================================
+
+  const getStatusLabel = (status) => {
+    return (
+      statusLabels[status] ||
+      status ||
+      "Unknown"
+    );
+  };
+
+  const getStatusClass = (status) => {
+    return (
+      statusClassMap[status] ||
+      "pending"
+    );
+  };
+
+  const getPaymentStatusLabel = (
+    status
+  ) => {
+    return (
+      paymentStatusLabels[status] ||
+      status ||
+      "Pending"
+    );
+  };
+
+  const getPaymentStatusClass = (
+    status
+  ) => {
+    return (
+      paymentStatusClassMap[status] ||
+      "pending"
+    );
+  };
+
+  // =========================================================
+  // FORMAT HELPERS
+  // =========================================================
+
+  const formatCurrency = (amount) => {
+    return `₹${Number(
+      amount || 0
+    ).toLocaleString("en-IN")}`;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "—";
+
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
+
+  const getItemCount = (order) => {
+    if (!Array.isArray(order?.items)) {
+      return 0;
+    }
+
+    return order.items.reduce(
+      (total, item) =>
+        total +
+        Number(item?.quantity || 0),
+      0
+    );
+  };
+
+  const getOrderId = (order) => {
+    if (!order?._id) {
+      return "—";
+    }
+
+    return `ORD-${String(order._id)
+      .slice(-6)
+      .toUpperCase()}`;
+  };
+
+  // =========================================================
+  // STATUS UPDATE
+  // =========================================================
 
   const handleStatusChange = async (
     orderId,
@@ -147,7 +319,8 @@ function Orders() {
       setUpdatingId(orderId);
       setError("");
 
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
       if (!token) {
         setError("Authentication required");
@@ -170,12 +343,14 @@ function Orders() {
         response.data?.order;
 
       if (updatedOrder) {
-        setOrders((previousOrders) =>
-          previousOrders.map((order) =>
-            order._id === orderId
-              ? updatedOrder
-              : order
-          )
+        setOrders(
+          (previousOrders) =>
+            previousOrders.map(
+              (order) =>
+                order._id === orderId
+                  ? updatedOrder
+                  : order
+            )
         );
       } else {
         await fetchOrders();
@@ -196,110 +371,242 @@ function Orders() {
     }
   };
 
-  const pendingOrders = orders.filter(
-    (order) =>
-      String(
-        order.orderStatus ||
-          order.status ||
-          ""
-      ).toUpperCase() === "PENDING"
-  ).length;
+  // =========================================================
+  // SERVER-SIDE PAGINATION
+  // =========================================================
 
-  const processingOrders = orders.filter(
-    (order) =>
-      String(
-        order.orderStatus ||
-          order.status ||
-          ""
-      ).toUpperCase() === "PROCESSING"
-  ).length;
+  const filteredOrders = orders;
 
-  const deliveredOrders = orders.filter(
-    (order) =>
-      String(
-        order.orderStatus ||
-          order.status ||
-          ""
-      ).toUpperCase() === "DELIVERED"
-  ).length;
+  const startIndex =
+    (currentPage - 1) * ORDERS_PER_PAGE;
 
-  const cancelledOrders = orders.filter(
-    (order) =>
-      String(
-        order.orderStatus ||
-          order.status ||
-          ""
-      ).toUpperCase() === "CANCELLED"
-  ).length;
+  const paginatedOrders = orders;
+
+  // =========================================================
+  // SUMMARY
+  // =========================================================
+
+  const summary = useMemo(() => {
+    const pending = orders.filter(
+      (order) =>
+        [
+          "PENDING_PAYMENT",
+          "PENDING",
+        ].includes(
+          order?.orderStatus
+        )
+    ).length;
+
+    const processing = orders.filter(
+      (order) =>
+        [
+          "CONFIRMED",
+          "PROCESSING",
+        ].includes(
+          order?.orderStatus
+        )
+    ).length;
+
+    const delivered = orders.filter(
+      (order) =>
+        order?.orderStatus ===
+        "DELIVERED"
+    ).length;
+
+    const cancelled = orders.filter(
+      (order) =>
+        order?.orderStatus ===
+        "CANCELLED"
+    ).length;
+
+    return {
+      pending,
+      processing,
+      delivered,
+      cancelled,
+    };
+  }, [orders]);
+
+  // =========================================================
+  // STATUS OPTIONS
+  // =========================================================
+
+  const statusOptions = [
+    {
+      value: "",
+      label: "All Status",
+    },
+    {
+      value: "PENDING",
+      label: "Pending",
+    },
+    {
+      value: "CONFIRMED",
+      label: "Confirmed",
+    },
+    {
+      value: "PROCESSING",
+      label: "Processing",
+    },
+    {
+      value: "SHIPPED",
+      label: "Shipped",
+    },
+    {
+      value: "DELIVERED",
+      label: "Delivered",
+    },
+    {
+      value: "CANCELLED",
+      label: "Cancelled",
+    },
+  ];
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading) {
+    return (
+      <div className="orders-page">
+        <div className="orders-loading">
+          <div className="loading-spinner"></div>
+
+          <p>
+            Loading orders...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
+    <div className="orders-page">
 
-      <main className="orders-content">
-        <div className="orders-header">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="orders-header">
+        <div>
+          <h1>Orders</h1>
+
+          <p>
+            Manage and track customer
+            orders
+          </p>
+        </div>
+      </div>
+
+      {/* =====================================================
+          SUMMARY CARDS
+      ===================================================== */}
+
+      <div className="orders-summary">
+
+        <div className="order-summary-card">
+          <div className="summary-icon pending-icon">
+            <i className="bi bi-hourglass-split"></i>
+          </div>
+
           <div>
-            <h1>Orders</h1>
-            <p>
-              Manage and track customer orders
-            </p>
+            <span>Pending</span>
+
+            <strong>
+              {summary.pending}
+            </strong>
           </div>
         </div>
 
-        {/* Order Summary Cards */}
-        <div className="order-cards">
-          <div className="order-card">
-            <span>Pending Orders</span>
-            <h2>{pendingOrders}</h2>
+        <div className="order-summary-card">
+          <div className="summary-icon processing-icon">
+            <i className="bi bi-box-seam"></i>
           </div>
 
-          <div className="order-card">
+          <div>
             <span>Processing</span>
-            <h2>{processingOrders}</h2>
-          </div>
 
-          <div className="order-card">
-            <span>Delivered</span>
-            <h2>{deliveredOrders}</h2>
-          </div>
-
-          <div className="order-card">
-            <span>Cancelled</span>
-            <h2>{cancelledOrders}</h2>
+            <strong>
+              {summary.processing}
+            </strong>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="orders-tools">
+        <div className="order-summary-card">
+          <div className="summary-icon delivered-icon">
+            <i className="bi bi-check-circle"></i>
+          </div>
+
+          <div>
+            <span>Delivered</span>
+
+            <strong>
+              {summary.delivered}
+            </strong>
+          </div>
+        </div>
+
+        <div className="order-summary-card">
+          <div className="summary-icon cancelled-icon">
+            <i className="bi bi-x-circle"></i>
+          </div>
+
+          <div>
+            <span>Cancelled</span>
+
+            <strong>
+              {summary.cancelled}
+            </strong>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =====================================================
+          TOOLBAR
+      ===================================================== */}
+
+      <div className="orders-toolbar">
+
+        <div className="orders-search">
+          <i className="bi bi-search"></i>
+
           <input
             type="text"
-            placeholder="Search by order ID, customer name or email..."
+            placeholder="Search orders, customers..."
             value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
+            onChange={(e) =>
+              setSearch(e.target.value)
             }
           />
+        </div>
+
+        <div className="orders-filter">
+          <i className="bi bi-funnel"></i>
 
           <select
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value)
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value
+              )
             }
           >
-            <option value="">
-              All Status
-            </option>
-
-            {STATUS_OPTIONS.map((status) => (
-              <option
-                key={status}
-                value={status}
-              >
-                {formatStatus(status)}
-              </option>
-            ))}
+            {statusOptions.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              )
+            )}
           </select>
-
           <select
             value={paymentStatusFilter}
             onChange={(event) =>
@@ -318,194 +625,375 @@ function Orders() {
                   key={status}
                   value={status}
                 >
-                  {formatStatus(status)}
+                  {status}
                 </option>
               )
             )}
           </select>
         </div>
 
-        {/* Total Orders */}
-        <div style={{ margin: "15px 0" }}>
-          Total Orders: <strong>{totalOrders}</strong>
+      </div>
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error && (
+        <div className="orders-error">
+
+          <i className="bi bi-exclamation-circle"></i>
+
+          <span>
+            {error}
+          </span>
+
+          <button
+            type="button"
+            onClick={fetchOrders}
+          >
+            Retry
+          </button>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          TABLE CARD
+      ===================================================== */}
+
+      <div className="orders-table-card">
+
+        <div className="orders-table-wrapper">
+
+          <table className="orders-table">
+
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Order Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {paginatedOrders.length >
+              0 ? (
+
+                paginatedOrders.map(
+                  (order) => {
+
+                    const paymentStatus =
+                      order?.paymentStatus ||
+                      "PENDING";
+
+                    const currentStatus =
+                      String(
+                        order?.orderStatus ||
+                          order?.status ||
+                          "PENDING"
+                      ).toUpperCase();
+
+                    return (
+                      <tr
+                        key={order._id}
+                      >
+
+                        {/* ORDER ID */}
+
+                        <td>
+                          <span className="order-id">
+                            {getOrderId(
+                              order
+                            )}
+                          </span>
+                        </td>
+
+                        {/* CUSTOMER */}
+
+                        <td>
+                          <div className="customer-cell">
+
+                            <div className="customer-avatar">
+                              {getCustomerName(
+                                order
+                              )
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+
+                            <div className="customer-info">
+
+                              <strong>
+                                {getCustomerName(
+                                  order
+                                )}
+                              </strong>
+
+                              <span>
+                                {getCustomerEmail(
+                                  order
+                                ) !== "—"
+                                  ? getCustomerEmail(
+                                      order
+                                    )
+                                  : getCustomerPhone(
+                                      order
+                                    )}
+                              </span>
+
+                            </div>
+
+                          </div>
+                        </td>
+
+                        {/* DATE */}
+
+                        <td>
+                          <span className="order-date">
+                            {formatDate(
+                              order?.createdAt ||
+                                order?.updatedAt
+                            )}
+                          </span>
+                        </td>
+
+                        {/* ITEMS */}
+
+                        <td>
+                          <span className="item-count">
+                            {getItemCount(
+                              order
+                            )}
+                          </span>
+                        </td>
+
+                        {/* TOTAL */}
+
+                        <td>
+                          <strong className="order-total">
+                            {formatCurrency(
+                              order?.finalAmount ??
+                                order?.totalAmount ??
+                                order?.total ??
+                                0
+                            )}
+                          </strong>
+                        </td>
+
+                        {/* PAYMENT */}
+
+                        <td>
+                          <span
+                            className={`payment-status ${getPaymentStatusClass(
+                              paymentStatus
+                            )}`}
+                          >
+
+                            <span className="status-dot"></span>
+
+                            {getPaymentStatusLabel(
+                              paymentStatus
+                            )}
+
+                          </span>
+                        </td>
+
+                        {/* ORDER STATUS */}
+
+                        <td>
+
+                          <select
+                            className={`order-status-select ${getStatusClass(
+                              currentStatus
+                            )}`}
+                            value={
+                              currentStatus
+                            }
+                            disabled={
+                              updatingId ===
+                              order._id
+                            }
+                            onChange={(
+                              event
+                            ) =>
+                              handleStatusChange(
+                                order._id,
+                                event.target
+                                  .value
+                              )
+                            }
+                          >
+
+                            {statusOptions
+                              .filter(
+                                (option) =>
+                                  option.value !==
+                                  "ALL"
+                              )
+                              .map(
+                                (option) => (
+                                  <option
+                                    key={
+                                      option.value
+                                    }
+                                    value={
+                                      option.value
+                                    }
+                                  >
+                                    {
+                                      option.label
+                                    }
+                                  </option>
+                                )
+                              )}
+
+                          </select>
+
+                        </td>
+
+                        {/* ACTION */}
+
+                        <td>
+
+                          <button
+                            type="button"
+                            className="view-order-btn"
+                            onClick={() =>
+                              navigate(
+                                `/admin/orders/${order._id}`
+                              )
+                            }
+                            title="View Order"
+                            aria-label="View Order"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )
+
+              ) : (
+
+                <tr>
+
+                  <td
+                    colSpan="8"
+                    className="orders-empty"
+                  >
+
+                    <div className="empty-orders">
+
+                      <i className="bi bi-inbox"></i>
+
+                      <h3>
+                        No orders found
+                      </h3>
+
+                      <p>
+                        {search ||
+                        statusFilter !==
+                          "ALL"
+                          ? "Try changing your search or filter."
+                          : "There are no orders available yet."}
+                      </p>
+
+                    </div>
+
+                  </td>
+
+                </tr>
+
+              )}
+
+            </tbody>
+
+          </table>
+
         </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            style={{
-              padding: "15px",
-              margin: "20px 0",
-              color: "#b00020",
-              background: "#ffecec",
-              border: "1px solid #ffb3b3",
-            }}
-          >
-            {error}
+        {/* ===================================================
+            TABLE FOOTER
+        =================================================== */}
+
+        {filteredOrders.length >
+          0 && (
+          <div className="orders-table-footer">
+
+            <span>
+              Showing{" "}
+              <strong>
+                {startIndex + 1}
+              </strong>
+              {" - "}
+              <strong>
+                {Math.min(
+                  startIndex +
+                    ORDERS_PER_PAGE,
+                  filteredOrders.length
+                )}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {filteredOrders.length}
+              </strong>{" "}
+              orders
+            </span>
+
           </div>
         )}
 
-        {/* Orders Table */}
-        <div className="orders-table-container">
-          {loading ? (
-            <p style={{ padding: "20px" }}>
-              Loading orders...
-            </p>
-          ) : orders.length === 0 ? (
-            <p style={{ padding: "20px" }}>
-              No orders found.
-            </p>
-          ) : (
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+        {/* ===================================================
+            PAGINATION
+        =================================================== */}
 
-              <tbody>
-                {orders.map((order) => {
-                  const customerName =
-                    order.user?.name ||
-                    order.user?.fullName ||
-                    order.user?.email ||
-                    "Customer";
-
-                  const orderDate = order.createdAt
-                    ? new Date(
-                        order.createdAt
-                      ).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )
-                    : "-";
-
-                  const itemCount =
-                    order.items?.reduce(
-                      (total, item) =>
-                        total +
-                        Number(
-                          item.quantity || 0
-                        ),
-                      0
-                    ) || 0;
-
-                  const total =
-                    order.finalAmount ??
-                    order.totalAmount ??
-                    order.total ??
-                    0;
-
-                  const currentStatus =
-                    String(
-                      order.orderStatus ||
-                        order.status ||
-                        "PENDING"
-                    ).toUpperCase();
-
-                  return (
-                    <tr key={order._id}>
-                      <td className="order-id">
-                        #{order._id?.slice(-6)}
-                      </td>
-
-                      <td>{customerName}</td>
-
-                      <td>{orderDate}</td>
-
-                      <td>{itemCount}</td>
-
-                      <td className="order-total">
-                        ?
-                        {Number(
-                          total
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
-                      </td>
-
-                      <td>
-                        <select
-                          value={currentStatus}
-                          disabled={
-                            updatingId ===
-                            order._id
-                          }
-                          onChange={(event) =>
-                            handleStatusChange(
-                              order._id,
-                              event.target
-                                .value
-                            )
-                          }
-                        >
-                          {STATUS_OPTIONS.map(
-                            (status) => (
-                              <option
-                                key={status}
-                                value={status}
-                              >
-                                {formatStatus(
-                                  status
-                                )}
-                              </option>
-                            )
-                          )}
-                        </select>
-                      </td>
-
-                      <td>
-                        <button
-                          className="view-btn"
-                          onClick={() =>
-                            navigate(
-                              `/admin/orders/${order._id}`
-                            )
-                          }
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 py-6">
+          <div className="orders-pagination">
+
             <button
+              type="button"
+              className="pagination-btn"
               onClick={() =>
                 setCurrentPage(
                   (page) =>
-                    Math.max(page - 1, 1)
+                    Math.max(
+                      page - 1,
+                      1
+                    )
                 )
               }
-              disabled={currentPage === 1}
-              className="px-4 py-2 border rounded disabled:opacity-50"
+              disabled={
+                currentPage === 1
+              }
             >
+              <i className="bi bi-chevron-left"></i>
+
               Previous
             </button>
 
-            <span>
-              Page {currentPage} of{" "}
-              {totalPages}
-            </span>
+            <div className="pagination-info">
+              Page{" "}
+              <strong>
+                {currentPage}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {totalPages}
+              </strong>
+            </div>
 
             <button
+              type="button"
+              className="pagination-btn"
               onClick={() =>
                 setCurrentPage(
                   (page) =>
@@ -516,17 +1004,22 @@ function Orders() {
                 )
               }
               disabled={
-                currentPage === totalPages
+                currentPage ===
+                totalPages
               }
-              className="px-4 py-2 border rounded disabled:opacity-50"
             >
               Next
+
+              <i className="bi bi-chevron-right"></i>
             </button>
+
           </div>
         )}
-      </main>
+
+      </div>
+
     </div>
   );
-}
+};
 
 export default Orders;

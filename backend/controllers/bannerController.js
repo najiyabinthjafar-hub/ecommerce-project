@@ -19,7 +19,12 @@ const createBanner = async (req, res, next) => {
 // GET ALL BANNERS
 const getBanners = async (req, res, next) => {
   try {
-    const banners = await bannerService.getAllBanners();
+    const { search, status } = req.query;
+
+    const banners = await bannerService.getAllBanners({
+      search,
+      status,
+    });
 
     res.status(200).json({
       success: true,

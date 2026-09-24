@@ -1,8 +1,6 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
-
-
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -33,8 +31,35 @@ const verifyPaymentSignature = (
   return generatedSignature === razorpaySignature;
 };
 
+const createRefund = async (paymentId, amount) => {
+  try {
+    const refund = await razorpay.payments.refund(paymentId, {
+      amount: Math.round(amount * 100),
+    });
+
+    console.log("Razorpay refund created:", refund);
+
+    return refund;
+  } catch (error) {
+    console.error(
+      "Razorpay refund error:",
+      JSON.stringify(error, null, 2)
+    );
+
+    const razorpayError = error.error || {};
+
+    const message =
+      razorpayError.description ||
+      error.description ||
+      error.message ||
+      "Unknown Razorpay refund error";
+
+    throw new Error(message);
+  }
+};
 
 module.exports = {
   createRazorpayOrder,
   verifyPaymentSignature,
+  createRefund,
 };
