@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
+
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+
 import "./Checkout.css";
 
 const API_URL = "http://localhost:5000/api";
 
 function Checkout() {
   const navigate = useNavigate();
+
   const location = useLocation();
 
   // =========================================================
@@ -26,15 +32,21 @@ function Checkout() {
   // =========================================================
 
   const [cart, setCart] = useState(null);
+
   const [loading, setLoading] = useState(true);
+
   const [placingOrder, setPlacingOrder] = useState(false);
 
   const [couponCode, setCouponCode] = useState("");
+
   const [coupon, setCoupon] = useState(null);
+
   const [couponMessage, setCouponMessage] = useState("");
+
   const [couponLoading, setCouponLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
+
   const [billingAddress, setBillingAddress] = useState("same");
 
   const [error, setError] = useState("");
@@ -44,12 +56,40 @@ function Checkout() {
   // =========================================================
 
   const token = localStorage.getItem("token");
+
   const userId = localStorage.getItem("userId");
 
   const authConfig = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  };
+
+  // =========================================================
+  // LOAD RAZORPAY SCRIPT
+  // =========================================================
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      const script = document.createElement("script");
+
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+
+      script.onload = () => {
+        resolve(true);
+      };
+
+      script.onerror = () => {
+        resolve(false);
+      };
+
+      document.body.appendChild(script);
+    });
   };
 
   // =========================================================
@@ -68,6 +108,7 @@ function Checkout() {
   const fetchCart = async () => {
     try {
       setLoading(true);
+
       setError("");
 
       const response = await axios.get(
@@ -81,7 +122,9 @@ function Checkout() {
 
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
+
         localStorage.removeItem("userId");
+
         localStorage.removeItem("user");
 
         navigate("/login");
@@ -105,7 +148,9 @@ function Checkout() {
       return [
         {
           product: buyNowProduct,
+
           quantity: buyNowProduct.quantity || 1,
+
           size: buyNowProduct.selectedSize || "",
         },
       ];
@@ -175,12 +220,15 @@ function Checkout() {
 
     if (!code) {
       setCouponMessage("Please enter a coupon code.");
+
       setCoupon(null);
+
       return;
     }
 
     try {
       setCouponLoading(true);
+
       setCouponMessage("");
 
       const response = await axios.get(
@@ -194,23 +242,29 @@ function Checkout() {
 
       if (!couponData) {
         setCoupon(null);
+
         setCouponMessage("Invalid coupon.");
+
         return;
       }
 
       // Active check
+
       if (
         couponData.active === false ||
         couponData.isActive === false
       ) {
         setCoupon(null);
+
         setCouponMessage(
           "This coupon is inactive."
         );
+
         return;
       }
 
       // Expiry check
+
       const expiryDate =
         couponData.expiryDate ||
         couponData.expiry;
@@ -220,13 +274,16 @@ function Checkout() {
         new Date(expiryDate) < new Date()
       ) {
         setCoupon(null);
+
         setCouponMessage(
           "This coupon has expired."
         );
+
         return;
       }
 
       // Minimum purchase
+
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
@@ -242,6 +299,7 @@ function Checkout() {
       }
 
       // Calculate discount
+
       let discountAmount = 0;
 
       const discountType =
@@ -262,6 +320,7 @@ function Checkout() {
       }
 
       // Maximum discount
+
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -277,6 +336,7 @@ function Checkout() {
       }
 
       // Discount cannot exceed subtotal
+
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -289,6 +349,7 @@ function Checkout() {
 
       setCoupon({
         ...couponData,
+
         discountAmount,
       });
 
@@ -313,19 +374,437 @@ function Checkout() {
 
   const removeCoupon = () => {
     setCoupon(null);
+
     setCouponCode("");
+
     setCouponMessage("");
   };
 
   // =========================================================
+  // CREATE ORDER DATA
+  // FIXED: receive actual form instead of event
+  // =========================================================
+
+  const getOrderData = (form) => {
+    const formData = new FormData(form);
+
+    // =======================================================
+    // SHIPPING ADDRESS
+    // =======================================================
+
+    const firstName =
+      formData.get("firstName") || "";
+
+    const lastName =
+      formData.get("lastName") || "";
+
+    const shippingAddress = {
+      fullName:
+        `${firstName} ${lastName}`.trim(),
+
+      phone:
+        formData.get("phone") || "",
+
+      address:
+        formData.get("address") || "",
+
+      apartment:
+        formData.get("apartment") || "",
+
+      city:
+        formData.get("city") || "",
+
+      state:
+        formData.get("state") || "",
+
+      pincode:
+        formData.get("pincode") || "",
+
+      country:
+        formData.get("country") ||
+        "India",
+    };
+
+    // =======================================================
+    // VALIDATION
+    // =======================================================
+
+    if (!shippingAddress.fullName) {
+      throw new Error(
+        "Please enter your name."
+      );
+    }
+
+    if (!shippingAddress.phone) {
+      throw new Error(
+        "Please enter your phone number."
+      );
+    }
+
+    if (!shippingAddress.address) {
+      throw new Error(
+        "Please enter your address."
+      );
+    }
+
+    if (!shippingAddress.city) {
+      throw new Error(
+        "Please enter your city."
+      );
+    }
+
+    if (!shippingAddress.state) {
+      throw new Error(
+        "Please select your state."
+      );
+    }
+
+    if (!shippingAddress.pincode) {
+      throw new Error(
+        "Please enter your pincode."
+      );
+    }
+
+    // =======================================================
+    // ORDER ITEMS
+    // =======================================================
+
+    const orderItems = cartItems.map(
+      (item) => {
+        const product = getProduct(item);
+
+        return {
+          product:
+            product._id ||
+            product.id ||
+            item.product,
+
+          quantity:
+            getQuantity(item),
+
+          price:
+            getPrice(item),
+
+          size:
+            item.size ||
+            item.selectedSize ||
+            "",
+        };
+      }
+    );
+
+    // =======================================================
+    // ORDER DATA
+    // =======================================================
+
+    return {
+      user: userId,
+
+      items: orderItems,
+
+      shippingAddress,
+
+      totalAmount: subtotal,
+
+      discountAmount: discount,
+
+      finalAmount: totalAmount,
+
+      couponCode:
+        coupon?.code ||
+        couponCode.trim().toUpperCase() ||
+        null,
+
+      paymentMethod:
+        paymentMethod === "razorpay"
+          ? "RAZORPAY"
+          : "COD",
+    };
+  };
+
+  // =========================================================
+  // RAZORPAY PAYMENT
+  // FIXED: receive actual form instead of event
+  // =========================================================
+
+  const handleRazorpayPayment = async (form) => {
+    try {
+      setPlacingOrder(true);
+
+      setError("");
+
+      // -----------------------------------------------------
+      // Load Razorpay checkout script
+      // -----------------------------------------------------
+
+      const razorpayLoaded =
+        await loadRazorpayScript();
+
+      if (!razorpayLoaded) {
+        throw new Error(
+          "Razorpay SDK failed to load. Please check your internet connection."
+        );
+      }
+
+      // -----------------------------------------------------
+      // Prepare order data
+      // -----------------------------------------------------
+
+      const orderData =
+        getOrderData(form);
+
+      console.log(
+        "RAZORPAY ORDER DATA:",
+        orderData
+      );
+
+      // -----------------------------------------------------
+      // STEP 1: CREATE MONGODB ORDER
+      // -----------------------------------------------------
+
+      const mongoOrderResponse =
+        await axios.post(
+          `${API_URL}/orders`,
+          orderData,
+          authConfig
+        );
+
+      console.log(
+        "MONGODB ORDER RESPONSE:",
+        mongoOrderResponse.data
+      );
+
+      const mongoOrder =
+        mongoOrderResponse.data.order;
+
+      if (!mongoOrder?._id) {
+        throw new Error(
+          "MongoDB order was not created."
+        );
+      }
+
+      const mongoOrderId =
+        mongoOrder._id;
+
+      // -----------------------------------------------------
+      // STEP 2: CREATE RAZORPAY ORDER
+      // -----------------------------------------------------
+
+      const razorpayOrderResponse =
+        await axios.post(
+          `${API_URL}/orders/razorpay/create-order`,
+          {
+            amount: totalAmount,
+
+            orderId: mongoOrderId,
+          },
+          authConfig
+        );
+
+      console.log(
+        "RAZORPAY ORDER RESPONSE:",
+        razorpayOrderResponse.data
+      );
+
+      const razorpayOrder =
+        razorpayOrderResponse.data.order;
+
+      if (!razorpayOrder?.id) {
+        throw new Error(
+          "Razorpay order was not created."
+        );
+      }
+
+      // -----------------------------------------------------
+      // STEP 3: GET PUBLIC RAZORPAY KEY
+      // -----------------------------------------------------
+
+      const razorpayKey =
+        import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+      if (!razorpayKey) {
+        throw new Error(
+          "Razorpay Key ID is missing. Add VITE_RAZORPAY_KEY_ID to frontend .env file."
+        );
+      }
+
+      // -----------------------------------------------------
+      // STEP 4: OPEN RAZORPAY CHECKOUT
+      // -----------------------------------------------------
+
+      const options = {
+        key: razorpayKey,
+
+        amount: razorpayOrder.amount,
+
+        currency:
+          razorpayOrder.currency || "INR",
+
+        name: "Rizo",
+
+        description:
+          "Rizo E-commerce Order",
+
+        order_id:
+          razorpayOrder.id,
+
+        handler: async function (
+          razorpayResponse
+        ) {
+          try {
+            console.log(
+              "RAZORPAY SUCCESS RESPONSE:",
+              razorpayResponse
+            );
+
+            // ------------------------------------------------
+            // STEP 5: VERIFY PAYMENT
+            // ------------------------------------------------
+
+            const verifyResponse =
+              await axios.post(
+                `${API_URL}/orders/razorpay/verify`,
+                {
+                  orderId:
+                    mongoOrderId,
+
+                  razorpay_order_id:
+                    razorpayResponse.razorpay_order_id,
+
+                  razorpay_payment_id:
+                    razorpayResponse.razorpay_payment_id,
+
+                  razorpay_signature:
+                    razorpayResponse.razorpay_signature,
+                },
+                authConfig
+              );
+
+            console.log(
+              "PAYMENT VERIFICATION RESPONSE:",
+              verifyResponse.data
+            );
+
+            if (
+              verifyResponse.data.success
+            ) {
+              alert(
+                "Payment successful! Order placed successfully."
+              );
+
+              if (!isBuyNow) {
+                await fetchCart();
+              }
+
+              navigate("/orders");
+            } else {
+              setError(
+                "Payment verification failed."
+              );
+            }
+          } catch (error) {
+            console.error(
+              "PAYMENT VERIFICATION ERROR:",
+              error.response?.data ||
+                error.message
+            );
+
+            setError(
+              error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Payment verification failed."
+            );
+          } finally {
+            setPlacingOrder(false);
+          }
+        },
+
+        prefill: {
+          name:
+            orderData.shippingAddress
+              .fullName,
+
+          contact:
+            orderData.shippingAddress
+              .phone,
+        },
+
+        notes: {
+          orderId:
+            mongoOrderId,
+        },
+
+        theme: {
+          color: "#0b2d4d",
+        },
+
+        modal: {
+          ondismiss: function () {
+            console.log(
+              "Razorpay payment popup closed."
+            );
+
+            setPlacingOrder(false);
+
+            setError(
+              "Payment was cancelled."
+            );
+          },
+        },
+      };
+
+      const razorpay =
+        new window.Razorpay(options);
+
+      razorpay.on(
+        "payment.failed",
+        function (response) {
+          console.error(
+            "RAZORPAY PAYMENT FAILED:",
+            response
+          );
+
+          setPlacingOrder(false);
+
+          setError(
+            response.error?.description ||
+              "Payment failed. Please try again."
+          );
+        }
+      );
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "RAZORPAY ERROR:",
+        error.response?.data ||
+          error.message
+      );
+
+      setError(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to start Razorpay payment."
+      );
+
+      setPlacingOrder(false);
+    }
+  };
+
+  // =========================================================
   // PLACE ORDER
+  // FIXED: capture form before async operations
   // =========================================================
 
   const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
+    const form = event.currentTarget;
+
     if (!token) {
       navigate("/login");
+
       return;
     }
 
@@ -333,6 +812,7 @@ function Checkout() {
       setError(
         "User information not found. Please login again."
       );
+
       return;
     }
 
@@ -340,17 +820,25 @@ function Checkout() {
       setError(
         "No products available to place the order."
       );
-      return;
-    }
-
-    // Razorpay UI is ready, actual integration later
-    if (paymentMethod === "razorpay") {
-      alert(
-        "Razorpay payment integration will be added later."
-      );
 
       return;
     }
+
+    // =======================================================
+    // RAZORPAY
+    // =======================================================
+
+    if (
+      paymentMethod === "razorpay"
+    ) {
+      await handleRazorpayPayment(form);
+
+      return;
+    }
+
+    // =======================================================
+    // COD
+    // =======================================================
 
     if (paymentMethod !== "cod") {
       alert(
@@ -362,163 +850,36 @@ function Checkout() {
 
     try {
       setPlacingOrder(true);
+
       setError("");
 
-      const formData = new FormData(
-        event.currentTarget
-      );
-
-      // =====================================================
-      // SHIPPING ADDRESS
-      // =====================================================
-
-      const firstName =
-        formData.get("firstName") || "";
-
-      const lastName =
-        formData.get("lastName") || "";
-
-      const shippingAddress = {
-        fullName:
-          `${firstName} ${lastName}`.trim(),
-
-        phone:
-          formData.get("phone") || "",
-
-        address:
-          formData.get("address") || "",
-
-        apartment:
-          formData.get("apartment") || "",
-
-        city:
-          formData.get("city") || "",
-
-        state:
-          formData.get("state") || "",
-
-        pincode:
-          formData.get("pincode") || "",
-
-        country:
-          formData.get("country") ||
-          "India",
-      };
-
-      // =====================================================
-      // VALIDATION
-      // =====================================================
-
-      if (!shippingAddress.fullName) {
-        alert("Please enter your name.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      if (!shippingAddress.phone) {
-        alert("Please enter your phone number.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      if (!shippingAddress.address) {
-        alert("Please enter your address.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      if (!shippingAddress.city) {
-        alert("Please enter your city.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      if (!shippingAddress.state) {
-        alert("Please select your state.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      if (!shippingAddress.pincode) {
-        alert("Please enter your pincode.");
-        setPlacingOrder(false);
-        return;
-      }
-
-      // =====================================================
-      // ORDER ITEMS
-      // =====================================================
-
-      const orderItems = cartItems.map(
-        (item) => {
-          const product = getProduct(item);
-
-          return {
-            product:
-              product._id ||
-              product.id ||
-              item.product,
-
-            quantity:
-              getQuantity(item),
-
-            price:
-              getPrice(item),
-
-            size:
-              item.size ||
-              item.selectedSize ||
-              "",
-          };
-        }
-      );
-
-      // =====================================================
-      // ORDER DATA
-      // =====================================================
-
-      const orderData = {
-        user: userId,
-
-        items: orderItems,
-
-        shippingAddress,
-
-        totalAmount: subtotal,
-
-        discountAmount: discount,
-
-        finalAmount: totalAmount,
-
-        couponCode:
-          coupon?.code ||
-          couponCode.trim().toUpperCase() ||
-          null,
-
-        paymentMethod: "COD",
-      };
+      const orderData =
+        getOrderData(form);
 
       console.log(
-        "ORDER DATA:",
+        "COD ORDER DATA:",
         orderData
       );
 
       // =====================================================
-      // CREATE ORDER
+      // CREATE COD ORDER
       // =====================================================
 
-      const response = await axios.post(
-        `${API_URL}/orders`,
-        orderData,
-        authConfig
-      );
+      const response =
+        await axios.post(
+          `${API_URL}/orders`,
+          orderData,
+          authConfig
+        );
 
       console.log(
-        "ORDER SUCCESS:",
+        "COD ORDER SUCCESS:",
         response.data
       );
 
-      alert("Order placed successfully!");
+      alert(
+        "Order placed successfully!"
+      );
 
       if (!isBuyNow) {
         await fetchCart();
@@ -535,6 +896,7 @@ function Checkout() {
       setError(
         error.response?.data?.error ||
           error.response?.data?.message ||
+          error.message ||
           "Failed to place order."
       );
     } finally {
@@ -553,7 +915,9 @@ function Checkout() {
 
         <main className="checkout-empty-page">
           <div className="checkout-empty">
-            <h2>Login Required</h2>
+            <h2>
+              Login Required
+            </h2>
 
             <p>
               Please login before proceeding
@@ -674,14 +1038,6 @@ function Checkout() {
 
           <section className="delivery-section">
 
-            {/* LOGO */}
-
-            <div className="checkout-logo">
-              <img
-                src="/logo.png"
-                alt="Rizo"
-              />
-            </div>
 
             {/* DELIVERY */}
 
@@ -970,7 +1326,8 @@ function Checkout() {
                       <strong>
                         ₹
                         {(
-                          price * quantity
+                          price *
+                          quantity
                         ).toLocaleString(
                           "en-IN"
                         )}
@@ -988,7 +1345,6 @@ function Checkout() {
             <div className="price-details">
 
               <div className="price-row">
-
                 <span>
                   Subtotal
                 </span>
@@ -999,7 +1355,6 @@ function Checkout() {
                     "en-IN"
                   )}
                 </span>
-
               </div>
 
               {discount > 0 && (
@@ -1122,12 +1477,10 @@ function Checkout() {
 
               {paymentMethod === "cod" && (
                 <div className="payment-info-box">
-
                   <p>
                     You can pay cash when
                     your order is delivered.
                   </p>
-
                 </div>
               )}
 
@@ -1175,14 +1528,11 @@ function Checkout() {
               {paymentMethod ===
                 "razorpay" && (
                 <div className="payment-info-box">
-
                   <p>
-                    Razorpay payment gateway
-                    UI is ready. Payment API
-                    integration will be added
-                    later.
+                    You will be redirected to
+                    Razorpay secure payment
+                    checkout.
                   </p>
-
                 </div>
               )}
 
@@ -1265,7 +1615,7 @@ function Checkout() {
               disabled={placingOrder}
             >
               {placingOrder
-                ? "PLACING ORDER..."
+                ? "PROCESSING..."
                 : paymentMethod === "cod"
                 ? "PLACE ORDER"
                 : "PAY WITH RAZORPAY"}
@@ -1302,7 +1652,6 @@ function Checkout() {
           </section>
 
         </form>
-
       </main>
 
       <Footer />

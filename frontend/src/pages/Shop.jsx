@@ -515,14 +515,6 @@ function Shop() {
                           : "♡"}
                       </button>
 
-                      {/* SOLD OUT */}
-
-                      {product.stock === 0 && (
-                        <span className="sold-out">
-                          SOLD OUT
-                        </span>
-                      )}
-
                       <img
                         src={productImage}
                         alt={product.name}

@@ -37,15 +37,6 @@ function Cart() {
 
       console.log("CART API RESPONSE:", data);
 
-      // Backend response:
-      // {
-      //   success: true,
-      //   cart: {
-      //     user: "...",
-      //     items: [...]
-      //   }
-      // }
-
       setCart(
         data.cart || {
           items: [],
@@ -333,14 +324,15 @@ function Cart() {
 
           <div className="cart-header">
             <span>PRODUCT</span>
+
             <span>QUANTITY</span>
+
             <span>TOTAL</span>
           </div>
 
           {/* CART ITEMS */}
 
           <div className="cart-items">
-
             {items.map((item) => {
               const product =
                 item.product || item;
@@ -368,14 +360,12 @@ function Cart() {
                   {/* PRODUCT */}
 
                   <div className="cart-product">
-
                     <img
                       src={getProductImage(item)}
                       alt={getProductName(item)}
                     />
 
                     <div className="cart-product-info">
-
                       <h3>
                         {getProductName(item)}
                       </h3>
@@ -392,41 +382,52 @@ function Cart() {
                           Size: {item.size}
                         </span>
                       )}
-
                     </div>
                   </div>
 
-                  {/* QUANTITY */}
+                  {/* QUANTITY + DELETE */}
 
-                  <div className="cart-quantity">
+                  <div className="cart-quantity-wrapper">
+
+                    <div className="cart-quantity">
+                      <button
+                        onClick={() =>
+                          updateQuantity(
+                            productId,
+                            quantity - 1
+                          )
+                        }
+                        disabled={
+                          quantity <= 1
+                        }
+                      >
+                        −
+                      </button>
+
+                      <span>
+                        {quantity}
+                      </span>
+
+                      <button
+                        onClick={() =>
+                          updateQuantity(
+                            productId,
+                            quantity + 1
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
 
                     <button
+                      className="remove-btn"
                       onClick={() =>
-                        updateQuantity(
-                          productId,
-                          quantity - 1
-                        )
+                        removeItem(productId)
                       }
-                      disabled={
-                        quantity <= 1
-                      }
+                      title="Remove"
                     >
-                      −
-                    </button>
-
-                    <span>
-                      {quantity}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          productId,
-                          quantity + 1
-                        )
-                      }
-                    >
-                      +
+                      🗑
                     </button>
 
                   </div>
@@ -434,33 +435,17 @@ function Cart() {
                   {/* TOTAL */}
 
                   <div className="cart-item-total">
-
                     <span>
                       ₹
                       {Number(
                         itemTotal
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
+                      ).toLocaleString("en-IN")}
                     </span>
-
-                    <button
-                      className="remove-btn"
-                      onClick={() =>
-                        removeItem(
-                          productId
-                        )
-                      }
-                    >
-                      REMOVE
-                    </button>
-
                   </div>
 
                 </div>
               );
             })}
-
           </div>
 
           {/* BOTTOM */}
@@ -476,7 +461,6 @@ function Cart() {
               </h2>
 
               <div className="summary-row">
-
                 <span>
                   Subtotal
                 </span>
@@ -485,15 +469,11 @@ function Cart() {
                   ₹
                   {Number(
                     subtotal
-                  ).toLocaleString(
-                    "en-IN"
-                  )}
+                  ).toLocaleString("en-IN")}
                 </span>
-
               </div>
 
               <div className="summary-row">
-
                 <span>
                   Delivery
                 </span>
@@ -503,11 +483,9 @@ function Cart() {
                     ? "FREE"
                     : `₹${delivery}`}
                 </span>
-
               </div>
 
               <div className="summary-total">
-
                 <span>
                   Total
                 </span>
@@ -516,11 +494,8 @@ function Cart() {
                   ₹
                   {Number(
                     total
-                  ).toLocaleString(
-                    "en-IN"
-                  )}
+                  ).toLocaleString("en-IN")}
                 </span>
-
               </div>
 
               <p className="delivery-note">

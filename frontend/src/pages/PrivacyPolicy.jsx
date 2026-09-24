@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -6,14 +7,17 @@ import Footer from "../components/Footer";
 import "./PrivacyPolicy.css";
 
 function PrivacyPolicy() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navbar />
 
-      <main className="policy-page">
-        <section className="policy-container">
-
-          <div className="policy-heading">
+      <main className="privacy-policy-page">
+        <section className="privacy-policy-container">
+          <div className="privacy-policy-heading">
             <p>RIZO FASHION</p>
 
             <h1>PRIVACY POLICY</h1>
@@ -23,19 +27,18 @@ function PrivacyPolicy() {
             </span>
           </div>
 
-          <div className="policy-content">
-
-            <section className="policy-section">
+          <div className="privacy-policy-content">
+            <section className="privacy-policy-section">
               <h2>Information We Collect</h2>
 
               <p>
-                When you use RIZO Fashion, we may collect information such
-                as your name, email address, phone number, shipping address,
-                and order details.
+                When you use RIZO Fashion, we may collect information such as
+                your name, email address, phone number, shipping address, and
+                order details.
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>How We Use Your Information</h2>
 
               <p>
@@ -44,12 +47,12 @@ function PrivacyPolicy() {
               </p>
 
               <p>
-                We may also use your information to provide customer support
-                and send important updates regarding your orders.
+                We may also use your information to provide customer support and
+                send important updates regarding your orders.
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>Protecting Your Information</h2>
 
               <p>
@@ -63,12 +66,10 @@ function PrivacyPolicy() {
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>Sharing Information</h2>
 
-              <p>
-                We do not sell your personal information to third parties.
-              </p>
+              <p>We do not sell your personal information to third parties.</p>
 
               <p>
                 Your information may only be shared with trusted services
@@ -76,41 +77,45 @@ function PrivacyPolicy() {
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>Cookies</h2>
 
               <p>
-                Our website may use cookies to improve your browsing
-                experience and understand how visitors use our website.
+                Our website may use cookies to improve your browsing experience
+                and understand how visitors use our website.
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>Your Privacy</h2>
 
               <p>
                 You have the right to access and update your personal
-                information. You can manage your account details through
-                your RIZO account.
+                information. You can manage your account details through your
+                RIZO account.
               </p>
             </section>
 
-            <section className="policy-section">
+            <section className="privacy-policy-section">
               <h2>Questions About Privacy?</h2>
 
               <p>
-                If you have any questions about our Privacy Policy,
-                please contact our support team.
+                If you have any questions about our Privacy Policy, please
+                contact our support team.
               </p>
 
-              <Link to="/support" className="policy-support-btn">
+              <Link to="/support" className="privacy-policy-support-btn">
                 CONTACT SUPPORT
               </Link>
+
+              
             </section>
-
+            <Link to="/checkout" className="privacy-policy-back-btn">
+                 BACK 
+              </Link>
           </div>
-
-        </section>
+        </section> 
+        
       </main>
 
       <Footer />

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -6,30 +7,30 @@ import Footer from "../components/Footer";
 import "./RefundPolicy.css";
 
 function RefundPolicy() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navbar />
 
       <main className="policy-page">
         <section className="policy-container">
-
           <div className="policy-heading">
             <p>RIZO FASHION</p>
             <h1>REFUND POLICY</h1>
-            <span>
-              Everything you need to know about returns and refunds.
-            </span>
+            <span>Everything you need to know about returns and refunds.</span>
           </div>
 
           <div className="policy-content">
-
             <section className="policy-section">
               <h2>Returns</h2>
 
               <p>
                 We want you to love your RIZO purchase. If you are not
-                completely satisfied with your order, you may request a
-                return within 7 days of receiving your product.
+                completely satisfied with your order, you may request a return
+                within 7 days of receiving your product.
               </p>
             </section>
 
@@ -50,13 +51,13 @@ function RefundPolicy() {
               <h2>Refunds</h2>
 
               <p>
-                Once we receive and inspect your returned item, we will
-                notify you about the status of your refund.
+                Once we receive and inspect your returned item, we will notify
+                you about the status of your refund.
               </p>
 
               <p>
-                If your return is approved, the refund will be processed
-                to your original payment method within 5–7 business days.
+                If your return is approved, the refund will be processed to your
+                original payment method within 5–7 business days.
               </p>
             </section>
 
@@ -64,9 +65,9 @@ function RefundPolicy() {
               <h2>Non-Returnable Items</h2>
 
               <p>
-                Certain items may not be eligible for return, including
-                products that have been worn, washed, damaged, or returned
-                without their original tags.
+                Certain items may not be eligible for return, including products
+                that have been worn, washed, damaged, or returned without their
+                original tags.
               </p>
             </section>
 
@@ -74,17 +75,18 @@ function RefundPolicy() {
               <h2>Need Help?</h2>
 
               <p>
-                If you have any questions regarding returns or refunds,
-                our support team is always happy to help.
+                If you have any questions regarding returns or refunds, our
+                support team is always happy to help.
               </p>
 
               <Link to="/support" className="policy-support-btn">
                 CONTACT SUPPORT
               </Link>
             </section>
-
+            <Link to="/checkout" className="policy-back-btn">
+              BACK
+            </Link>
           </div>
-
         </section>
       </main>
 

@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from "react";
-
 import { Link } from "react-router-dom";
-
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
 
 import "./Invoicing.css";
@@ -22,6 +19,7 @@ const Invoicing = () => {
   // =========================
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchOrders();
   }, []);
 
@@ -81,7 +79,7 @@ const Invoicing = () => {
 
     return status
       .toLowerCase()
-      .replace(/_/g, " ")
+      .replace(/\_/g, " ")
       .replace(/\b\w/g, (letter) =>
         letter.toUpperCase()
       );

@@ -241,7 +241,7 @@ function Wishlist() {
           {/* ================= HEADING ================= */}
 
           <section className="wishlist-heading">
-            <h1>MY WISHLIST</h1>
+            <h1>YOUR WISHLIST</h1>
 
             <span>
               Your favourite products in one place.
