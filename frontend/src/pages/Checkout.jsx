@@ -963,8 +963,8 @@ function Checkout() {
       );
 
       if (!isBuyNow) {
-        await fetchCart();
-      }
+          setCart(null);
+        }
 
       navigate("/orders");
     } catch (error) {
@@ -1845,3 +1845,4 @@ function Checkout() {
 }
 
 export default Checkout;
+

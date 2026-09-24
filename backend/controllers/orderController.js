@@ -3,6 +3,8 @@ const razorpayService = require("../services/razorpayService");
 
 // CREATE ORDER
 const createOrder = async (req, res) => {
+  console.log("CREATE ORDER CONTROLLER HIT");
+  console.log("PAYMENT METHOD:", req.body?.paymentMethod);
   try {
     const orderData = {
       ...req.body,

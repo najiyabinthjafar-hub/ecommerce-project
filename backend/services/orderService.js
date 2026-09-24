@@ -7,8 +7,7 @@ const notificationService = require("./notificationService");
 const productService = require("./productService");
 const razorpayService = require("./razorpayService");
 
-// ================= STOCK HELPERS =================
-
+// ================= STOCK HELPERS ==========
 const getProductId = (item) => {
   if (!item) return null;
 
@@ -125,9 +124,12 @@ const reduceStockForItems = async (items = []) => {
   }
 };
 
-// ================= CREATE ORDER =================
-
+// ================= CREATE ORDER ==========
 const createOrder = async (orderData) => {
+  console.log("CREATE ORDER SERVICE HIT:", {
+    user: orderData.user,
+    paymentMethod: orderData.paymentMethod,
+  });
   const items = orderData.items || [];
 
   const paymentMethod = String(
@@ -158,7 +160,19 @@ const createOrder = async (orderData) => {
     throw error;
   }
 
-  // Notify customer
+    // Clear cart only after a COD order is successfully created
+  if (paymentMethod === "COD") {
+    console.log("COD CART CLEAR: START");
+    const cart = await Cart.findOne({ user: order.user });
+    console.log("COD CART BEFORE CLEAR:", cart ? cart.items.length : "NO CART");
+
+    if (cart) {
+      cart.items = [];
+      await cart.save();
+      console.log("COD CART CLEAR: SUCCESS");
+    }
+  }
+// Notify customer
   await notificationService.createNotification({
     user: order.user,
     title: "Order Created",
@@ -181,8 +195,7 @@ const createOrder = async (orderData) => {
   return order;
 };
 
-// ================= GET USER ORDERS =================
-
+// ================= GET USER ORDERS ==========
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
@@ -191,8 +204,7 @@ const getOrdersByUser = async (userId) => {
   return orders;
 };
 
-// ================= GET ALL ORDERS =================
-
+// ================= GET ALL ORDERS ==========
 const getAllOrders = async ({
   page = 1,
   limit = 10,
@@ -287,8 +299,7 @@ const getAllOrders = async ({
   };
 };
 
-// ================= GET ORDER BY ID =================
-
+// ================= GET ORDER BY ID ==========
 const getOrderById = async (orderId) => {
   const order = await Order.findById(orderId)
     .populate("items.product")
@@ -301,8 +312,7 @@ const getOrderById = async (orderId) => {
   return order;
 };
 
-// ================= UPDATE ORDER STATUS =================
-
+// ================= UPDATE ORDER STATUS ==========
 const updateOrderStatus = async (
   orderId,
   orderStatus
@@ -360,8 +370,7 @@ const updateOrderStatus = async (
   return order;
 };
 
-// ================= REQUEST RETURN =================
-
+// ================= REQUEST RETURN ==========
 const requestReturn = async (
   orderId,
   userId,
@@ -404,8 +413,7 @@ const requestReturn = async (
   return order;
 };
 
-// ================= ADMIN APPROVE / REJECT RETURN =================
-
+// ================= ADMIN APPROVE / REJECT RETURN ==========
 const updateReturnStatus = async (
   orderId,
   returnStatus
@@ -520,8 +528,7 @@ const updateReturnStatus = async (
   }
 };
 
-// ================= BEST SELLING PRODUCTS =================
-
+// ================= BEST SELLING PRODUCTS ==========
 const getBestSellingProducts = async () => {
   const bestSellers = await Order.aggregate([
     {
@@ -574,8 +581,7 @@ const getBestSellingProducts = async () => {
   return bestSellers;
 };
 
-// ================= UPDATE RAZORPAY ORDER =================
-
+// ================= UPDATE RAZORPAY ORDER ==========
 const updateRazorpayOrder = async (
   orderId,
   razorpayOrderId,
@@ -597,8 +603,7 @@ const updateRazorpayOrder = async (
   return order;
 };
 
-// ================= VERIFY RAZORPAY PAYMENT =================
-
+// ================= VERIFY RAZORPAY PAYMENT ==========
 const verifyRazorpayPayment = async (
   orderId,
   userId,
@@ -683,8 +688,7 @@ const verifyRazorpayPayment = async (
   }
 };
 
-// ================= EXPORTS =================
-
+// ================= EXPORTS ==========
 module.exports = {
   createOrder,
   getOrdersByUser,
@@ -697,3 +701,4 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
