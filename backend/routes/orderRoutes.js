@@ -79,7 +79,8 @@ router.put(
 router.post("/:id/return", protect, orderController.requestReturn);
 
 // ADMIN APPROVE / REJECT RETURN
-router.put("/:id/return-status", protect, orderController.updateReturnStatus);
+router.put("/:id/return-status", protect, adminOnly, orderController.updateReturnStatus);
 
 module.exports = router;
+
 
