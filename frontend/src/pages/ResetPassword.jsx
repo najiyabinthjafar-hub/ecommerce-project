@@ -91,7 +91,6 @@ function ResetPassword() {
         <section className="reset-password-container">
 
           <div className="reset-password-header">
-            <p>ACCOUNT SECURITY</p>
 
             <h1>RESET PASSWORD</h1>
 

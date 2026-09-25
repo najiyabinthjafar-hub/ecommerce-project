@@ -4,126 +4,262 @@ import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
 
 function Orders() {
-  const navigate = useNavigate();
-
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ================= FETCH ORDERS =================
+  const navigate = useNavigate();
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  // =========================================================
+  // FETCH ORDERS
+  // =========================================================
+  useEffect(() => {
+    window.scrollTo(0, 0);
 
-      const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId");
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      if (!token || !userId) {
-        setOrders([]);
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const response = await axios.get(
+          `${API_URL}/orders`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log(
+          "Orders API response:",
+          response.data
+        );
+
+        setOrders(
+          response.data.orders ||
+            response.data.data ||
+            []
+        );
+      } catch (error) {
+        console.error(
+          "Fetch orders error:",
+          error
+        );
+
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("user");
+
+          navigate("/login");
+          return;
+        }
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to load your orders."
+        );
+      } finally {
         setLoading(false);
-        return;
+      }
+    };
+
+    fetchOrders();
+  }, [navigate]);
+
+  // =========================================================
+  // FORMAT STATUS
+  // =========================================================
+  const formatStatus = (status) => {
+    if (!status) {
+      return "Pending";
+    }
+
+    return status
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
+  };
+
+  // =========================================================
+  // PRODUCT IMAGE
+  // =========================================================
+  const getProductImage = (product) => {
+    if (!product) {
+      return "/images/placeholder.png";
+    }
+
+    if (
+      product.images &&
+      product.images.length > 0
+    ) {
+      const image = product.images[0];
+
+      if (typeof image === "string") {
+        if (image.startsWith("http")) {
+          return image;
+        }
+
+        return `${API_URL.replace(
+          "/api",
+          ""
+        )}/${image.startsWith("/")
+          ? image.slice(1)
+          : image}`;
       }
 
-      const response = await axios.get(
-        `${API_URL}/orders?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      if (image?.url) {
+        if (image.url.startsWith("http")) {
+          return image.url;
         }
-      );
 
-      console.log("ORDERS RESPONSE:", response.data);
-
-      const ordersData =
-        response.data?.orders ||
-        response.data?.data ||
-        response.data;
-
-      setOrders(
-        Array.isArray(ordersData)
-          ? ordersData
-          : []
-      );
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-
-      setError(
-        err.response?.data?.message ||
-          "Failed to load your orders."
-      );
-    } finally {
-      setLoading(false);
+        return `${API_URL.replace(
+          "/api",
+          ""
+        )}${image.url}`;
+      }
     }
+
+    if (product.image) {
+      if (
+        product.image.startsWith("http")
+      ) {
+        return product.image;
+      }
+
+      return `${API_URL.replace(
+        "/api",
+        ""
+      )}${product.image}`;
+    }
+
+    return "/images/placeholder.png";
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  // ================= TRACK ORDER =================
-
-  const handleTrackOrder = (order) => {
-    navigate(`/track-order/${order._id}`, {
-      state: {
-        order: order,
-      },
-    });
-  };
-
-  // ================= CANCEL ORDER =================
-
-  const handleCancelOrder = async (orderId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this order?"
+  // =========================================================
+  // PRODUCT NAME
+  // =========================================================
+  const getProductName = (product) => {
+    return (
+      product?.name ||
+      product?.title ||
+      "Product"
     );
+  };
 
-    if (!confirmCancel) return;
+  // =========================================================
+  // PRODUCT PRICE
+  // =========================================================
+  const getProductPrice = (item) => {
+    if (
+      item?.price !== undefined &&
+      item?.price !== null
+    ) {
+      return Number(item.price);
+    }
+
+    if (
+      item?.product?.salePrice !== undefined &&
+      item?.product?.salePrice !== null &&
+      item.product.salePrice > 0
+    ) {
+      return Number(
+        item.product.salePrice
+      );
+    }
+
+    return Number(
+      item?.product?.regularPrice || 0
+    );
+  };
+
+  // =========================================================
+  // PRODUCT SIZE
+  // =========================================================
+  const getProductSize = (item) => {
+    return (
+      item?.size ||
+      item?.selectedSize ||
+      item?.variant?.size ||
+      "N/A"
+    );
+  };
+
+  // =========================================================
+  // TRACK ORDER
+  // =========================================================
+  const handleTrackOrder = (order) => {
+    navigate(
+      `/track-order/${order._id}`,
+      {
+        state: {
+          order: order,
+        },
+      }
+    );
+  };
+
+  // =========================================================
+  // CANCEL ORDER
+  // =========================================================
+  const handleCancelOrder = async (
+    orderId
+  ) => {
+    const confirmCancel =
+      window.confirm(
+        "Are you sure you want to cancel this order?"
+      );
+
+    if (!confirmCancel) {
+      return;
+    }
 
     try {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
-      const response = await axios.put(
-        `${API_URL}/orders/${orderId}/status`,
-        {
-          orderStatus: "CANCELLED",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+      const response =
+        await axios.put(
+          `${API_URL}/orders/${orderId}/status`,
+          {
+            orderStatus: "CANCELLED",
           },
-        }
-      );
-
-      console.log(
-        "CANCEL ORDER RESPONSE:",
-        response.data
-      );
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
       const updatedOrder =
-        response.data?.order ||
-        response.data?.data;
+        response.data.order ||
+        response.data.data;
 
-      if (updatedOrder) {
-        setOrders((previousOrders) =>
-          previousOrders.map((order) =>
-            order._id === orderId
-              ? updatedOrder
-              : order
+      setOrders(
+        (previousOrders) =>
+          previousOrders.map(
+            (order) =>
+              order._id === orderId
+                ? updatedOrder
+                : order
           )
-        );
-      } else {
-        await fetchOrders();
-      }
+      );
 
-      alert("Your order has been cancelled.");
+      alert(
+        "Your order has been cancelled."
+      );
     } catch (error) {
       console.error(
         "Cancel order error:",
@@ -137,103 +273,26 @@ function Orders() {
     }
   };
 
-  // ================= FORMAT STATUS =================
-
-  const formatStatus = (status) => {
-    if (!status) return "Pending";
-
-    return status
-      .toLowerCase()
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (letter) =>
-        letter.toUpperCase()
-      );
-  };
-
-  // ================= PRODUCT NAME =================
-
-  const getProductName = (item) => {
-    if (item?.product?.name) {
-      return item.product.name;
-    }
-
-    if (item?.productName) {
-      return item.productName;
-    }
-
-    if (item?.name) {
-      return item.name;
-    }
-
-    return "Product";
-  };
-
-  // ================= PRODUCT IMAGE =================
-
-  const getProductImage = (item) => {
-    if (item?.image) {
-      return item.image;
-    }
-
-    if (item?.product?.image) {
-      return item.product.image;
-    }
-
-    if (
-      item?.product?.images &&
-      item.product.images.length > 0
-    ) {
-      return item.product.images[0];
-    }
-
-    return "";
-  };
-
-  // ================= LOADING =================
-
+  // =========================================================
+  // LOADING
+  // =========================================================
   if (loading) {
     return (
       <>
         <Navbar />
 
         <main className="orders-page">
-          <div className="orders-loading">
-            Loading your orders...
-          </div>
-        </main>
+          <section className="orders-heading">
 
-        <Footer />
-      </>
-    );
-  }
+            <p>YOUR ACCOUNT</p>
 
-  // ================= LOGIN CHECK =================
-
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-
-  if (!token || !userId) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-login">
-            <p>MY ACCOUNT</p>
-
-            <h1>My Orders</h1>
+            <h1>MY ORDERS</h1>
 
             <span>
-              Please login to view your orders.
+              Loading your orders...
             </span>
 
-            <Link
-              to="/login"
-              className="orders-login-btn"
-            >
-              LOGIN
-            </Link>
-          </div>
+          </section>
         </main>
 
         <Footer />
@@ -241,299 +300,336 @@ function Orders() {
     );
   }
 
-  // ================= ERROR =================
-
-  if (error) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-error">
-            <p>{error}</p>
-
-            <button
-              className="orders-retry"
-              onClick={fetchOrders}
-            >
-              TRY AGAIN
-            </button>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // ================= EMPTY ORDERS =================
-
-  if (orders.length === 0) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-empty">
-            <h2>No Orders Yet</h2>
-
-            <p>
-              You haven't placed any orders yet.
-            </p>
-
-            <Link
-              to="/shop"
-              className="orders-shop-btn"
-            >
-              SHOP NOW
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // ================= ORDERS PAGE =================
-
+  // =========================================================
+  // PAGE
+  // =========================================================
   return (
     <>
       <Navbar />
 
       <main className="orders-page">
-        <div className="orders-table-header">
-          <span>PRODUCT</span>
-          <span>STATUS</span>
-        </div>
 
-        <div className="orders-list">
-          {orders.map((order) => {
-            const status =
-              order.orderStatus || "PENDING";
+        <div className="orders-container">
 
-            const firstItem = order.items?.[0];
+          {/* =================================================
+              HEADING
+          ================================================= */}
+          <section className="orders-heading">
 
-            const productName =
-              getProductName(firstItem);
+            <p>YOUR ACCOUNT</p>
 
-            const productImage =
-              getProductImage(firstItem);
+            <h1>MY ORDERS</h1>
 
-            return (
-              <article
-                className="order-row"
-                key={order._id}
-              >
-                {/* ================= ORDER HEADER ================= */}
+            <span>
+              View your recent orders and
+              order details.
+            </span>
 
-                <div className="order-header">
-                  <div>
-                    <span>ORDER ID</span>
+          </section>
 
-                    <strong>
-                      #{order._id}
-                    </strong>
-                  </div>
+          {/* =================================================
+              ERROR
+          ================================================= */}
+          {error && (
+            <section className="orders-empty">
 
-                  <div>
-                    <span>DATE</span>
+              <h2>{error}</h2>
 
-                    <strong>
-                      {order.createdAt
-                        ? new Date(
-                            order.createdAt
-                          ).toLocaleDateString(
-                            "en-IN"
-                          )
-                        : "-"}
-                    </strong>
-                  </div>
-                </div>
+            </section>
+          )}
 
-                {/* ================= PRODUCT SECTION ================= */}
+          {/* =================================================
+              NO ORDERS
+          ================================================= */}
+          {!error &&
+            orders.length === 0 && (
+              <section className="orders-empty">
 
-                <div className="order-product-section">
-                  <div className="order-product">
-                    <div className="order-image">
-                      {productImage ? (
-                        <img
-                          src={productImage}
-                          alt={productName}
-                        />
-                      ) : (
-                        <span>No Image</span>
-                      )}
-                    </div>
+                <h2>
+                  No orders yet
+                </h2>
 
-                    <div className="order-details">
-                      <h3>
-                        {productName}
-                      </h3>
+                <p>
+                  You haven't placed any
+                  orders yet.
+                </p>
 
-                      <p>
-                        ₹
-                        {Number(
-                          firstItem?.price || 0
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
-                      </p>
+                <Link to="/shop">
+                  START SHOPPING
+                </Link>
 
-                      <span>
-                        Quantity:{" "}
-                        {firstItem?.quantity || 1}
+              </section>
+            )}
 
-                        {firstItem?.size
-                          ? ` • Size: ${firstItem.size}`
-                          : ""}
-                      </span>
-                    </div>
-                  </div>
+          {/* =================================================
+              ORDERS
+          ================================================= */}
+          {!error &&
+            orders.length > 0 && (
+              <section className="orders-list">
 
-                  {/* ================= STATUS ================= */}
+                {orders.map((order) => {
 
-                  <div className="order-status-section">
-                    <span
-                      className={`order-status ${status
-                        .toLowerCase()
-                        .replace(/_/g, "-")}`}
+                  const status =
+                    order.orderStatus ||
+                    "PENDING";
+
+                  const normalizedStatus =
+                    status.toUpperCase();
+
+                  return (
+                    <article
+                      className="order-card"
+                      key={order._id}
                     >
-                      {formatStatus(status)}
-                    </span>
 
-                    <button
-                      className="track-order-btn"
-                      onClick={() =>
-                        handleTrackOrder(order)
-                      }
-                    >
-                      Track Your Order
-                    </button>
-                  </div>
-                </div>
+                      {/* =====================================
+                          ORDER HEADER
+                      ===================================== */}
+                      <div className="order-header">
 
-                {/* ================= ALL ORDER PRODUCTS ================= */}
+                        <div>
+                          <span>
+                            ORDER ID
+                          </span>
 
-                {order.items?.length > 1 && (
-                  <div className="order-products">
-                    {order.items.map(
-                      (item, index) => {
-                        const product =
-                          item.product || {};
+                          <strong>
+                            #{order._id}
+                          </strong>
+                        </div>
 
-                        const itemName =
-                          product.name ||
-                          item.name ||
-                          getProductName(item);
+                        <div>
+                          <span>
+                            DATE
+                          </span>
 
-                        const itemImage =
-                          product.images?.[0] ||
-                          product.image ||
-                          item.image ||
-                          "";
+                          <strong>
+                            {order.createdAt
+                              ? new Date(
+                                  order.createdAt
+                                ).toLocaleDateString(
+                                  "en-IN"
+                                )
+                              : "N/A"}
+                          </strong>
+                        </div>
 
-                        return (
-                          <div
-                            className="order-product"
-                            key={`${order._id}-${index}`}
+                        <div>
+                          <span>
+                            STATUS
+                          </span>
+
+                          <strong
+                            className={`order-status ${
+                              status
+                                .toLowerCase()
+                                .replace(
+                                  /\s+/g,
+                                  "-"
+                                )
+                            }`}
                           >
-                            <div className="order-product-image">
-                              {itemImage ? (
-                                <img
-                                  src={itemImage}
-                                  alt={itemName}
-                                />
-                              ) : (
-                                <span>
-                                  No Image
-                                </span>
-                              )}
-                            </div>
+                            {formatStatus(
+                              status
+                            )}
+                          </strong>
+                        </div>
 
-                            <div className="order-product-info">
-                              <h3>
-                                {itemName}
-                              </h3>
+                      </div>
 
-                              {item.size && (
-                                <p>
-                                  Size: {item.size}
-                                </p>
-                              )}
+                      {/* =====================================
+                          ORDER PRODUCTS
+                      ===================================== */}
+                      <div className="order-products">
 
-                              <p>
-                                Quantity:{" "}
-                                {item.quantity || 1}
-                              </p>
-                            </div>
+                        {order.items?.map(
+                          (
+                            item,
+                            index
+                          ) => {
 
-                            <strong>
-                              ₹
-                              {(
-                                (item.price || 0) *
-                                (item.quantity || 1)
-                              ).toLocaleString(
-                                "en-IN"
-                              )}
-                            </strong>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                )}
+                            const product =
+                              item.product ||
+                              {};
 
-                {/* ================= ORDER FOOTER ================= */}
+                            return (
+                              <div
+                                className="order-product"
+                                key={`${order._id}-${index}`}
+                              >
 
-                <div className="order-footer">
-                  <div>
-                    <span>PAYMENT</span>
+                                {/* PRODUCT IMAGE */}
+                                <div className="order-product-image">
 
-                    <strong>
-                      {order.paymentMethod ||
-                        "COD"}
-                    </strong>
-                  </div>
+                                  <img
+                                    src={getProductImage(
+                                      product
+                                    )}
+                                    alt={getProductName(
+                                      product
+                                    )}
+                                    onError={(
+                                      event
+                                    ) => {
+                                      event.currentTarget.src =
+                                        "/images/placeholder.png";
+                                    }}
+                                  />
 
-                  <div>
-                    <span>TOTAL</span>
+                                </div>
 
-                    <strong>
-                      ₹
-                      {Number(
-                        order.finalAmount ??
-                          order.totalAmount ??
-                          order.total ??
-                          0
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
-                    </strong>
-                  </div>
-                </div>
+                                {/* PRODUCT DETAILS */}
+                                <div className="product-details">
 
-                {/* ================= ORDER ACTIONS ================= */}
+                                  <h3>
+                                    {getProductName(
+                                      product
+                                    )}
+                                  </h3>
 
-                <div className="order-actions">
-                  {status !== "CANCELLED" &&
-                    status !== "DELIVERED" && (
-                      <button
-                        className="cancel-order-btn"
-                        onClick={() =>
-                          handleCancelOrder(
-                            order._id
-                          )
-                        }
-                      >
-                        Cancel Order
-                      </button>
-                    )}
-                </div>
-              </article>
-            );
-          })}
+                                  <p className="product-price">
+                                    ₹
+                                    {getProductPrice(
+                                      item
+                                    ).toLocaleString(
+                                      "en-IN"
+                                    )}
+                                  </p>
+
+                                  <p className="product-meta">
+                                    Size:{" "}
+                                    {getProductSize(
+                                      item
+                                    )}
+
+                                    <span>
+                                      |
+                                    </span>
+
+                                    Quantity:{" "}
+                                    {item.quantity ||
+                                      1}
+                                  </p>
+
+                                </div>
+
+                                {/* ITEM TOTAL */}
+                                <strong className="product-item-total">
+                                  ₹
+                                  {(
+                                    getProductPrice(
+                                      item
+                                    ) *
+                                    Number(
+                                      item.quantity ||
+                                        1
+                                    )
+                                  ).toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </strong>
+
+                              </div>
+                            );
+                          }
+                        )}
+
+                      </div>
+
+                      {/* =====================================
+                          ORDER FOOTER
+                      ===================================== */}
+                      <div className="order-footer">
+
+                        <div>
+                          <span>
+                            PAYMENT
+                          </span>
+
+                          <strong>
+                            {order.paymentMethod ||
+                              "COD"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            TOTAL
+                          </span>
+
+                          <strong>
+                            ₹
+                            {Number(
+                              order.finalAmount ??
+                                order.totalAmount ??
+                                order.total ??
+                                0
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </strong>
+                        </div>
+
+                      </div>
+
+                      {/* =====================================
+                          ORDER ACTIONS
+                      ===================================== */}
+                      <div className="order-actions">
+
+                        {normalizedStatus !==
+                          "CANCELLED" &&
+                          normalizedStatus !==
+                            "DELIVERED" && (
+                            <>
+                              <button
+                                type="button"
+                                className="track-button"
+                                onClick={() =>
+                                  handleTrackOrder(
+                                    order
+                                  )
+                                }
+                              >
+                                Track Your Order
+                              </button>
+
+                              <button
+                                type="button"
+                                className="cancel-order-btn"
+                                onClick={() =>
+                                  handleCancelOrder(
+                                    order._id
+                                  )
+                                }
+                              >
+                                CANCEL ORDER
+                              </button>
+                            </>
+                          )}
+
+                      </div>
+
+                    </article>
+                  );
+                })}
+
+              </section>
+            )}
+
         </div>
+
+        {/* =================================================
+            BACK BUTTON
+        ================================================= */}
+        <button
+          type="button"
+          className="orders-back-button"
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
+
       </main>
 
       <Footer />

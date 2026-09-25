@@ -6,16 +6,10 @@ const bannerController = require("../controllers/bannerController");
 const upload = require("../middleware/uploadMiddleware");
 
 // CREATE
-router.post(
-  "/",
-  upload.single("image"),
-  bannerController.createBanner
-);
+router.post("/", bannerController.createBanner);
+
 // GET ALL
 router.get("/", bannerController.getBanners);
-
-// GET ACTIVE BANNERS
-router.get("/active", bannerController.getActiveBanners);
 
 // GET SINGLE
 router.get("/:id", bannerController.getBanner);

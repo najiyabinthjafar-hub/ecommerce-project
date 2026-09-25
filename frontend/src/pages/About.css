@@ -1,18 +1,49 @@
-
 /* =========================================
    ABOUT PAGE
 ========================================= */
 
 .about-page {
-  min-height: 100vh;
-  background: #f3fafa;
-  padding: 70px 0 0;
+  min-height: calc(100vh - 210px);
+  padding: 60px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  background: linear-gradient(
+    110deg,
+    #a8a8a6 0%,
+    #c2c2c0 38%,
+    #e1e1df 68%,
+    #f7f7f5 100%
+  );
 }
 
+/* =========================================
+   ABOUT CARD
+========================================= */
+
 .about-section {
-  width: 72%;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 700px;
+
+  padding: 38px 48px;
+
+  box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.18);
+
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* =========================================
@@ -20,12 +51,17 @@
 ========================================= */
 
 .about-section h1 {
+  margin: 0 0 28px;
+
   text-align: center;
-  font-size: 30px;
-  font-weight: 400;
-  letter-spacing: 0;
-  margin: 0 0 35px;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 29px;
+  font-weight: 500;
+
   color: #111;
+
+  letter-spacing: 0.5px;
 }
 
 /* =========================================
@@ -33,27 +69,43 @@
 ========================================= */
 
 .about-content {
-  background: #cfd1d2;
-  padding: 28px 42px 45px;
-  min-height: 300px;
-  box-sizing: border-box;
+  width: 100%;
 }
 
 .about-content p {
-  margin: 0 0 22px;
-  font-size: 13px;
-  line-height: 1.7;
-  font-weight: 500;
-  color: #4b4b4b;
+  margin: 0 0 20px;
+
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.75;
+  font-weight: 400;
+
+  color: #444;
+
+  text-align: justify;
 }
 
 .about-content p:last-child {
   margin-bottom: 0;
 }
 
+/* =========================================
+   TAGLINE
+========================================= */
+
 .about-tagline {
-  font-weight: 700 !important;
-  color: #333 !important;
+  margin-top: 25px !important;
+
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+
+  font-weight: 600 !important;
+
+  color: #222 !important;
+
+  text-align: center !important;
+  letter-spacing: 0.3px;
 }
 
 /* =========================================
@@ -61,12 +113,13 @@
 ========================================= */
 
 @media (max-width: 1000px) {
-  .about-section {
-    width: 82%;
+  .about-page {
+    padding: 55px 20px;
   }
 
-  .about-content {
-    padding: 28px 35px 40px;
+  .about-section {
+    max-width: 650px;
+    padding: 36px 42px;
   }
 }
 
@@ -76,27 +129,30 @@
 
 @media (max-width: 768px) {
   .about-page {
-    padding: 60px 0 0;
+    min-height: calc(100vh - 180px);
+    padding: 45px 18px;
   }
 
   .about-section {
-    width: 90%;
+    max-width: 600px;
+
+    padding: 34px 32px;
+
+    border-radius: 16px;
   }
 
   .about-section h1 {
-    font-size: 26px;
+    font-size: 27px;
     margin-bottom: 25px;
   }
 
-  .about-content {
-    padding: 25px 28px 35px;
-    min-height: auto;
+  .about-content p {
+    font-size: 11px;
+    line-height: 1.7;
   }
 
-  .about-content p {
-    font-size: 12px;
-    line-height: 1.6;
-    margin-bottom: 20px;
+  .about-tagline {
+    font-size: 14px !important;
   }
 }
 
@@ -106,26 +162,32 @@
 
 @media (max-width: 600px) {
   .about-page {
-    padding: 45px 0 0;
+    min-height: calc(100vh - 170px);
+    padding: 35px 14px;
   }
 
   .about-section {
-    width: 92%;
+    width: 100%;
+
+    padding: 30px 22px;
+
+    border-radius: 14px;
   }
 
   .about-section h1 {
-    font-size: 24px;
-    margin-bottom: 22px;
-  }
-
-  .about-content {
-    padding: 22px 20px 30px;
+    font-size: 25px;
+    margin-bottom: 23px;
   }
 
   .about-content p {
-    font-size: 11px;
-    line-height: 1.65;
-    margin-bottom: 18px;
+    font-size: 10px;
+    line-height: 1.7;
+    margin-bottom: 17px;
+  }
+
+  .about-tagline {
+    font-size: 13px !important;
+    margin-top: 22px !important;
   }
 }
 
@@ -135,26 +197,24 @@
 
 @media (max-width: 400px) {
   .about-page {
-    padding: 40px 0 0;
+    padding: 30px 10px;
   }
 
   .about-section {
-    width: 94%;
+    padding: 28px 18px;
   }
 
   .about-section h1 {
-    font-size: 22px;
-    margin-bottom: 20px;
-  }
-
-  .about-content {
-    padding: 20px 17px 28px;
+    font-size: 23px;
+    margin-bottom: 21px;
   }
 
   .about-content p {
-    font-size: 10px;
-    line-height: 1.6;
-    margin-bottom: 16px;
+    font-size: 9.5px;
+    line-height: 1.65;
+  }
+
+  .about-tagline {
+    font-size: 12px !important;
   }
 }
-

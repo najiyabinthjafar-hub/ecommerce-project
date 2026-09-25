@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -67,13 +69,18 @@ function Blog() {
     },
   ];
 
+  // Scroll to top when page opens
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navbar />
 
       <main className="blog-page">
-        {/* HERO */}
 
+        {/* HERO */}
         <section className="blog-heading">
           <p>RIZO JOURNAL</p>
 
@@ -85,8 +92,8 @@ function Blog() {
         </section>
 
         {/* FEATURED BLOG */}
-
         <section className="featured-blog">
+
           <div className="featured-image">
             <img
               src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1200&q=80"
@@ -105,13 +112,16 @@ function Blog() {
               yours.
             </p>
 
-            <button type="button">READ MORE →</button>
+            <button type="button">
+              READ MORE →
+            </button>
           </div>
+
         </section>
 
         {/* LATEST STORIES */}
-
         <section className="latest-stories">
+
           <div className="stories-heading">
             <p>LATEST STORIES</p>
 
@@ -119,16 +129,24 @@ function Blog() {
           </div>
 
           <div className="blog-grid">
+
             {blogs.map((blog) => (
-              <article className="blog-card" key={blog.id}>
+              <article
+                className="blog-card"
+                key={blog.id}
+              >
+
                 <div className="blog-image">
-                  <img src={blog.image} alt={blog.title} />
+                  <img
+                    src={blog.image}
+                    alt={blog.title}
+                  />
                 </div>
 
                 <div className="blog-content">
+
                   <div className="blog-meta">
                     <span>{blog.category}</span>
-
                     <span>{blog.date}</span>
                   </div>
 
@@ -136,16 +154,22 @@ function Blog() {
 
                   <p>{blog.description}</p>
 
-                  <button type="button">READ ARTICLE →</button>
+                  <button type="button">
+                    READ ARTICLE →
+                  </button>
+
                 </div>
+
               </article>
             ))}
+
           </div>
+
         </section>
 
         {/* NEWSLETTER */}
-
         <section className="blog-newsletter">
+
           <p>STAY UPDATED</p>
 
           <h2>JOIN THE RIZO COMMUNITY</h2>
@@ -158,19 +182,27 @@ function Blog() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+
               alert("Thank you for subscribing!");
+
               e.target.reset();
             }}
           >
+
             <input
               type="email"
               placeholder="Enter your email address"
               required
             />
 
-            <button type="submit">SUBSCRIBE</button>
+            <button type="submit">
+              SUBSCRIBE
+            </button>
+
           </form>
+
         </section>
+
       </main>
 
       <Footer />

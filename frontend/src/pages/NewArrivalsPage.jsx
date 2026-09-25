@@ -1,74 +1,75 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
+
 import "./NewArrivalsPage.css";
+
+const API_URL = "http://localhost:5000/api";
 
 function NewArrivalsPage() {
   const location = useLocation();
 
   // ================= ACTIVE FASHION =================
+
   const [activeFashion, setActiveFashion] = useState(
-    location.state?.activeFashion || "MEN'S FASHION"
+    location.state?.activeFashion || "MEN'S FASHION",
   );
 
   const [products, setProducts] = useState([]);
   const [categoryTree, setCategoryTree] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // ================= FILTERS =================
+
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
 
   // ================= PAGINATION =================
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const productsPerPage = 8;
 
-  // ================= FETCH DATA =================
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: productsPerPage,
+    totalProducts: 0,
+    totalPages: 0,
+  });
+
+  // ================= FETCH CATEGORY TREE =================
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        setLoading(true);
-        setError("");
+        const response = await fetch(`${API_URL}/categories/tree`);
 
-        const [categoryResponse, productResponse] =
-          await Promise.all([
-            fetch("http://localhost:5000/api/categories/tree"),
-            fetch("http://localhost:5000/api/products?limit=100"),
-          ]);
+        const data = await response.json();
 
-        const categoryData = await categoryResponse.json();
-        const productData = await productResponse.json();
-
-        if (!categoryResponse.ok) {
-          throw new Error(
-            categoryData.message || "Failed to fetch categories"
-          );
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch categories");
         }
 
-        if (!productResponse.ok) {
-          throw new Error(
-            productData.message || "Failed to fetch products"
-          );
-        }
-
-        setCategoryTree(categoryData.categories || []);
-        setProducts(productData.products || []);
+        setCategoryTree(data.categories || []);
       } catch (error) {
-        console.error("New Arrivals Page API Error:", error);
+        console.error("Category API Error:", error);
+
         setError(error.message);
-      } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchCategories();
   }, []);
 
   // ================= FIND SELECTED CATEGORY =================
+
   const selectedCategory = categoryTree.find((category) => {
     if (activeFashion === "MEN'S FASHION") {
       return category.slug === "men-s-fashion";
@@ -78,98 +79,104 @@ function NewArrivalsPage() {
   });
 
   // ================= GET CHILD CATEGORY IDS =================
-  const childCategoryIds = (
-    selectedCategory?.children || []
-  ).map((category) => String(category._id));
 
-  // ================= FILTER PRODUCTS =================
-  const filteredProducts = products
-    .filter((product) => {
-      // Active products only
-      if (product.status !== "active") {
-        return false;
-      }
-
-      // Product must have category
-      if (!product.category) {
-        return false;
-      }
-
-      // Product category can be object or ID
-      const productCategoryId =
-        typeof product.category === "object"
-          ? product.category._id
-          : product.category;
-
-      // Men's / Women's child categories only
-      if (
-        !childCategoryIds.includes(
-          String(productCategoryId)
-        )
-      ) {
-        return false;
-      }
-
-      // ================= AVAILABILITY =================
-      if (availability === "available") {
-        return Number(product.stock || 0) > 0;
-      }
-
-      if (availability === "soldout") {
-        return Number(product.stock || 0) <= 0;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      // ================= PRICE =================
-      if (priceOrder === "low-high") {
-        return (
-          Number(a.price || 0) -
-          Number(b.price || 0)
-        );
-      }
-
-      if (priceOrder === "high-low") {
-        return (
-          Number(b.price || 0) -
-          Number(a.price || 0)
-        );
-      }
-
-      // ================= FEATURED =================
-      if (sortBy === "featured") {
-        return (
-          Number(Boolean(b.isBestSeller)) -
-          Number(Boolean(a.isBestSeller))
-        );
-      }
-
-      // ================= NEWEST =================
-      return (
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-      );
-    });
-
-  // ================= PAGINATION CALCULATIONS =================
-  const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
+  const childCategoryIds = (selectedCategory?.children || []).map((category) =>
+    String(category._id),
   );
 
-  const indexOfLastProduct =
-    currentPage * productsPerPage;
+  // ================= FETCH PRODUCTS =================
 
-  const indexOfFirstProduct =
-    indexOfLastProduct - productsPerPage;
+  useEffect(() => {
+    if (!selectedCategory || childCategoryIds.length === 0) {
+      return;
+    }
 
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const params = new URLSearchParams();
+
+        // ================= PAGINATION =================
+
+        params.append("page", currentPage);
+        params.append("limit", productsPerPage);
+
+        // ================= CATEGORY =================
+
+        params.append("category", childCategoryIds.join(","));
+
+        // ================= AVAILABILITY =================
+        // Availability backend connection later cheyyam.
+        // Ippo UI mathram Shop page pole.
+
+        // ================= SORTING =================
+
+        if (priceOrder === "low-high") {
+          params.append("sort", "price-low");
+        } else if (priceOrder === "high-low") {
+          params.append("sort", "price-high");
+        } else if (sortBy === "featured") {
+          params.append("sort", "featured");
+        } else {
+          params.append("sort", "newest");
+        }
+
+        // ================= API REQUEST =================
+
+        const response = await fetch(
+          `${API_URL}/products?${params.toString()}`,
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch products");
+        }
+
+        // ================= PRODUCTS =================
+
+        setProducts(data.products || []);
+
+        // ================= PAGINATION =================
+
+        setPagination(
+          data.pagination || {
+            currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          },
+        );
+      } catch (error) {
+        console.error("New Arrivals Product API Error:", error);
+
+        setError(error.message);
+
+        setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedCategory, currentPage, availability, priceOrder, sortBy]);
 
   // ================= CHANGE PAGE =================
+
   const handlePageChange = (page) => {
+    if (page < 1 || page > pagination.totalPages) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -179,6 +186,7 @@ function NewArrivalsPage() {
   };
 
   // ================= CHANGE FASHION =================
+
   const handleFashionChange = (fashion) => {
     setActiveFashion(fashion);
     setCurrentPage(1);
@@ -189,63 +197,78 @@ function NewArrivalsPage() {
     });
   };
 
+  // ================= AVAILABILITY CHANGE =================
+
+  const handleAvailabilityChange = (value) => {
+    setAvailability(value);
+    setCurrentPage(1);
+  };
+
+  // ================= PRICE CHANGE =================
+
+  const handlePriceChange = (value) => {
+    setPriceOrder(value);
+    setCurrentPage(1);
+  };
+
+  // ================= SORT CHANGE =================
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
+
+    // Reset price sorting when changing main sorting
+    setPriceOrder("default");
+
+    setCurrentPage(1);
+  };
+
   // ================= RESET PAGE WHEN FILTER CHANGES =================
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [
-    availability,
-    priceOrder,
-    sortBy,
-    activeFashion,
-  ]);
+  }, [availability, priceOrder, sortBy, activeFashion]);
 
   // ================= PAGE TOP =================
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   // ================= UI =================
+
   return (
     <>
       <Navbar />
 
       <main className="new-arrivals-page">
-
         {/* ================= HEADING ================= */}
+
         <section className="new-arrivals-page-heading">
           <h1>New Arrivals</h1>
 
           <p className="new-arrivals-page-description">
-            Step into the latest drops that define the
-            season.
+            Step into the latest drops that define the season.
             <br />
             From bold basics to fresh fits — just landed.
           </p>
 
           {/* ================= FASHION BUTTONS ================= */}
+
           <div className="fashion-buttons">
             <button
               className={`fashion-btn ${
-                activeFashion === "MEN'S FASHION"
-                  ? "active"
-                  : ""
+                activeFashion === "MEN'S FASHION" ? "active" : ""
               }`}
-              onClick={() =>
-                handleFashionChange("MEN'S FASHION")
-              }
+              onClick={() => handleFashionChange("MEN'S FASHION")}
             >
               Men's Fashion
             </button>
 
             <button
               className={`fashion-btn ${
-                activeFashion === "WOMEN'S FASHION"
-                  ? "active"
-                  : ""
+                activeFashion === "WOMEN'S FASHION" ? "active" : ""
               }`}
-              onClick={() =>
-                handleFashionChange("WOMEN'S FASHION")
-              }
+              onClick={() => handleFashionChange("WOMEN'S FASHION")}
             >
               Women's Fashion
             </button>
@@ -253,129 +276,90 @@ function NewArrivalsPage() {
         </section>
 
         {/* ================= PRODUCTS SECTION ================= */}
-        <section className="new-arrivals-page-products">
 
-          {/* ================= SHOP STYLE FILTER ================= */}
+        <section className="new-arrivals-page-products">
+          {/* ================= FILTER BAR ================= */}
+
           {!loading && !error && (
             <section className="shop-filter-bar">
-
               <div className="filter-left">
-
-                <span className="filter-title">
-                  FILTER
-                </span>
+                <span className="filter-title">FILTER</span>
 
                 <select
                   value={availability}
-                  onChange={(e) =>
-                    setAvailability(e.target.value)
-                  }
+                  onChange={(e) => handleAvailabilityChange(e.target.value)}
                 >
-                  <option value="all">
-                    AVAILABILITY
-                  </option>
+                  <option value="all">AVAILABILITY</option>
 
-                  <option value="available">
-                    AVAILABLE
-                  </option>
+                  <option value="in-stock">IN STOCK</option>
 
-                  <option value="soldout">
-                    SOLD OUT
-                  </option>
+                  <option value="out-of-stock">OUT OF STOCK</option>
                 </select>
 
                 <select
                   value={priceOrder}
-                  onChange={(e) =>
-                    setPriceOrder(e.target.value)
-                  }
+                  onChange={(e) => handlePriceChange(e.target.value)}
                 >
-                  <option value="default">
-                    PRICE
-                  </option>
+                  <option value="default">PRICE</option>
 
-                  <option value="low-high">
-                    LOW TO HIGH
-                  </option>
+                  <option value="low-high">LOW TO HIGH</option>
 
-                  <option value="high-low">
-                    HIGH TO LOW
-                  </option>
+                  <option value="high-low">HIGH TO LOW</option>
                 </select>
-
               </div>
 
               <div className="filter-right">
-
                 <div className="sort-by">
-
                   <span>SORT BY:</span>
 
                   <select
                     value={sortBy}
-                    onChange={(e) =>
-                      setSortBy(e.target.value)
-                    }
+                    onChange={(e) => handleSortChange(e.target.value)}
                   >
-                    <option value="newest">
-                      NEWEST
-                    </option>
+                    <option value="newest">NEWEST</option>
 
-                    <option value="featured">
-                      FEATURED
-                    </option>
+                    <option value="featured">FEATURED</option>
                   </select>
-
                 </div>
 
                 <span className="product-count">
-                  {filteredProducts.length} PRODUCTS
+                  {products.length} PRODUCTS
                 </span>
-
               </div>
-
             </section>
           )}
 
           {/* ================= LOADING ================= */}
+
           {loading && (
-            <p className="new-arrivals-page-message">
-              Loading products...
-            </p>
+            <p className="new-arrivals-page-message">Loading products...</p>
           )}
 
           {/* ================= ERROR ================= */}
+
           {!loading && error && (
-            <p className="new-arrivals-page-message">
-              Error: {error}
-            </p>
+            <p className="new-arrivals-page-message">Error: {error}</p>
           )}
 
           {/* ================= PRODUCTS ================= */}
+
           {!loading && !error && (
             <>
-              {filteredProducts.length > 0 ? (
+              {products.length > 0 ? (
                 <>
                   <div className="new-arrivals-page-grid">
-                    {currentProducts.map((product) => (
-                      <ProductCard
-                        key={product._id}
-                        product={product}
-                      />
+                    {products.map((product) => (
+                      <ProductCard key={product._id} product={product} />
                     ))}
                   </div>
 
                   {/* ================= PAGINATION ================= */}
-                  {totalPages > 1 && (
-                    <div className="pagination">
 
+                  {pagination.totalPages > 1 && (
+                    <div className="pagination">
                       <button
                         className="pagination-arrow"
-                        onClick={() =>
-                          handlePageChange(
-                            currentPage - 1
-                          )
-                        }
+                        onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
                       >
                         ←
@@ -383,20 +367,14 @@ function NewArrivalsPage() {
 
                       {Array.from(
                         {
-                          length: totalPages,
+                          length: pagination.totalPages,
                         },
-                        (_, index) => index + 1
+                        (_, index) => index + 1,
                       ).map((page) => (
                         <button
                           key={page}
-                          className={
-                            currentPage === page
-                              ? "active-page"
-                              : ""
-                          }
-                          onClick={() =>
-                            handlePageChange(page)
-                          }
+                          className={currentPage === page ? "active-page" : ""}
+                          onClick={() => handlePageChange(page)}
                         >
                           {page}
                         </button>
@@ -404,29 +382,19 @@ function NewArrivalsPage() {
 
                       <button
                         className="pagination-arrow"
-                        onClick={() =>
-                          handlePageChange(
-                            currentPage + 1
-                          )
-                        }
-                        disabled={
-                          currentPage === totalPages
-                        }
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === pagination.totalPages}
                       >
                         →
                       </button>
-
                     </div>
                   )}
                 </>
               ) : (
-                <p className="new-arrivals-page-message">
-                  No products found.
-                </p>
+                <p className="new-arrivals-page-message">No products found.</p>
               )}
             </>
           )}
-
         </section>
       </main>
 

@@ -1,15 +1,24 @@
-
 /* =========================================
    CATEGORIES PAGE
 ========================================= */
 
 .categories-page {
   width: 100%;
-  min-height: 70vh;
-  background: #fff;
-  color: #111;
+  min-height: calc(100vh - 210px);
+  padding: 35px 20px 140px;
   box-sizing: border-box;
+
+  background: linear-gradient(
+    110deg,
+    #a8a8a6 0%,
+    #c2c2c0 38%,
+    #e1e1df 68%,
+    #f7f7f5 100%
+  );
+
+  color: #111111;
 }
+
 
 /* =========================================
    HEADING
@@ -17,26 +26,36 @@
 
 .categories-heading {
   width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+
   text-align: center;
-  padding: 70px 20px 55px;
+  padding: 55px 20px 50px;
+
   box-sizing: border-box;
 }
 
 .categories-heading h1 {
   margin: 0;
+
   font-family: Georgia, "Times New Roman", serif;
   font-size: 34px;
   font-weight: 400;
   letter-spacing: -0.5px;
+
+  color: #111111;
 }
 
 .categories-heading p {
   margin: 14px 0 0;
+
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   line-height: 1.6;
-  color: #777;
+
+  color: #555555;
 }
+
 
 /* =========================================
    CATEGORY SECTION
@@ -45,16 +64,26 @@
 .fashion-category-section {
   width: 88%;
   max-width: 1100px;
+
   margin: 0 auto;
-  padding-bottom: 90px;
+  padding-bottom: 20px;
+
   box-sizing: border-box;
 }
 
+
+/* =========================================
+   CATEGORY GRID
+========================================= */
+
 .fashion-category-grid {
   display: grid;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 22px;
 }
+
 
 /* =========================================
    CATEGORY CARD
@@ -62,50 +91,104 @@
 
 .fashion-category-card {
   min-height: 280px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+
   text-decoration: none;
-  color: #111;
+  color: #111111;
+
   box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.24);
+
+  border: 1px solid rgba(255, 255, 255, 0.75);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
   transition:
     transform 0.3s ease,
-    background 0.3s ease;
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .fashion-category-card:hover {
   transform: translateY(-5px);
-  background: #eee;
+
+  background: rgba(255, 255, 255, 0.34);
+
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
+
+
+/* =========================================
+   CATEGORY CONTENT
+========================================= */
 
 .fashion-category-content {
   width: 100%;
+
   text-align: center;
-  padding: 30px;
+
+  padding: 35px;
+
   box-sizing: border-box;
 }
 
 .fashion-category-content h2 {
   margin: 0;
+
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 28px;
+
+  font-size: 29px;
   font-weight: 400;
+
+  color: #111111;
 }
 
 .fashion-category-content p {
-  margin: 14px 0 22px;
+  margin: 14px 0 24px;
+
   font-family: Arial, Helvetica, sans-serif;
+
   font-size: 12px;
   line-height: 1.6;
-  color: #777;
+
+  color: #666666;
 }
 
 .fashion-category-content span {
+  display: inline-block;
+
   font-family: Arial, Helvetica, sans-serif;
+
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  color: #222222;
+
+  transition:
+    transform 0.25s ease,
+    color 0.25s ease;
 }
+
+.fashion-category-card:hover
+.fashion-category-content span {
+  transform: translateX(4px);
+  color: #000000;
+}
+
 
 /* =========================================
    MESSAGE
@@ -113,19 +196,29 @@
 
 .categories-message {
   margin: 0;
+
   text-align: center;
+
   font-family: Arial, Helvetica, sans-serif;
+
   font-size: 13px;
-  color: #777;
+
+  color: #555555;
 }
+
 
 /* =========================================
    TABLET
 ========================================= */
 
 @media (max-width: 900px) {
+
+  .categories-page {
+    padding: 25px 18px 120px;
+  }
+
   .categories-heading {
-    padding: 55px 20px 45px;
+    padding: 50px 20px 45px;
   }
 
   .categories-heading h1 {
@@ -134,7 +227,6 @@
 
   .fashion-category-section {
     width: 90%;
-    padding-bottom: 70px;
   }
 
   .fashion-category-grid {
@@ -146,21 +238,27 @@
   }
 
   .fashion-category-content {
-    padding: 25px;
+    padding: 30px 25px;
   }
 
   .fashion-category-content h2 {
-    font-size: 25px;
+    font-size: 26px;
   }
 }
+
 
 /* =========================================
    MOBILE
 ========================================= */
 
 @media (max-width: 650px) {
+
+  .categories-page {
+    padding: 15px 14px 100px;
+  }
+
   .categories-heading {
-    padding: 45px 20px 35px;
+    padding: 42px 15px 35px;
   }
 
   .categories-heading h1 {
@@ -173,8 +271,7 @@
   }
 
   .fashion-category-section {
-    width: 90%;
-    padding-bottom: 55px;
+    width: 92%;
   }
 
   .fashion-category-grid {
@@ -184,10 +281,12 @@
 
   .fashion-category-card {
     min-height: 220px;
+
+    border-radius: 18px;
   }
 
   .fashion-category-content {
-    padding: 25px 20px;
+    padding: 28px 20px;
   }
 
   .fashion-category-content h2 {
@@ -195,7 +294,7 @@
   }
 
   .fashion-category-content p {
-    margin: 12px 0 19px;
+    margin: 12px 0 20px;
     font-size: 11px;
   }
 
@@ -204,13 +303,19 @@
   }
 }
 
+
 /* =========================================
    SMALL MOBILE
 ========================================= */
 
 @media (max-width: 400px) {
+
+  .categories-page {
+    padding: 10px 10px 80px;
+  }
+
   .categories-heading {
-    padding: 38px 15px 30px;
+    padding: 35px 10px 30px;
   }
 
   .categories-heading h1 {
@@ -222,8 +327,7 @@
   }
 
   .fashion-category-section {
-    width: 92%;
-    padding-bottom: 45px;
+    width: 94%;
   }
 
   .fashion-category-grid {
@@ -232,10 +336,11 @@
 
   .fashion-category-card {
     min-height: 190px;
+    border-radius: 16px;
   }
 
   .fashion-category-content {
-    padding: 20px 15px;
+    padding: 22px 15px;
   }
 
   .fashion-category-content h2 {
@@ -255,4 +360,3 @@
     font-size: 11px;
   }
 }
-

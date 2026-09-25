@@ -2,7 +2,6 @@ const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 
 const User = require("../models/User");
-
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
 
@@ -40,28 +39,26 @@ const registerUser = async ({
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
   const otp = generateOtp();
 
   // IMPORTANT:
-  // Do NOT add googleId here.
-  // Normal users should not have googleId: null.
+  // Normal registration should NOT contain googleId.
+  // Do not use googleId: null here.
   const user = await User.create({
     name,
     email,
     phone,
     password: hashedPassword,
-
     otp,
     otpExpiresAt: new Date(
       Date.now() + 10 * 60 * 1000
     ),
-
     otpAttempts: 0,
   });
 
   // ================= ADMIN NOTIFICATION =================
 
+  // Notification failure should not stop registration.
   try {
     const admin =
       await notificationService.getAdminUser();
@@ -75,7 +72,6 @@ const registerUser = async ({
       });
     }
   } catch (error) {
-    // Notification failure should not stop registration
     console.error(
       "ADMIN NOTIFICATION ERROR:",
       error.message
@@ -317,8 +313,7 @@ const googleLogin = async (idToken) => {
     );
   }
 
-  const normalizedEmail =
-    email.toLowerCase();
+  const normalizedEmail = email.toLowerCase();
 
   // ================= FIND USER BY GOOGLE ID =================
 
@@ -342,7 +337,8 @@ const googleLogin = async (idToken) => {
       throw new Error("Your account is blocked");
     }
 
-    // Connect Google account if not already connected
+    // Connect Google account to existing account
+    // only when googleId is not already present.
     if (!user.googleId) {
       user.googleId = googleId;
     }
