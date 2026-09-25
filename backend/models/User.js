@@ -39,7 +39,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
-      default: null,
+      // IMPORTANT:
+      // No default: null here.
+      // Normal users should not have googleId field.
     },
 
     role: {
