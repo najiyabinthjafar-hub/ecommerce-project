@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./Checkout.css";
@@ -28,19 +29,6 @@ function Checkout() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
-
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState("");
-
-  const [shippingAddress, setShippingAddress] = useState({
-    fullName: "",
-    phone: "",
-    address: "",
-    apartment: "",
-    city: "",
-    state: "Kerala",
-    pincode: "",
-  });
 
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState(null);
@@ -78,8 +66,7 @@ function Checkout() {
 
       const script = document.createElement("script");
 
-      script.src =
-        "https://checkout.razorpay.com/v1/checkout.js";
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
 
       script.onload = () => {
         resolve(true);
@@ -94,7 +81,7 @@ function Checkout() {
   };
 
   // =========================================================
-  // FETCH CART + ADDRESSES
+  // FETCH CART
   // =========================================================
 
   useEffect(() => {
@@ -104,12 +91,7 @@ function Checkout() {
     }
 
     fetchCart();
-    fetchAddresses();
   }, [token, navigate]);
-
-  // =========================================================
-  // FETCH CART
-  // =========================================================
 
   const fetchCart = async () => {
     try {
@@ -140,92 +122,6 @@ function Checkout() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // =========================================================
-  // FETCH SAVED ADDRESSES
-  // =========================================================
-
-  const fetchAddresses = async () => {
-    try {
-      const response = await axios.get(
-        `${API_URL}/addresses`,
-        authConfig
-      );
-
-      const addressList =
-        response.data.addresses ||
-        response.data ||
-        [];
-
-      setAddresses(addressList);
-
-      // Select default address automatically
-      const defaultAddress = addressList.find(
-        (address) => address.isDefault
-      );
-
-      if (defaultAddress) {
-        setSelectedAddressId(defaultAddress._id);
-
-        setShippingAddress({
-          fullName: defaultAddress.fullName || "",
-          phone: defaultAddress.phone || "",
-          address: defaultAddress.addressLine1 || "",
-          apartment: defaultAddress.addressLine2 || "",
-          city: defaultAddress.city || "",
-          state: defaultAddress.state || "Kerala",
-          pincode: defaultAddress.postalCode || "",
-        });
-      }
-    } catch (error) {
-      console.error(
-        "Error fetching addresses:",
-        error
-      );
-    }
-  };
-
-  // =========================================================
-  // SELECT SAVED ADDRESS
-  // =========================================================
-
-  const handleAddressChange = (event) => {
-    const addressId = event.target.value;
-
-    setSelectedAddressId(addressId);
-
-    if (!addressId) {
-      setShippingAddress({
-        fullName: "",
-        phone: "",
-        address: "",
-        apartment: "",
-        city: "",
-        state: "Kerala",
-        pincode: "",
-      });
-
-      return;
-    }
-
-    const address = addresses.find(
-      (item) => item._id === addressId
-    );
-
-    if (!address) {
-      return;
-    }
-
-    setShippingAddress({
-      fullName: address.fullName || "",
-      phone: address.phone || "",
-      address: address.addressLine1 || "",
-      apartment: address.addressLine2 || "",
-      city: address.city || "",
-      state: address.state || "Kerala",
-      pincode: address.postalCode || "",
-    });
   };
 
   // =========================================================
@@ -276,20 +172,12 @@ function Checkout() {
   // PRICE CALCULATIONS
   // =========================================================
 
-  const subtotal = cartItems.reduce(
-    (total, item) => {
-      return (
-        total +
-        getPrice(item) * getQuantity(item)
-      );
-    },
-    0
-  );
+  const subtotal = cartItems.reduce((total, item) => {
+    return total + getPrice(item) * getQuantity(item);
+  }, 0);
 
   const deliveryCharge =
-    subtotal >= 999 || subtotal === 0
-      ? 0
-      : 99;
+    subtotal >= 999 || subtotal === 0 ? 0 : 99;
 
   const discount = coupon?.discountAmount || 0;
 
@@ -306,9 +194,7 @@ function Checkout() {
     const code = couponCode.trim().toUpperCase();
 
     if (!code) {
-      setCouponMessage(
-        "Please enter a coupon code."
-      );
+      setCouponMessage("Please enter a coupon code.");
       setCoupon(null);
       return;
     }
@@ -323,8 +209,7 @@ function Checkout() {
       );
 
       const couponData =
-        response.data.coupon ||
-        response.data;
+        response.data.coupon || response.data;
 
       if (!couponData) {
         setCoupon(null);
@@ -338,11 +223,7 @@ function Checkout() {
         couponData.isActive === false
       ) {
         setCoupon(null);
-
-        setCouponMessage(
-          "This coupon is inactive."
-        );
-
+        setCouponMessage("This coupon is inactive.");
         return;
       }
 
@@ -356,11 +237,7 @@ function Checkout() {
         new Date(expiryDate) < new Date()
       ) {
         setCoupon(null);
-
-        setCouponMessage(
-          "This coupon has expired."
-        );
-
+        setCouponMessage("This coupon has expired.");
         return;
       }
 
@@ -371,11 +248,9 @@ function Checkout() {
 
       if (subtotal < minimumPurchase) {
         setCoupon(null);
-
         setCouponMessage(
           `Minimum purchase should be ₹${minimumPurchase}.`
         );
-
         return;
       }
 
@@ -436,10 +311,7 @@ function Checkout() {
         } applied successfully.`
       );
     } catch (error) {
-      console.error(
-        "Coupon error:",
-        error
-      );
+      console.error("Coupon error:", error);
 
       setCoupon(null);
 
@@ -502,8 +374,7 @@ function Checkout() {
         formData.get("pincode") || "",
 
       country:
-        formData.get("country") ||
-        "India",
+        formData.get("country") || "India",
     };
 
     // =======================================================
@@ -511,9 +382,7 @@ function Checkout() {
     // =======================================================
 
     if (!shippingAddressData.fullName) {
-      throw new Error(
-        "Please enter your name."
-      );
+      throw new Error("Please enter your name.");
     }
 
     if (!shippingAddressData.phone) {
@@ -550,29 +419,27 @@ function Checkout() {
     // ORDER ITEMS
     // =======================================================
 
-    const orderItems = cartItems.map(
-      (item) => {
-        const product = getProduct(item);
+    const orderItems = cartItems.map((item) => {
+      const product = getProduct(item);
 
-        return {
-          product:
-            product._id ||
-            product.id ||
-            item.product,
+      return {
+        product:
+          product._id ||
+          product.id ||
+          item.product,
 
-          quantity:
-            getQuantity(item),
+        quantity:
+          getQuantity(item),
 
-          price:
-            getPrice(item),
+        price:
+          getPrice(item),
 
-          size:
-            item.size ||
-            item.selectedSize ||
-            "",
-        };
-      }
-    );
+        size:
+          item.size ||
+          item.selectedSize ||
+          "",
+      };
+    });
 
     // =======================================================
     // ORDER DATA
@@ -608,9 +475,7 @@ function Checkout() {
   // RAZORPAY PAYMENT
   // =========================================================
 
-  const handleRazorpayPayment = async (
-    form
-  ) => {
+  const handleRazorpayPayment = async (form) => {
     try {
       setPlacingOrder(true);
       setError("");
@@ -715,8 +580,7 @@ function Checkout() {
           razorpayOrder.amount,
 
         currency:
-          razorpayOrder.currency ||
-          "INR",
+          razorpayOrder.currency || "INR",
 
         name: "Rizo",
 
@@ -788,10 +652,8 @@ function Checkout() {
             );
 
             setError(
-              error.response?.data
-                ?.message ||
-                error.response?.data
-                  ?.error ||
+              error.response?.data?.message ||
+                error.response?.data?.error ||
                 "Payment verification failed."
             );
           } finally {
@@ -815,7 +677,7 @@ function Checkout() {
         },
 
         theme: {
-          color: "#0b2d4d",
+          color: "#202020",
         },
 
         modal: {
@@ -834,9 +696,7 @@ function Checkout() {
       };
 
       const razorpay =
-        new window.Razorpay(
-          options
-        );
+        new window.Razorpay(options);
 
       razorpay.on(
         "payment.failed",
@@ -878,9 +738,7 @@ function Checkout() {
   // PLACE ORDER
   // =========================================================
 
-  const handlePlaceOrder = async (
-    event
-  ) => {
+  const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
     const form = event.currentTarget;
@@ -908,13 +766,8 @@ function Checkout() {
     // RAZORPAY
     // =======================================================
 
-    if (
-      paymentMethod === "razorpay"
-    ) {
-      await handleRazorpayPayment(
-        form
-      );
-
+    if (paymentMethod === "razorpay") {
+      await handleRazorpayPayment(form);
       return;
     }
 
@@ -926,7 +779,6 @@ function Checkout() {
       alert(
         "Online payment is not available yet. Please select Cash on Delivery."
       );
-
       return;
     }
 
@@ -1089,25 +941,14 @@ function Checkout() {
 
       <main className="figma-checkout">
 
-        {/* MOBILE BACK BUTTON */}
-
-        <button
-          type="button"
-          className="checkout-back-button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-        >
-          ←
-        </button>
-
         {/* ERROR */}
-
         {error && (
           <div className="checkout-error">
             {error}
           </div>
         )}
 
+        {/* CHECKOUT CARD */}
         <form
           className="figma-checkout-container"
           onSubmit={handlePlaceOrder}
@@ -1115,55 +956,16 @@ function Checkout() {
 
           {/* =================================================
               LEFT SIDE
-          ================================================= */}
+              ================================================= */}
 
           <section className="delivery-section">
 
-            {/* SAVED ADDRESS */}
-
-            {addresses.length > 0 && (
-              <div className="form-group saved-address-group">
-                <label>
-                  Select Saved Address
-                </label>
-
-                <select
-                  value={selectedAddressId}
-                  onChange={
-                    handleAddressChange
-                  }
-                >
-                  <option value="">
-                    Select an address
-                  </option>
-
-                  {addresses.map(
-                    (address) => (
-                      <option
-                        key={address._id}
-                        value={address._id}
-                      >
-                        {address.fullName} -{" "}
-                        {
-                          address.addressLine1
-                        }
-                        ,{" "}
-                        {address.city}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-            )}
-
             {/* DELIVERY */}
-
             <h2 className="delivery-title">
               Delivery
             </h2>
 
             {/* COUNTRY */}
-
             <div className="checkout-field">
               <label>
                 Country/region
@@ -1180,7 +982,6 @@ function Checkout() {
             </div>
 
             {/* NAME */}
-
             <div className="checkout-row">
 
               <div className="checkout-field">
@@ -1188,13 +989,6 @@ function Checkout() {
                   type="text"
                   name="firstName"
                   placeholder="First name"
-                  defaultValue={
-                    shippingAddress.fullName
-                      .split(" ")[0] || ""
-                  }
-                  key={
-                    `first-${selectedAddressId}`
-                  }
                   required
                 />
               </div>
@@ -1204,15 +998,6 @@ function Checkout() {
                   type="text"
                   name="lastName"
                   placeholder="Last name"
-                  defaultValue={
-                    shippingAddress.fullName
-                      .split(" ")
-                      .slice(1)
-                      .join(" ")
-                  }
-                  key={
-                    `last-${selectedAddressId}`
-                  }
                   required
                 />
               </div>
@@ -1220,40 +1005,25 @@ function Checkout() {
             </div>
 
             {/* ADDRESS */}
-
             <div className="checkout-field">
               <input
                 type="text"
                 name="address"
                 placeholder="Address"
-                defaultValue={
-                  shippingAddress.address
-                }
-                key={
-                  `address-${selectedAddressId}`
-                }
                 required
               />
             </div>
 
             {/* APARTMENT */}
-
             <div className="checkout-field">
               <input
                 type="text"
                 name="apartment"
                 placeholder="Apartment, suite, etc. (optional)"
-                defaultValue={
-                  shippingAddress.apartment
-                }
-                key={
-                  `apartment-${selectedAddressId}`
-                }
               />
             </div>
 
             {/* CITY / STATE / PIN */}
-
             <div className="checkout-location-row">
 
               <div className="checkout-field">
@@ -1261,12 +1031,6 @@ function Checkout() {
                   type="text"
                   name="city"
                   placeholder="City"
-                  defaultValue={
-                    shippingAddress.city
-                  }
-                  key={
-                    `city-${selectedAddressId}`
-                  }
                   required
                 />
               </div>
@@ -1274,13 +1038,7 @@ function Checkout() {
               <div className="checkout-field">
                 <select
                   name="state"
-                  defaultValue={
-                    shippingAddress.state ||
-                    "Kerala"
-                  }
-                  key={
-                    `state-${selectedAddressId}`
-                  }
+                  defaultValue="Kerala"
                   required
                 >
                   <option value="Kerala">
@@ -1312,12 +1070,6 @@ function Checkout() {
                   placeholder="PIN code"
                   pattern="[0-9]{6}"
                   title="Please enter a valid 6-digit PIN code"
-                  defaultValue={
-                    shippingAddress.pincode
-                  }
-                  key={
-                    `pincode-${selectedAddressId}`
-                  }
                   required
                 />
               </div>
@@ -1325,7 +1077,6 @@ function Checkout() {
             </div>
 
             {/* PHONE */}
-
             <div className="checkout-field">
               <input
                 type="tel"
@@ -1333,19 +1084,13 @@ function Checkout() {
                 placeholder="Phone"
                 pattern="[0-9]{10}"
                 title="Please enter a valid 10-digit phone number"
-                defaultValue={
-                  shippingAddress.phone
-                }
-                key={
-                  `phone-${selectedAddressId}`
-                }
                 required
               />
             </div>
 
             {/* SAVE INFO */}
-
             <label className="save-info">
+
               <input
                 type="checkbox"
                 name="saveInfo"
@@ -1354,11 +1099,12 @@ function Checkout() {
               <span>
                 Save this information for next time
               </span>
+
             </label>
 
             {/* =================================================
                 COUPON
-            ================================================= */}
+                ================================================= */}
 
             <div className="coupon-section">
 
@@ -1383,12 +1129,8 @@ function Checkout() {
                 {!coupon ? (
                   <button
                     type="button"
-                    onClick={
-                      validateCoupon
-                    }
-                    disabled={
-                      couponLoading
-                    }
+                    onClick={validateCoupon}
+                    disabled={couponLoading}
                   >
                     {couponLoading
                       ? "Applying..."
@@ -1397,9 +1139,7 @@ function Checkout() {
                 ) : (
                   <button
                     type="button"
-                    onClick={
-                      removeCoupon
-                    }
+                    onClick={removeCoupon}
                   >
                     Remove
                   </button>
@@ -1419,12 +1159,11 @@ function Checkout() {
 
           {/* =================================================
               RIGHT SIDE
-          ================================================= */}
+              ================================================= */}
 
           <section className="checkout-right">
 
             {/* PRODUCTS */}
-
             <div className="order-summary-products">
 
               {cartItems.map(
@@ -1492,8 +1231,7 @@ function Checkout() {
 
                         {item.size && (
                           <small>
-                            Size:{" "}
-                            {item.size}
+                            Size: {item.size}
                           </small>
                         )}
 
@@ -1502,8 +1240,7 @@ function Checkout() {
                       <strong>
                         ₹
                         {(
-                          price *
-                          quantity
+                          price * quantity
                         ).toLocaleString(
                           "en-IN"
                         )}
@@ -1517,7 +1254,6 @@ function Checkout() {
             </div>
 
             {/* PRICE DETAILS */}
-
             <div className="price-details">
 
               <div className="price-row">
@@ -1572,7 +1308,6 @@ function Checkout() {
             </div>
 
             {/* TOTAL */}
-
             <div className="figma-total">
 
               <div>
@@ -1604,7 +1339,7 @@ function Checkout() {
 
             {/* =================================================
                 PAYMENT
-            ================================================= */}
+                ================================================= */}
 
             <div className="payment-section">
 
@@ -1618,7 +1353,6 @@ function Checkout() {
               </p>
 
               {/* COD */}
-
               <label
                 className={`payment-method ${
                   paymentMethod === "cod"
@@ -1635,9 +1369,7 @@ function Checkout() {
                     paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "cod"
-                    )
+                    setPaymentMethod("cod")
                   }
                 />
 
@@ -1655,24 +1387,19 @@ function Checkout() {
 
               </label>
 
-              {paymentMethod ===
-                "cod" && (
+              {paymentMethod === "cod" && (
                 <div className="payment-info-box">
-
                   <p>
                     You can pay cash when
                     your order is delivered.
                   </p>
-
                 </div>
               )}
 
               {/* RAZORPAY */}
-
               <label
                 className={`payment-method ${
-                  paymentMethod ===
-                  "razorpay"
+                  paymentMethod === "razorpay"
                     ? "active-payment"
                     : ""
                 }`}
@@ -1725,7 +1452,7 @@ function Checkout() {
 
             {/* =================================================
                 BILLING
-            ================================================= */}
+                ================================================= */}
 
             <div className="billing-section">
 
@@ -1740,13 +1467,10 @@ function Checkout() {
                   name="billing"
                   value="same"
                   checked={
-                    billingAddress ===
-                    "same"
+                    billingAddress === "same"
                   }
                   onChange={() =>
-                    setBillingAddress(
-                      "same"
-                    )
+                    setBillingAddress("same")
                   }
                 />
 
@@ -1790,10 +1514,7 @@ function Checkout() {
 
             </div>
 
-            {/* =================================================
-                PLACE ORDER
-            ================================================= */}
-
+            {/* PLACE ORDER */}
             <button
               type="submit"
               className="figma-pay-button"
@@ -1807,7 +1528,6 @@ function Checkout() {
             </button>
 
             {/* POLICY LINKS */}
-
             <div className="checkout-policy-links">
 
               <Link to="/refund-policy">
@@ -1837,6 +1557,20 @@ function Checkout() {
           </section>
 
         </form>
+
+        {/* =====================================================
+            BACK BUTTON — BELOW CARD + CENTER
+            ===================================================== */}
+
+        <button
+          type="button"
+          className="checkout-back-button"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ← Back
+        </button>
+
       </main>
 
       <Footer />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -15,12 +15,11 @@ function NewArrivalsPage() {
   // ================= ACTIVE FASHION =================
 
   const [activeFashion, setActiveFashion] = useState(
-    location.state?.activeFashion || "MEN'S FASHION",
+    location.state?.activeFashion || "MEN'S FASHION"
   );
 
   const [products, setProducts] = useState([]);
   const [categoryTree, setCategoryTree] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,19 +47,23 @@ function NewArrivalsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${API_URL}/categories/tree`);
+        setLoading(true);
+        setError("");
 
+        const response = await fetch(`${API_URL}/categories/tree`);
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch categories");
+          throw new Error(
+            data.message || "Failed to fetch categories"
+          );
         }
 
         setCategoryTree(data.categories || []);
       } catch (error) {
         console.error("Category API Error:", error);
-
         setError(error.message);
+      } finally {
         setLoading(false);
       }
     };
@@ -70,24 +73,92 @@ function NewArrivalsPage() {
 
   // ================= FIND SELECTED CATEGORY =================
 
-  const selectedCategory = categoryTree.find((category) => {
-    if (activeFashion === "MEN'S FASHION") {
-      return category.slug === "men-s-fashion";
+  const selectedCategory = useMemo(() => {
+    if (!categoryTree.length) {
+      return null;
     }
 
-    return category.slug === "womens-fashion";
-  });
+    const isMen = activeFashion === "MEN'S FASHION";
+
+    return categoryTree.find((category) => {
+      const slug = String(category.slug || "")
+        .toLowerCase()
+        .trim();
+
+      const name = String(category.name || "")
+        .toLowerCase()
+        .trim();
+
+      if (isMen) {
+        return (
+          slug === "men-s-fashion" ||
+          slug === "mens-fashion" ||
+          name === "men's fashion" ||
+          name === "mens fashion"
+        );
+      }
+
+      return (
+        slug === "womens-fashion" ||
+        slug === "women-s-fashion" ||
+        slug === "womens-fashion" ||
+        slug === "women-fashion" ||
+        name === "women's fashion" ||
+        name === "womens fashion" ||
+        name === "women fashion"
+      );
+    });
+  }, [categoryTree, activeFashion]);
 
   // ================= GET CHILD CATEGORY IDS =================
 
-  const childCategoryIds = (selectedCategory?.children || []).map((category) =>
-    String(category._id),
-  );
+  const childCategoryIds = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
+
+    return (selectedCategory.children || [])
+      .map((category) => category?._id)
+      .filter(Boolean)
+      .map((id) => String(id));
+  }, [selectedCategory]);
+
+  // ================= DEBUG CATEGORY =================
+
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log(
+        `${activeFashion} category:`,
+        selectedCategory
+      );
+
+      console.log(
+        `${activeFashion} child category IDs:`,
+        childCategoryIds
+      );
+    }
+  }, [selectedCategory, childCategoryIds, activeFashion]);
 
   // ================= FETCH PRODUCTS =================
 
   useEffect(() => {
-    if (!selectedCategory || childCategoryIds.length === 0) {
+    if (!selectedCategory) {
+      return;
+    }
+
+    if (childCategoryIds.length === 0) {
+      console.warn(
+        `${activeFashion} has no child categories.`
+      );
+
+      setProducts([]);
+      setPagination({
+        currentPage: 1,
+        limit: productsPerPage,
+        totalProducts: 0,
+        totalPages: 0,
+      });
+
       return;
     }
 
@@ -105,11 +176,20 @@ function NewArrivalsPage() {
 
         // ================= CATEGORY =================
 
-        params.append("category", childCategoryIds.join(","));
+        params.append(
+          "category",
+          childCategoryIds.join(",")
+        );
 
         // ================= AVAILABILITY =================
-        // Availability backend connection later cheyyam.
-        // Ippo UI mathram Shop page pole.
+
+        if (availability === "in-stock") {
+          params.append("availability", "in-stock");
+        }
+
+        if (availability === "out-of-stock") {
+          params.append("availability", "out-of-stock");
+        }
 
         // ================= SORTING =================
 
@@ -126,13 +206,15 @@ function NewArrivalsPage() {
         // ================= API REQUEST =================
 
         const response = await fetch(
-          `${API_URL}/products?${params.toString()}`,
+          `${API_URL}/products?${params.toString()}`
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch products");
+          throw new Error(
+            data.message || "Failed to fetch products"
+          );
         }
 
         // ================= PRODUCTS =================
@@ -147,13 +229,15 @@ function NewArrivalsPage() {
             limit: productsPerPage,
             totalProducts: 0,
             totalPages: 0,
-          },
+          }
         );
       } catch (error) {
-        console.error("New Arrivals Product API Error:", error);
+        console.error(
+          "New Arrivals Product API Error:",
+          error
+        );
 
         setError(error.message);
-
         setProducts([]);
 
         setPagination({
@@ -168,7 +252,15 @@ function NewArrivalsPage() {
     };
 
     fetchProducts();
-  }, [selectedCategory, currentPage, availability, priceOrder, sortBy]);
+  }, [
+    selectedCategory,
+    childCategoryIds,
+    currentPage,
+    availability,
+    priceOrder,
+    sortBy,
+    activeFashion,
+  ]);
 
   // ================= CHANGE PAGE =================
 
@@ -216,7 +308,7 @@ function NewArrivalsPage() {
   const handleSortChange = (value) => {
     setSortBy(value);
 
-    // Reset price sorting when changing main sorting
+    // Reset price sorting
     setPriceOrder("default");
 
     setCurrentPage(1);
@@ -226,7 +318,12 @@ function NewArrivalsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [availability, priceOrder, sortBy, activeFashion]);
+  }, [
+    availability,
+    priceOrder,
+    sortBy,
+    activeFashion,
+  ]);
 
   // ================= PAGE TOP =================
 
@@ -241,6 +338,7 @@ function NewArrivalsPage() {
       <Navbar />
 
       <main className="new-arrivals-page">
+
         {/* ================= HEADING ================= */}
 
         <section className="new-arrivals-page-heading">
@@ -255,90 +353,143 @@ function NewArrivalsPage() {
           {/* ================= FASHION BUTTONS ================= */}
 
           <div className="fashion-buttons">
+
             <button
               className={`fashion-btn ${
-                activeFashion === "MEN'S FASHION" ? "active" : ""
+                activeFashion === "MEN'S FASHION"
+                  ? "active"
+                  : ""
               }`}
-              onClick={() => handleFashionChange("MEN'S FASHION")}
+              onClick={() =>
+                handleFashionChange("MEN'S FASHION")
+              }
             >
               Men's Fashion
             </button>
 
             <button
               className={`fashion-btn ${
-                activeFashion === "WOMEN'S FASHION" ? "active" : ""
+                activeFashion === "WOMEN'S FASHION"
+                  ? "active"
+                  : ""
               }`}
-              onClick={() => handleFashionChange("WOMEN'S FASHION")}
+              onClick={() =>
+                handleFashionChange("WOMEN'S FASHION")
+              }
             >
               Women's Fashion
             </button>
+
           </div>
         </section>
 
         {/* ================= PRODUCTS SECTION ================= */}
 
         <section className="new-arrivals-page-products">
+
           {/* ================= FILTER BAR ================= */}
 
           {!loading && !error && (
             <section className="shop-filter-bar">
+
               <div className="filter-left">
-                <span className="filter-title">FILTER</span>
+
+                <span className="filter-title">
+                  FILTER
+                </span>
 
                 <select
                   value={availability}
-                  onChange={(e) => handleAvailabilityChange(e.target.value)}
+                  onChange={(e) =>
+                    handleAvailabilityChange(
+                      e.target.value
+                    )
+                  }
                 >
-                  <option value="all">AVAILABILITY</option>
+                  <option value="all">
+                    AVAILABILITY
+                  </option>
 
-                  <option value="in-stock">IN STOCK</option>
+                  <option value="in-stock">
+                    IN STOCK
+                  </option>
 
-                  <option value="out-of-stock">OUT OF STOCK</option>
+                  <option value="out-of-stock">
+                    OUT OF STOCK
+                  </option>
                 </select>
 
                 <select
                   value={priceOrder}
-                  onChange={(e) => handlePriceChange(e.target.value)}
+                  onChange={(e) =>
+                    handlePriceChange(
+                      e.target.value
+                    )
+                  }
                 >
-                  <option value="default">PRICE</option>
+                  <option value="default">
+                    PRICE
+                  </option>
 
-                  <option value="low-high">LOW TO HIGH</option>
+                  <option value="low-high">
+                    LOW TO HIGH
+                  </option>
 
-                  <option value="high-low">HIGH TO LOW</option>
+                  <option value="high-low">
+                    HIGH TO LOW
+                  </option>
                 </select>
+
               </div>
 
               <div className="filter-right">
+
                 <div className="sort-by">
+
                   <span>SORT BY:</span>
 
                   <select
                     value={sortBy}
-                    onChange={(e) => handleSortChange(e.target.value)}
+                    onChange={(e) =>
+                      handleSortChange(
+                        e.target.value
+                      )
+                    }
                   >
-                    <option value="newest">NEWEST</option>
+                    <option value="newest">
+                      NEWEST
+                    </option>
 
-                    <option value="featured">FEATURED</option>
+                    <option value="featured">
+                      FEATURED
+                    </option>
                   </select>
+
                 </div>
 
                 <span className="product-count">
                   {products.length} PRODUCTS
                 </span>
+
               </div>
+
             </section>
           )}
 
           {/* ================= LOADING ================= */}
 
           {loading && (
-            <p className="new-arrivals-page-message">Loading products...</p>
+            <p className="new-arrivals-page-message">
+              Loading products...
+            </p>
           )}
 
           {/* ================= ERROR ================= */}
 
           {!loading && error && (
-            <p className="new-arrivals-page-message">Error: {error}</p>
+            <p className="new-arrivals-page-message">
+              Error: {error}
+            </p>
           )}
 
           {/* ================= PRODUCTS ================= */}
@@ -349,7 +500,10 @@ function NewArrivalsPage() {
                 <>
                   <div className="new-arrivals-page-grid">
                     {products.map((product) => (
-                      <ProductCard key={product._id} product={product} />
+                      <ProductCard
+                        key={product._id}
+                        product={product}
+                      />
                     ))}
                   </div>
 
@@ -357,9 +511,14 @@ function NewArrivalsPage() {
 
                   {pagination.totalPages > 1 && (
                     <div className="pagination">
+
                       <button
                         className="pagination-arrow"
-                        onClick={() => handlePageChange(currentPage - 1)}
+                        onClick={() =>
+                          handlePageChange(
+                            currentPage - 1
+                          )
+                        }
                         disabled={currentPage === 1}
                       >
                         ←
@@ -367,14 +526,21 @@ function NewArrivalsPage() {
 
                       {Array.from(
                         {
-                          length: pagination.totalPages,
+                          length:
+                            pagination.totalPages,
                         },
-                        (_, index) => index + 1,
+                        (_, index) => index + 1
                       ).map((page) => (
                         <button
                           key={page}
-                          className={currentPage === page ? "active-page" : ""}
-                          onClick={() => handlePageChange(page)}
+                          className={
+                            currentPage === page
+                              ? "active-page"
+                              : ""
+                          }
+                          onClick={() =>
+                            handlePageChange(page)
+                          }
                         >
                           {page}
                         </button>
@@ -382,19 +548,30 @@ function NewArrivalsPage() {
 
                       <button
                         className="pagination-arrow"
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === pagination.totalPages}
+                        onClick={() =>
+                          handlePageChange(
+                            currentPage + 1
+                          )
+                        }
+                        disabled={
+                          currentPage ===
+                          pagination.totalPages
+                        }
                       >
                         →
                       </button>
+
                     </div>
                   )}
                 </>
               ) : (
-                <p className="new-arrivals-page-message">No products found.</p>
+                <p className="new-arrivals-page-message">
+                  No products found.
+                </p>
               )}
             </>
           )}
+
         </section>
       </main>
 

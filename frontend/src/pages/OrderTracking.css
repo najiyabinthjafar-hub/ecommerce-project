@@ -5,9 +5,8 @@
 .tracking-page {
   width: 100%;
   min-height: 100vh;
-  padding: 120px 0 80px;
+  padding: 80px 0 80px;
   box-sizing: border-box;
-
   background: linear-gradient(
     110deg,
     #a8a8a6 0%,
@@ -15,10 +14,8 @@
     #e1e1df 68%,
     #f7f7f5 100%
   );
-
   color: #202020;
 }
-
 
 /* =========================
    CONTAINER
@@ -30,20 +27,18 @@
   margin: 0 auto;
 }
 
-
 /* =========================
    HEADER
 ========================= */
 
 .tracking-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 25px;
 }
 
 .tracking-header span {
   display: block;
   margin-bottom: 10px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   letter-spacing: 2px;
@@ -52,13 +47,11 @@
 
 .tracking-header h1 {
   margin: 0;
-
   font-family: Georgia, "Times New Roman", serif;
   font-size: 30px;
   font-weight: 400;
   color: #202020;
 }
-
 
 /* =========================
    ORDER INFORMATION
@@ -67,21 +60,16 @@
 .tracking-order-info {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-
   padding: 22px 0;
-  margin-bottom: 42px;
-
+  margin-bottom: 30px;
   background: rgba(255, 255, 255, 0.45);
-
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 8px;
-
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
 }
 
 .tracking-order-info div {
   text-align: center;
-
   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -91,7 +79,6 @@
 
 .tracking-order-info p {
   margin: 0 0 7px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 8px;
   letter-spacing: 1.2px;
@@ -100,13 +87,11 @@
 
 .tracking-order-info h3 {
   margin: 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #202020;
 }
-
 
 /* =========================
    TRACKING STEPS
@@ -115,16 +100,11 @@
 .tracking-steps {
   width: 70%;
   margin: 0 auto 45px;
-
   padding: 28px 35px;
-
   background: rgba(255, 255, 255, 0.4);
-
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 8px;
-
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
-
   box-sizing: border-box;
 }
 
@@ -142,20 +122,15 @@
 .step-circle {
   width: 21px;
   height: 21px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border: 1px solid #aaa;
   border-radius: 50%;
-
   background: rgba(255, 255, 255, 0.7);
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   color: #fff;
-
   position: relative;
   z-index: 2;
   box-sizing: border-box;
@@ -172,13 +147,10 @@
 
 .step-line {
   position: absolute;
-
   width: 1px;
   height: 57px;
-
   left: 10px;
   top: 21px;
-
   background: #d2d2d0;
 }
 
@@ -192,7 +164,6 @@
 
 .step-content h3 {
   margin: 0 0 6px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -201,7 +172,6 @@
 
 .step-content p {
   margin: 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   color: #707070;
@@ -209,20 +179,15 @@
 
 .current-status {
   display: inline-block;
-
   margin-top: 9px;
   padding: 4px 8px;
-
   background: #202020;
   color: #fff;
-
   border-radius: 4px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 7px;
   letter-spacing: 1px;
 }
-
 
 /* =========================
    ORDER ITEMS
@@ -231,20 +196,15 @@
 .tracking-products {
   padding: 25px;
   margin-bottom: 35px;
-
   background: rgba(255, 255, 255, 0.42);
-
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 8px;
-
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
-
   box-sizing: border-box;
 }
 
 .tracking-products h2 {
   margin: 0 0 20px;
-
   font-family: Georgia, "Times New Roman", serif;
   font-size: 19px;
   font-weight: 400;
@@ -253,12 +213,9 @@
 
 .tracking-product {
   min-height: 75px;
-
   display: flex;
   align-items: center;
-
   padding: 12px 0;
-
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -269,16 +226,12 @@
 .tracking-product-image {
   width: 58px;
   height: 68px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: rgba(255, 255, 255, 0.7);
-
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 6px;
-
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -302,7 +255,6 @@
 
 .tracking-product-details h3 {
   margin: 0 0 7px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 500;
@@ -311,7 +263,6 @@
 
 .tracking-product-details p {
   margin: 3px 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 9px;
   color: #777;
@@ -319,13 +270,11 @@
 
 .tracking-product-price {
   padding-left: 15px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #202020;
 }
-
 
 /* =========================
    CANCELLED
@@ -335,39 +284,29 @@
   width: 70%;
   margin: 0 auto 45px;
   padding: 45px 25px;
-
   text-align: center;
-
   background: rgba(255, 255, 255, 0.42);
-
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 8px;
-
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
-
   box-sizing: border-box;
 }
 
 .cancelled-icon {
   width: 32px;
   height: 32px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   margin: 0 auto 15px;
-
   border: 1px solid #777;
   border-radius: 50%;
-
   color: #555;
   font-size: 18px;
 }
 
 .cancelled-box h2 {
   margin: 0 0 9px;
-
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
   font-weight: 400;
@@ -376,12 +315,10 @@
 
 .cancelled-box p {
   margin: 0;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   color: #777;
 }
-
 
 /* =========================
    EMPTY STATE
@@ -390,25 +327,18 @@
 .tracking-empty {
   width: 420px;
   max-width: 90%;
-
   margin: 80px auto 0;
   padding: 45px 30px;
-
   text-align: center;
-
   background: rgba(255, 255, 255, 0.45);
-
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 8px;
-
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
-
   box-sizing: border-box;
 }
 
 .tracking-empty h2 {
   margin: 0 0 10px;
-
   font-family: Georgia, "Times New Roman", serif;
   font-size: 23px;
   font-weight: 400;
@@ -416,12 +346,10 @@
 
 .tracking-empty p {
   margin: 0 0 25px;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   color: #777;
 }
-
 
 /* =========================
    BUTTON
@@ -430,24 +358,17 @@
 .tracking-back-btn,
 .tracking-empty button {
   display: block;
-
   width: 135px;
   height: 35px;
-
   margin: 0 auto;
-
   border: none;
   border-radius: 6px;
-
   background: #202020;
   color: #fff;
-
   font-family: Arial, Helvetica, sans-serif;
   font-size: 8px;
   letter-spacing: 1px;
-
   cursor: pointer;
-
   transition: background 0.2s ease;
 }
 
@@ -456,15 +377,13 @@
   background: #3a3a3a;
 }
 
-
 /* =========================
    MOBILE
 ========================= */
 
 @media (max-width: 700px) {
-
   .tracking-page {
-    padding-top: 105px;
+    padding-top: 80px;
     padding-bottom: 60px;
   }
 
@@ -473,7 +392,7 @@
   }
 
   .tracking-header {
-    margin-bottom: 32px;
+    margin-bottom: 25px;
   }
 
   .tracking-header h1 {
@@ -520,9 +439,11 @@
   }
 }
 
+/* =========================
+   SMALL MOBILE
+========================= */
 
 @media (max-width: 450px) {
-
   .tracking-order-info {
     grid-template-columns: 1fr;
     gap: 15px;
