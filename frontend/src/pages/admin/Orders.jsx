@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -10,18 +9,7 @@ import { useNavigate } from "react-router-dom";
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
-
-// =========================================================
-// ORDERS PER PAGE
-// Backend pagination limit
-// =========================================================
-
 const ORDERS_PER_PAGE = 10;
-
-// =========================================================
-// ORDER STATUS
-// These match the backend Order model
-// =========================================================
 
 const statusLabels = {
   PENDING: "Pending",
@@ -41,10 +29,6 @@ const statusClassMap = {
   CANCELLED: "cancelled",
 };
 
-// =========================================================
-// PAYMENT STATUS
-// =========================================================
-
 const paymentStatusLabels = {
   PENDING: "Pending",
   PAID: "Paid",
@@ -57,45 +41,37 @@ const paymentStatusClassMap = {
   FAILED: "failed",
 };
 
-// =========================================================
-// ORDERS COMPONENT
-// =========================================================
-
 const Orders = () => {
   const navigate = useNavigate();
 
-  // =========================================================
-  // STATE
-  // =========================================================
-
   const [orders, setOrders] = useState([]);
-
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
 
-  const [statusFilter, setStatusFilter] =
-    useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
-  const [paymentFilter, setPaymentFilter] =
-    useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  /* =========================================================
+     GET TOKEN
+  ========================================================= */
 
-  const [totalPages, setTotalPages] =
-    useState(1);
+  const getToken = useCallback(() => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("adminToken") ||
+      ""
+    );
+  }, []);
 
-  const [totalOrders, setTotalOrders] =
-    useState(0);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  // =========================================================
-  // FETCH ORDERS FROM BACKEND
-  // =========================================================
+  /* =========================================================
+     FETCH ORDERS
+  ========================================================= */
 
   const fetchOrders = useCallback(
     async (page = currentPage) => {
@@ -103,12 +79,7 @@ const Orders = () => {
         setLoading(true);
         setError("");
 
-        const token =
-          localStorage.getItem("token");
-
-        // -----------------------------------------------------
-        // TOKEN CHECK
-        // -----------------------------------------------------
+        const token = getToken();
 
         if (!token) {
           setError(
@@ -122,11 +93,6 @@ const Orders = () => {
           return;
         }
 
-        // -----------------------------------------------------
-        // GET ADMIN ORDERS
-        // GET /api/orders/all
-        // -----------------------------------------------------
-
         const response = await axios.get(
           `${API_URL}/orders/all`,
           {
@@ -137,7 +103,6 @@ const Orders = () => {
             params: {
               page,
               limit: ORDERS_PER_PAGE,
-
               search: search.trim(),
 
               orderStatus:
@@ -153,64 +118,48 @@ const Orders = () => {
           }
         );
 
-        // -----------------------------------------------------
-        // BACKEND RESPONSE
-        //
-        // {
-        //   success: true,
-        //   orders: [],
-        //   currentPage: 1,
-        //   totalPages: 5,
-        //   totalOrders: 48
-        // }
-        // -----------------------------------------------------
+        const responseData = response.data || {};
 
-        const responseOrders =
-          response.data?.orders || [];
+        const responseOrders = Array.isArray(
+          responseData.orders
+        )
+          ? responseData.orders
+          : [];
 
-        setOrders(
-          Array.isArray(responseOrders)
-            ? responseOrders
-            : []
-        );
+        setOrders(responseOrders);
 
         setCurrentPage(
-          Number(
-            response.data?.currentPage || page
-          )
+          Number(responseData.currentPage || page)
         );
 
         setTotalPages(
           Math.max(
-            Number(
-              response.data?.totalPages || 1
-            ),
+            Number(responseData.totalPages || 1),
             1
           )
         );
 
         setTotalOrders(
-          Number(
-            response.data?.totalOrders || 0
-          )
+          Number(responseData.totalOrders || 0)
         );
-      } catch (error) {
+      } catch (err) {
         console.error(
           "Failed to fetch admin orders:",
-          error
+          err
         );
 
-        if (
-          error.response?.status === 401 ||
-          error.response?.status === 403
-        ) {
+        if (err.response?.status === 401) {
+          setError(
+            "Your session has expired. Please login again."
+          );
+        } else if (err.response?.status === 403) {
           setError(
             "You are not authorized to view orders."
           );
         } else {
           setError(
-            error.response?.data?.message ||
-              error.message ||
+            err.response?.data?.message ||
+              err.message ||
               "Failed to load orders."
           );
         }
@@ -224,15 +173,16 @@ const Orders = () => {
     },
     [
       currentPage,
+      getToken,
       search,
       statusFilter,
       paymentFilter,
     ]
   );
 
-  // =========================================================
-  // INITIAL / SEARCH / FILTER / PAGINATION FETCH
-  // =========================================================
+  /* =========================================================
+     FETCH ON CHANGE
+  ========================================================= */
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -248,9 +198,9 @@ const Orders = () => {
     fetchOrders,
   ]);
 
-  // =========================================================
-  // RESET PAGE WHEN SEARCH / FILTER CHANGES
-  // =========================================================
+  /* =========================================================
+     RESET PAGE
+  ========================================================= */
 
   useEffect(() => {
     setCurrentPage(1);
@@ -260,9 +210,9 @@ const Orders = () => {
     paymentFilter,
   ]);
 
-  // =========================================================
-  // CUSTOMER HELPERS
-  // =========================================================
+  /* =========================================================
+     CUSTOMER HELPERS
+  ========================================================= */
 
   const getCustomerName = (order) => {
     return (
@@ -290,9 +240,9 @@ const Orders = () => {
     );
   };
 
-  // =========================================================
-  // STATUS HELPERS
-  // =========================================================
+  /* =========================================================
+     STATUS HELPERS
+  ========================================================= */
 
   const getStatusLabel = (status) => {
     return (
@@ -324,9 +274,9 @@ const Orders = () => {
     );
   };
 
-  // =========================================================
-  // FORMAT HELPERS
-  // =========================================================
+  /* =========================================================
+     CURRENCY
+  ========================================================= */
 
   const formatCurrency = (amount) => {
     return `₹${Number(
@@ -334,16 +284,18 @@ const Orders = () => {
     ).toLocaleString("en-IN")}`;
   };
 
+  /* =========================================================
+     DATE
+  ========================================================= */
+
   const formatDate = (date) => {
-    if (!date) return "—";
+    if (!date) {
+      return "—";
+    }
 
     const parsedDate = new Date(date);
 
-    if (
-      Number.isNaN(
-        parsedDate.getTime()
-      )
-    ) {
+    if (Number.isNaN(parsedDate.getTime())) {
       return "—";
     }
 
@@ -357,18 +309,29 @@ const Orders = () => {
     );
   };
 
+  /* =========================================================
+     ITEM COUNT
+  ========================================================= */
+
   const getItemCount = (order) => {
     if (!Array.isArray(order?.items)) {
       return 0;
     }
 
     return order.items.reduce(
-      (total, item) =>
-        total +
-        Number(item?.quantity || 0),
+      (total, item) => {
+        return (
+          total +
+          Number(item?.quantity || 0)
+        );
+      },
       0
     );
   };
+
+  /* =========================================================
+     ORDER ID
+  ========================================================= */
 
   const getOrderId = (order) => {
     if (!order?._id) {
@@ -380,41 +343,43 @@ const Orders = () => {
       .toUpperCase()}`;
   };
 
-  // =========================================================
-  // SUMMARY
-  // Counts are based on currently loaded backend page
-  // =========================================================
+  /* =========================================================
+     SUMMARY
+  ========================================================= */
 
   const summary = useMemo(() => {
     const pending = orders.filter(
       (order) =>
-        order?.orderStatus === "PENDING"
+        String(
+          order?.orderStatus || ""
+        ).toUpperCase() === "PENDING"
     ).length;
 
-    const processing =
-      orders.filter(
-        (order) =>
-          [
-            "CONFIRMED",
-            "PROCESSING",
-          ].includes(
-            order?.orderStatus
-          )
-      ).length;
+    const processing = orders.filter(
+      (order) =>
+        [
+          "CONFIRMED",
+          "PROCESSING",
+        ].includes(
+          String(
+            order?.orderStatus || ""
+          ).toUpperCase()
+        )
+    ).length;
 
-    const delivered =
-      orders.filter(
-        (order) =>
-          order?.orderStatus ===
-          "DELIVERED"
-      ).length;
+    const delivered = orders.filter(
+      (order) =>
+        String(
+          order?.orderStatus || ""
+        ).toUpperCase() === "DELIVERED"
+    ).length;
 
-    const cancelled =
-      orders.filter(
-        (order) =>
-          order?.orderStatus ===
-          "CANCELLED"
-      ).length;
+    const cancelled = orders.filter(
+      (order) =>
+        String(
+          order?.orderStatus || ""
+        ).toUpperCase() === "CANCELLED"
+    ).length;
 
     return {
       pending,
@@ -424,9 +389,9 @@ const Orders = () => {
     };
   }, [orders]);
 
-  // =========================================================
-  // ORDER STATUS FILTER OPTIONS
-  // =========================================================
+  /* =========================================================
+     FILTER OPTIONS
+  ========================================================= */
 
   const statusOptions = [
     {
@@ -459,10 +424,6 @@ const Orders = () => {
     },
   ];
 
-  // =========================================================
-  // PAYMENT FILTER OPTIONS
-  // =========================================================
-
   const paymentOptions = [
     {
       value: "ALL",
@@ -482,13 +443,12 @@ const Orders = () => {
     },
   ];
 
-  // =========================================================
-  // PAGINATION HELPERS
-  // =========================================================
+  /* =========================================================
+     PAGINATION
+  ========================================================= */
 
-  const getPageNumbers = () => {
+  const pageNumbers = useMemo(() => {
     const pages = [];
-
     const maxVisiblePages = 5;
 
     let startPage = Math.max(
@@ -520,14 +480,10 @@ const Orders = () => {
     }
 
     return pages;
-  };
-
-  const pageNumbers =
-    getPageNumbers();
-
-  // =========================================================
-  // PAGINATION DISPLAY
-  // =========================================================
+  }, [
+    currentPage,
+    totalPages,
+  ]);
 
   const startItem =
     totalOrders === 0
@@ -541,53 +497,60 @@ const Orders = () => {
     totalOrders
   );
 
-  // =========================================================
-  // LOADING
-  // =========================================================
+  const goToPage = (page) => {
+    if (
+      page < 1 ||
+      page > totalPages ||
+      page === currentPage
+    ) {
+      return;
+    }
+
+    setCurrentPage(page);
+  };
+
+  const handleRetry = () => {
+    fetchOrders(currentPage);
+  };
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
-      <div className="orders-page">
+      <div className="admin-orders-page">
         <div className="orders-loading">
           <div className="loading-spinner"></div>
 
-          <p>
-            Loading orders...
-          </p>
+          <p>Loading orders...</p>
         </div>
       </div>
     );
   }
 
-  // =========================================================
-  // UI
-  // =========================================================
+  /* =========================================================
+     UI
+  ========================================================= */
 
   return (
-    <div className="orders-page">
+    <div className="admin-orders-page">
 
-      {/* ===================================================
-          HEADER
-      =================================================== */}
+      {/* HEADER */}
 
       <div className="orders-header">
         <div>
           <h1>Orders</h1>
 
           <p>
-            Manage and track customer
-            orders
+            Manage and track customer orders
           </p>
         </div>
       </div>
 
-      {/* ===================================================
-          SUMMARY CARDS
-      =================================================== */}
+      {/* SUMMARY */}
 
       <div className="orders-summary">
-
-        {/* Pending */}
 
         <div className="order-summary-card">
           <div className="summary-icon pending-icon">
@@ -603,8 +566,6 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Processing */}
-
         <div className="order-summary-card">
           <div className="summary-icon processing-icon">
             <i className="bi bi-box-seam"></i>
@@ -618,8 +579,6 @@ const Orders = () => {
             </strong>
           </div>
         </div>
-
-        {/* Delivered */}
 
         <div className="order-summary-card">
           <div className="summary-icon delivered-icon">
@@ -635,8 +594,6 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Cancelled */}
-
         <div className="order-summary-card">
           <div className="summary-icon cancelled-icon">
             <i className="bi bi-x-circle"></i>
@@ -650,15 +607,12 @@ const Orders = () => {
             </strong>
           </div>
         </div>
+
       </div>
 
-      {/* ===================================================
-          TOOLBAR
-      =================================================== */}
+      {/* TOOLBAR */}
 
       <div className="orders-toolbar">
-
-        {/* Search */}
 
         <div className="orders-search">
           <i className="bi bi-search"></i>
@@ -667,10 +621,8 @@ const Orders = () => {
             type="text"
             placeholder="Search orders, customers..."
             value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
+            onChange={(event) =>
+              setSearch(event.target.value)
             }
           />
 
@@ -678,27 +630,22 @@ const Orders = () => {
             <button
               type="button"
               className="clear-search-btn"
-              onClick={() =>
-                setSearch("")
-              }
+              onClick={() => setSearch("")}
               aria-label="Clear search"
-              title="Clear search"
             >
               <i className="bi bi-x"></i>
             </button>
           )}
         </div>
 
-        {/* Order Status Filter */}
-
         <div className="orders-filter">
           <i className="bi bi-funnel"></i>
 
           <select
             value={statusFilter}
-            onChange={(e) =>
+            onChange={(event) =>
               setStatusFilter(
-                e.target.value
+                event.target.value
               )
             }
           >
@@ -715,16 +662,14 @@ const Orders = () => {
           </select>
         </div>
 
-        {/* Payment Filter */}
-
         <div className="orders-filter">
           <i className="bi bi-credit-card"></i>
 
           <select
             value={paymentFilter}
-            onChange={(e) =>
+            onChange={(event) =>
               setPaymentFilter(
-                e.target.value
+                event.target.value
               )
             }
           >
@@ -740,36 +685,29 @@ const Orders = () => {
             )}
           </select>
         </div>
+
       </div>
 
-      {/* ===================================================
-          ERROR
-      =================================================== */}
+      {/* ERROR */}
 
       {error && (
         <div className="orders-error">
+
           <i className="bi bi-exclamation-circle"></i>
 
-          <span>
-            {error}
-          </span>
+          <span>{error}</span>
 
           <button
             type="button"
-            onClick={() =>
-              fetchOrders(
-                currentPage
-              )
-            }
+            onClick={handleRetry}
           >
             Retry
           </button>
+
         </div>
       )}
 
-      {/* ===================================================
-          TABLE CARD
-      =================================================== */}
+      {/* TABLE */}
 
       <div className="orders-table-card">
 
@@ -809,18 +747,23 @@ const Orders = () => {
                         "PENDING"
                     ).toUpperCase();
 
+                  const customerName =
+                    getCustomerName(order);
+
+                  const customerEmail =
+                    getCustomerEmail(order);
+
+                  const customerPhone =
+                    getCustomerPhone(order);
+
                   return (
-                    <tr
-                      key={order._id}
-                    >
+                    <tr key={order?._id}>
 
                       {/* ORDER ID */}
 
                       <td>
                         <span className="order-id">
-                          {getOrderId(
-                            order
-                          )}
+                          {getOrderId(order)}
                         </span>
                       </td>
 
@@ -830,9 +773,7 @@ const Orders = () => {
                         <div className="customer-cell">
 
                           <div className="customer-avatar">
-                            {getCustomerName(
-                              order
-                            )
+                            {customerName
                               .charAt(0)
                               .toUpperCase()}
                           </div>
@@ -840,24 +781,18 @@ const Orders = () => {
                           <div className="customer-info">
 
                             <strong>
-                              {getCustomerName(
-                                order
-                              )}
+                              {customerName}
                             </strong>
 
                             <span>
-                              {getCustomerEmail(
-                                order
-                              ) !== "—"
-                                ? getCustomerEmail(
-                                    order
-                                  )
-                                : getCustomerPhone(
-                                    order
-                                  )}
+                              {customerEmail !==
+                              "—"
+                                ? customerEmail
+                                : customerPhone}
                             </span>
 
                           </div>
+
                         </div>
                       </td>
 
@@ -876,9 +811,7 @@ const Orders = () => {
 
                       <td>
                         <span className="item-count">
-                          {getItemCount(
-                            order
-                          )}
+                          {getItemCount(order)}
                         </span>
                       </td>
 
@@ -895,7 +828,7 @@ const Orders = () => {
                         </strong>
                       </td>
 
-                      {/* PAYMENT STATUS */}
+                      {/* PAYMENT */}
 
                       <td>
                         <span
@@ -911,10 +844,7 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* ORDER STATUS
-                          Display only.
-                          Update happens in Order Details.
-                      */}
+                      {/* ORDER STATUS */}
 
                       <td>
                         <span
@@ -938,7 +868,7 @@ const Orders = () => {
                           className="view-order-btn"
                           onClick={() =>
                             navigate(
-                              `/admin/orders/${order._id}`
+                              `/admin/orders/${order?._id}`
                             )
                           }
                           title="View Order"
@@ -969,10 +899,8 @@ const Orders = () => {
 
                       <p>
                         {search ||
-                        statusFilter !==
-                          "ALL" ||
-                        paymentFilter !==
-                          "ALL"
+                        statusFilter !== "ALL" ||
+                        paymentFilter !== "ALL"
                           ? "Try changing your search or filters."
                           : "There are no orders available yet."}
                       </p>
@@ -980,75 +908,52 @@ const Orders = () => {
                     </div>
                   </td>
                 </tr>
+
               )}
 
             </tbody>
+
           </table>
+
         </div>
 
-        {/* =================================================
-            TABLE FOOTER
-        ================================================= */}
+        {/* FOOTER */}
 
         {totalOrders > 0 && (
           <div className="orders-table-footer">
-
             <span>
               Showing{" "}
-
-              <strong>
-                {startItem}
-              </strong>
-
+              <strong>{startItem}</strong>
               {" - "}
-
-              <strong>
-                {endItem}
-              </strong>
-
+              <strong>{endItem}</strong>
               {" "}of{" "}
-
-              <strong>
-                {totalOrders}
-              </strong>
-
+              <strong>{totalOrders}</strong>
               {" "}orders
             </span>
-
           </div>
         )}
 
-        {/* =================================================
-            PAGINATION
-        ================================================= */}
+        {/* PAGINATION */}
 
         {totalPages > 1 && (
           <div className="orders-pagination">
-
-            {/* PREVIOUS */}
 
             <button
               type="button"
               className="pagination-btn"
               onClick={() =>
-                setCurrentPage(
-                  (page) =>
-                    Math.max(
-                      page - 1,
-                      1
-                    )
+                goToPage(
+                  currentPage - 1
                 )
               }
-              disabled={
-                currentPage === 1
-              }
+              disabled={currentPage === 1}
             >
               <i className="bi bi-chevron-left"></i>
 
-              Previous
+              <span>
+                Previous
+              </span>
             </button>
-
-            {/* PAGE NUMBERS */}
 
             <div className="pagination-info">
 
@@ -1063,9 +968,7 @@ const Orders = () => {
                         : ""
                     }`}
                     onClick={() =>
-                      setCurrentPage(
-                        page
-                      )
+                      goToPage(page)
                     }
                   >
                     {page}
@@ -1075,18 +978,12 @@ const Orders = () => {
 
             </div>
 
-            {/* NEXT */}
-
             <button
               type="button"
               className="pagination-btn"
               onClick={() =>
-                setCurrentPage(
-                  (page) =>
-                    Math.min(
-                      page + 1,
-                      totalPages
-                    )
+                goToPage(
+                  currentPage + 1
                 )
               }
               disabled={
@@ -1094,7 +991,9 @@ const Orders = () => {
                 totalPages
               }
             >
-              Next
+              <span>
+                Next
+              </span>
 
               <i className="bi bi-chevron-right"></i>
             </button>
@@ -1103,9 +1002,9 @@ const Orders = () => {
         )}
 
       </div>
+
     </div>
   );
 };
 
 export default Orders;
-

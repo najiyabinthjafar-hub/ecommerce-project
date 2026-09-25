@@ -1,305 +1,116 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import "./Customers.css";
 
 const API_URL = "http://localhost:5000/api";
 
+const CUSTOMERS_PER_PAGE = 10;
+
 const Customers = () => {
   const navigate = useNavigate();
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
+  const [customers, setCustomers] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState("");
+
+  const [error, setError] = useState("");
+
+  // Search / filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState("newest");
 
-  const [customers, setCustomers] = useState([]);
-  const [orders, setOrders] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionLoading, setActionLoading] = useState(null);
-
+  // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalRegisteredUsers, setTotalRegisteredUsers] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
-  const limit = 10;
+  // Summary cards
+  const [activeCustomers, setActiveCustomers] = useState(0);
+  const [blockedCustomers, setBlockedCustomers] = useState(0);
 
-  const token = localStorage.getItem("token");
+  // =========================================================
+  // TOKEN
+  // =========================================================
 
-  /* =========================================================
-     SAFE RESPONSE PARSER
-  ========================================================= */
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("adminToken") ||
+      ""
+    );
+  };
 
-  const getResponseData = async (response) => {
+  // =========================================================
+  // HEADERS
+  // =========================================================
+
+  const getHeaders = () => {
+    const token = getToken();
+
+    return {
+      "Content-Type": "application/json",
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+    };
+  };
+
+  // =========================================================
+  // SAFE RESPONSE PARSER
+  // =========================================================
+
+  const parseResponse = async (response) => {
+    const contentType =
+      response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      return await response.json();
+    }
+
     const text = await response.text();
 
-    try {
-      return text ? JSON.parse(text) : {};
-    } catch {
-      return {
-        message: text || "Something went wrong",
-      };
-    }
+    throw new Error(
+      `Server returned ${response.status}: ${text.slice(
+        0,
+        200
+      )}`
+    );
   };
 
-  /* =========================================================
-     FETCH CUSTOMERS
-  ========================================================= */
+  // =========================================================
+  // GET INITIALS
+  // =========================================================
 
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const getInitials = (name) => {
+    if (!name) return "U";
 
-      if (!token) {
-        setError("Authentication token not found.");
-        setCustomers([]);
-        return;
-      }
-
-      const params = new URLSearchParams();
-
-      params.append("page", page);
-      params.append("limit", limit);
-      params.append("sort", sort);
-
-      if (search.trim()) {
-        params.append("search", search.trim());
-      }
-
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-
-      const response = await fetch(
-        `${API_URL}/users?${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await getResponseData(response);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to fetch customers"
-        );
-      }
-
-      setCustomers(
-        Array.isArray(data.users) ? data.users : []
-      );
-
-      setTotalPages(data.totalPages || 1);
-      setTotalRegisteredUsers(data.total || 0);
-    } catch (err) {
-      console.error("Customer fetch error:", err);
-
-      setError(
-        err.message || "Failed to load customers"
-      );
-
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) =>
+        word.charAt(0).toUpperCase()
+      )
+      .join("");
   };
 
-  /* =========================================================
-     FETCH ORDERS
-  ========================================================= */
-
-  const fetchOrders = async () => {
-    try {
-      if (!token) return;
-
-      const response = await fetch(
-        `${API_URL}/orders/all`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await getResponseData(response);
-
-      if (!response.ok) {
-        console.error(
-          "Orders fetch error:",
-          data.message
-        );
-        return;
-      }
-
-      let orderList = [];
-
-      if (Array.isArray(data)) {
-        orderList = data;
-      } else if (Array.isArray(data.orders)) {
-        orderList = data.orders;
-      } else if (Array.isArray(data.data)) {
-        orderList = data.data;
-      }
-
-      setOrders(orderList);
-    } catch (err) {
-      console.error("Orders fetch error:", err);
-    }
-  };
-
-  /* =========================================================
-     CUSTOMER FETCH
-  ========================================================= */
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [page, sort, statusFilter]);
-
-  /* =========================================================
-     ORDERS FETCH
-  ========================================================= */
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  /* =========================================================
-     SEARCH
-  ========================================================= */
-
-  useEffect(() => {
-  const timer = setTimeout(() => {
-    fetchCustomers();
-  }, 400);
-
-  return () => clearTimeout(timer);
-}, [page, search, sort, statusFilter]);
-  /* =========================================================
-     CUSTOMER ORDER MATCHING
-  ========================================================= */
-
-  const customerData = useMemo(() => {
-    return customers.map((customer) => {
-      const customerId =
-        customer?._id?.toString();
-
-      const customerOrders = orders.filter(
-        (order) => {
-          const orderUserId =
-            order?.user?._id?.toString() ||
-            order?.user?.id?.toString() ||
-            order?.userId?.toString();
-
-          const orderEmail =
-            order?.user?.email ||
-            order?.email ||
-            order?.shippingAddress?.email;
-
-          const orderPhone =
-            order?.user?.phone ||
-            order?.phone ||
-            order?.shippingAddress?.phone;
-
-          const orderName =
-            order?.user?.name ||
-            order?.customerName ||
-            order?.shippingAddress?.name;
-
-          const customerEmail =
-            customer?.email;
-
-          const customerPhone =
-            customer?.phone;
-
-          const customerName =
-            customer?.name;
-
-          /* Match by ID */
-
-          if (customerId && orderUserId) {
-            if (customerId === orderUserId) {
-              return true;
-            }
-          }
-
-          /* Match by email */
-
-          if (
-            customerEmail &&
-            orderEmail &&
-            customerEmail.toLowerCase() ===
-              orderEmail.toLowerCase()
-          ) {
-            return true;
-          }
-
-          /* Match by phone */
-
-          if (
-            customerPhone &&
-            orderPhone &&
-            customerPhone === orderPhone
-          ) {
-            return true;
-          }
-
-          /* Match by name */
-
-          if (
-            customerName &&
-            orderName &&
-            customerName.toLowerCase() ===
-              orderName.toLowerCase()
-          ) {
-            return true;
-          }
-
-          return false;
-        }
-      );
-
-      /* =====================================================
-         TOTAL SPENT
-      ===================================================== */
-
-      const totalSpent =
-        customerOrders.reduce(
-          (total, order) => {
-            const amount =
-              Number(
-                order?.finalAmount ??
-                  order?.totalAmount ??
-                  order?.total ??
-                  order?.amount ??
-                  0
-              ) || 0;
-
-            return total + amount;
-          },
-          0
-        );
-
-      return {
-        ...customer,
-
-        orders: customerOrders,
-
-        orderCount:
-          customerOrders.length,
-
-        totalSpent,
-      };
-    });
-  }, [customers, orders]);
-
-  /* =========================================================
-     FORMAT DATE
-  ========================================================= */
+  // =========================================================
+  // FORMAT DATE
+  // =========================================================
 
   const formatDate = (date) => {
     if (!date) return "-";
@@ -310,72 +121,321 @@ const Customers = () => {
       return "-";
     }
 
-    return parsedDate.toLocaleDateString(
-      "en-IN",
+    return parsedDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // =========================================================
+  // FETCH CUSTOMER COUNTS
+  // =========================================================
+
+  const fetchCustomerCounts = useCallback(
+    async () => {
+      try {
+        const headers = getHeaders();
+
+        const baseUrl =
+          `${API_URL}/users?page=1&limit=1&sort=newest`;
+
+        const [
+          totalResponse,
+          activeResponse,
+          blockedResponse,
+        ] = await Promise.all([
+          fetch(baseUrl, {
+            method: "GET",
+            headers,
+          }),
+
+          fetch(
+            `${API_URL}/users?page=1&limit=1&sort=newest&status=active`,
+            {
+              method: "GET",
+              headers,
+            }
+          ),
+
+          fetch(
+            `${API_URL}/users?page=1&limit=1&sort=newest&status=blocked`,
+            {
+              method: "GET",
+              headers,
+            }
+          ),
+        ]);
+
+        const totalData =
+          await parseResponse(totalResponse);
+
+        const activeData =
+          await parseResponse(activeResponse);
+
+        const blockedData =
+          await parseResponse(blockedResponse);
+
+        if (!totalResponse.ok) {
+          throw new Error(
+            totalData?.message ||
+              "Failed to fetch customer count."
+          );
+        }
+
+        if (!activeResponse.ok) {
+          throw new Error(
+            activeData?.message ||
+              "Failed to fetch active customer count."
+          );
+        }
+
+        if (!blockedResponse.ok) {
+          throw new Error(
+            blockedData?.message ||
+              "Failed to fetch blocked customer count."
+          );
+        }
+
+        setTotalCustomers(
+          Number(totalData?.total || 0)
+        );
+
+        setActiveCustomers(
+          Number(activeData?.total || 0)
+        );
+
+        setBlockedCustomers(
+          Number(blockedData?.total || 0)
+        );
+      } catch (error) {
+        console.error(
+          "Customer count error:",
+          error
+        );
+      }
+    },
+    []
+  );
+
+  // =========================================================
+  // FETCH CUSTOMERS
+  // =========================================================
+
+  const fetchCustomers = useCallback(
+    async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token = getToken();
+
+        if (!token) {
+          throw new Error(
+            "Authentication required. Please login again."
+          );
+        }
+
+        const params = new URLSearchParams();
+
+        params.set("page", String(page));
+        params.set(
+          "limit",
+          String(CUSTOMERS_PER_PAGE)
+        );
+        params.set("sort", sort);
+
+        if (search.trim()) {
+          params.set(
+            "search",
+            search.trim()
+          );
+        }
+
+        if (statusFilter !== "all") {
+          params.set(
+            "status",
+            statusFilter
+          );
+        }
+
+        const response = await fetch(
+          `${API_URL}/users?${params.toString()}`,
+          {
+            method: "GET",
+            headers: getHeaders(),
+          }
+        );
+
+        const data =
+          await parseResponse(response);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to fetch customers."
+          );
+        }
+
+        const users = Array.isArray(
+          data?.users
+        )
+          ? data.users
+          : [];
+
+        setCustomers(users);
+
+        setTotalPages(
+          Math.max(
+            Number(data?.totalPages || 1),
+            1
+          )
+        );
+
+        /*
+          Keep total card synced with backend response
+          when no filter is active.
+        */
+        if (
+          statusFilter === "all" &&
+          !search.trim()
+        ) {
+          setTotalCustomers(
+            Number(data?.total || 0)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Customers fetch error:",
+          error
+        );
+
+        setCustomers([]);
+
+        setError(
+          error?.message ||
+            "Unable to load customers."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      page,
+      search,
+      statusFilter,
+      sort,
+    ]
+  );
+
+  // =========================================================
+  // FETCH CUSTOMERS + COUNTS
+  // =========================================================
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  useEffect(() => {
+    fetchCustomerCounts();
+  }, [fetchCustomerCounts]);
+
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(1);
+  };
+
+  // =========================================================
+  // STATUS FILTER
+  // =========================================================
+
+  const handleStatusChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(1);
+  };
+
+  // =========================================================
+  // SORT
+  // =========================================================
+
+  const handleSortChange = (event) => {
+    setSort(event.target.value);
+    setPage(1);
+  };
+
+  // =========================================================
+  // CLEAR FILTERS
+  // =========================================================
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSort("newest");
+    setPage(1);
+  };
+
+  // =========================================================
+  // VIEW CUSTOMER
+  // =========================================================
+
+  const handleViewCustomer = (customer) => {
+    if (!customer?._id) {
+      return;
+    }
+
+    navigate(
+      `/admin/customers/${customer._id}`,
       {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
+        state: {
+          customer,
+        },
       }
     );
   };
 
-  /* =========================================================
-     FORMAT CURRENCY
-  ========================================================= */
+  // =========================================================
+  // BLOCK / UNBLOCK CUSTOMER
+  // =========================================================
 
-  const formatCurrency = (amount) => {
-    return `₹${Number(
-      amount || 0
-    ).toLocaleString("en-IN")}`;
-  };
+  const handleToggleStatus = async (
+    customer
+  ) => {
+    if (!customer?._id) {
+      return;
+    }
 
-  /* =========================================================
-     STATUS CHANGE
-  ========================================================= */
+    const isBlocked =
+      customer.status === "blocked";
 
-  const handleStatusChange = async (customer) => {
-    if (!customer?._id) return;
+    const newStatus = isBlocked
+      ? "active"
+      : "blocked";
 
-    const newStatus =
-      customer.status === "blocked"
-        ? "active"
-        : "blocked";
-
-    const actionText =
-      newStatus === "blocked"
-        ? "block"
-        : "unblock";
+    const actionText = isBlocked
+      ? "unblock"
+      : "block";
 
     const confirmed = window.confirm(
-      `Are you sure you want to ${actionText} ${customer.name}?`
+      `Are you sure you want to ${actionText} ${customer.name || "this customer"}?`
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setActionLoading(customer._id);
-
-      if (!token) {
-        alert(
-          "Authentication token not found."
-        );
-        return;
-      }
+      setError("");
 
       const response = await fetch(
         `${API_URL}/users/${customer._id}/status`,
         {
           method: "PATCH",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
-          },
-
+          headers: getHeaders(),
           body: JSON.stringify({
             status: newStatus,
           }),
@@ -383,120 +443,169 @@ const Customers = () => {
       );
 
       const data =
-        await getResponseData(response);
+        await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to update customer status"
+          data?.message ||
+            `Failed to ${actionText} customer.`
         );
       }
 
-      setCustomers(
-        (previousCustomers) =>
-          previousCustomers.map(
-            (item) =>
-              item._id === customer._id
-                ? {
-                    ...item,
-                    status: newStatus,
-                  }
-                : item
-          )
-      );
-    } catch (err) {
-      console.error(
-        "Status update error:",
-        err
+      // Update current customer in table
+      setCustomers((previousCustomers) =>
+        previousCustomers.map((item) =>
+          String(item._id) ===
+          String(customer._id)
+            ? {
+                ...item,
+                ...(data?.user || {}),
+                status: newStatus,
+              }
+            : item
+        )
       );
 
-      alert(
-        err.message ||
-          "Failed to update customer status"
+      // Refresh summary cards
+      await fetchCustomerCounts();
+
+      window.alert(
+        data?.message ||
+          `Customer ${
+            newStatus === "blocked"
+              ? "blocked"
+              : "unblocked"
+          } successfully.`
+      );
+    } catch (error) {
+      console.error(
+        "Customer status update error:",
+        error
+      );
+
+      window.alert(
+        error?.message ||
+          "Failed to update customer status."
       );
     } finally {
-      setActionLoading(null);
+      setActionLoading("");
     }
   };
 
-  /* =========================================================
-     VIEW CUSTOMER
-  ========================================================= */
+  // =========================================================
+  // PAGINATION
+  // =========================================================
 
-  const handleViewCustomer = (customer) => {
-    if (!customer?._id) return;
+  const handlePreviousPage = () => {
+    if (page <= 1) return;
 
-    const selectedCustomer =
-      customerData.find(
-        (item) =>
-          item._id === customer._id
-      ) || customer;
-
-    navigate(
-      `/admin/customers/${customer._id}`,
-      {
-        state: {
-          customer: selectedCustomer,
-        },
-      }
+    setPage((previousPage) =>
+      previousPage - 1
     );
   };
 
-  /* =========================================================
-     PAGINATION
-  ========================================================= */
+  const handleNextPage = () => {
+    if (page >= totalPages) return;
 
-  const handlePrevious = () => {
-    if (page > 1) {
-      setPage(
-        (previousPage) =>
-          previousPage - 1
-      );
-    }
+    setPage((previousPage) =>
+      previousPage + 1
+    );
   };
 
-  const handleNext = () => {
-    if (page < totalPages) {
-      setPage(
-        (previousPage) =>
-          previousPage + 1
-      );
+  const handlePageChange = (pageNumber) => {
+    if (
+      pageNumber < 1 ||
+      pageNumber > totalPages
+    ) {
+      return;
     }
+
+    setPage(pageNumber);
   };
 
-  /* =========================================================
-     SUMMARY COUNTS
-  ========================================================= */
+  // =========================================================
+  // PAGE NUMBER LIST
+  // =========================================================
 
-  const activeCustomers =
-    customers.filter(
-      (customer) =>
-        customer.status !== "blocked"
-    ).length;
+  const getPageNumbers = () => {
+    const pages = [];
 
-  const blockedCustomers =
-    customers.filter(
-      (customer) =>
-        customer.status === "blocked"
-    ).length;
+    const maxVisiblePages = 5;
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
+    if (totalPages <= maxVisiblePages) {
+      for (
+        let index = 1;
+        index <= totalPages;
+        index += 1
+      ) {
+        pages.push(index);
+      }
 
-  if (loading) {
+      return pages;
+    }
+
+    if (page <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+
+    if (page >= totalPages - 2) {
+      return [
+        1,
+        "...",
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
+    return [
+      1,
+      "...",
+      page - 1,
+      page,
+      page + 1,
+      "...",
+      totalPages,
+    ];
+  };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading && customers.length === 0) {
     return (
       <div className="customers-page">
+        <div className="customers-page-header">
+          <div>
+            <span className="customers-eyebrow">
+              CUSTOMER MANAGEMENT
+            </span>
+
+            <h1>Customers</h1>
+
+            <p>
+              Manage registered customers and
+              their account status.
+            </p>
+          </div>
+        </div>
+
         <div className="customers-loading">
-          Loading customers...
+          <div className="customers-spinner"></div>
+
+          <span>
+            Loading customers...
+          </span>
         </div>
       </div>
     );
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  // =========================================================
+  // PAGE
+  // =========================================================
 
   return (
     <div className="customers-page">
@@ -505,66 +614,67 @@ const Customers = () => {
           HEADER
       ===================================================== */}
 
-      <div className="customers-header">
+      <div className="customers-page-header">
 
-        <div>
+        <div className="customers-heading">
+
+          <span className="customers-eyebrow">
+            CUSTOMER MANAGEMENT
+          </span>
+
           <h1>Customers</h1>
 
           <p>
-            Manage registered customers
-            and their accounts.
+            Manage registered customers,
+            account status, and customer
+            information.
           </p>
-        </div>
 
-        <div className="customers-total">
-          <span>Total Customers</span>
-
-          <strong>
-            {totalRegisteredUsers}
-          </strong>
         </div>
 
       </div>
-
 
       {/* =====================================================
           SUMMARY CARDS
       ===================================================== */}
 
-      <div className="customers-summary-cards">
+      <div className="customers-summary-grid">
 
-        {/* Total Customers */}
+        {/* TOTAL */}
 
-        <div className="customer-summary-card">
+        <div className="customer-summary-card total">
 
-          <div className="summary-card-icon total">
-            <i className="bi bi-people"></i>
+          <div className="customer-summary-icon">
+            <i className="bi bi-people-fill"></i>
           </div>
 
-          <div className="summary-card-content">
+          <div className="customer-summary-content">
 
             <span>
               Total Customers
             </span>
 
             <strong>
-              {totalRegisteredUsers}
+              {totalCustomers}
             </strong>
+
+            <small>
+              All registered customers
+            </small>
 
           </div>
 
         </div>
 
+        {/* ACTIVE */}
 
-        {/* Active Customers */}
+        <div className="customer-summary-card active">
 
-        <div className="customer-summary-card">
-
-          <div className="summary-card-icon active">
-            <i className="bi bi-person-check"></i>
+          <div className="customer-summary-icon">
+            <i className="bi bi-person-check-fill"></i>
           </div>
 
-          <div className="summary-card-content">
+          <div className="customer-summary-content">
 
             <span>
               Active Customers
@@ -574,20 +684,23 @@ const Customers = () => {
               {activeCustomers}
             </strong>
 
+            <small>
+              Currently active accounts
+            </small>
+
           </div>
 
         </div>
 
+        {/* BLOCKED */}
 
-        {/* Blocked Customers */}
+        <div className="customer-summary-card blocked">
 
-        <div className="customer-summary-card">
-
-          <div className="summary-card-icon blocked">
-            <i className="bi bi-person-x"></i>
+          <div className="customer-summary-icon">
+            <i className="bi bi-person-x-fill"></i>
           </div>
 
-          <div className="summary-card-content">
+          <div className="customer-summary-content">
 
             <span>
               Blocked Customers
@@ -597,125 +710,143 @@ const Customers = () => {
               {blockedCustomers}
             </strong>
 
-          </div>
-
-        </div>
-
-
-        {/* Total Orders */}
-
-        <div className="customer-summary-card">
-
-          <div className="summary-card-icon orders">
-            <i className="bi bi-bag-check"></i>
-          </div>
-
-          <div className="summary-card-content">
-
-            <span>
-              Total Orders
-            </span>
-
-            <strong>
-              {orders.length}
-            </strong>
+            <small>
+              Blocked accounts
+            </small>
 
           </div>
 
         </div>
 
       </div>
-
 
       {/* =====================================================
-          FILTER TOOLBAR
+          FILTER CARD
       ===================================================== */}
 
-      <div className="customers-toolbar">
+      <div className="customers-filter-card">
 
-        {/* Search */}
+        <div className="customers-filter-header">
 
-        <div className="customers-search">
+          <div>
+            <h2>Customer List</h2>
 
-          <i className="bi bi-search"></i>
-
-          <input
-            type="text"
-            placeholder="Search customers..."
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-          />
+            <p>
+              Search and manage your customers.
+            </p>
+          </div>
 
         </div>
 
+        <div className="customers-filters">
 
-        {/* Filters */}
+          {/* SEARCH */}
 
-        <div className="customers-filter-group">
+          <div className="customer-search-box">
 
-          <select
-            value={statusFilter}
-            onChange={(event) => {
-              setStatusFilter(
-                event.target.value
-              );
+            <i className="bi bi-search"></i>
 
-              setPage(1);
-            }}
-          >
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearchChange}
+              placeholder="Search by name, email or phone..."
+            />
 
-            <option value="all">
-              All Status
-            </option>
+            {search && (
+              <button
+                type="button"
+                className="customer-search-clear"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+                aria-label="Clear search"
+              >
+                <i className="bi bi-x"></i>
+              </button>
+            )}
 
-            <option value="active">
-              Active
-            </option>
+          </div>
 
-            <option value="blocked">
-              Blocked
-            </option>
+          {/* STATUS */}
 
-          </select>
+          <div className="customer-filter-field">
 
+            <label htmlFor="customer-status">
+              Status
+            </label>
 
-          <select
-            value={sort}
-            onChange={(event) => {
-              setSort(
-                event.target.value
-              );
+            <select
+              id="customer-status"
+              value={statusFilter}
+              onChange={handleStatusChange}
+            >
+              <option value="all">
+                All Customers
+              </option>
 
-              setPage(1);
-            }}
-          >
+              <option value="active">
+                Active
+              </option>
 
-            <option value="newest">
-              Newest First
-            </option>
+              <option value="blocked">
+                Blocked
+              </option>
+            </select>
 
-            <option value="oldest">
-              Oldest First
-            </option>
+          </div>
 
-            <option value="name_asc">
-              Name A-Z
-            </option>
+          {/* SORT */}
 
-            <option value="name_desc">
-              Name Z-A
-            </option>
+          <div className="customer-filter-field">
 
-          </select>
+            <label htmlFor="customer-sort">
+              Sort
+            </label>
+
+            <select
+              id="customer-sort"
+              value={sort}
+              onChange={handleSortChange}
+            >
+              <option value="newest">
+                Newest First
+              </option>
+
+              <option value="oldest">
+                Oldest First
+              </option>
+
+              <option value="name_asc">
+                Name A-Z
+              </option>
+
+              <option value="name_desc">
+                Name Z-A
+              </option>
+            </select>
+
+          </div>
+
+          {/* CLEAR */}
+
+          {(search ||
+            statusFilter !== "all" ||
+            sort !== "newest") && (
+            <button
+              type="button"
+              className="customers-clear-btn"
+              onClick={handleClearFilters}
+            >
+              <i className="bi bi-arrow-counterclockwise"></i>
+              Clear
+            </button>
+          )}
 
         </div>
 
       </div>
-
 
       {/* =====================================================
           ERROR
@@ -723,335 +854,549 @@ const Customers = () => {
 
       {error && (
         <div className="customers-error">
-          {error}
+
+          <i className="bi bi-exclamation-circle"></i>
+
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={fetchCustomers}
+          >
+            Retry
+          </button>
+
         </div>
       )}
 
-
       {/* =====================================================
-          CUSTOMER TABLE
+          DESKTOP TABLE
       ===================================================== */}
 
-      <div className="customers-table-wrapper">
+      <div className="customers-table-card">
 
-        <table className="customers-table">
+        <div className="customers-table-wrapper">
 
-          <thead>
+          <table className="customers-table">
 
-            <tr>
+            <thead>
 
-              <th>
-                Customer
-              </th>
+              <tr>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
 
-              <th>
-                Joined
-              </th>
+            </thead>
 
-              <th>
-                Contact
-              </th>
+            <tbody>
 
-              <th>
-                Orders
-              </th>
+              {customers.length > 0 ? (
+                customers.map((customer) => {
 
-              <th>
-                Total Spent
-              </th>
+                  const isBlocked =
+                    customer.status === "blocked";
 
-              <th>
-                Status
-              </th>
+                  const isUpdating =
+                    actionLoading ===
+                    customer._id;
 
-              <th>
-                Action
-              </th>
+                  return (
+                    <tr
+                      key={customer._id}
+                    >
 
-            </tr>
+                      {/* CUSTOMER */}
 
-          </thead>
+                      <td>
 
+                        <div className="customer-table-user">
 
-          <tbody>
+                          <div className="customer-avatar">
+                            {getInitials(
+                              customer.name
+                            )}
+                          </div>
 
-            {customerData.length > 0 ? (
+                          <div className="customer-table-user-info">
 
-              customerData.map(
-                (customer) => (
+                            <strong>
+                              {customer.name ||
+                                "Unknown Customer"}
+                            </strong>
 
-                  <tr
-                    key={customer._id}
-                  >
+                            <span>
+                              Customer
+                            </span>
 
-                    {/* ================= CUSTOMER ================= */}
-
-                    <td>
-
-                      <div className="customer-info">
-
-                        <div className="customer-avatar">
-
-                          {customer.name
-                            ?.charAt(0)
-                            ?.toUpperCase() ||
-                            "U"}
+                          </div>
 
                         </div>
 
-                        <div className="customer-name">
+                      </td>
 
-                          <strong>
-                            {customer.name ||
-                              "Unknown"}
-                          </strong>
+                      {/* EMAIL */}
 
-                        </div>
-
-                      </div>
-
-                    </td>
-
-
-                    {/* ================= JOINED ================= */}
-
-                    <td>
-
-                      {formatDate(
-                        customer.createdAt
-                      )}
-
-                    </td>
-
-
-                    {/* ================= CONTACT ================= */}
-
-                    <td>
-
-                      <div className="customer-contact">
-
-                        <span>
+                      <td>
+                        <span className="customer-email">
                           {customer.email ||
                             "-"}
                         </span>
+                      </td>
 
-                        <small>
+                      {/* PHONE */}
+
+                      <td>
+                        <span className="customer-phone">
                           {customer.phone ||
                             "-"}
-                        </small>
+                        </span>
+                      </td>
 
-                      </div>
+                      {/* JOINED */}
 
-                    </td>
-
-
-                    {/* ================= ORDERS ================= */}
-
-                    <td>
-
-                      <span className="orders-count">
-
-                        {customer.orderCount ||
-                          0}
-
-                      </span>
-
-                    </td>
-
-
-                    {/* ================= TOTAL SPENT ================= */}
-
-                    <td>
-
-                      <strong>
-                        {formatCurrency(
-                          customer.totalSpent
-                        )}
-                      </strong>
-
-                    </td>
-
-
-                    {/* ================= STATUS ================= */}
-
-                    <td>
-
-                      <span
-                        className={`customer-status ${
-                          customer.status ===
-                          "blocked"
-                            ? "blocked"
-                            : "active"
-                        }`}
-                      >
-
-                        {customer.status ===
-                        "blocked"
-                          ? "Blocked"
-                          : "Active"}
-
-                      </span>
-
-                    </td>
-
-
-                    {/* ================= ACTION ================= */}
-
-                    <td>
-
-                      <div className="customer-actions">
-
-                        {/* View */}
-
-                        <button
-                          type="button"
-                          className="icon-action-btn view"
-                          title="View Customer"
-                          aria-label="View Customer"
-                          onClick={() =>
-                            handleViewCustomer(
-                              customer
-                            )
-                          }
-                        >
-
-                          <i className="bi bi-eye"></i>
-
-                        </button>
-
-
-                        {/* Block / Unblock */}
-
-                        <button
-                          type="button"
-                          className={`icon-action-btn ${
-                            customer.status ===
-                            "blocked"
-                              ? "unblock"
-                              : "block"
-                          }`}
-                          title={
-                            customer.status ===
-                            "blocked"
-                              ? "Unblock Customer"
-                              : "Block Customer"
-                          }
-                          aria-label={
-                            customer.status ===
-                            "blocked"
-                              ? "Unblock Customer"
-                              : "Block Customer"
-                          }
-                          disabled={
-                            actionLoading ===
-                            customer._id
-                          }
-                          onClick={() =>
-                            handleStatusChange(
-                              customer
-                            )
-                          }
-                        >
-
-                          {actionLoading ===
-                          customer._id ? (
-
-                            <i className="bi bi-three-dots"></i>
-
-                          ) : customer.status ===
-                            "blocked" ? (
-
-                            <i className="bi bi-unlock"></i>
-
-                          ) : (
-
-                            <i className="bi bi-slash-circle"></i>
-
+                      <td>
+                        <span className="customer-date">
+                          {formatDate(
+                            customer.createdAt
                           )}
+                        </span>
+                      </td>
 
-                        </button>
+                      {/* STATUS */}
 
+                      <td>
+
+                        <span
+                          className={`customer-status-badge ${
+                            isBlocked
+                              ? "blocked"
+                              : "active"
+                          }`}
+                        >
+
+                          <span className="status-dot"></span>
+
+                          {isBlocked
+                            ? "Blocked"
+                            : "Active"}
+
+                        </span>
+
+                      </td>
+
+                      {/* ACTIONS */}
+
+                      <td>
+
+                        <div className="customer-actions">
+
+                          {/* VIEW */}
+
+                          <button
+                            type="button"
+                            className="customer-action-btn view"
+                            title="View Customer"
+                            onClick={() =>
+                              handleViewCustomer(
+                                customer
+                              )
+                            }
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+
+                          {/* BLOCK / UNBLOCK */}
+
+                          <button
+                            type="button"
+                            className={`customer-action-btn ${
+                              isBlocked
+                                ? "unblock"
+                                : "block"
+                            }`}
+                            title={
+                              isBlocked
+                                ? "Unblock Customer"
+                                : "Block Customer"
+                            }
+                            disabled={
+                              isUpdating
+                            }
+                            onClick={() =>
+                              handleToggleStatus(
+                                customer
+                              )
+                            }
+                          >
+                            {isUpdating ? (
+                              <i className="bi bi-arrow-repeat customer-action-loading"></i>
+                            ) : (
+                              <i
+                                className={
+                                  isBlocked
+                                    ? "bi bi-person-check"
+                                    : "bi bi-person-x"
+                                }
+                              ></i>
+                            )}
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+
+                  <td
+                    colSpan="6"
+                    className="customers-empty-cell"
+                  >
+
+                    <div className="customers-empty">
+
+                      <div className="customers-empty-icon">
+                        <i className="bi bi-people"></i>
                       </div>
 
-                    </td>
+                      <h3>
+                        No Customers Found
+                      </h3>
 
-                  </tr>
+                      <p>
+                        No customers match your
+                        current search or filters.
+                      </p>
 
-                )
+                      {(search ||
+                        statusFilter !==
+                          "all") && (
+                        <button
+                          type="button"
+                          onClick={
+                            handleClearFilters
+                          }
+                        >
+                          Clear Filters
+                        </button>
+                      )}
 
-              )
+                    </div>
 
-            ) : (
+                  </td>
 
-              <tr>
+                </tr>
+              )}
 
-                <td
-                  colSpan="7"
-                  className="customers-empty"
-                >
-                  No customers found.
-                </td>
+            </tbody>
 
-              </tr>
+          </table>
 
-            )}
-
-          </tbody>
-
-        </table>
+        </div>
 
       </div>
 
+      {/* =====================================================
+          MOBILE CUSTOMER CARDS
+      ===================================================== */}
+
+      <div className="customers-mobile-list">
+
+        {customers.length > 0 ? (
+          customers.map((customer) => {
+
+            const isBlocked =
+              customer.status === "blocked";
+
+            const isUpdating =
+              actionLoading ===
+              customer._id;
+
+            return (
+              <div
+                className="customer-mobile-card"
+                key={customer._id}
+              >
+
+                {/* TOP */}
+
+                <div className="customer-mobile-top">
+
+                  <div className="customer-mobile-user">
+
+                    <div className="customer-avatar">
+                      {getInitials(
+                        customer.name
+                      )}
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {customer.name ||
+                          "Unknown Customer"}
+                      </strong>
+
+                      <span>
+                        Customer
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  <span
+                    className={`customer-status-badge ${
+                      isBlocked
+                        ? "blocked"
+                        : "active"
+                    }`}
+                  >
+                    <span className="status-dot"></span>
+
+                    {isBlocked
+                      ? "Blocked"
+                      : "Active"}
+                  </span>
+
+                </div>
+
+                {/* INFO */}
+
+                <div className="customer-mobile-info">
+
+                  <div className="customer-mobile-row">
+
+                    <span>
+                      <i className="bi bi-envelope"></i>
+                      Email
+                    </span>
+
+                    <strong>
+                      {customer.email ||
+                        "-"}
+                    </strong>
+
+                  </div>
+
+                  <div className="customer-mobile-row">
+
+                    <span>
+                      <i className="bi bi-telephone"></i>
+                      Phone
+                    </span>
+
+                    <strong>
+                      {customer.phone ||
+                        "-"}
+                    </strong>
+
+                  </div>
+
+                  <div className="customer-mobile-row">
+
+                    <span>
+                      <i className="bi bi-calendar3"></i>
+                      Joined
+                    </span>
+
+                    <strong>
+                      {formatDate(
+                        customer.createdAt
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                {/* ACTIONS */}
+
+                <div className="customer-mobile-actions">
+
+                  <button
+                    type="button"
+                    className="customer-mobile-view-btn"
+                    onClick={() =>
+                      handleViewCustomer(
+                        customer
+                      )
+                    }
+                  >
+                    <i className="bi bi-eye"></i>
+                    View Customer
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`customer-mobile-status-btn ${
+                      isBlocked
+                        ? "unblock"
+                        : "block"
+                    }`}
+                    disabled={isUpdating}
+                    onClick={() =>
+                      handleToggleStatus(
+                        customer
+                      )
+                    }
+                  >
+                    {isUpdating ? (
+                      <i className="bi bi-arrow-repeat customer-action-loading"></i>
+                    ) : (
+                      <i
+                        className={
+                          isBlocked
+                            ? "bi bi-person-check"
+                            : "bi bi-person-x"
+                        }
+                      ></i>
+                    )}
+
+                    {isBlocked
+                      ? "Unblock"
+                      : "Block"}
+                  </button>
+
+                </div>
+
+              </div>
+            );
+          })
+        ) : (
+          <div className="customers-mobile-empty">
+
+            <div className="customers-empty-icon">
+              <i className="bi bi-people"></i>
+            </div>
+
+            <h3>
+              No Customers Found
+            </h3>
+
+            <p>
+              No customers match your current
+              search or filters.
+            </p>
+
+          </div>
+        )}
+
+      </div>
 
       {/* =====================================================
           PAGINATION
       ===================================================== */}
 
-      <div className="customers-pagination">
+      {customers.length > 0 && (
+        <div className="customers-pagination">
 
-        <button
-          type="button"
-          onClick={handlePrevious}
-          disabled={page <= 1}
-        >
+          <div className="customers-pagination-info">
 
-          <i className="bi bi-chevron-left"></i>
+            Showing{" "}
+            <strong>
+              {(page - 1) *
+                CUSTOMERS_PER_PAGE +
+                1}
+            </strong>{" "}
+            -{" "}
+            <strong>
+              {Math.min(
+                page *
+                  CUSTOMERS_PER_PAGE,
+                totalCustomers
+              )}
+            </strong>{" "}
+            of{" "}
+            <strong>
+              {totalCustomers}
+            </strong>{" "}
+            customers
 
-          Previous
+          </div>
 
-        </button>
+          <div className="customers-pagination-controls">
 
+            {/* PREVIOUS */}
 
-        <span>
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={page <= 1}
+              onClick={
+                handlePreviousPage
+              }
+              aria-label="Previous page"
+            >
+              <i className="bi bi-chevron-left"></i>
+            </button>
 
-          Page{" "}
+            {/* PAGE NUMBERS */}
 
-          <strong>
-            {page}
-          </strong>
+            {getPageNumbers().map(
+              (pageNumber, index) => {
 
-          {" "}of{" "}
+                if (
+                  pageNumber === "..."
+                ) {
+                  return (
+                    <span
+                      key={`dots-${index}`}
+                      className="pagination-dots"
+                    >
+                      ...
+                    </span>
+                  );
+                }
 
-          <strong>
-            {totalPages}
-          </strong>
+                return (
+                  <button
+                    type="button"
+                    key={pageNumber}
+                    className={`pagination-number ${
+                      page === pageNumber
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handlePageChange(
+                        pageNumber
+                      )
+                    }
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              }
+            )}
 
-        </span>
+            {/* NEXT */}
 
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={
+                page >= totalPages
+              }
+              onClick={
+                handleNextPage
+              }
+              aria-label="Next page"
+            >
+              <i className="bi bi-chevron-right"></i>
+            </button>
 
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={page >= totalPages}
-        >
+          </div>
 
-          Next
-
-          <i className="bi bi-chevron-right"></i>
-
-        </button>
-
-      </div>
+        </div>
+      )}
 
     </div>
   );

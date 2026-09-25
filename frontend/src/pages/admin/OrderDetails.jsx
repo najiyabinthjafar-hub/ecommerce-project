@@ -1,15 +1,26 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import "./OrderDetails.css";
 
 const API_URL = "http://localhost:5000/api";
 
-// =========================================================
-// ORDER STATUSES
-// =========================================================
+/* =========================================================
+   ORDER STATUS
+========================================================= */
 
-const ORDER_STATUSES = [
+const ORDER_STATUS_OPTIONS = [
   {
     value: "PENDING",
     label: "Pending",
@@ -27,10 +38,6 @@ const ORDER_STATUSES = [
     label: "Shipped",
   },
   {
-    value: "OUT_FOR_DELIVERY",
-    label: "Out for Delivery",
-  },
-  {
     value: "DELIVERED",
     label: "Delivered",
   },
@@ -40,231 +47,156 @@ const ORDER_STATUSES = [
   },
 ];
 
+/* =========================================================
+   RETURN STATUS
+========================================================= */
+
+const RETURN_STATUS_LABELS = {
+  NONE: "No Return Request",
+  REQUESTED: "Return Requested",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  COMPLETED: "Completed",
+};
+
+/* =========================================================
+   REFUND STATUS
+========================================================= */
+
+const REFUND_STATUS_LABELS = {
+  NOT_APPLICABLE: "Not Applicable",
+  PENDING: "Pending",
+  PROCESSING: "Processing",
+  COMPLETED: "Completed",
+  FAILED: "Failed",
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // =========================================================
-  // STATE
-  // =========================================================
+  /* =======================================================
+     STATE
+  ======================================================= */
 
-  const [order, setOrder] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState("PENDING");
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [fetchError, setFetchError] = useState("");
-  const [updateError, setUpdateError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [order, setOrder] = useState(
+    location.state?.order || null
+  );
 
-  // =========================================================
-  // FETCH SINGLE ORDER
-  // =========================================================
+  const [loading, setLoading] = useState(
+    !location.state?.order
+  );
+
+  const [error, setError] = useState("");
+
+  const [updatingStatus, setUpdatingStatus] =
+    useState(false);
+
+  const [updatingReturn, setUpdatingReturn] =
+    useState(false);
+
+  const [statusDropdownOpen, setStatusDropdownOpen] =
+    useState(false);
+
+  const statusDropdownRef = useRef(null);
+
+  /* =======================================================
+     CLOSE CUSTOM DROPDOWN WHEN CLICKING OUTSIDE
+  ======================================================= */
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        setFetchError("");
-
-        const token = localStorage.getItem("token");
-
-        console.log("=================================");
-        console.log("ORDER DETAILS ID:", id);
-        console.log(
-          "ORDER DETAILS URL:",
-          `${API_URL}/orders/${id}`
-        );
-        console.log("TOKEN EXISTS:", Boolean(token));
-        console.log("=================================");
-
-        if (!id) {
-          throw new Error("Order ID is missing.");
-        }
-
-        if (!token) {
-          throw new Error(
-            "Authentication required. Please login again."
-          );
-        }
-
-        let fetchedOrder = null;
-
-        // =====================================================
-        // FIRST: TRY SINGLE ORDER API
-        // =====================================================
-
-        try {
-          const response = await axios.get(
-            `${API_URL}/orders/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          console.log(
-            "ORDER DETAILS RESPONSE:",
-            response.data
-          );
-
-          fetchedOrder =
-            response.data?.order ||
-            response.data?.data ||
-            response.data;
-        } catch (singleOrderError) {
-          console.error(
-            "Single order API error:",
-            singleOrderError
-          );
-
-          // ===================================================
-          // FALLBACK:
-          // GET ADMIN ORDERS AND FIND THE ORDER BY ID
-          // ===================================================
-
-          if (
-            singleOrderError.response?.status === 404
-          ) {
-            console.log(
-              "Single order API returned 404."
-            );
-
-            console.log(
-              "Trying /api/orders/all fallback..."
-            );
-
-            const allOrdersResponse =
-              await axios.get(
-                `${API_URL}/orders/all`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                  params: {
-                    page: 1,
-                    limit: 1000,
-                  },
-                }
-              );
-
-            const allOrders =
-              allOrdersResponse.data?.orders || [];
-
-            console.log(
-              "ADMIN ORDERS RESPONSE:",
-              allOrdersResponse.data
-            );
-
-            fetchedOrder = allOrders.find(
-              (item) =>
-                String(item?._id) ===
-                String(id)
-            );
-
-            console.log(
-              "ORDER FOUND FROM FALLBACK:",
-              fetchedOrder
-            );
-          } else {
-            throw singleOrderError;
-          }
-        }
-
-        // =====================================================
-        // CHECK ORDER
-        // =====================================================
-
-        if (
-          !fetchedOrder ||
-          !fetchedOrder._id
-        ) {
-          throw new Error(
-            "Order not found. The selected order may no longer exist."
-          );
-        }
-
-        // =====================================================
-        // SET ORDER
-        // =====================================================
-
-        setOrder(fetchedOrder);
-
-        const fetchedStatus = String(
-          fetchedOrder.orderStatus ||
-            fetchedOrder.status ||
-            "PENDING"
-        ).toUpperCase();
-
-        setSelectedStatus(fetchedStatus);
-      } catch (error) {
-        console.error(
-          "Failed to fetch order details:",
-          error
-        );
-
-        console.error(
-          "ORDER DETAILS ERROR STATUS:",
-          error.response?.status
-        );
-
-        console.error(
-          "ORDER DETAILS ERROR DATA:",
-          error.response?.data
-        );
-
-        console.error(
-          "ORDER DETAILS ERROR URL:",
-          error.config?.url
-        );
-
-        if (
-          error.response?.status === 401 ||
-          error.response?.status === 403
-        ) {
-          setFetchError(
-            "You are not authorized to view this order."
-          );
-        } else {
-          setFetchError(
-            error.response?.data?.message ||
-              error.message ||
-              "Failed to load order details."
-          );
-        }
-      } finally {
-        setLoading(false);
+    const handleOutsideClick = (event) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target)
+      ) {
+        setStatusDropdownOpen(false);
       }
     };
 
-    fetchOrder();
-  }, [id]);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
 
-  // =========================================================
-  // UPDATE ORDER STATUS
-  // =========================================================
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+    };
+  }, []);
 
-  const handleStatusUpdate = async () => {
-    if (!order?._id || !selectedStatus) {
-      return;
+  /* =======================================================
+     TOKEN
+  ======================================================= */
+
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("adminToken") ||
+      ""
+    );
+  };
+
+  /* =======================================================
+     HEADERS
+  ======================================================= */
+
+  const getHeaders = () => {
+    const token = getToken();
+
+    return {
+      "Content-Type": "application/json",
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+    };
+  };
+
+  /* =======================================================
+     SAFE JSON RESPONSE
+  ======================================================= */
+
+  const parseResponse = async (response) => {
+    const contentType =
+      response.headers.get("content-type") || "";
+
+    if (
+      contentType.includes("application/json")
+    ) {
+      return await response.json();
     }
 
-    const currentStatus = String(
-      order.orderStatus ||
-        order.status ||
-        "PENDING"
-    ).toUpperCase();
+    const text = await response.text();
 
-    if (selectedStatus === currentStatus) {
-      return;
-    }
+    throw new Error(
+      `Server returned ${response.status}: ${text.slice(
+        0,
+        200
+      )}`
+    );
+  };
 
-    try {
-      setUpdating(true);
-      setUpdateError("");
-      setSuccess("");
+  /* =======================================================
+     FIND ORDER FROM ALL ORDERS
+     
+     IMPORTANT:
+     Backend pagination is 10 orders per request.
+     We continue through totalPages until the required
+     order is found.
+  ======================================================= */
 
-      const token = localStorage.getItem("token");
+  const findOrderFromAllOrders = useCallback(
+    async (orderId) => {
+      const token = getToken();
 
       if (!token) {
         throw new Error(
@@ -272,96 +204,236 @@ function OrderDetails() {
         );
       }
 
-      const response = await axios.put(
-        `${API_URL}/orders/${order._id}/status`,
-        {
-          orderStatus: selectedStatus,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      let page = 1;
+      let totalPages = 1;
+
+      while (page <= totalPages) {
+        const response = await fetch(
+          `${API_URL}/orders/all?page=${page}&limit=10`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data =
+          await parseResponse(response);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to fetch orders."
+          );
         }
-      );
 
-      console.log(
-        "ORDER STATUS UPDATE RESPONSE:",
-        response.data
-      );
+        const orders = Array.isArray(
+          data?.orders
+        )
+          ? data.orders
+          : [];
 
-      const updatedOrder =
-        response.data?.order ||
-        response.data?.data ||
-        response.data;
+        const foundOrder = orders.find(
+          (item) =>
+            String(item?._id) ===
+            String(orderId)
+        );
 
-      if (
-        updatedOrder &&
-        updatedOrder._id
-      ) {
-        setOrder(updatedOrder);
+        if (foundOrder) {
+          return foundOrder;
+        }
 
-        const updatedStatus = String(
-          updatedOrder.orderStatus ||
-            updatedOrder.status ||
-            selectedStatus
-        ).toUpperCase();
+        totalPages = Math.max(
+          Number(data?.totalPages || 1),
+          1
+        );
 
-        setSelectedStatus(updatedStatus);
-      } else {
-        setOrder((prevOrder) => ({
-          ...prevOrder,
-          orderStatus: selectedStatus,
-        }));
+        page += 1;
       }
 
-      setSuccess(
-        "Order status updated successfully."
-      );
+      return null;
+    },
+    []
+  );
 
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
-    } catch (error) {
+  /* =======================================================
+     FETCH ORDER
+  ======================================================= */
+
+  const fetchOrder = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      /*
+        If Orders page already passed the order through
+        location.state, use it directly.
+      */
+
+      if (
+        location.state?.order &&
+        String(
+          location.state.order._id
+        ) === String(id)
+      ) {
+        setOrder(location.state.order);
+        return;
+      }
+
+      /*
+        Otherwise fetch from backend.
+      */
+
+      const foundOrder =
+        await findOrderFromAllOrders(id);
+
+      if (!foundOrder) {
+        throw new Error(
+          "Order not found."
+        );
+      }
+
+      setOrder(foundOrder);
+    } catch (err) {
       console.error(
-        "Failed to update order status:",
-        error
+        "Fetch order error:",
+        err
       );
 
-      setUpdateError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to update order status."
+      setError(
+        err.message ||
+          "Failed to load order details."
       );
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
+  }, [
+    id,
+    location.state,
+    findOrderFromAllOrders,
+  ]);
+
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+    fetchOrder();
+  }, [fetchOrder]);
+
+  /* =======================================================
+     STATUS HELPERS
+  ======================================================= */
+
+  const getOrderStatus = (value) => {
+    if (!value) {
+      return "PENDING";
+    }
+
+    return String(value).toUpperCase();
   };
 
-  // =========================================================
-  // HELPERS
-  // =========================================================
+  const getOrderStatusLabel = (value) => {
+    const status =
+      getOrderStatus(value);
 
-  const formatStatus = (status) => {
-    if (!status) {
-      return "Pending";
+    const found =
+      ORDER_STATUS_OPTIONS.find(
+        (item) =>
+          item.value === status
+      );
+
+    if (found) {
+      return found.label;
     }
 
     return String(status)
       .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) =>
-        char.toUpperCase()
+      .replace(
+        /\b\w/g,
+        (char) =>
+          char.toUpperCase()
       );
   };
 
+  const getReturnStatusLabel = (value) => {
+    const status = String(
+      value || "NONE"
+    ).toUpperCase();
+
+    return (
+      RETURN_STATUS_LABELS[status] ||
+      status
+        .replace(/_/g, " ")
+        .replace(
+          /\b\w/g,
+          (char) =>
+            char.toUpperCase()
+        )
+    );
+  };
+
+  const getRefundStatusLabel = (value) => {
+    const status = String(
+      value ||
+        "NOT_APPLICABLE"
+    ).toUpperCase();
+
+    return (
+      REFUND_STATUS_LABELS[status] ||
+      status
+        .replace(/_/g, " ")
+        .replace(
+          /\b\w/g,
+          (char) =>
+            char.toUpperCase()
+        )
+    );
+  };
+
+  /* =======================================================
+     CURRENT STATUS OPTION
+  ======================================================= */
+
+  const currentStatusOption =
+    ORDER_STATUS_OPTIONS.find(
+      (item) =>
+        item.value ===
+        getOrderStatus(
+          order?.orderStatus
+        )
+    ) ||
+    ORDER_STATUS_OPTIONS[0];
+
+  /* =======================================================
+     FORMAT CURRENCY
+  ======================================================= */
+
+  const formatCurrency = (amount) => {
+    return `₹${Number(
+      amount || 0
+    ).toLocaleString("en-IN")}`;
+  };
+
+  /* =======================================================
+     FORMAT DATE
+  ======================================================= */
+
   const formatDate = (date) => {
     if (!date) {
-      return "-";
+      return "—";
     }
 
-    const parsedDate = new Date(date);
+    const parsedDate =
+      new Date(date);
 
-    if (Number.isNaN(parsedDate.getTime())) {
-      return "-";
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return "—";
     }
 
     return parsedDate.toLocaleDateString(
@@ -374,683 +446,1712 @@ function OrderDetails() {
     );
   };
 
-  const formatCurrency = (amount) => {
-    return Number(amount || 0).toLocaleString(
-      "en-IN"
+  /* =======================================================
+     FORMAT DATE + TIME
+  ======================================================= */
+
+  const formatDateTime = (date) => {
+    if (!date) {
+      return "—";
+    }
+
+    const parsedDate =
+      new Date(date);
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return "—";
+    }
+
+    return parsedDate.toLocaleString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
     );
   };
 
-  // =========================================================
-  // CUSTOMER HELPERS
-  // =========================================================
+  /* =======================================================
+     ORDER ID
+  ======================================================= */
 
-  const getCustomerName = () => {
+  const getOrderId = (currentOrder) => {
+    if (!currentOrder?._id) {
+      return "—";
+    }
+
+    return `ORD-${String(
+      currentOrder._id
+    )
+      .slice(-6)
+      .toUpperCase()}`;
+  };
+
+  /* =======================================================
+     CUSTOMER NAME
+  ======================================================= */
+
+  const getCustomerName = (
+    currentOrder
+  ) => {
     return (
-      order?.user?.name ||
-      order?.user?.fullName ||
-      order?.shippingAddress?.fullName ||
-      order?.shippingAddress?.name ||
-      order?.user?.email ||
+      currentOrder?.user?.name ||
+      currentOrder?.user?.fullName ||
+      currentOrder
+        ?.shippingAddress
+        ?.fullName ||
+      currentOrder?.user?.email ||
       "Unknown Customer"
     );
   };
 
-  const getCustomerEmail = () => {
+  /* =======================================================
+     CUSTOMER EMAIL
+  ======================================================= */
+
+  const getCustomerEmail = (
+    currentOrder
+  ) => {
     return (
-      order?.user?.email ||
-      order?.shippingAddress?.email ||
-      "Not available"
+      currentOrder?.user?.email ||
+      "—"
     );
   };
 
-  const getCustomerPhone = () => {
+  /* =======================================================
+     CUSTOMER PHONE
+  ======================================================= */
+
+  const getCustomerPhone = (
+    currentOrder
+  ) => {
     return (
-      order?.user?.phone ||
-      order?.shippingAddress?.phone ||
-      order?.address?.phone ||
-      "-"
+      currentOrder?.user?.phone ||
+      currentOrder
+        ?.shippingAddress
+        ?.phone ||
+      "—"
     );
   };
 
-  // =========================================================
-  // SHIPPING ADDRESS
-  // =========================================================
+  /* =======================================================
+     PAYMENT STATUS
+  ======================================================= */
 
-  const getShippingAddress = () => {
-    const address =
-      order?.shippingAddress ||
-      order?.address;
-
-    if (!address) {
-      return "-";
-    }
-
-    if (typeof address === "string") {
-      return address;
-    }
-
-    const addressParts = [
-      address.fullName,
-      address.name,
-      address.address,
-      address.addressLine1,
-      address.addressLine2,
-      address.city,
-      address.state,
-      address.pincode || address.zipCode,
-      address.country,
-    ].filter(Boolean);
-
-    return addressParts.length > 0
-      ? addressParts.join(", ")
-      : "-";
+  const getPaymentStatus = (
+    currentOrder
+  ) => {
+    return String(
+      currentOrder?.paymentStatus ||
+        "PENDING"
+    ).toUpperCase();
   };
 
-  // =========================================================
-  // PRODUCT HELPERS
-  // =========================================================
-
-  const getProductName = (item) => {
-    if (
-      item?.product &&
-      typeof item.product === "object"
-    ) {
-      return (
-        item.product.name ||
-        item.product.title ||
-        "Product"
+  const getPaymentStatusClass = (
+    currentOrder
+  ) => {
+    const status =
+      getPaymentStatus(
+        currentOrder
       );
+
+    if (status === "PAID") {
+      return "paid";
     }
 
+    if (status === "FAILED") {
+      return "failed";
+    }
+
+    return "pending";
+  };
+
+  const getPaymentStatusLabel = (
+    currentOrder
+  ) => {
+    const status =
+      getPaymentStatus(
+        currentOrder
+      );
+
+    if (status === "PAID") {
+      return "Paid";
+    }
+
+    if (status === "FAILED") {
+      return "Failed";
+    }
+
+    return "Pending";
+  };
+
+  /* =======================================================
+     PRODUCT IMAGE
+  ======================================================= */
+
+  const getProductImage = (
+    item
+  ) => {
+    const product =
+      item?.product;
+
+    if (!product) {
+      return "";
+    }
+
+    if (
+      Array.isArray(
+        product.images
+      ) &&
+      product.images.length > 0
+    ) {
+      const firstImage =
+        product.images[0];
+
+      if (
+        typeof firstImage ===
+        "string"
+      ) {
+        return firstImage;
+      }
+
+      if (
+        typeof firstImage ===
+          "object" &&
+        firstImage?.url
+      ) {
+        return firstImage.url;
+      }
+    }
+
+    if (product.image) {
+      return product.image;
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     PRODUCT NAME
+  ======================================================= */
+
+  const getProductName = (
+    item
+  ) => {
     return (
+      item?.product?.name ||
       item?.name ||
-      item?.productName ||
       "Product"
     );
   };
 
-  const getProductCategory = (item) => {
-    if (
-      item?.product?.category &&
-      typeof item.product.category === "object"
-    ) {
-      return (
-        item.product.category.name ||
-        "-"
-      );
-    }
+  /* =======================================================
+     PRODUCT PRICE
+  ======================================================= */
 
-    if (
-      typeof item?.product?.category === "string"
-    ) {
-      return item.product.category;
-    }
-
-    return item?.category || "-";
+  const getProductPrice = (
+    item
+  ) => {
+    return Number(
+      item?.price ||
+        item?.product
+          ?.salePrice ||
+        item?.product
+          ?.regularPrice ||
+        0
+    );
   };
 
-  const getProductImage = (item) => {
-    const product = item?.product;
+  /* =======================================================
+     TOTAL ITEMS
+  ======================================================= */
 
-    if (!product) {
-      return null;
-    }
-
+  const totalItems = useMemo(() => {
     if (
-      Array.isArray(product.images) &&
-      product.images.length > 0
+      !Array.isArray(
+        order?.items
+      )
     ) {
-      const image = product.images[0];
-
-      if (typeof image === "string") {
-        return image;
-      }
-
-      return (
-        image?.url ||
-        image?.secure_url ||
-        null
-      );
+      return 0;
     }
 
-    return product.image || null;
-  };
-
-  // =========================================================
-  // ORDER CALCULATIONS
-  // =========================================================
-
-  const items = Array.isArray(order?.items)
-    ? order.items
-    : [];
-
-  const subtotal = useMemo(() => {
-    return items.reduce(
-      (total, item) => {
-        const price =
-          item?.price ??
-          item?.salePrice ??
-          item?.product?.salePrice ??
-          item?.product?.price ??
-          item?.product?.regularPrice ??
-          0;
-
-        const quantity = Number(
+    return order.items.reduce(
+      (total, item) =>
+        total +
+        Number(
           item?.quantity || 0
-        );
-
-        return (
-          total +
-          Number(price || 0) * quantity
-        );
-      },
+        ),
       0
     );
-  }, [items]);
+  }, [order]);
 
-  const shipping =
-    order?.shippingAmount ??
-    order?.shippingFee ??
-    order?.deliveryCharge ??
-    0;
+  /* =======================================================
+     UPDATE ORDER STATUS
+  ======================================================= */
 
-  const calculatedTotal =
-    subtotal + Number(shipping || 0);
+  const handleStatusChange =
+    async (newStatus) => {
+      if (!order) {
+        return;
+      }
 
-  const totalAmount =
-    order?.finalAmount ??
-    order?.totalAmount ??
-    order?.total ??
-    calculatedTotal;
+      const currentStatus =
+        getOrderStatus(
+          order.orderStatus
+        );
 
-  const paymentStatus =
-    order?.paymentStatus || "PENDING";
+      if (
+        currentStatus ===
+        newStatus
+      ) {
+        setStatusDropdownOpen(
+          false
+        );
 
-  const paymentMethod =
-    order?.paymentMethod ||
-    order?.payment?.method ||
-    order?.method ||
-    "Razorpay";
+        return;
+      }
 
-  // =========================================================
-  // CURRENT STATUS
-  // =========================================================
+      try {
+        setUpdatingStatus(true);
+        setError("");
+        setStatusDropdownOpen(
+          false
+        );
 
-  const currentOrderStatus = String(
-    order?.orderStatus ||
-      order?.status ||
-      "PENDING"
+        const token =
+          getToken();
+
+        if (!token) {
+          throw new Error(
+            "Authentication required."
+          );
+        }
+
+        const response =
+          await fetch(
+            `${API_URL}/orders/${order._id}/status`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                Authorization:
+                  `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                orderStatus:
+                  newStatus,
+              }),
+            }
+          );
+
+        const data =
+          await parseResponse(
+            response
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to update order status."
+          );
+        }
+
+        const updatedOrder =
+          data?.order;
+
+        if (!updatedOrder) {
+          throw new Error(
+            "Order status updated, but updated order data was not returned."
+          );
+        }
+
+        setOrder(
+          updatedOrder
+        );
+      } catch (err) {
+        console.error(
+          "Update order status error:",
+          err
+        );
+
+        setError(
+          err.message ||
+            "Failed to update order status."
+        );
+      } finally {
+        setUpdatingStatus(
+          false
+        );
+      }
+    };
+
+  /* =======================================================
+     UPDATE RETURN STATUS
+  ======================================================= */
+
+  const handleReturnStatusChange =
+    async (
+      newReturnStatus
+    ) => {
+      if (!order) {
+        return;
+      }
+
+      const currentReturnStatus =
+        String(
+          order.returnStatus ||
+            "NONE"
+        ).toUpperCase();
+
+      if (
+        currentReturnStatus !==
+        "REQUESTED"
+      ) {
+        setError(
+          "There is no pending return request for this order."
+        );
+
+        return;
+      }
+
+      if (
+        ![
+          "APPROVED",
+          "REJECTED",
+        ].includes(
+          newReturnStatus
+        )
+      ) {
+        return;
+      }
+
+      try {
+        setUpdatingReturn(true);
+        setError("");
+
+        const token =
+          getToken();
+
+        if (!token) {
+          throw new Error(
+            "Authentication required."
+          );
+        }
+
+        const response =
+          await fetch(
+            `${API_URL}/orders/${order._id}/return-status`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                Authorization:
+                  `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                returnStatus:
+                  newReturnStatus,
+              }),
+            }
+          );
+
+        const data =
+          await parseResponse(
+            response
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to update return status."
+          );
+        }
+
+        const updatedOrder =
+          data?.order;
+
+        if (!updatedOrder) {
+          throw new Error(
+            "Return status updated, but updated order data was not returned."
+          );
+        }
+
+        setOrder(
+          updatedOrder
+        );
+      } catch (err) {
+        console.error(
+          "Update return status error:",
+          err
+        );
+
+        setError(
+          err.message ||
+            "Failed to update return status."
+        );
+      } finally {
+        setUpdatingReturn(
+          false
+        );
+      }
+    };
+
+  /* =======================================================
+     SHIPPING ADDRESS
+  ======================================================= */
+
+  const shippingAddress =
+    order?.shippingAddress ||
+    {};
+
+  /* =======================================================
+     RETURN VALUES
+  ======================================================= */
+
+  const returnStatus =
+    String(
+      order?.returnStatus ||
+        "NONE"
+    ).toUpperCase();
+
+  const refundStatus =
+    String(
+      order?.refundStatus ||
+        "NOT_APPLICABLE"
+    ).toUpperCase();
+
+  const hasPendingReturn =
+    returnStatus ===
+    "REQUESTED";
+
+  const paymentMethod = String(
+    order?.paymentMethod || ""
   ).toUpperCase();
 
-  const currentStatusLabel =
-    formatStatus(currentOrderStatus);
+  const isCODOrder =
+    paymentMethod === "COD";
 
-  // =========================================================
-  // TIMELINE STATUS
-  // =========================================================
+  const isRazorpayOrder =
+    paymentMethod ===
+    "RAZORPAY";
 
-  const processingStatuses = [
-    "CONFIRMED",
-    "PROCESSING",
-    "SHIPPED",
-    "OUT_FOR_DELIVERY",
-    "DELIVERED",
+  /* =======================================================
+     TIMELINE
+  ======================================================= */
+
+  const timelineItems = [
+    {
+      key: "PENDING",
+      label: "Order Placed",
+      icon: "bi-bag-check",
+    },
+    {
+      key: "CONFIRMED",
+      label: "Confirmed",
+      icon: "bi-check-circle",
+    },
+    {
+      key: "PROCESSING",
+      label: "Processing",
+      icon: "bi-box-seam",
+    },
+    {
+      key: "SHIPPED",
+      label: "Shipped",
+      icon: "bi-truck",
+    },
+    {
+      key: "DELIVERED",
+      label: "Delivered",
+      icon: "bi-house-check",
+    },
   ];
 
-  const shippedStatuses = [
-    "SHIPPED",
-    "OUT_FOR_DELIVERY",
-    "DELIVERED",
-  ];
+  const getTimelineActive = (
+    timelineStatus
+  ) => {
+    const currentStatus =
+      getOrderStatus(
+        order?.orderStatus
+      );
 
-  const isOrderPlaced =
-    Boolean(order?.createdAt);
+    const orderFlow = [
+      "PENDING",
+      "CONFIRMED",
+      "PROCESSING",
+      "SHIPPED",
+      "DELIVERED",
+    ];
 
-  const isProcessing =
-    processingStatuses.includes(
-      currentOrderStatus
+    const currentIndex =
+      orderFlow.indexOf(
+        currentStatus
+      );
+
+    const timelineIndex =
+      orderFlow.indexOf(
+        timelineStatus
+      );
+
+    if (
+      currentStatus ===
+      "CANCELLED"
+    ) {
+      return false;
+    }
+
+    return (
+      currentIndex >=
+      timelineIndex
     );
+  };
 
-  const isShipped =
-    shippedStatuses.includes(
-      currentOrderStatus
-    );
-
-  const isDelivered =
-    currentOrderStatus === "DELIVERED";
-
-  // =========================================================
-  // LOADING
-  // =========================================================
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loading) {
     return (
       <div className="order-details-page">
-        <div className="order-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading order details...</p>
+        <div className="order-details-loading">
+          <i className="bi bi-arrow-repeat"></i>
+
+          <span>
+            Loading order details...
+          </span>
         </div>
       </div>
     );
   }
 
-  // =========================================================
-  // ERROR
-  // =========================================================
+  /* =======================================================
+     ERROR
+  ======================================================= */
 
-  if (fetchError && !order) {
+  if (
+    error &&
+    !order
+  ) {
     return (
       <div className="order-details-page">
-        <button
-          type="button"
-          className="back-btn"
-          onClick={() =>
-            navigate("/admin/orders")
-          }
-        >
-          <i className="bi bi-arrow-left"></i>
-          Back to Orders
-        </button>
+        <div className="order-details-error">
 
-        <div className="order-error">
-          <i className="bi bi-exclamation-circle-fill"></i>
+          <div className="error-icon">
+            <i className="bi bi-exclamation-triangle"></i>
+          </div>
 
-          <span>{fetchError}</span>
+          <h2>
+            Unable to Load Order
+          </h2>
+
+          <p className="breakable">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            className="back-btn"
+            onClick={() =>
+              navigate(
+                "/admin/orders"
+              )
+            }
+          >
+            <i className="bi bi-arrow-left"></i>
+            Back to Orders
+          </button>
+
         </div>
       </div>
     );
   }
 
+  /* =======================================================
+     NO ORDER
+  ======================================================= */
+
   if (!order) {
-    return null;
+    return (
+      <div className="order-details-page">
+        <div className="order-details-error">
+
+          <div className="error-icon">
+            <i className="bi bi-receipt"></i>
+          </div>
+
+          <h2>
+            Order Not Found
+          </h2>
+
+          <p>
+            The requested order could not
+            be found.
+          </p>
+
+          <button
+            type="button"
+            className="back-btn"
+            onClick={() =>
+              navigate(
+                "/admin/orders"
+              )
+            }
+          >
+            <i className="bi bi-arrow-left"></i>
+            Back to Orders
+          </button>
+
+        </div>
+      </div>
+    );
   }
 
-  // =========================================================
-  // RETURN
-  // =========================================================
+  /* =======================================================
+     PAGE
+  ======================================================= */
 
   return (
     <div className="order-details-page">
 
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <div className="order-details-header">
 
-        <button
-          type="button"
-          className="back-btn"
-          onClick={() =>
-            navigate("/admin/orders")
-          }
-        >
-          <i className="bi bi-arrow-left"></i>
-          Back to Orders
-        </button>
-
-        <div className="title-row">
-
+        <div className="order-header-left">
           <div>
-            <h1>Order Details</h1>
+
+            <div className="page-eyebrow">
+              ORDER DETAILS
+            </div>
+
+            <h1>
+              {getOrderId(order)}
+            </h1>
 
             <p>
-              View complete information
-              about this order.
+              Complete information about this order
             </p>
+
+          </div>
+        </div>
+
+        {/* =================================================
+            TOP RIGHT ACTIONS
+        ================================================= */}
+
+        <div className="order-header-actions">
+
+          {/* CUSTOM STATUS DROPDOWN */}
+
+          <div
+            className="order-status-control"
+            ref={
+              statusDropdownRef
+            }
+          >
+
+            <label>
+              Order Status
+            </label>
+
+            <button
+              type="button"
+              className={`custom-status-trigger ${
+                statusDropdownOpen
+                  ? "open"
+                  : ""
+              }`}
+              onClick={() =>
+                !updatingStatus &&
+                setStatusDropdownOpen(
+                  (prev) =>
+                    !prev
+                )
+              }
+              disabled={
+                updatingStatus
+              }
+            >
+
+              <span>
+                {updatingStatus
+                  ? "Updating..."
+                  : currentStatusOption.label}
+              </span>
+
+              <i
+                className={`bi ${
+                  statusDropdownOpen
+                    ? "bi-chevron-up"
+                    : "bi-chevron-down"
+                }`}
+              ></i>
+
+            </button>
+
+            {statusDropdownOpen && (
+              <div className="custom-status-menu">
+
+                {ORDER_STATUS_OPTIONS.map(
+                  (option) => (
+                    <button
+                      type="button"
+                      key={
+                        option.value
+                      }
+                      className={`custom-status-option ${
+                        option.value ===
+                        currentStatusOption.value
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleStatusChange(
+                          option.value
+                        )
+                      }
+                    >
+
+                      <span>
+                        {option.label}
+                      </span>
+
+                      {option.value ===
+                        currentStatusOption.value && (
+                        <i className="bi bi-check2"></i>
+                      )}
+
+                    </button>
+                  )
+                )}
+
+              </div>
+            )}
+
+            {updatingStatus && (
+              <span className="status-saving">
+                Updating status...
+              </span>
+            )}
+
           </div>
 
-          <span
-            className={`order-status ${currentOrderStatus
-              .toLowerCase()
-              .replace(/_/g, "-")}`}
-          >
-            <span className="status-dot"></span>
+          {/* TOP RIGHT BACK BUTTON */}
 
-            {currentStatusLabel}
+          <button
+            type="button"
+            className="top-back-btn"
+            onClick={() =>
+              navigate(
+                "/admin/orders"
+              )
+            }
+          >
+            <i className="bi bi-arrow-left"></i>
+
+            <span>
+              Back to Orders
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      {/* =================================================
+          ERROR
+      ================================================= */}
+
+      {error && (
+        <div className="order-inline-error">
+
+          <i className="bi bi-exclamation-circle"></i>
+
+          <span className="breakable">
+            {error}
           </span>
 
         </div>
+      )}
+
+      {/* =================================================
+          META CARDS
+      ================================================= */}
+
+      <div className="order-meta-grid">
+
+        <div className="meta-card">
+
+          <div className="meta-icon">
+            <i className="bi bi-person"></i>
+          </div>
+
+          <div>
+            <span>
+              Customer
+            </span>
+
+            <strong className="breakable">
+              {getCustomerName(
+                order
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        <div className="meta-card">
+
+          <div className="meta-icon">
+            <i className="bi bi-calendar3"></i>
+          </div>
+
+          <div>
+            <span>
+              Order Date
+            </span>
+
+            <strong>
+              {formatDate(
+                order.createdAt
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        <div className="meta-card">
+
+          <div className="meta-icon">
+            <i className="bi bi-box-seam"></i>
+          </div>
+
+          <div>
+            <span>
+              Items
+            </span>
+
+            <strong>
+              {totalItems}
+            </strong>
+          </div>
+
+        </div>
+
+        <div className="meta-card">
+
+          <div className="meta-icon">
+            <i className="bi bi-currency-rupee"></i>
+          </div>
+
+          <div>
+            <span>
+              Final Amount
+            </span>
+
+            <strong>
+              {formatCurrency(
+                order.finalAmount
+              )}
+            </strong>
+          </div>
+
+        </div>
+
       </div>
 
-      {/* =====================================================
-          ORDER OVERVIEW
-      ===================================================== */}
+      {/* =================================================
+          CUSTOMER + SHIPPING
+      ================================================= */}
 
-      <div className="order-overview">
+      <div className="details-two-column">
 
-        <div className="overview-item">
-          <span>Order ID</span>
+        {/* CUSTOMER */}
 
-          <strong>
-            #
-            {order._id
-              ? String(order._id).slice(-8)
-              : "-"}
-          </strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Order Date</span>
-
-          <strong>
-            {formatDate(order.createdAt)}
-          </strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Payment</span>
-
-          <strong
-            className={
-              String(paymentStatus)
-                .toUpperCase() === "PAID"
-                ? "paid"
-                : ""
-            }
-          >
-            {formatStatus(paymentStatus)}
-          </strong>
-        </div>
-
-        <div className="overview-item">
-          <span>Payment Method</span>
-
-          <strong>
-            {formatStatus(paymentMethod)}
-          </strong>
-        </div>
-
-      </div>
-
-      {/* =====================================================
-          MAIN GRID
-      ===================================================== */}
-
-      <div className="order-details-grid">
-
-        {/* ===================================================
-            CUSTOMER DETAILS
-        =================================================== */}
-
-        <div className="details-card customer-card">
+        <div className="details-card">
 
           <div className="card-heading">
 
             <div className="heading-icon">
-              <i className="bi bi-person"></i>
+              <i className="bi bi-person-vcard"></i>
             </div>
 
             <div>
-              <h2>Customer Details</h2>
+              <h2>
+                Customer Information
+              </h2>
 
               <p>
-                Customer information
+                Customer contact details
               </p>
             </div>
 
           </div>
 
-          <div className="customer-info">
+          <div className="info-list">
 
-            <div>
-              <span>Name</span>
+            <div className="info-row">
+              <span>
+                Name
+              </span>
 
-              <strong>
-                {getCustomerName()}
+              <strong className="breakable">
+                {getCustomerName(
+                  order
+                )}
               </strong>
             </div>
 
-            <div>
-              <span>Email</span>
+            <div className="info-row">
+              <span>
+                Email
+              </span>
 
-              <strong>
-                {getCustomerEmail()}
+              <strong className="breakable">
+                {getCustomerEmail(
+                  order
+                )}
               </strong>
             </div>
 
-            <div>
-              <span>Phone</span>
+            <div className="info-row">
+              <span>
+                Phone
+              </span>
 
-              <strong>
-                {getCustomerPhone()}
-              </strong>
-            </div>
-
-            <div>
-              <span>Shipping Address</span>
-
-              <strong>
-                {getShippingAddress()}
+              <strong className="breakable">
+                {getCustomerPhone(
+                  order
+                )}
               </strong>
             </div>
 
           </div>
+
         </div>
 
-        {/* ===================================================
-            PAYMENT DETAILS
-        =================================================== */}
+        {/* SHIPPING */}
 
-        <div className="details-card payment-card">
+        <div className="details-card">
 
           <div className="card-heading">
 
-            <div className="heading-icon payment-icon">
-              <i className="bi bi-credit-card"></i>
+            <div className="heading-icon">
+              <i className="bi bi-geo-alt"></i>
             </div>
 
             <div>
-              <h2>Payment Details</h2>
+              <h2>
+                Shipping Address
+              </h2>
 
               <p>
-                Transaction information
+                Delivery information
               </p>
             </div>
 
           </div>
 
-          <div className="payment-info">
+          <div className="shipping-address">
 
-            <div>
-              <span>Payment Status</span>
+            <strong className="breakable">
+              {shippingAddress.fullName ||
+                getCustomerName(order)}
+            </strong>
 
-              <strong
-                className={
-                  String(paymentStatus)
-                    .toUpperCase() === "PAID"
-                    ? "paid"
-                    : ""
-                }
-              >
-                {formatStatus(paymentStatus)}
-              </strong>
-            </div>
+            <span className="breakable">
+              {shippingAddress.address ||
+                "—"}
+            </span>
 
-            <div>
-              <span>Method</span>
+            <span className="breakable">
+              {[
+                shippingAddress.city,
+                shippingAddress.state,
+              ]
+                .filter(Boolean)
+                .join(", ") ||
+                "—"}
+            </span>
 
-              <strong>
-                {formatStatus(paymentMethod)}
-              </strong>
-            </div>
+            <span>
+              Pincode:{" "}
+              {shippingAddress.pincode ||
+                "—"}
+            </span>
 
-            <div>
-              <span>Shipping</span>
-
-              <strong>
-                Standard Delivery
-              </strong>
-            </div>
+            <span>
+              Phone:{" "}
+              {shippingAddress.phone ||
+                getCustomerPhone(order)}
+            </span>
 
           </div>
+
         </div>
 
       </div>
 
-      {/* =====================================================
-          ORDERED PRODUCTS
-      ===================================================== */}
+      {/* =================================================
+          PAYMENT + ORDER INFORMATION
+      ================================================= */}
+
+      <div className="details-two-column">
+
+        {/* PAYMENT */}
+
+        <div className="details-card">
+
+          <div className="card-heading">
+
+            <div className="heading-icon">
+              <i className="bi bi-credit-card"></i>
+            </div>
+
+            <div>
+              <h2>
+                Payment Information
+              </h2>
+
+              <p>
+                Payment and transaction details
+              </p>
+            </div>
+
+          </div>
+
+          <div className="info-list">
+
+            <div className="info-row">
+              <span>
+                Payment Method
+              </span>
+
+              <strong>
+                {order.paymentMethod ||
+                  "—"}
+              </strong>
+            </div>
+
+            <div className="info-row">
+              <span>
+                Payment Status
+              </span>
+
+              <strong>
+                <span
+                  className={`payment-status ${getPaymentStatusClass(
+                    order
+                  )}`}
+                >
+                  {getPaymentStatusLabel(
+                    order
+                  )}
+                </span>
+              </strong>
+            </div>
+
+            <div className="info-row">
+              <span>
+                Order Created
+              </span>
+
+              <strong>
+                {formatDateTime(
+                  order.createdAt
+                )}
+              </strong>
+            </div>
+
+            {order.razorpayOrderId && (
+              <div className="info-row">
+
+                <span>
+                  Razorpay Order
+                </span>
+
+                <strong className="breakable">
+                  {
+                    order.razorpayOrderId
+                  }
+                </strong>
+
+              </div>
+            )}
+
+            {order.razorpayPaymentId && (
+              <div className="info-row">
+
+                <span>
+                  Razorpay Payment
+                </span>
+
+                <strong className="breakable">
+                  {
+                    order.razorpayPaymentId
+                  }
+                </strong>
+
+              </div>
+            )}
+
+          </div>
+
+        </div>
+
+        {/* ORDER INFORMATION */}
+
+        <div className="details-card">
+
+          <div className="card-heading">
+
+            <div className="heading-icon">
+              <i className="bi bi-receipt"></i>
+            </div>
+
+            <div>
+              <h2>
+                Order Information
+              </h2>
+
+              <p>
+                Basic order details
+              </p>
+            </div>
+
+          </div>
+
+          <div className="info-list">
+
+            <div className="info-row">
+              <span>
+                Order ID
+              </span>
+
+              <strong className="breakable">
+                {order._id}
+              </strong>
+            </div>
+
+            <div className="info-row">
+              <span>
+                Status
+              </span>
+
+              <strong>
+                {getOrderStatusLabel(
+                  order.orderStatus
+                )}
+              </strong>
+            </div>
+
+            <div className="info-row">
+              <span>
+                Items
+              </span>
+
+              <strong>
+                {totalItems}
+              </strong>
+            </div>
+
+            <div className="info-row">
+              <span>
+                Payment Method
+              </span>
+
+              <strong>
+                {order.paymentMethod ||
+                  "—"}
+              </strong>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =================================================
+          PRODUCTS
+      ================================================= */}
 
       <div className="details-card products-card">
 
-        <div className="products-card-header">
+        <div className="card-heading">
+
+          <div className="heading-icon">
+            <i className="bi bi-bag"></i>
+          </div>
 
           <div>
-            <h2>Ordered Products</h2>
+            <h2>
+              Ordered Products
+            </h2>
 
             <p>
-              {items.length}{" "}
-              {items.length === 1
-                ? "item"
-                : "items"}{" "}
-              in this order
+              Products included in this order
             </p>
           </div>
 
         </div>
 
-        <div className="order-table-wrapper">
+        <div className="ordered-products">
 
-          <table className="order-table">
+          {Array.isArray(
+            order.items
+          ) &&
+          order.items.length > 0 ? (
 
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-              </tr>
-            </thead>
+            order.items.map(
+              (item, index) => {
 
-            <tbody>
+                const image =
+                  getProductImage(
+                    item
+                  );
 
-              {items.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="empty-products"
+                const price =
+                  getProductPrice(
+                    item
+                  );
+
+                const quantity =
+                  Number(
+                    item?.quantity ||
+                      0
+                  );
+
+                return (
+                  <div
+                    className="ordered-product"
+                    key={
+                      item?._id ||
+                      `${
+                        item?.product
+                          ?._id ||
+                        "product"
+                      }-${index}`
+                    }
                   >
-                    No products found in
-                    this order.
-                  </td>
-                </tr>
-              ) : (
-                items.map((item, index) => {
 
-                  const price =
-                    item?.price ??
-                    item?.salePrice ??
-                    item?.product?.salePrice ??
-                    item?.product?.price ??
-                    item?.product?.regularPrice ??
-                    0;
+                    <div className="product-image">
 
-                  const quantity =
-                    Number(
-                      item?.quantity || 0
-                    );
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={getProductName(
+                            item
+                          )}
+                          onError={(
+                            event
+                          ) => {
+                            event.currentTarget.style.display =
+                              "none";
 
-                  const image =
-                    getProductImage(item);
+                            const parent =
+                              event
+                                .currentTarget
+                                .parentElement;
 
-                  const itemTotal =
-                    Number(price || 0) *
-                    quantity;
+                            if (
+                              parent &&
+                              !parent.querySelector(
+                                ".image-placeholder"
+                              )
+                            ) {
+                              const placeholder =
+                                document.createElement(
+                                  "div"
+                                );
 
-                  return (
-                    <tr
-                      key={
-                        item?._id ||
-                        item?.product?._id ||
-                        index
-                      }
-                    >
+                              placeholder.className =
+                                "image-placeholder";
 
-                      {/* PRODUCT */}
+                              placeholder.innerHTML =
+                                '<i class="bi bi-image"></i>';
 
-                      <td>
-                        <div className="product-name">
-
-                          <div className="product-image">
-
-                            {image ? (
-                              <img
-                                src={image}
-                                alt={getProductName(
-                                  item
-                                )}
-                              />
-                            ) : (
-                              <i className="bi bi-box"></i>
-                            )}
-
-                          </div>
-
-                          <strong>
-                            {getProductName(
-                              item
-                            )}
-                          </strong>
-
+                              parent.appendChild(
+                                placeholder
+                              );
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="image-placeholder">
+                          <i className="bi bi-image"></i>
                         </div>
-                      </td>
+                      )}
 
-                      {/* CATEGORY */}
+                    </div>
 
-                      <td>
-                        {getProductCategory(
+                    <div className="product-info">
+
+                      <strong className="breakable">
+                        {getProductName(
                           item
                         )}
-                      </td>
+                      </strong>
 
-                      {/* PRICE */}
+                      {item?.product
+                        ?.sku && (
+                        <span>
+                          SKU:{" "}
+                          {
+                            item
+                              .product
+                              .sku
+                          }
+                        </span>
+                      )}
 
-                      <td>
-                        ₹
-                        {formatCurrency(
-                          price
+                      {Array.isArray(
+                        item?.product
+                          ?.variants
+                      ) &&
+                        item.product
+                          .variants
+                          .length >
+                          0 && (
+                          <span className="breakable">
+                            Available sizes:{" "}
+                            {item.product.variants.join(
+                              ", "
+                            )}
+                          </span>
                         )}
-                      </td>
 
-                      {/* QUANTITY */}
+                    </div>
 
-                      <td>
-                        {quantity}
-                      </td>
+                    <div className="product-quantity">
 
-                      {/* TOTAL */}
+                      <span>
+                        Qty
+                      </span>
 
-                      <td>
-                        <strong>
-                          ₹
-                          {formatCurrency(
-                            itemTotal
-                          )}
-                        </strong>
-                      </td>
+                      <strong>
+                        ×{quantity}
+                      </strong>
 
-                    </tr>
-                  );
-                })
-              )}
+                    </div>
 
-            </tbody>
-          </table>
+                    <div className="product-price">
+
+                      <span>
+                        Price
+                      </span>
+
+                      <strong>
+                        {formatCurrency(
+                          price *
+                            quantity
+                        )}
+                      </strong>
+
+                    </div>
+
+                  </div>
+                );
+              }
+            )
+
+          ) : (
+
+            <div className="empty-products">
+
+              <i className="bi bi-bag-x"></i>
+
+              <span>
+                No products found in this order.
+              </span>
+
+            </div>
+
+          )}
 
         </div>
+
       </div>
 
-      {/* =====================================================
-          BOTTOM GRID
-      ===================================================== */}
+      {/* =================================================
+          RETURN & REFUND
+      ================================================= */}
 
-      <div className="order-bottom-grid">
+      <div className="details-card return-refund-card">
 
-        {/* ===================================================
-            ORDER STATUS
-        =================================================== */}
+        <div className="card-heading">
+
+          <div className="heading-icon">
+            <i className="bi bi-arrow-return-left"></i>
+          </div>
+
+          <div>
+            <h2>
+              Return & Refund
+            </h2>
+
+            <p>
+              Return request and refund information
+            </p>
+          </div>
+
+        </div>
+
+        <div className="return-refund-grid">
+
+          <div className="return-refund-item">
+            <span>
+              Return Status
+            </span>
+
+            <strong>
+              {getReturnStatusLabel(
+                returnStatus
+              )}
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Requested At
+            </span>
+
+            <strong>
+              {formatDateTime(
+                order.returnRequestedAt
+              )}
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Refund Status
+            </span>
+
+            <strong>
+              <span
+                className={`refund-status ${refundStatus.toLowerCase()}`}
+              >
+                {isCODOrder
+                  ? "Not Applicable"
+                  : getRefundStatusLabel(
+                      refundStatus
+                    )}
+              </span>
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Refund Amount
+            </span>
+
+            <strong>
+              {formatCurrency(
+                order.refundAmount
+              )}
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Return Reason
+            </span>
+
+            <strong className="breakable">
+              {order.returnReason ||
+                "No return reason provided"}
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Refund ID
+            </span>
+
+            <strong className="breakable">
+              {isCODOrder
+                ? "Not Applicable"
+                : order.refundId || "—"}
+            </strong>
+          </div>
+
+          <div className="return-refund-item">
+            <span>
+              Refunded At
+            </span>
+
+            <strong>
+              {isCODOrder
+                ? "Not Applicable"
+                : formatDateTime(
+                    order.refundedAt
+                  )}
+            </strong>
+          </div>
+
+        </div>
+
+        {/* RETURN CONTROL */}
+
+        <div className="return-control">
+
+          {hasPendingReturn ? (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginTop: "14px",
+                }}
+              >
+
+                <button
+                  type="button"
+                  className="secondary-action-btn"
+                  disabled={
+                    updatingReturn
+                  }
+                  onClick={() =>
+                    handleReturnStatusChange(
+                      "APPROVED"
+                    )
+                  }
+                >
+                  <i className="bi bi-check-circle"></i>
+
+                  {updatingReturn
+                    ? "Updating..."
+                    : "Approve Return"}
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-action-btn"
+                  disabled={
+                    updatingReturn
+                  }
+                  onClick={() =>
+                    handleReturnStatusChange(
+                      "REJECTED"
+                    )
+                  }
+                >
+                  <i className="bi bi-x-circle"></i>
+
+                  {updatingReturn
+                    ? "Updating..."
+                    : "Reject Return"}
+                </button>
+
+              </div>
+
+              <small>
+                {isCODOrder
+                  ? "COD return approval does not create an online refund. Handle the cash refund according to your store return process."
+                  : "Approving a paid Razorpay return automatically creates the refund through the backend."}
+              </small>
+            </>
+          ) : (
+            <small>
+              {returnStatus ===
+              "NONE"
+                ? "No return request has been submitted for this order."
+                : `Return status is ${getReturnStatusLabel(
+                    returnStatus
+                  )}. No further return decision is available.`}
+            </small>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* =================================================
+          SUMMARY + TIMELINE
+      ================================================= */}
+
+      <div className="details-two-column bottom-grid">
+
+        {/* SUMMARY */}
+
+        <div className="details-card">
+
+          <div className="card-heading">
+
+            <div className="heading-icon">
+              <i className="bi bi-calculator"></i>
+            </div>
+
+            <div>
+              <h2>
+                Order Summary
+              </h2>
+
+              <p>
+                Payment breakdown
+              </p>
+            </div>
+
+          </div>
+
+          <div className="summary-list">
+
+            <div className="summary-row">
+              <span>
+                Subtotal
+              </span>
+
+              <strong>
+                {formatCurrency(
+                  order.totalAmount
+                )}
+              </strong>
+            </div>
+
+            <div className="summary-row">
+              <span>
+                Discount
+              </span>
+
+              <strong className="discount-value">
+                -{" "}
+                {formatCurrency(
+                  order.discountAmount
+                )}
+              </strong>
+            </div>
+
+            <div className="summary-divider"></div>
+
+            <div className="summary-row total">
+              <span>
+                Final Amount
+              </span>
+
+              <strong>
+                {formatCurrency(
+                  order.finalAmount
+                )}
+              </strong>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* TIMELINE */}
 
         <div className="details-card timeline-card">
 
@@ -1061,262 +2162,92 @@ function OrderDetails() {
             </div>
 
             <div>
-              <h2>Order Status</h2>
+              <h2>
+                Order Timeline
+              </h2>
 
               <p>
-                Update order progress
+                Current order progress
               </p>
             </div>
 
           </div>
 
-          {/* STATUS UPDATE */}
-
-          <div className="status-update-box">
-
-            <label htmlFor="order-status">
-              Update Status
-            </label>
-
-            <div className="status-update-row">
-
-              <select
-                id="order-status"
-                value={selectedStatus}
-                onChange={(event) => {
-                  setSelectedStatus(
-                    event.target.value
-                  );
-
-                  setUpdateError("");
-                  setSuccess("");
-                }}
-                disabled={updating}
-              >
-                {ORDER_STATUSES.map(
-                  (status) => (
-                    <option
-                      key={status.value}
-                      value={status.value}
-                    >
-                      {status.label}
-                    </option>
-                  )
-                )}
-              </select>
-
-              <button
-                type="button"
-                className="update-status-btn"
-                onClick={
-                  handleStatusUpdate
-                }
-                disabled={
-                  updating ||
-                  selectedStatus ===
-                    currentOrderStatus
-                }
-              >
-                {updating ? (
-                  <>
-                    <span className="button-spinner"></span>
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-check2"></i>
-                    Update Status
-                  </>
-                )}
-              </button>
-
-            </div>
-
-            {success && (
-              <div className="order-success">
-
-                <i className="bi bi-check-circle-fill"></i>
-
-                <span>
-                  {success}
-                </span>
-
-              </div>
-            )}
-
-            {updateError && (
-              <div className="order-error">
-
-                <i className="bi bi-exclamation-circle-fill"></i>
-
-                <span>
-                  {updateError}
-                </span>
-
-              </div>
-            )}
-
-          </div>
-
-          {/* TIMELINE */}
-
           <div className="timeline">
 
-            {/* ORDER PLACED */}
+            {getOrderStatus(
+              order.orderStatus
+            ) === "CANCELLED" ? (
 
-            <div
-              className={`timeline-item ${
-                isOrderPlaced
-                  ? "completed"
-                  : ""
-              }`}
-            >
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
+              <div className="timeline-item cancelled">
+
+                <div className="timeline-dot">
+                  <i className="bi bi-x-lg"></i>
+                </div>
+
+                <div>
+                  <strong>
+                    Order Cancelled
+                  </strong>
+
+                  <span>
+                    This order has been cancelled.
+                  </span>
+                </div>
+
               </div>
 
-              <div>
-                <strong>
-                  Order Placed
-                </strong>
+            ) : (
 
-                <span>
-                  Order has been placed
-                  successfully.
-                </span>
-              </div>
-            </div>
+              timelineItems.map(
+                (item) => (
+                  <div
+                    key={item.key}
+                    className={`timeline-item ${
+                      getTimelineActive(
+                        item.key
+                      )
+                        ? "active"
+                        : ""
+                    }`}
+                  >
 
-            {/* PROCESSING */}
+                    <div className="timeline-dot">
+                      <i
+                        className={`bi ${item.icon}`}
+                      ></i>
+                    </div>
 
-            <div
-              className={`timeline-item ${
-                isProcessing
-                  ? "completed"
-                  : ""
-              }`}
-            >
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
+                    <div>
+                      <strong>
+                        {item.label}
+                      </strong>
 
-              <div>
-                <strong>
-                  Processing
-                </strong>
+                      <span>
+                        {getTimelineActive(
+                          item.key
+                        )
+                          ? "Completed"
+                          : "Waiting"}
+                      </span>
+                    </div>
 
-                <span>
-                  Order is being prepared.
-                </span>
-              </div>
-            </div>
+                  </div>
+                )
+              )
 
-            {/* SHIPPED */}
-
-            <div
-              className={`timeline-item ${
-                isShipped
-                  ? "completed"
-                  : ""
-              }`}
-            >
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>
-                  Shipped
-                </strong>
-
-                <span>
-                  Package has been shipped.
-                </span>
-              </div>
-            </div>
-
-            {/* DELIVERED */}
-
-            <div
-              className={`timeline-item ${
-                isDelivered
-                  ? "completed"
-                  : ""
-              }`}
-            >
-              <div className="timeline-dot">
-                <i className="bi bi-check"></i>
-              </div>
-
-              <div>
-                <strong>
-                  Delivered
-                </strong>
-
-                <span>
-                  Order delivered to
-                  customer.
-                </span>
-              </div>
-            </div>
+            )}
 
           </div>
-        </div>
-
-        {/* ===================================================
-            ORDER SUMMARY
-        =================================================== */}
-
-        <div className="details-card summary-card">
-
-          <h2>Order Summary</h2>
-
-          <div className="summary-row">
-
-            <span>Subtotal</span>
-
-            <strong>
-              ₹{formatCurrency(subtotal)}
-            </strong>
-
-          </div>
-
-          <div className="summary-row">
-
-            <span>Shipping</span>
-
-            <strong>
-              ₹{formatCurrency(shipping)}
-            </strong>
-
-          </div>
-
-          <div className="summary-divider"></div>
-
-          <div className="summary-total">
-
-            <span>Total Amount</span>
-
-            <strong>
-              ₹{formatCurrency(totalAmount)}
-            </strong>
-
-          </div>
-
-          <button
-            type="button"
-            className="orders-btn"
-            onClick={() =>
-              navigate("/admin/orders")
-            }
-          >
-            <i className="bi bi-arrow-left"></i>
-            View All Orders
-          </button>
 
         </div>
 
       </div>
+
+      {/* =================================================
+          BOTTOM ACTION REMOVED
+          Back button is now in top-right
+      ================================================= */}
 
     </div>
   );
