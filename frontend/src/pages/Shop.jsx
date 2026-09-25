@@ -4,6 +4,7 @@ import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Shop.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -21,6 +22,7 @@ function Shop() {
   // =========================
   // WISHLIST
   // =========================
+
   const [wishlistIds, setWishlistIds] = useState([]);
   const [loadingWishlist, setLoadingWishlist] = useState(true);
   const [updatingWishlist, setUpdatingWishlist] = useState(null);
@@ -28,6 +30,7 @@ function Shop() {
   // =========================
   // FILTERS
   // =========================
+
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
@@ -35,20 +38,22 @@ function Shop() {
   // =========================
   // PAGINATION
   // =========================
+
   const [currentPage, setCurrentPage] = useState(1);
+
+  const productsPerPage = 8;
 
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    limit: 8,
+    limit: productsPerPage,
     totalProducts: 0,
     totalPages: 0,
   });
 
-  const productsPerPage = 8;
-
   // =========================
   // AUTH HELPERS
   // =========================
+
   const getToken = () => localStorage.getItem("token");
 
   const getAuthConfig = () => ({
@@ -60,6 +65,7 @@ function Shop() {
   // =========================
   // FETCH PRODUCTS
   // =========================
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -145,6 +151,7 @@ function Shop() {
   // =========================
   // FIX PAGE IF TOTAL PAGES CHANGE
   // =========================
+
   useEffect(() => {
     if (
       pagination.totalPages > 0 &&
@@ -157,6 +164,7 @@ function Shop() {
   // =========================
   // FETCH WISHLIST
   // =========================
+
   useEffect(() => {
     const fetchWishlist = async () => {
       const token = getToken();
@@ -206,6 +214,7 @@ function Shop() {
   // =========================
   // WISHLIST HANDLER
   // =========================
+
   const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
@@ -293,6 +302,7 @@ function Shop() {
   // =========================
   // FILTER HANDLERS
   // =========================
+
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
     setCurrentPage(1);
@@ -312,6 +322,7 @@ function Shop() {
   // =========================
   // PAGINATION
   // =========================
+
   const handlePageChange = (page) => {
     if (
       page < 1 ||
@@ -329,6 +340,10 @@ function Shop() {
     });
   };
 
+  // =========================
+  // UI
+  // =========================
+
   return (
     <>
       <Navbar />
@@ -338,6 +353,7 @@ function Shop() {
         {/* =========================
             HEADING
         ========================= */}
+
         <section className="shop-heading">
           <h1>SHOP</h1>
 
@@ -352,6 +368,7 @@ function Shop() {
         {/* =========================
             FILTER BAR
         ========================= */}
+
         <section className="shop-filter-bar">
 
           <div className="filter-left">
@@ -429,10 +446,12 @@ function Shop() {
 
             </div>
 
+            {/* =========================
+                CURRENT PAGE PRODUCT COUNT
+            ========================= */}
+
             <span className="product-count">
-              {pagination.totalProducts ||
-                products.length}{" "}
-              PRODUCTS
+              {products.length} PRODUCTS
             </span>
 
           </div>
@@ -442,6 +461,7 @@ function Shop() {
         {/* =========================
             LOADING
         ========================= */}
+
         {loading && (
           <p className="no-products">
             Loading products...
@@ -451,6 +471,7 @@ function Shop() {
         {/* =========================
             ERROR
         ========================= */}
+
         {!loading && error && (
           <p className="no-products">
             Error: {error}
@@ -460,6 +481,7 @@ function Shop() {
         {/* =========================
             PRODUCTS
         ========================= */}
+
         {!loading && !error && (
           <section className="shop-products">
 
@@ -493,6 +515,7 @@ function Shop() {
                   String(productId);
 
                 return (
+
                   <Link
                     to={`/product/${productId}`}
                     className="shop-product-card"
@@ -502,6 +525,7 @@ function Shop() {
                     <div className="shop-product-image">
 
                       {/* WISHLIST */}
+
                       <button
                         type="button"
                         className={`shop-wishlist-btn ${
@@ -551,6 +575,7 @@ function Shop() {
                     </div>
 
                   </Link>
+
                 );
               })
 
@@ -568,6 +593,7 @@ function Shop() {
         {/* =========================
             BACKEND PAGINATION
         ========================= */}
+
         {!loading &&
           !error &&
           pagination.totalPages > 1 && (
@@ -629,6 +655,7 @@ function Shop() {
               </button>
 
             </div>
+
           )}
 
       </main>
