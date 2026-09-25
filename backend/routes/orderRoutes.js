@@ -68,6 +68,13 @@ router.put(
 );
 
 
+
+// CUSTOMER CANCEL ORDER
+router.put(
+  "/:id/cancel",
+  protect,
+  orderController.cancelOrder
+);
 // CUSTOMER REQUEST RETURN
 router.post("/:id/return", protect, orderController.requestReturn);
 
@@ -75,3 +82,4 @@ router.post("/:id/return", protect, orderController.requestReturn);
 router.put("/:id/return-status", protect, orderController.updateReturnStatus);
 
 module.exports = router;
+

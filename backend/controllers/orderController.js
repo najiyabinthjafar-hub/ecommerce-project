@@ -316,6 +316,30 @@ const requestReturn = async (req, res) => {
   }
 };
 
+
+// CUSTOMER CANCEL ORDER
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await orderService.cancelOrderByUser(
+      req.params.id,
+      req.user._id,
+      req.user.role
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Customer cancel order error:", error);
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 // ADMIN APPROVE / REJECT RETURN
 const updateReturnStatus = async (req, res) => {
   try {
@@ -370,6 +394,7 @@ module.exports = {
   getBestSellingProducts,
   createRazorpayOrder,
   updateOrderStatus,
+  cancelOrder,
   getOrderById,
   verifyRazorpayPayment,
   requestReturn,
