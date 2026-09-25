@@ -370,6 +370,76 @@ const updateOrderStatus = async (
   return order;
 };
 
+
+// ================= CUSTOMER CANCEL ORDER ==========
+const cancelOrderByUser = async (
+  orderId,
+  userId
+) => {
+  const order = await Order.findOne({
+    _id: orderId,
+    user: userId,
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // Customer can cancel only before delivery
+  if (
+    ["SHIPPED", "DELIVERED", "CANCELLED"].includes(
+      order.orderStatus
+    )
+  ) {
+    throw new Error(
+      "Order cannot be cancelled at this stage"
+    );
+  }
+
+  // Prevent duplicate cancellation
+  if (order.orderStatus === "CANCELLED") {
+    throw new Error("Order is already cancelled");
+  }
+
+  const paymentMethod = String(
+    order.paymentMethod || ""
+  ).toUpperCase();
+
+  // Restore stock only when stock was already deducted
+  const stockWasDeducted =
+    paymentMethod === "COD" ||
+    (
+      paymentMethod === "RAZORPAY" &&
+      order.paymentStatus === "PAID"
+    );
+
+  if (stockWasDeducted) {
+    await restoreStock(order.items);
+  }
+
+  order.orderStatus = "CANCELLED";
+
+  // Razorpay paid order cancellation needs refund handling
+  if (
+    paymentMethod === "RAZORPAY" &&
+    order.paymentStatus === "PAID"
+  ) {
+    order.refundStatus = "PENDING";
+    order.refundAmount = Number(order.finalAmount) || 0;
+  }
+
+  await order.save();
+
+  // Notify customer
+  await notificationService.createNotification({
+    user: order.user,
+    title: "Order Cancelled",
+    message: "Your order has been cancelled successfully.",
+    type: "ORDER",
+  });
+
+  return order;
+};
 // ================= REQUEST RETURN ==========
 const requestReturn = async (
   orderId,
@@ -695,10 +765,12 @@ module.exports = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  cancelOrderByUser,
   requestReturn,
   updateReturnStatus,
   getBestSellingProducts,
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
 
