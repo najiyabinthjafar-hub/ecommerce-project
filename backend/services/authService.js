@@ -5,6 +5,7 @@ const User = require("../models/User");
 
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+
 const notificationService = require("./notificationService");
 
 const {
@@ -42,28 +43,9 @@ const registerUser = async ({
 
   const otp = generateOtp();
 
-feature/milhaj-product-filter
-  
-const user = await User.create({
-  name,
-  email,
-  phone,
-  password: hashedPassword,
-  otp,
-  otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-  otpAttempts: 0,
-});
-
-// Create notification for admin
-const admin = await notificationService.getAdminUser();
-
-if (admin) {
-  await notificationService.createNotification({
-    user: admin._id,
-    title: "New Customer",
-    message: `New customer ${user.name} has registered.`,
-    type: "USER",
-    
+  // IMPORTANT:
+  // Do NOT add googleId here.
+  // Normal users should not have googleId: null.
   const user = await User.create({
     name,
     email,
@@ -76,11 +58,33 @@ if (admin) {
     ),
 
     otpAttempts: 0,
- main
   });
-}
 
-await sendOtpEmail(email, otp);
+  // ================= ADMIN NOTIFICATION =================
+
+  try {
+    const admin =
+      await notificationService.getAdminUser();
+
+    if (admin) {
+      await notificationService.createNotification({
+        user: admin._id,
+        title: "New Customer",
+        message: `New customer ${user.name} has registered.`,
+        type: "USER",
+      });
+    }
+  } catch (error) {
+    // Notification failure should not stop registration
+    console.error(
+      "ADMIN NOTIFICATION ERROR:",
+      error.message
+    );
+  }
+
+  // ================= SEND OTP =================
+
+  await sendOtpEmail(email, otp);
 
   return {
     userId: user._id,
@@ -122,7 +126,8 @@ const verifyEmailOtp = async (email, otp) => {
     throw new Error("Invalid OTP");
   }
 
-  // Mark email as verified
+  // ================= MARK EMAIL VERIFIED =================
+
   user.isEmailVerified = true;
 
   // Clear OTP
@@ -132,7 +137,8 @@ const verifyEmailOtp = async (email, otp) => {
 
   await user.save();
 
-  // Generate JWT
+  // ================= GENERATE JWT =================
+
   const token = generateToken(user._id);
 
   return {
@@ -177,10 +183,12 @@ const resendOtp = async (email) => {
   await user.save();
 
   console.log("OTP email:", email);
+
   console.log(
     "EMAIL_USER loaded:",
     !!process.env.EMAIL_USER
   );
+
   console.log(
     "EMAIL_PASS loaded:",
     !!process.env.EMAIL_PASS
@@ -309,18 +317,20 @@ const googleLogin = async (idToken) => {
     );
   }
 
-  // ================= FIND USER =================
+  const normalizedEmail =
+    email.toLowerCase();
 
-  // First try googleId
+  // ================= FIND USER BY GOOGLE ID =================
+
   let user = await User.findOne({
     googleId,
   });
 
-  // If googleId doesn't exist,
-  // check whether same email already exists
+  // ================= FIND USER BY EMAIL =================
+
   if (!user) {
     user = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     });
   }
 
@@ -332,8 +342,7 @@ const googleLogin = async (idToken) => {
       throw new Error("Your account is blocked");
     }
 
-    // If this existing account doesn't have googleId,
-    // connect Google account to existing account.
+    // Connect Google account if not already connected
     if (!user.googleId) {
       user.googleId = googleId;
     }
@@ -349,13 +358,15 @@ const googleLogin = async (idToken) => {
     await user.save();
   }
 
-  // ================= CREATE NEW USER =================
+  // ================= CREATE NEW GOOGLE USER =================
 
   if (!user) {
+    // IMPORTANT:
+    // googleId is saved ONLY for Google registration.
     user = await User.create({
       name: name || "Google User",
 
-      email: email.toLowerCase(),
+      email: normalizedEmail,
 
       googleId,
 
@@ -375,7 +386,7 @@ const googleLogin = async (idToken) => {
     });
   }
 
-  // ================= GENERATE EXISTING JWT =================
+  // ================= GENERATE JWT =================
 
   const token = generateToken(user._id);
 
@@ -470,6 +481,8 @@ const resetPassword = async ({
     message: "Password reset successfully",
   };
 };
+
+// ================= EXPORT =================
 
 module.exports = {
   registerUser,
