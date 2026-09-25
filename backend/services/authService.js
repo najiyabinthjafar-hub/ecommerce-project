@@ -4,6 +4,7 @@ const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+
 const notificationService = require("./notificationService");
 
 const {
@@ -40,33 +41,51 @@ const registerUser = async ({
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOtp();
 
+  // IMPORTANT:
+  // Normal registration should NOT contain googleId.
+  // Do not use googleId: null here.
   const user = await User.create({
     name,
     email,
     phone,
     password: hashedPassword,
     otp,
-    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    otpExpiresAt: new Date(
+      Date.now() + 10 * 60 * 1000
+    ),
     otpAttempts: 0,
   });
 
-  // Create notification for admin
-  const admin = await notificationService.getAdminUser();
+  // ================= ADMIN NOTIFICATION =================
 
-  if (admin) {
-    await notificationService.createNotification({
-      user: admin._id,
-      title: "New Customer",
-      message: `New customer ${user.name} has registered.`,
-      type: "USER",
-    });
+  // Notification failure should not stop registration.
+  try {
+    const admin =
+      await notificationService.getAdminUser();
+
+    if (admin) {
+      await notificationService.createNotification({
+        user: admin._id,
+        title: "New Customer",
+        message: `New customer ${user.name} has registered.`,
+        type: "USER",
+      });
+    }
+  } catch (error) {
+    console.error(
+      "ADMIN NOTIFICATION ERROR:",
+      error.message
+    );
   }
+
+  // ================= SEND OTP =================
 
   await sendOtpEmail(email, otp);
 
   return {
     userId: user._id,
-    message: "Registration successful. OTP sent to your email.",
+    message:
+      "Registration successful. OTP sent to your email.",
   };
 };
 
@@ -97,12 +116,14 @@ const verifyEmailOtp = async (email, otp) => {
 
   if (user.otp !== otp) {
     user.otpAttempts += 1;
+
     await user.save();
 
     throw new Error("Invalid OTP");
   }
 
-  // Mark email as verified
+  // ================= MARK EMAIL VERIFIED =================
+
   user.isEmailVerified = true;
 
   // Clear OTP
@@ -112,12 +133,15 @@ const verifyEmailOtp = async (email, otp) => {
 
   await user.save();
 
-  // Generate JWT
+  // ================= GENERATE JWT =================
+
   const token = generateToken(user._id);
 
   return {
     message: "Email verified successfully",
+
     token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -145,18 +169,22 @@ const resendOtp = async (email) => {
   const otp = generateOtp();
 
   user.otp = otp;
+
   user.otpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
+
   user.otpAttempts = 0;
 
   await user.save();
 
   console.log("OTP email:", email);
+
   console.log(
     "EMAIL_USER loaded:",
     !!process.env.EMAIL_USER
   );
+
   console.log(
     "EMAIL_PASS loaded:",
     !!process.env.EMAIL_PASS
@@ -182,7 +210,9 @@ const loginUser = async ({
   }
 
   if (!user.isEmailVerified) {
-    throw new Error("Please verify your email first");
+    throw new Error(
+      "Please verify your email first"
+    );
   }
 
   if (user.status !== "active") {
@@ -209,6 +239,7 @@ const loginUser = async ({
 
   return {
     token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -282,18 +313,19 @@ const googleLogin = async (idToken) => {
     );
   }
 
-  // ================= FIND USER =================
+  const normalizedEmail = email.toLowerCase();
 
-  // First try googleId
+  // ================= FIND USER BY GOOGLE ID =================
+
   let user = await User.findOne({
     googleId,
   });
 
-  // If googleId doesn't exist,
-  // check whether same email already exists
+  // ================= FIND USER BY EMAIL =================
+
   if (!user) {
     user = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     });
   }
 
@@ -306,6 +338,7 @@ const googleLogin = async (idToken) => {
     }
 
     // Connect Google account to existing account
+    // only when googleId is not already present.
     if (!user.googleId) {
       user.googleId = googleId;
     }
@@ -324,15 +357,27 @@ const googleLogin = async (idToken) => {
   // ================= CREATE NEW GOOGLE USER =================
 
   if (!user) {
+    // IMPORTANT:
+    // googleId is saved ONLY for Google registration.
     user = await User.create({
       name: name || "Google User",
-      email: email.toLowerCase(),
+
+      email: normalizedEmail,
+
       googleId,
+
+      // Google user will complete phone later
       phone: null,
+
+      // Google user does not need password
       password: null,
+
       role: "user",
+
       isEmailVerified: true,
+
       profileCompleted: false,
+
       status: "active",
     });
   }
@@ -343,6 +388,7 @@ const googleLogin = async (idToken) => {
 
   return {
     token,
+
     user: {
       id: user._id,
       name: user.name,
@@ -366,6 +412,7 @@ const forgotPassword = async (email) => {
   const otp = generateOtp();
 
   user.resetOtp = otp;
+
   user.resetOtpExpiresAt = new Date(
     Date.now() + 10 * 60 * 1000
   );
@@ -375,7 +422,8 @@ const forgotPassword = async (email) => {
   await sendResetOtpEmail(email, otp);
 
   return {
-    message: "Password reset OTP sent to your email",
+    message:
+      "Password reset OTP sent to your email",
   };
 };
 
@@ -419,6 +467,7 @@ const resetPassword = async ({
   );
 
   user.password = hashedPassword;
+
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
 
@@ -428,6 +477,8 @@ const resetPassword = async ({
     message: "Password reset successfully",
   };
 };
+
+// ================= EXPORT =================
 
 module.exports = {
   registerUser,
