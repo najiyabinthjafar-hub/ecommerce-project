@@ -322,7 +322,8 @@ const cancelOrder = async (req, res) => {
   try {
     const order = await orderService.cancelOrderByUser(
       req.params.id,
-      req.user._id
+      req.user._id,
+      req.user.role
     );
 
     res.status(200).json({
@@ -399,5 +400,4 @@ module.exports = {
   requestReturn,
   updateReturnStatus,
 };
-
 

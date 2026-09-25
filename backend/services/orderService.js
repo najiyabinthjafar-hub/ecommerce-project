@@ -374,18 +374,24 @@ const updateOrderStatus = async (
 // ================= CUSTOMER CANCEL ORDER ==========
 const cancelOrderByUser = async (
   orderId,
-  userId
+  userId,
+  userRole
 ) => {
-  const order = await Order.findOne({
-    _id: orderId,
-    user: userId,
-  });
+  const isAdmin =
+    String(userRole || "").toLowerCase() === "admin";
+
+  const order = isAdmin
+    ? await Order.findById(orderId)
+    : await Order.findOne({
+        _id: orderId,
+        user: userId,
+      });
 
   if (!order) {
     throw new Error("Order not found");
   }
 
-  // Customer can cancel only before delivery
+  // Customer and admin can cancel only before delivery
   if (
     ["SHIPPED", "DELIVERED", "CANCELLED"].includes(
       order.orderStatus
@@ -772,5 +778,4 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
-
 
