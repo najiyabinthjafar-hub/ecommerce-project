@@ -23,15 +23,21 @@ function EditBanner() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // =========================================================
   // FETCH BANNER
+  // =========================================================
+
   useEffect(() => {
     const fetchBanner = async () => {
       try {
         const response = await fetch(`${API_URL}/${id}`);
+
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch banner");
+          throw new Error(
+            data.message || "Failed to fetch banner"
+          );
         }
 
         const bannerData = data.banner;
@@ -41,19 +47,27 @@ function EditBanner() {
           description: bannerData.description || "",
           link: bannerData.link || "",
           status: bannerData.status || "active",
+
           startDate: bannerData.startDate
             ? bannerData.startDate.split("T")[0]
             : "",
+
           endDate: bannerData.endDate
             ? bannerData.endDate.split("T")[0]
             : "",
+
           image: bannerData.image || "",
         });
 
         setPreview(bannerData.image || "");
       } catch (error) {
-        console.error("Error fetching banner:", error);
+        console.error(
+          "Error fetching banner:",
+          error
+        );
+
         alert(error.message);
+
         navigate("/admin/banners");
       } finally {
         setLoading(false);
@@ -63,7 +77,10 @@ function EditBanner() {
     fetchBanner();
   }, [id, navigate]);
 
+  // =========================================================
   // INPUT CHANGE
+  // =========================================================
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -73,29 +90,44 @@ function EditBanner() {
     }));
   };
 
+  // =========================================================
   // IMAGE CHANGE
+  // =========================================================
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
 
     if (!file) return;
 
+    // Only image files
     if (!file.type.startsWith("image/")) {
       alert("Please select an image file.");
+
+      e.target.value = "";
+
       return;
     }
 
+    // Maximum 5MB
     if (file.size > 5 * 1024 * 1024) {
       alert("Image size must be less than 5MB.");
+
+      e.target.value = "";
+
       return;
     }
 
     setNewImage(file);
 
     const imageUrl = URL.createObjectURL(file);
+
     setPreview(imageUrl);
   };
 
+  // =========================================================
   // SUBMIT
+  // =========================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -107,38 +139,99 @@ function EditBanner() {
     setSaving(true);
 
     try {
-      // 1. UPDATE BANNER DETAILS
-      const updateResponse = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: banner.title.trim(),
-          description: banner.description.trim(),
-          link: banner.link.trim(),
-          status: banner.status,
-          ...(banner.startDate && {
-            startDate: banner.startDate,
-          }),
-          ...(banner.endDate && {
-            endDate: banner.endDate,
-          }),
-          image: banner.image,
-        }),
-      });
+      // =====================================================
+      // DETERMINE UPDATED STATUS
+      // =====================================================
 
-      const updateData = await updateResponse.json();
+      let updatedStatus = banner.status;
+
+      /*
+        IMPORTANT:
+
+        Only if the banner was expired and the new
+        end date is today/future, make it active.
+
+        Manually inactive banners will remain inactive.
+      */
+
+      const today = new Date();
+
+      today.setHours(0, 0, 0, 0);
+
+      if (banner.endDate) {
+        const endDate = new Date(banner.endDate);
+
+        endDate.setHours(23, 59, 59, 999);
+
+        // If selected end date is today or future,
+        // banner can be active again.
+        if (endDate >= today) {
+          updatedStatus = "active";
+        }
+      }
+
+      // =====================================================
+      // 1. UPDATE BANNER DETAILS
+      // =====================================================
+
+      const updateResponse = await fetch(
+        `${API_URL}/${id}`,
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            title: banner.title.trim(),
+
+            description: banner.description.trim(),
+
+            link: banner.link.trim(),
+
+            status: updatedStatus,
+
+            ...(banner.startDate && {
+              startDate: banner.startDate,
+            }),
+
+            ...(banner.endDate && {
+              endDate: banner.endDate,
+            }),
+
+            image: banner.image,
+          }),
+        }
+      );
+
+      const updateData =
+        await updateResponse.json();
+
+      console.log(
+        "Update Banner Status:",
+        updateResponse.status
+      );
+
+      console.log(
+        "Update Banner Response:",
+        updateData
+      );
 
       if (!updateResponse.ok) {
         throw new Error(
-          updateData.message || "Failed to update banner"
+          updateData.message ||
+            "Failed to update banner"
         );
       }
 
+      // =====================================================
       // 2. UPLOAD NEW IMAGE IF SELECTED
+      // =====================================================
+
       if (newImage) {
         const formData = new FormData();
+
         formData.append("image", newImage);
 
         const imageResponse = await fetch(
@@ -149,24 +242,64 @@ function EditBanner() {
           }
         );
 
-        const imageData = await imageResponse.json();
+        const imageResponseText =
+          await imageResponse.text();
+
+        console.log(
+          "Upload Image Status:",
+          imageResponse.status
+        );
+
+        console.log(
+          "Upload Image Response:",
+          imageResponseText
+        );
+
+        let imageData;
+
+        try {
+          imageData = JSON.parse(
+            imageResponseText
+          );
+        } catch {
+          throw new Error(
+            `Image upload returned non-JSON response (${imageResponse.status})`
+          );
+        }
 
         if (!imageResponse.ok) {
           throw new Error(
-            imageData.message || "Image upload failed"
+            imageData.message ||
+              "Image upload failed"
           );
         }
       }
 
+      // =====================================================
+      // SUCCESS
+      // =====================================================
+
       alert("Banner updated successfully!");
+
       navigate("/admin/banners");
     } catch (error) {
-      console.error("Error updating banner:", error);
-      alert(error.message);
+      console.error(
+        "Error updating banner:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Something went wrong"
+      );
     } finally {
       setSaving(false);
     }
   };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
@@ -178,17 +311,27 @@ function EditBanner() {
     );
   }
 
+  // =========================================================
+  // MAIN UI
+  // =========================================================
+
   return (
     <div className="edit-banner-page">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <div className="edit-banner-header">
+
         <div>
           <span className="edit-banner-eyebrow">
             BANNER MANAGEMENT
           </span>
 
-          <h1>Edit Banner</h1>
+          <h1>
+            Edit Banner
+          </h1>
 
           <p>
             Update your website banner details
@@ -198,28 +341,46 @@ function EditBanner() {
         <button
           type="button"
           className="back-banner-btn"
-          onClick={() => navigate("/admin/banners")}
+          onClick={() =>
+            navigate("/admin/banners")
+          }
         >
           ← Back to Banners
         </button>
+
       </div>
 
-      {/* FORM CARD */}
+      {/* =====================================================
+          FORM CARD
+      ===================================================== */}
+
       <div className="edit-banner-card">
 
         <form onSubmit={handleSubmit}>
 
           <div className="edit-banner-layout">
 
-            {/* LEFT SIDE */}
+            {/* =================================================
+                LEFT SIDE
+            ================================================= */}
+
             <div className="edit-banner-form">
 
+              {/* =================================================
+                  BANNER DETAILS
+              ================================================= */}
+
               <div className="form-section">
-                <h2>Banner Details</h2>
+
+                <h2>
+                  Banner Details
+                </h2>
 
                 <div className="form-group">
+
                   <label>
-                    Banner Title <span>*</span>
+                    Banner Title{" "}
+                    <span>*</span>
                   </label>
 
                   <input
@@ -229,10 +390,14 @@ function EditBanner() {
                     onChange={handleChange}
                     placeholder="Enter banner title"
                   />
+
                 </div>
 
                 <div className="form-group">
-                  <label>Description</label>
+
+                  <label>
+                    Description
+                  </label>
 
                   <textarea
                     name="description"
@@ -241,10 +406,14 @@ function EditBanner() {
                     placeholder="Enter banner description"
                     rows="4"
                   />
+
                 </div>
 
                 <div className="form-group">
-                  <label>Banner Link</label>
+
+                  <label>
+                    Banner Link
+                  </label>
 
                   <input
                     type="text"
@@ -253,30 +422,50 @@ function EditBanner() {
                     onChange={handleChange}
                     placeholder="https://example.com"
                   />
+
                 </div>
 
                 <div className="form-group">
-                  <label>Status</label>
+
+                  <label>
+                    Status
+                  </label>
 
                   <select
                     name="status"
                     value={banner.status}
                     onChange={handleChange}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">
+                      Active
+                    </option>
+
+                    <option value="inactive">
+                      Inactive
+                    </option>
                   </select>
+
                 </div>
+
               </div>
 
-              {/* DATE SECTION */}
+              {/* =================================================
+                  DATE SECTION
+              ================================================= */}
+
               <div className="form-section">
-                <h2>Schedule</h2>
+
+                <h2>
+                  Schedule
+                </h2>
 
                 <div className="date-grid">
 
                   <div className="form-group">
-                    <label>Start Date</label>
+
+                    <label>
+                      Start Date
+                    </label>
 
                     <input
                       type="date"
@@ -284,10 +473,14 @@ function EditBanner() {
                       value={banner.startDate}
                       onChange={handleChange}
                     />
+
                   </div>
 
                   <div className="form-group">
-                    <label>End Date</label>
+
+                    <label>
+                      End Date
+                    </label>
 
                     <input
                       type="date"
@@ -295,25 +488,36 @@ function EditBanner() {
                       value={banner.endDate}
                       onChange={handleChange}
                     />
+
                   </div>
 
                 </div>
+
               </div>
 
             </div>
 
-            {/* RIGHT SIDE - IMAGE */}
+            {/* =================================================
+                RIGHT SIDE - IMAGE
+            ================================================= */}
+
             <div className="edit-banner-image-section">
 
               <div className="form-section">
-                <h2>Banner Image</h2>
+
+                <h2>
+                  Banner Image
+                </h2>
 
                 <div className="current-image-box">
 
                   {preview ? (
                     <img
                       src={preview}
-                      alt={banner.title || "Banner"}
+                      alt={
+                        banner.title ||
+                        "Banner"
+                      }
                     />
                   ) : (
                     <div className="no-image">
@@ -334,28 +538,40 @@ function EditBanner() {
                 />
 
                 <p className="image-help">
-                  JPG, JPEG, PNG or WEBP. Maximum size 5MB.
+                  JPG, JPEG, PNG or WEBP.
+                  Maximum size 5MB.
                 </p>
 
                 {newImage && (
                   <div className="selected-image">
+
                     New image selected:{" "}
-                    <strong>{newImage.name}</strong>
+
+                    <strong>
+                      {newImage.name}
+                    </strong>
+
                   </div>
                 )}
+
               </div>
 
             </div>
 
           </div>
 
-          {/* BUTTONS */}
+          {/* =================================================
+              BUTTONS
+          ================================================= */}
+
           <div className="edit-banner-actions">
 
             <button
               type="button"
               className="cancel-banner-btn"
-              onClick={() => navigate("/admin/banners")}
+              onClick={() =>
+                navigate("/admin/banners")
+              }
               disabled={saving}
             >
               Cancel
@@ -366,7 +582,9 @@ function EditBanner() {
               className="save-banner-btn"
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving
+                ? "Saving..."
+                : "Save Changes"}
             </button>
 
           </div>
@@ -374,6 +592,7 @@ function EditBanner() {
         </form>
 
       </div>
+
     </div>
   );
 }

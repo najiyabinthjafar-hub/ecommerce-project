@@ -1,927 +1,317 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000/api";
-
-const PRODUCTS_API_URL = `${API_URL}/products?limit=1000`;
-const ACTIVE_PRODUCTS_API_URL = `${API_URL}/products/active`;
-const BEST_SELLERS_API_URL = `${API_URL}/orders/best-sellers`;
-const ORDERS_API_URL = `${API_URL}/orders/all`;
-const CUSTOMERS_API_URL = `${API_URL}/users?limit=1`;
-const CATEGORIES_API_URL = `${API_URL}/categories`;
-const COUPONS_API_URL = `${API_URL}/coupons`;
-
-const PERIODS = ["Weekly", "Monthly", "Yearly"];
-
-const ORDER_STATUS_CONFIG = [
-  {
-    key: "pending",
-    label: "Pending",
-    color: "#f59e0b",
-  },
-  {
-    key: "confirmed",
-    label: "Confirmed",
-    color: "#8b5cf6",
-  },
-  {
-    key: "processing",
-    label: "Processing",
-    color: "#f97316",
-  },
-  {
-    key: "shipped",
-    label: "Shipped",
-    color: "#3b82f6",
-  },
-  {
-    key: "delivered",
-    label: "Delivered",
-    color: "#22c55e",
-  },
-  {
-    key: "cancelled",
-    label: "Cancelled",
-    color: "#ef4444",
-  },
-];
+const API_BASE_URL = "http://localhost:5000/api";
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [period, setPeriod] = useState("Weekly");
+  // =========================================================
+  // STATE
+  // =========================================================
 
-  const [products, setProducts] = useState([]);
-  const [activeProducts, setActiveProducts] = useState([]);
+  const [summary, setSummary] = useState({
+    products: 0,
+    categories: 0,
+    customers: 0,
+    orders: 0,
+    revenue: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    sales: 0,
+  });
 
-  const [totalProductCount, setTotalProductCount] = useState(0);
-  const [activeProductCount, setActiveProductCount] = useState(0);
+  const [revenueData, setRevenueData] = useState([]);
+  const [revenuePeriod, setRevenuePeriod] = useState("daily");
 
-  const [bestSellingProducts, setBestSellingProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [customerCount, setCustomerCount] = useState(0);
-  const [categories, setCategories] = useState([]);
-  const [coupons, setCoupons] = useState([]);
+  const [orderStatus, setOrderStatus] = useState({
+    PENDING: 0,
+    CONFIRMED: 0,
+    PROCESSING: 0,
+    SHIPPED: 0,
+    DELIVERED: 0,
+    CANCELLED: 0,
+  });
+
+  const [stockAlerts, setStockAlerts] = useState({
+    lowStockCount: 0,
+    outOfStockCount: 0,
+    lowStockProducts: [],
+    outOfStockProducts: [],
+  });
+
+  const [recentOrders, setRecentOrders] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [periodLoading, setPeriodLoading] = useState(false);
+  const [revenueLoading, setRevenueLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* =========================================================
-     FETCH DASHBOARD DATA
-  ========================================================= */
+  // =========================================================
+  // TOKEN
+  // =========================================================
 
-  useEffect(() => {
-    fetchDashboardData();
+  const getToken = useCallback(() => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("adminToken") ||
+      sessionStorage.getItem("token") ||
+      ""
+    );
   }, []);
 
-  const fetchDashboardData = async () => {
+  // =========================================================
+  // HEADERS
+  // =========================================================
+
+  const getHeaders = useCallback(() => {
+    const token = getToken();
+
+    return {
+      "Content-Type": "application/json",
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+    };
+  }, [getToken]);
+
+  // =========================================================
+  // COMMON FETCH
+  // =========================================================
+
+  const fetchJSON = useCallback(
+    async (url, options = {}) => {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...getHeaders(),
+          ...(options.headers || {}),
+        },
+      });
+
+      const text = await response.text();
+
+      let data = {};
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(
+          "Server returned an invalid response. Please check the backend."
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            data.error ||
+            `Request failed with status ${response.status}`
+        );
+      }
+
+      return data;
+    },
+    [getHeaders]
+  );
+
+  // =========================================================
+  // FETCH SUMMARY
+  // =========================================================
+
+  const fetchSummary = useCallback(async () => {
+    const data = await fetchJSON(
+      `${API_BASE_URL}/dashboard/summary`
+    );
+
+    const summaryData = data.data || {};
+
+    setSummary({
+      products: Number(summaryData.products || 0),
+      categories: Number(summaryData.categories || 0),
+      customers: Number(summaryData.customers || 0),
+      orders: Number(summaryData.orders || 0),
+      revenue: Number(summaryData.revenue || 0),
+      pendingOrders: Number(summaryData.pendingOrders || 0),
+      completedOrders: Number(
+        summaryData.completedOrders || 0
+      ),
+      cancelledOrders: Number(
+        summaryData.cancelledOrders || 0
+      ),
+      sales: Number(summaryData.sales || 0),
+    });
+  }, [fetchJSON]);
+
+  // =========================================================
+  // FETCH REVENUE
+  // =========================================================
+
+  const fetchRevenue = useCallback(
+    async (period) => {
+      try {
+        setRevenueLoading(true);
+
+        const data = await fetchJSON(
+          `${API_BASE_URL}/dashboard/revenue?period=${period}`
+        );
+
+        setRevenueData(
+          Array.isArray(data.data) ? data.data : []
+        );
+      } catch (error) {
+        console.error("Revenue API error:", error);
+        setRevenueData([]);
+      } finally {
+        setRevenueLoading(false);
+      }
+    },
+    [fetchJSON]
+  );
+
+  // =========================================================
+  // FETCH ORDER STATUS
+  // =========================================================
+
+  const fetchOrderStatus = useCallback(async () => {
+    const data = await fetchJSON(
+      `${API_BASE_URL}/dashboard/order-status`
+    );
+
+    const statusData = data.data || {};
+
+    setOrderStatus({
+      PENDING: Number(statusData.PENDING || 0),
+      CONFIRMED: Number(statusData.CONFIRMED || 0),
+      PROCESSING: Number(statusData.PROCESSING || 0),
+      SHIPPED: Number(statusData.SHIPPED || 0),
+      DELIVERED: Number(statusData.DELIVERED || 0),
+      CANCELLED: Number(statusData.CANCELLED || 0),
+    });
+  }, [fetchJSON]);
+
+  // =========================================================
+  // FETCH STOCK ALERTS
+  // =========================================================
+
+  const fetchStockAlerts = useCallback(async () => {
+    const data = await fetchJSON(
+      `${API_BASE_URL}/dashboard/stock-alerts?limit=10`
+    );
+
+    const stockData = data.data || {};
+
+    setStockAlerts({
+      lowStockCount: Number(
+        stockData.lowStockCount || 0
+      ),
+
+      outOfStockCount: Number(
+        stockData.outOfStockCount || 0
+      ),
+
+      lowStockProducts: Array.isArray(
+        stockData.lowStockProducts
+      )
+        ? stockData.lowStockProducts
+        : [],
+
+      outOfStockProducts: Array.isArray(
+        stockData.outOfStockProducts
+      )
+        ? stockData.outOfStockProducts
+        : [],
+    });
+  }, [fetchJSON]);
+
+  // =========================================================
+  // FETCH RECENT ORDERS
+  // =========================================================
+
+  const fetchRecentOrders = useCallback(async () => {
+    const data = await fetchJSON(
+      `${API_BASE_URL}/dashboard/recent-orders?limit=5`
+    );
+
+    setRecentOrders(
+      Array.isArray(data.data) ? data.data : []
+    );
+  }, [fetchJSON]);
+
+  // =========================================================
+  // LOAD DASHBOARD
+  // =========================================================
+
+  const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
-
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : {}),
-      };
-
-      const fetchApi = async (url) => {
-        const response = await fetch(url, {
-          method: "GET",
-          headers,
-        });
-
-        const text = await response.text();
-
-        let data = {};
-
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          data = {};
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data?.message || `Request failed: ${response.status}`
-          );
-        }
-
-        return data;
-      };
-
-      const results = await Promise.allSettled([
-        fetchApi(PRODUCTS_API_URL),
-        fetchApi(ACTIVE_PRODUCTS_API_URL),
-        fetchApi(BEST_SELLERS_API_URL),
-        fetchApi(ORDERS_API_URL),
-        fetchApi(CUSTOMERS_API_URL),
-        fetchApi(CATEGORIES_API_URL),
-        fetchApi(COUPONS_API_URL),
+      await Promise.all([
+        fetchSummary(),
+        fetchOrderStatus(),
+        fetchStockAlerts(),
+        fetchRecentOrders(),
       ]);
+    } catch (error) {
+      console.error("Dashboard API error:", error);
 
-      const [
-        productsResult,
-        activeProductsResult,
-        bestSellersResult,
-        ordersResult,
-        customersResult,
-        categoriesResult,
-        couponsResult,
-      ] = results;
-
-      /* PRODUCTS */
-
-      if (productsResult.status === "fulfilled") {
-        const response = productsResult.value;
-
-        const productData = Array.isArray(response?.products)
-          ? response.products
-          : Array.isArray(response?.data?.products)
-          ? response.data.products
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        setProducts(productData);
-
-        const backendTotal =
-          Number(response?.totalProducts) ||
-          Number(response?.total) ||
-          Number(response?.count) ||
-          Number(response?.data?.totalProducts) ||
-          Number(response?.data?.total) ||
-          Number(response?.data?.count) ||
-          productData.length;
-
-        setTotalProductCount(backendTotal);
-      } else {
-        console.error("Products API Error:", productsResult.reason);
-        setProducts([]);
-        setTotalProductCount(0);
-      }
-
-      /* ACTIVE PRODUCTS */
-
-      if (activeProductsResult.status === "fulfilled") {
-        const response = activeProductsResult.value;
-
-        const activeData = Array.isArray(response?.products)
-          ? response.products
-          : Array.isArray(response?.data?.products)
-          ? response.data.products
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        setActiveProducts(activeData);
-
-        const backendActiveTotal =
-          Number(response?.totalProducts) ||
-          Number(response?.total) ||
-          Number(response?.count) ||
-          Number(response?.activeProducts) ||
-          Number(response?.data?.totalProducts) ||
-          Number(response?.data?.total) ||
-          Number(response?.data?.count) ||
-          Number(response?.data?.activeProducts) ||
-          activeData.length;
-
-        setActiveProductCount(backendActiveTotal);
-      } else {
-        console.error(
-          "Active Products API Error:",
-          activeProductsResult.reason
-        );
-
-        setActiveProducts([]);
-        setActiveProductCount(0);
-      }
-
-      /* BEST SELLERS */
-
-      if (bestSellersResult.status === "fulfilled") {
-        const response = bestSellersResult.value;
-
-        const bestSellerData = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.bestSellers)
-          ? response.bestSellers
-          : Array.isArray(response?.products)
-          ? response.products
-          : Array.isArray(response?.data?.bestSellers)
-          ? response.data.bestSellers
-          : Array.isArray(response?.data?.products)
-          ? response.data.products
-          : Array.isArray(response?.data)
-          ? response.data
-          : [];
-
-        setBestSellingProducts(bestSellerData);
-      } else {
-        console.error(
-          "Best Sellers API Error:",
-          bestSellersResult.reason
-        );
-
-        setBestSellingProducts([]);
-      }
-
-      /* ORDERS */
-
-      if (ordersResult.status === "fulfilled") {
-        const response = ordersResult.value;
-
-        const orderData = Array.isArray(response?.orders)
-          ? response.orders
-          : Array.isArray(response?.data?.orders)
-          ? response.data.orders
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        setOrders(orderData);
-      } else {
-        console.error("Orders API Error:", ordersResult.reason);
-        setOrders([]);
-      }
-
-      /* CUSTOMERS */
-
-      if (customersResult.status === "fulfilled") {
-        const response = customersResult.value;
-
-        const totalCustomers =
-          Number(response?.total) ||
-          Number(response?.totalUsers) ||
-          Number(response?.count) ||
-          Number(response?.data?.total) ||
-          Number(response?.data?.totalUsers) ||
-          Number(response?.data?.count);
-
-        if (Number.isFinite(totalCustomers) && totalCustomers > 0) {
-          setCustomerCount(totalCustomers);
-        } else if (Array.isArray(response?.users)) {
-          setCustomerCount(response.users.length);
-        } else if (Array.isArray(response?.data?.users)) {
-          setCustomerCount(response.data.users.length);
-        } else {
-          setCustomerCount(0);
-        }
-      } else {
-        console.error(
-          "Customers API Error:",
-          customersResult.reason
-        );
-
-        setCustomerCount(0);
-      }
-
-      /* CATEGORIES */
-
-      if (categoriesResult.status === "fulfilled") {
-        const response = categoriesResult.value;
-
-        const categoryData = Array.isArray(response?.categories)
-          ? response.categories
-          : Array.isArray(response?.data?.categories)
-          ? response.data.categories
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        setCategories(categoryData);
-      } else {
-        console.error(
-          "Categories API Error:",
-          categoriesResult.reason
-        );
-
-        setCategories([]);
-      }
-
-      /* COUPONS */
-
-      if (couponsResult.status === "fulfilled") {
-        const response = couponsResult.value;
-
-        const couponData = Array.isArray(response?.coupons)
-          ? response.coupons
-          : Array.isArray(response?.data?.coupons)
-          ? response.data.coupons
-          : Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        setCoupons(couponData);
-      } else {
-        console.error(
-          "Coupons API Error:",
-          couponsResult.reason
-        );
-
-        setCoupons([]);
-      }
-
-      const failedApis = results.filter(
-        (result) => result.status === "rejected"
+      setError(
+        error.message ||
+          "Failed to load dashboard data."
       );
-
-      if (failedApis.length === results.length) {
-        setError("Unable to load dashboard data.");
-      }
-    } catch (err) {
-      console.error("Dashboard Error:", err);
-      setError("Unable to load dashboard data.");
     } finally {
       setLoading(false);
-      setPeriodLoading(false);
     }
-  };
-
-  /* =========================================================
-     PERIOD CHANGE
-  ========================================================= */
-
-  useEffect(() => {
-    if (!loading) {
-      setPeriodLoading(true);
-
-      const timer = setTimeout(() => {
-        setPeriodLoading(false);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }
-  }, [period, loading]);
-
-  /* =========================================================
-     STOCK
-  ========================================================= */
-
-  const getProductStock = (product) => {
-    return Number(product?.stock) || 0;
-  };
-
-  const lowStockProducts = useMemo(() => {
-    return products
-      .filter((product) => {
-        const stock = getProductStock(product);
-        return stock > 0 && stock <= 10;
-      })
-      .sort(
-        (a, b) =>
-          getProductStock(a) - getProductStock(b)
-      );
-  }, [products]);
-
-  const outOfStockCount = useMemo(() => {
-    return products.filter(
-      (product) => getProductStock(product) === 0
-    ).length;
-  }, [products]);
-
-  const lowStockCount = useMemo(() => {
-    return products.filter((product) => {
-      const stock = getProductStock(product);
-      return stock > 0 && stock <= 10;
-    }).length;
-  }, [products]);
-
-  /* =========================================================
-     SUMMARY
-  ========================================================= */
-
-  const summary = useMemo(() => {
-    const totalProducts = totalProductCount;
-    const activeProductsCount = activeProductCount;
-
-    const totalOrders = orders.length;
-
-    const pendingOrders = orders.filter(
-      (order) =>
-        String(order.orderStatus || "").toUpperCase() ===
-        "PENDING"
-    ).length;
-
-    const deliveredOrders = orders.filter(
-      (order) =>
-        String(order.orderStatus || "").toUpperCase() ===
-        "DELIVERED"
-    ).length;
-
-    const cancelledOrders = orders.filter(
-      (order) =>
-        String(order.orderStatus || "").toUpperCase() ===
-        "CANCELLED"
-    ).length;
-
-    const revenue = orders.reduce((total, order) => {
-      const paymentStatus = String(
-        order.paymentStatus || ""
-      ).toUpperCase();
-
-      const orderStatus = String(
-        order.orderStatus || ""
-      ).toUpperCase();
-
-      if (paymentStatus !== "PAID") {
-        return total;
-      }
-
-      if (orderStatus === "CANCELLED") {
-        return total;
-      }
-
-      return total + Number(order.finalAmount || 0);
-    }, 0);
-
-    return {
-      totalProducts,
-      activeProducts: activeProductsCount,
-      categories: categories.length,
-      coupons: coupons.length,
-      customers: customerCount,
-      totalOrders,
-      pendingOrders,
-      deliveredOrders,
-      cancelledOrders,
-      revenue,
-    };
   }, [
-    totalProductCount,
-    activeProductCount,
-    orders,
-    categories,
-    coupons,
-    customerCount,
+    fetchSummary,
+    fetchOrderStatus,
+    fetchStockAlerts,
+    fetchRecentOrders,
   ]);
 
-  /* =========================================================
-     STATS
-  ========================================================= */
-
-  const stats = useMemo(
-    () => [
-      {
-        title: "Total Products",
-        value: summary.totalProducts,
-        icon: "bi-box-seam",
-        className: "products",
-      },
-      {
-        title: "Active Products",
-        value: summary.activeProducts,
-        icon: "bi-check-circle",
-        className: "active",
-      },
-      {
-        title: "Categories",
-        value: summary.categories,
-        icon: "bi-grid",
-        className: "categories",
-      },
-      {
-        title: "Coupons",
-        value: summary.coupons,
-        icon: "bi-ticket-perforated",
-        className: "coupons",
-      },
-      {
-        title: "Customers",
-        value: summary.customers,
-        icon: "bi-people",
-        className: "customers",
-      },
-      {
-        title: "Total Orders",
-        value: summary.totalOrders,
-        icon: "bi-cart3",
-        className: "orders",
-      },
-      {
-        title: "Pending Orders",
-        value: summary.pendingOrders,
-        icon: "bi-hourglass-split",
-        className: "pending",
-      },
-      {
-        title: "Delivered Orders",
-        value: summary.deliveredOrders,
-        icon: "bi-check2-circle",
-        className: "delivered",
-      },
-      {
-        title: "Cancelled Orders",
-        value: summary.cancelledOrders,
-        icon: "bi-x-circle",
-        className: "cancelled",
-      },
-      {
-        title: "Total Revenue",
-        value: formatCurrency(summary.revenue),
-        icon: "bi-graph-up-arrow",
-        className: "revenue",
-      },
-    ],
-    [summary]
-  );
-
-  /* =========================================================
-     ORDER STATUS
-  ========================================================= */
-
-  const orderStatus = useMemo(() => {
-    const result = {};
-
-    ORDER_STATUS_CONFIG.forEach((item) => {
-      result[item.key] = 0;
-    });
-
-    orders.forEach((order) => {
-      const status = String(
-        order.orderStatus || ""
-      )
-        .toLowerCase()
-        .trim();
-
-      const matched = ORDER_STATUS_CONFIG.find(
-        (item) => item.key === status
-      );
-
-      if (matched) {
-        result[matched.key] += 1;
-      }
-    });
-
-    return result;
-  }, [orders]);
-
-  const totalStatusOrders =
-    ORDER_STATUS_CONFIG.reduce(
-      (total, item) =>
-        total + Number(orderStatus[item.key] || 0),
-      0
-    );
-
-  /* =========================================================
-     DONUT
-  ========================================================= */
-
-  const donutBackground = useMemo(() => {
-    if (!totalStatusOrders) {
-      return "#eeeeee";
-    }
-
-    let current = 0;
-
-    const sections = ORDER_STATUS_CONFIG.map((item) => {
-      const value = Number(
-        orderStatus[item.key] || 0
-      );
-
-      const start = current;
-
-      current +=
-        (value / totalStatusOrders) * 100;
-
-      return `${item.color} ${start}% ${current}%`;
-    });
-
-    return `conic-gradient(${sections.join(", ")})`;
-  }, [orderStatus, totalStatusOrders]);
-
-  /* =========================================================
-     PERIOD RANGE
-  ========================================================= */
-
-  const getPeriodRange = () => {
-    const now = new Date();
-
-    if (period === "Weekly") {
-      const start = new Date(now);
-
-      start.setDate(now.getDate() - 6);
-      start.setHours(0, 0, 0, 0);
-
-      return {
-        start,
-        count: 7,
-      };
-    }
-
-    if (period === "Monthly") {
-      const start = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
-      );
-
-      return {
-        start,
-        count: now.getDate(),
-      };
-    }
-
-    const start = new Date(
-      now.getFullYear(),
-      0,
-      1
-    );
-
-    return {
-      start,
-      count: now.getMonth() + 1,
-    };
-  };
-
-  /* =========================================================
-     REVENUE
-  ========================================================= */
-
-  const isRevenueOrder = (order) => {
-    const paymentStatus = String(
-      order.paymentStatus || ""
-    ).toUpperCase();
-
-    const orderStatus = String(
-      order.orderStatus || ""
-    ).toUpperCase();
-
-    return (
-      paymentStatus === "PAID" &&
-      orderStatus !== "CANCELLED"
-    );
-  };
-
-  const revenueData = useMemo(() => {
-    const { start, count } = getPeriodRange();
-
-    const labels = [];
-    const values = [];
-
-    for (let i = 0; i < count; i++) {
-      const current = new Date(start);
-
-      if (period === "Weekly") {
-        current.setDate(start.getDate() + i);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            weekday: "short",
-          })
-        );
-      }
-
-      if (period === "Monthly") {
-        current.setDate(i + 1);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            day: "2-digit",
-          })
-        );
-      }
-
-      if (period === "Yearly") {
-        current.setMonth(i);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            month: "short",
-          })
-        );
-      }
-
-      let total = 0;
-
-      orders.forEach((order) => {
-        if (!isRevenueOrder(order)) {
-          return;
-        }
-
-        const orderDate = new Date(
-          order.createdAt
-        );
-
-        if (Number.isNaN(orderDate.getTime())) {
-          return;
-        }
-
-        let matches = false;
-
-        if (period === "Weekly") {
-          matches =
-            orderDate.toDateString() ===
-            current.toDateString();
-        }
-
-        if (period === "Monthly") {
-          matches =
-            orderDate.getFullYear() ===
-              current.getFullYear() &&
-            orderDate.getMonth() ===
-              current.getMonth() &&
-            orderDate.getDate() ===
-              current.getDate();
-        }
-
-        if (period === "Yearly") {
-          matches =
-            orderDate.getFullYear() ===
-              current.getFullYear() &&
-            orderDate.getMonth() ===
-              current.getMonth();
-        }
-
-        if (matches) {
-          total += Number(
-            order.finalAmount || 0
-          );
-        }
-      });
-
-      values.push(total);
-    }
-
-    return {
-      labels,
-      values,
-      total: values.reduce(
-        (sum, value) => sum + value,
-        0
-      ),
-    };
-  }, [orders, period]);
-
-  const revenueLabels = revenueData.labels;
-
-  const revenueValues = revenueData.values.map(
-    (value) => Number(value) || 0
-  );
-
-  const revenueMax = Math.max(
-    ...revenueValues,
-    1
-  );
-
-  const revenueTotal = revenueData.total;
-
-  /* =========================================================
-     ORDERS GRAPH
-  ========================================================= */
-
-  const ordersGraph = useMemo(() => {
-    const { start, count } = getPeriodRange();
-
-    const labels = [];
-    const values = [];
-
-    for (let i = 0; i < count; i++) {
-      const current = new Date(start);
-
-      if (period === "Weekly") {
-        current.setDate(start.getDate() + i);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            weekday: "short",
-          })
-        );
-      }
-
-      if (period === "Monthly") {
-        current.setDate(i + 1);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            day: "2-digit",
-          })
-        );
-      }
-
-      if (period === "Yearly") {
-        current.setMonth(i);
-
-        labels.push(
-          current.toLocaleDateString("en-IN", {
-            month: "short",
-          })
-        );
-      }
-
-      let countOrders = 0;
-
-      orders.forEach((order) => {
-        const orderDate = new Date(
-          order.createdAt
-        );
-
-        if (Number.isNaN(orderDate.getTime())) {
-          return;
-        }
-
-        let matches = false;
-
-        if (period === "Weekly") {
-          matches =
-            orderDate.toDateString() ===
-            current.toDateString();
-        }
-
-        if (period === "Monthly") {
-          matches =
-            orderDate.getFullYear() ===
-              current.getFullYear() &&
-            orderDate.getMonth() ===
-              current.getMonth() &&
-            orderDate.getDate() ===
-              current.getDate();
-        }
-
-        if (period === "Yearly") {
-          matches =
-            orderDate.getFullYear() ===
-              current.getFullYear() &&
-            orderDate.getMonth() ===
-              current.getMonth();
-        }
-
-        if (matches) {
-          countOrders += 1;
-        }
-      });
-
-      values.push(countOrders);
-    }
-
-    return {
-      labels,
-      values,
-      total: values.reduce(
-        (sum, value) => sum + value,
-        0
-      ),
-    };
-  }, [orders, period]);
-
-  const orderLabels = ordersGraph.labels;
-
-  const orderValues = ordersGraph.values.map(
-    (value) => Number(value) || 0
-  );
-
-  const orderMax = Math.max(
-    ...orderValues,
-    1
-  );
-
-  const orderTotal = ordersGraph.total;
-
-  /* =========================================================
-     BEST SELLERS
-  ========================================================= */
-
-  const getBestSellerTotal = (item) => {
-    const product = item?.product || item;
-
-    return Number(
-      item?.totalSold ??
-        product?.totalSold ??
-        0
-    );
-  };
-
-  const sortedBestSellingProducts = useMemo(() => {
-    return [...bestSellingProducts].sort(
-      (a, b) =>
-        getBestSellerTotal(b) -
-        getBestSellerTotal(a)
-    );
-  }, [bestSellingProducts]);
-
-  /* =========================================================
-     HELPERS
-  ========================================================= */
-
-  const formatDate = (date) => {
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  // =========================================================
+  // REVENUE PERIOD CHANGE
+  // =========================================================
+
+  useEffect(() => {
+    fetchRevenue(revenuePeriod);
+  }, [revenuePeriod, fetchRevenue]);
+
+  // =========================================================
+  // FORMAT CURRENCY
+  // =========================================================
+
+  const formatCurrency = useCallback((value) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
+  }, []);
+
+  // =========================================================
+  // FORMAT DATE
+  // =========================================================
+
+  const formatDate = useCallback((date) => {
     if (!date) {
       return "-";
     }
@@ -932,92 +322,242 @@ function Dashboard() {
       return "-";
     }
 
-    return parsedDate.toLocaleDateString(
-      "en-IN",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
+    return parsedDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }, []);
+
+  // =========================================================
+  // REVENUE LABEL
+  // =========================================================
+
+  const formatRevenuePeriod = useCallback(
+    (period) => {
+      if (!period) {
+        return "-";
       }
+
+      const value = String(period);
+
+      const parsedDate = new Date(value);
+
+      if (!Number.isNaN(parsedDate.getTime())) {
+        if (revenuePeriod === "yearly") {
+          return parsedDate.toLocaleDateString("en-IN", {
+            year: "numeric",
+          });
+        }
+
+        if (revenuePeriod === "monthly") {
+          return parsedDate.toLocaleDateString("en-IN", {
+            month: "short",
+            year: "numeric",
+          });
+        }
+
+        return parsedDate.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        });
+      }
+
+      return value;
+    },
+    [revenuePeriod]
+  );
+
+  // =========================================================
+  // TOTAL ORDER STATUS
+  // =========================================================
+
+  const totalOrderStatus = useMemo(() => {
+    return Object.values(orderStatus).reduce(
+      (total, value) =>
+        total + Number(value || 0),
+      0
     );
+  }, [orderStatus]);
+
+  // =========================================================
+  // REVENUE TOTAL
+  // =========================================================
+
+  const revenueTotal = useMemo(() => {
+    return revenueData.reduce(
+      (total, item) =>
+        total + Number(item.revenue || 0),
+      0
+    );
+  }, [revenueData]);
+
+  // =========================================================
+  // MAX REVENUE
+  // =========================================================
+
+  const maxRevenue = useMemo(() => {
+    if (!revenueData.length) {
+      return 0;
+    }
+
+    return Math.max(
+      ...revenueData.map((item) =>
+        Number(item.revenue || 0)
+      )
+    );
+  }, [revenueData]);
+
+  // =========================================================
+  // TOTAL REVENUE BARS
+  // =========================================================
+
+  const revenueBarCount = revenueData.length;
+
+  // =========================================================
+  // HIGHEST REVENUE PERIOD
+  // =========================================================
+
+  const highestRevenuePeriod = useMemo(() => {
+    if (!revenueData.length) {
+      return null;
+    }
+
+    return revenueData.reduce(
+      (highest, current) => {
+        const currentRevenue = Number(
+          current.revenue || 0
+        );
+
+        const highestRevenue = Number(
+          highest?.revenue || 0
+        );
+
+        return currentRevenue > highestRevenue
+          ? current
+          : highest;
+      },
+      revenueData[0]
+    );
+  }, [revenueData]);
+
+  // =========================================================
+  // ORDER STATUS COLORS
+  // =========================================================
+
+  const statusColors = {
+    PENDING: "#f2a900",
+    CONFIRMED: "#4285e8",
+    PROCESSING: "#7567df",
+    SHIPPED: "#21a68b",
+    DELIVERED: "#5fc442",
+    CANCELLED: "#e96b6b",
   };
 
-  const getStatusClass = (status) => {
+  // =========================================================
+  // DONUT GRADIENT
+  // =========================================================
+
+  const statusGradient = useMemo(() => {
+    if (totalOrderStatus === 0) {
+      return "#eeeeee 0deg 360deg";
+    }
+
+    let currentDegree = 0;
+
+    const segments = Object.entries(orderStatus)
+      .map(([status, count]) => {
+        const numericCount = Number(count || 0);
+
+        if (numericCount <= 0) {
+          return null;
+        }
+
+        const degree =
+          (numericCount / totalOrderStatus) * 360;
+
+        const start = currentDegree;
+        const end = currentDegree + degree;
+
+        currentDegree = end;
+
+        return `${statusColors[status]} ${start}deg ${end}deg`;
+      })
+      .filter(Boolean);
+
+    return segments.length
+      ? segments.join(", ")
+      : "#eeeeee 0deg 360deg";
+  }, [orderStatus, totalOrderStatus]);
+
+  // =========================================================
+  // STATUS LABEL
+  // =========================================================
+
+  const getStatusLabel = (status) => {
     if (!status) {
-      return "pending";
+      return "-";
     }
 
     return String(status)
       .toLowerCase()
-      .replace(/_/g, "-")
-      .replace(/\s+/g, "-");
+      .replace(/\_/g, " ")
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
   };
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-loading">
           <div className="dashboard-spinner"></div>
+
           <p>Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="dashboard-page">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="dashboard-header">
         <div>
-          <div className="dashboard-title-row">
-            <h1>Dashboard</h1>
-          </div>
+          <h1>Dashboard</h1>
 
           <p>
-            Welcome back, Admin. Here's what's
-            happening with your store.
+            Welcome back, Admin. Here's what's happening
+            with your store.
           </p>
         </div>
 
-        {/* WEEKLY / MONTHLY / YEARLY */}
+        <button
+          type="button"
+          className="dashboard-refresh-btn"
+          onClick={loadDashboard}
+        >
+          <i className="bi bi-arrow-clockwise"></i>
 
-        <div className="dashboard-header-actions">
-          <div className="dashboard-period-control">
-            <i className="bi bi-calendar3"></i>
-
-            <select
-              value={period}
-              onChange={(e) =>
-                setPeriod(e.target.value)
-              }
-              disabled={periodLoading}
-            >
-              {PERIODS.map((item) => (
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <i className="bi bi-chevron-down"></i>
-          </div>
-        </div>
+          <span>Refresh</span>
+        </button>
       </div>
 
-      {/* ERROR */}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
 
       {error && (
         <div className="dashboard-error">
@@ -1027,7 +567,7 @@ function Dashboard() {
 
           <button
             type="button"
-            onClick={fetchDashboardData}
+            onClick={loadDashboard}
           >
             Retry
           </button>
@@ -1035,626 +575,683 @@ function Dashboard() {
       )}
 
       {/* =====================================================
-          STAT CARDS
+          SUMMARY CARDS
       ===================================================== */}
 
       <section className="dashboard-stats">
-        {stats.map((stat) => (
-          <div
-            className="stat-card"
-            key={stat.title}
-          >
-            <div
-              className={`stat-icon ${stat.className}`}
-            >
-              <i
-                className={`bi ${stat.icon}`}
-              ></i>
+
+        {/* PRODUCTS */}
+
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon stat-icon-products">
+              <i className="bi bi-box-seam"></i>
             </div>
 
-            <div className="stat-content">
-              <p>{stat.title}</p>
-
-              <h2>
-                {typeof stat.value === "number"
-                  ? stat.value.toLocaleString(
-                      "en-IN"
-                    )
-                  : stat.value}
-              </h2>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* =====================================================
-          REVENUE + ORDER GRAPH
-      ===================================================== */}
-
-      <section className="dashboard-chart-grid">
-
-        {/* REVENUE */}
-
-        <div className="dashboard-card revenue-card">
-          <div className="card-header">
-            <div>
-              <h3>Revenue Overview</h3>
-              <p>
-                Sales performance for the selected
-                period
-              </p>
-            </div>
-
-            <div className="chart-period-label">
-              {period}
-            </div>
+            <span className="stat-label">
+              Products
+            </span>
           </div>
 
-          <div className="chart-summary">
-            <div>
-              <span>Total Revenue</span>
-
-              <strong>
-                {formatCurrency(revenueTotal)}
-              </strong>
-            </div>
+          <div className="stat-value">
+            {summary.products.toLocaleString("en-IN")}
           </div>
 
-          <div className="bar-chart">
-            <div className="chart-y-labels">
-              <span>
-                {formatCompactCurrency(
-                  revenueMax
-                )}
-              </span>
+          <div className="stat-bottom">
+            <span>All products</span>
+          </div>
+        </div>
 
-              <span>
-                {formatCompactCurrency(
-                  revenueMax * 0.75
-                )}
-              </span>
+        {/* CATEGORIES */}
 
-              <span>
-                {formatCompactCurrency(
-                  revenueMax * 0.5
-                )}
-              </span>
-
-              <span>
-                {formatCompactCurrency(
-                  revenueMax * 0.25
-                )}
-              </span>
-
-              <span>₹0</span>
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon stat-icon-categories">
+              <i className="bi bi-grid"></i>
             </div>
 
-            <div className="chart-bars-area">
-              <div className="chart-grid-lines">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
+            <span className="stat-label">
+              Categories
+            </span>
+          </div>
 
-              <div className="chart-bars">
-                {revenueValues.length > 0 ? (
-                  revenueValues.map(
-                    (value, index) => (
-                      <div
-                        className="bar-column"
-                        key={`${index}-revenue`}
-                      >
-                        <div className="bar-value">
-                          {formatCompactCurrency(
-                            value
-                          )}
-                        </div>
+          <div className="stat-value">
+            {summary.categories.toLocaleString("en-IN")}
+          </div>
 
-                        <div className="bar-track">
-                          <div
-                            className="revenue-bar"
-                            style={{
-                              height: `${Math.max(
-                                (value /
-                                  revenueMax) *
-                                  100,
-                                value > 0 ? 5 : 0
-                              )}%`,
-                            }}
-                          ></div>
-                        </div>
+          <div className="stat-bottom">
+            <span>Active catalog</span>
+          </div>
+        </div>
 
-                        <span className="bar-label">
-                          {revenueLabels[index] ||
-                            "-"}
-                        </span>
-                      </div>
-                    )
-                  )
-                ) : (
-                  <div className="chart-empty">
-                    No revenue data available
-                  </div>
-                )}
-              </div>
+        {/* CUSTOMERS */}
+
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon stat-icon-customers">
+              <i className="bi bi-people"></i>
             </div>
+
+            <span className="stat-label">
+              Customers
+            </span>
+          </div>
+
+          <div className="stat-value">
+            {summary.customers.toLocaleString("en-IN")}
+          </div>
+
+          <div className="stat-bottom">
+            <span>Registered users</span>
           </div>
         </div>
 
         {/* ORDERS */}
 
-        <div className="dashboard-card order-graph-card">
-          <div className="card-header">
-            <div>
-              <h3>Order Overview</h3>
-              <p>
-                Orders for the selected period
-              </p>
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon stat-icon-orders">
+              <i className="bi bi-cart3"></i>
             </div>
 
-            <div className="chart-period-label">
-              {period}
-            </div>
+            <span className="stat-label">
+              Total Orders
+            </span>
           </div>
 
-          <div className="chart-summary">
-            <div>
-              <span>Total Orders</span>
-
-              <strong>
-                {Number(orderTotal).toLocaleString(
-                  "en-IN"
-                )}
-              </strong>
-            </div>
+          <div className="stat-value">
+            {summary.orders.toLocaleString("en-IN")}
           </div>
 
-          <div className="line-chart">
-            <div className="line-chart-y">
-              <span>{orderMax}</span>
-              <span>
-                {Math.round(orderMax * 0.75)}
-              </span>
-              <span>
-                {Math.round(orderMax * 0.5)}
-              </span>
-              <span>
-                {Math.round(orderMax * 0.25)}
-              </span>
-              <span>0</span>
-            </div>
-
-            <div className="line-chart-area">
-              <div className="chart-grid-lines">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-
-              {orderValues.length > 0 ? (
-                <div className="order-line-bars">
-                  {orderValues.map(
-                    (value, index) => (
-                      <div
-                        className="order-line-column"
-                        key={`${index}-order`}
-                      >
-                        <div
-                          className="order-line-point"
-                          style={{
-                            bottom: `${Math.max(
-                              (value /
-                                orderMax) *
-                                100,
-                              value > 0 ? 4 : 0
-                            )}%`,
-                          }}
-                        >
-                          <span>{value}</span>
-                        </div>
-
-                        <div
-                          className="order-line-fill"
-                          style={{
-                            height: `${Math.max(
-                              (value /
-                                orderMax) *
-                                100,
-                              value > 0 ? 4 : 0
-                            )}%`,
-                          }}
-                        ></div>
-
-                        <span className="order-line-label">
-                          {orderLabels[index] ||
-                            "-"}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
-              ) : (
-                <div className="chart-empty">
-                  No order data available
-                </div>
-              )}
-            </div>
+          <div className="stat-bottom">
+            <span>
+              {summary.sales.toLocaleString("en-IN")} paid
+            </span>
           </div>
         </div>
+
+        {/* REVENUE */}
+
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon stat-icon-revenue">
+              <i className="bi bi-currency-rupee"></i>
+            </div>
+
+            <span className="stat-label">
+              Total Revenue
+            </span>
+          </div>
+
+          <div className="stat-value revenue-value">
+            {formatCurrency(summary.revenue)}
+          </div>
+
+          <div className="stat-bottom">
+            <span>Paid orders</span>
+          </div>
+        </div>
+
       </section>
 
       {/* =====================================================
-          ORDER STATUS + STOCK ALERT
+          MAIN GRID
       ===================================================== */}
 
-      <section className="dashboard-middle-grid">
+      <section className="dashboard-main-grid">
 
-        {/* ORDER STATUS */}
+        {/* ===================================================
+            REVENUE
+        =================================================== */}
 
-        <div className="dashboard-card order-summary-card">
-          <div className="card-header">
+        <div className="dashboard-card revenue-card">
+
+          <div className="dashboard-card-header">
+
             <div>
-              <h3>Order Status</h3>
+              <h2>Revenue Overview</h2>
 
               <p>
-                Current order status breakdown
+                Revenue generated from backend orders
               </p>
             </div>
+
+            <select
+              value={revenuePeriod}
+              onChange={(e) =>
+                setRevenuePeriod(e.target.value)
+              }
+              className="dashboard-period-select"
+            >
+              <option value="daily">
+                Daily
+              </option>
+
+              <option value="weekly">
+                Weekly
+              </option>
+
+              <option value="monthly">
+                Monthly
+              </option>
+
+              <option value="yearly">
+                Yearly
+              </option>
+            </select>
+
           </div>
 
-          <div className="order-summary-content">
+          {/* REVENUE TOTAL */}
 
-            {/* DONUT */}
+          <div className="revenue-total">
 
-            <div className="order-chart-section">
-              <div
-                className="order-donut"
-                style={{
-                  background: donutBackground,
-                }}
-              >
-                <div className="order-donut-center">
-                  <strong>
-                    {totalStatusOrders.toLocaleString(
-                      "en-IN"
-                    )}
-                  </strong>
+            <div>
+              <span>Period Revenue</span>
 
-                  <span>Total Orders</span>
-                </div>
+              <strong>
+                {formatCurrency(revenueTotal)}
+              </strong>
+            </div>
+
+            {highestRevenuePeriod && (
+              <div className="revenue-highest-info">
+                <span>Highest Period</span>
+
+                <strong>
+                  {formatCurrency(
+                    highestRevenuePeriod.revenue
+                  )}
+                </strong>
               </div>
+            )}
+
+          </div>
+
+          {/* REVENUE CHART */}
+
+          {revenueLoading ? (
+
+            <div className="dashboard-section-loading">
+              <div className="dashboard-spinner"></div>
+
+              <span>
+                Loading revenue...
+              </span>
+            </div>
+
+          ) : revenueData.length === 0 ? (
+
+            <div className="dashboard-empty">
+
+              <i className="bi bi-bar-chart"></i>
+
+              <p>
+                No revenue data available.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="revenue-chart-container">
+
+              {/* Y AXIS */}
+
+              <div className="revenue-y-axis">
+
+                <span>
+                  {formatCurrency(maxRevenue)}
+                </span>
+
+                <span>
+                  {formatCurrency(maxRevenue * 0.75)}
+                </span>
+
+                <span>
+                  {formatCurrency(maxRevenue * 0.5)}
+                </span>
+
+                <span>
+                  {formatCurrency(maxRevenue * 0.25)}
+                </span>
+
+                <span>
+                  ₹0
+                </span>
+
+              </div>
+
+              {/* CHART */}
+
+              <div
+                className="revenue-chart"
+                data-bars={revenueBarCount}
+              >
+
+                <div className="revenue-grid-lines">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+
+                {revenueData.map((item, index) => {
+
+                  const revenue = Number(
+                    item.revenue || 0
+                  );
+
+                  const height =
+                    maxRevenue > 0
+                      ? Math.max(
+                          7,
+                          (revenue / maxRevenue) * 100
+                        )
+                      : 7;
+
+                  const isHighest =
+                    highestRevenuePeriod &&
+                    highestRevenuePeriod.period ===
+                      item.period;
+
+                  return (
+                    <div
+                      className={`revenue-bar-item ${
+                        isHighest
+                          ? "highest"
+                          : ""
+                      }`}
+                      key={`${item.period}-${index}`}
+                    >
+
+                      {/* REVENUE VALUE */}
+
+                      <span className="revenue-bar-value">
+                        {formatCurrency(revenue)}
+                      </span>
+
+                      {/* BAR */}
+
+                      <div className="revenue-bar-wrapper">
+
+                        <div
+                          className="revenue-bar"
+                          style={{
+                            height: `${height}%`,
+                          }}
+                          title={`${formatRevenuePeriod(
+                            item.period
+                          )} - ${formatCurrency(
+                            revenue
+                          )}`}
+                        ></div>
+
+                      </div>
+
+                      {/* PERIOD */}
+
+                      <span className="revenue-bar-label">
+                        {formatRevenuePeriod(
+                          item.period
+                        )}
+                      </span>
+
+                    </div>
+                  );
+                })}
+
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ===================================================
+            ORDER STATUS
+        =================================================== */}
+
+        <div className="dashboard-card order-status-card">
+
+          <div className="dashboard-card-header">
+
+            <div>
+              <h2>Order Status</h2>
+
+              <p>
+                Current order distribution
+              </p>
+            </div>
+
+          </div>
+
+          {/* FIRST DONUT STYLE */}
+
+          <div className="order-status-content">
+
+            <div
+              className="order-status-donut"
+              style={{
+                background:
+                  `conic-gradient(${statusGradient})`,
+              }}
+            >
+
+              <div className="order-status-donut-center">
+
+                <strong>
+                  {totalOrderStatus.toLocaleString(
+                    "en-IN"
+                  )}
+                </strong>
+
+                <span>
+                  Total Orders
+                </span>
+
+              </div>
+
             </div>
 
             {/* STATUS LIST */}
 
             <div className="order-status-list">
-              {ORDER_STATUS_CONFIG.map(
-                (item) => {
-                  const count =
-                    Number(
-                      orderStatus[item.key]
-                    ) || 0;
 
-                  const percentage =
-                    totalStatusOrders > 0
-                      ? Math.round(
-                          (count /
-                            totalStatusOrders) *
-                            100
-                        )
-                      : 0;
+              {Object.entries(orderStatus).map(
+                ([status, count]) => (
 
-                  return (
-                    <div
-                      className="order-status-item"
-                      key={item.key}
-                    >
+                  <div
+                    className="order-status-row"
+                    key={status}
+                  >
+
+                    <div className="order-status-name">
+
                       <span
-                        className="status-dot"
-                        style={{
-                          backgroundColor:
-                            item.color,
-                        }}
+                        className={`status-dot status-${status.toLowerCase()}`}
                       ></span>
 
-                      <div className="status-info">
-                        <div className="status-name-row">
-                          <span>
-                            {item.label}
-                          </span>
-
-                          <strong>
-                            {count.toLocaleString(
-                              "en-IN"
-                            )}
-                          </strong>
-                        </div>
-
-                        <div className="status-progress">
-                          <span
-                            style={{
-                              width: `${percentage}%`,
-                              backgroundColor:
-                                item.color,
-                            }}
-                          ></span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* STOCK ALERT */}
-
-        <div className="dashboard-card stock-alert-card">
-          <div className="card-header">
-            <div>
-              <h3>Stock Alerts</h3>
-
-              <p>
-                Products that need attention
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="view-all-btn"
-              onClick={() =>
-                navigate("/admin/inventory")
-              }
-            >
-              View Inventory
-              <i className="bi bi-arrow-right"></i>
-            </button>
-          </div>
-
-          <div className="stock-alert-summary">
-            <div className="stock-alert-box out">
-              <div className="stock-alert-icon">
-                <i className="bi bi-x-circle"></i>
-              </div>
-
-              <div>
-                <span>Out of Stock</span>
-
-                <strong>
-                  {outOfStockCount.toLocaleString(
-                    "en-IN"
-                  )}
-                </strong>
-              </div>
-            </div>
-
-            <div className="stock-alert-box low">
-              <div className="stock-alert-icon">
-                <i className="bi bi-exclamation-triangle"></i>
-              </div>
-
-              <div>
-                <span>Low Stock</span>
-
-                <strong>
-                  {lowStockCount.toLocaleString(
-                    "en-IN"
-                  )}
-                </strong>
-              </div>
-            </div>
-          </div>
-
-          <div className="stock-product-list">
-            {lowStockProducts.length > 0 ? (
-              lowStockProducts.map(
-                (product, index) => {
-                  const stock =
-                    getProductStock(product);
-
-                  return (
-                    <div
-                      className="stock-product-item"
-                      key={
-                        product._id ||
-                        product.id ||
-                        index
-                      }
-                    >
-                      <div className="stock-product-icon">
-                        <i className="bi bi-box"></i>
-                      </div>
-
-                      <div className="stock-product-info">
-                        <strong>
-                          {product.name ||
-                            "Unnamed Product"}
-                        </strong>
-
-                        <span>
-                          {stock} units left
-                        </span>
-                      </div>
-
-                      <span className="stock-warning">
-                        Low
+                      <span>
+                        {getStatusLabel(status)}
                       </span>
-                    </div>
-                  );
-                }
-              )
-            ) : (
-              <div className="stock-empty">
-                <i className="bi bi-check-circle"></i>
 
-                <p>
-                  No low stock products
-                </p>
-              </div>
-            )}
+                    </div>
+
+                    <strong>
+                      {Number(
+                        count || 0
+                      ).toLocaleString("en-IN")}
+                    </strong>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
           </div>
+
         </div>
+
       </section>
 
       {/* =====================================================
-          BEST SELLING + RECENT ORDERS
-          TWO COLUMNS
+          STOCK ALERTS
       ===================================================== */}
 
-      <section className="dashboard-bottom-grid">
+      <section className="dashboard-stock-grid">
 
-        {/* BEST SELLING */}
+        {/* LOW STOCK */}
 
-        <div className="dashboard-card best-selling-card">
-          <div className="card-header">
+        <div className="dashboard-card stock-card">
+
+          <div className="dashboard-card-header">
+
             <div>
-              <h3>Best Selling Products</h3>
+              <h2>
+                <i className="bi bi-exclamation-triangle"></i>
+
+                Low Stock
+              </h2>
 
               <p>
-                Top products based on total
-                quantity sold
+                Products with stock from 1 to 10
               </p>
             </div>
 
-            <button
-              type="button"
-              className="view-all-btn"
-              onClick={() =>
-                navigate("/admin/products")
-              }
-            >
-              View Products
-              <i className="bi bi-arrow-right"></i>
-            </button>
+            <span className="stock-count low">
+              {stockAlerts.lowStockCount}
+            </span>
+
           </div>
 
-          <div className="best-selling-list">
-            {sortedBestSellingProducts.length >
+          <div className="stock-list">
+
+            {stockAlerts.lowStockProducts.length ===
             0 ? (
-              sortedBestSellingProducts
-                .slice(0, 10)
-                .map((item, index) => {
-                  const product =
-                    item.product || item;
 
-                  const totalSold = Number(
-                    item.totalSold ??
-                      product.totalSold ??
-                      0
-                  );
+              <div className="dashboard-empty small">
 
-                  return (
-                    <div
-                      className="best-selling-item"
-                      key={
-                        product._id ||
-                        product.id ||
-                        index
-                      }
-                    >
-                      <div className="best-selling-rank">
-                        #{index + 1}
-                      </div>
-
-                      <div className="best-selling-product-icon">
-                        {product.images?.[0] ? (
-                          <img
-                            src={
-                              product.images[0]
-                            }
-                            alt={
-                              product.name ||
-                              "Product"
-                            }
-                          />
-                        ) : (
-                          <i className="bi bi-image"></i>
-                        )}
-                      </div>
-
-                      <div className="best-selling-product-info">
-                        <strong>
-                          {product.name ||
-                            "Unnamed Product"}
-                        </strong>
-
-                        <span>
-                          {totalSold.toLocaleString(
-                            "en-IN"
-                          )}{" "}
-                          units sold
-                        </span>
-                      </div>
-
-                      <div className="best-selling-product-price">
-                        {product.price !==
-                        undefined
-                          ? formatCurrency(
-                              product.price
-                            )
-                          : product.salePrice !==
-                            undefined
-                          ? formatCurrency(
-                              product.salePrice
-                            )
-                          : "-"}
-                      </div>
-                    </div>
-                  );
-                })
-            ) : (
-              <div className="best-selling-empty">
-                <i className="bi bi-bar-chart-line"></i>
-
-                <h4>
-                  No best selling products
-                </h4>
+                <i className="bi bi-check-circle"></i>
 
                 <p>
-                  Best selling products will
-                  appear here once orders are
-                  placed.
+                  No low-stock products.
                 </p>
+
               </div>
+
+            ) : (
+
+              stockAlerts.lowStockProducts.map(
+                (product) => (
+
+                  <div
+                    className="stock-item"
+                    key={product._id}
+                  >
+
+                    <div className="stock-product-info">
+
+                      <strong>
+                        {product.name ||
+                          "Unnamed Product"}
+                      </strong>
+
+                      <span>
+                        {product.sku ||
+                          "No SKU"}
+                      </span>
+
+                    </div>
+
+                    <div className="stock-value low">
+
+                      {product.stock}
+
+                      <small>
+                        {" "}left
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                )
+              )
+
             )}
+
           </div>
+
+          {/* GO TO INVENTORY */}
+
+          <button
+            type="button"
+            className="stock-view-btn"
+            onClick={() =>
+              navigate("/admin/inventory")
+            }
+          >
+            View Inventory
+
+            <i className="bi bi-arrow-right"></i>
+          </button>
+
         </div>
 
-        {/* RECENT ORDERS */}
+        {/* OUT OF STOCK */}
 
-        <div className="dashboard-card recent-orders-card">
-          <div className="card-header">
+        <div className="dashboard-card stock-card">
+
+          <div className="dashboard-card-header">
+
             <div>
-              <h3>Recent Orders</h3>
+              <h2>
+                <i className="bi bi-x-circle"></i>
+
+                Out of Stock
+              </h2>
 
               <p>
-                Latest orders from your
-                customers
+                Products with zero stock
               </p>
             </div>
 
-            <button
-              type="button"
-              className="view-all-btn"
-              onClick={() =>
-                navigate("/admin/orders")
-              }
-            >
-              View All
-              <i className="bi bi-arrow-right"></i>
-            </button>
+            <span className="stock-count out">
+              {stockAlerts.outOfStockCount}
+            </span>
+
           </div>
 
+          <div className="stock-list">
+
+            {stockAlerts.outOfStockProducts.length ===
+            0 ? (
+
+              <div className="dashboard-empty small">
+
+                <i className="bi bi-check-circle"></i>
+
+                <p>
+                  No out-of-stock products.
+                </p>
+
+              </div>
+
+            ) : (
+
+              stockAlerts.outOfStockProducts.map(
+                (product) => (
+
+                  <div
+                    className="stock-item"
+                    key={product._id}
+                  >
+
+                    <div className="stock-product-info">
+
+                      <strong>
+                        {product.name ||
+                          "Unnamed Product"}
+                      </strong>
+
+                      <span>
+                        {product.sku ||
+                          "No SKU"}
+                      </span>
+
+                    </div>
+
+                    <div className="stock-value out">
+
+                      0
+
+                      <small>
+                        {" "}left
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                )
+              )
+
+            )}
+
+          </div>
+
+          {/* GO TO INVENTORY */}
+
+          <button
+            type="button"
+            className="stock-view-btn"
+            onClick={() =>
+              navigate("/admin/inventory")
+            }
+          >
+            View Inventory
+
+            <i className="bi bi-arrow-right"></i>
+          </button>
+
+        </div>
+
+      </section>
+
+      {/* =====================================================
+          RECENT ORDERS
+      ===================================================== */}
+
+      <section className="dashboard-card recent-orders-card">
+
+        <div className="dashboard-card-header">
+
+          <div>
+            <h2>Recent Orders</h2>
+
+            <p>
+              Latest orders from the backend
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="dashboard-view-all"
+            onClick={() =>
+              navigate("/admin/orders")
+            }
+          >
+            View All
+
+            <i className="bi bi-arrow-right"></i>
+          </button>
+
+        </div>
+
+        {recentOrders.length === 0 ? (
+
+          <div className="dashboard-empty">
+
+            <i className="bi bi-cart-x"></i>
+
+            <p>
+              No recent orders found.
+            </p>
+
+          </div>
+
+        ) : (
+
           <div className="orders-table-wrapper">
-            <table className="orders-table">
+
+            <table className="dashboard-orders-table">
+
               <thead>
                 <tr>
-                  <th>Order ID</th>
+                  <th>Order</th>
                   <th>Customer</th>
                   <th>Date</th>
                   <th>Amount</th>
@@ -1664,190 +1261,196 @@ function Dashboard() {
               </thead>
 
               <tbody>
-                {orders.length > 0 ? (
-                  [...orders]
-                    .sort(
-                      (a, b) =>
-                        new Date(
-                          b.createdAt || 0
-                        ) -
-                        new Date(
-                          a.createdAt || 0
-                        )
-                    )
-                    .slice(0, 6)
-                    .map((order, index) => {
-                      const customerName =
-                        order.user?.name ||
-                        order.shippingAddress
-                          ?.fullName ||
-                        "Customer";
 
-                      const orderId =
-                        order.orderNumber ||
-                        order.orderId ||
-                        order._id ||
-                        "-";
+                {recentOrders.map((order) => (
 
-                      return (
-                        <tr
-                          key={
-                            order._id ||
-                            order.id ||
-                            index
-                          }
-                        >
-                          <td>
-                            <strong>
-                              {String(
-                                orderId
-                              ).slice(-10)}
-                            </strong>
-                          </td>
+                  <tr key={order.orderId}>
 
-                          <td>
-                            <div className="customer-cell">
-                              <div className="customer-avatar">
-                                {getInitial(
-                                  customerName
-                                )}
-                              </div>
-
-                              <span>
-                                {customerName}
-                              </span>
-                            </div>
-                          </td>
-
-                          <td>
-                            {formatDate(
-                              order.createdAt
-                            )}
-                          </td>
-
-                          <td>
-                            <strong>
-                              {formatCurrency(
-                                order.finalAmount
-                              )}
-                            </strong>
-                          </td>
-
-                          <td>
-                            <span
-                              className={`order-status payment-${getStatusClass(
-                                order.paymentStatus ||
-                                  "PENDING"
-                              )}`}
-                            >
-                              {formatStatus(
-                                order.paymentStatus ||
-                                  "PENDING"
-                              )}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span
-                              className={`order-status ${getStatusClass(
-                                order.orderStatus ||
-                                  "PENDING"
-                              )}`}
-                            >
-                              {formatStatus(
-                                order.orderStatus ||
-                                  "PENDING"
-                              )}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="empty-table"
-                    >
-                      <i className="bi bi-inbox"></i>
-
-                      <span>
-                        No recent orders
-                        available
-                      </span>
+                    <td>
+                      <strong>
+                        #
+                        {String(
+                          order.orderId || ""
+                        ).slice(-8)}
+                      </strong>
                     </td>
+
+                    <td>
+
+                      <div className="order-customer">
+
+                        <strong>
+                          {order.customer?.name ||
+                            "Guest Customer"}
+                        </strong>
+
+                        <span>
+                          {order.customer?.email ||
+                            "No email"}
+                        </span>
+
+                      </div>
+
+                    </td>
+
+                    <td>
+                      {formatDate(order.date)}
+                    </td>
+
+                    <td>
+                      <strong>
+                        {formatCurrency(
+                          order.amount
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+
+                      <span
+                        className={`payment-status ${
+                          String(
+                            order.paymentStatus ||
+                              ""
+                          ).toLowerCase()
+                        }`}
+                      >
+                        {getStatusLabel(
+                          order.paymentStatus
+                        )}
+                      </span>
+
+                    </td>
+
+                    <td>
+
+                      <span
+                        className={`order-status-badge ${
+                          String(
+                            order.orderStatus ||
+                              ""
+                          ).toLowerCase()
+                        }`}
+                      >
+                        {getStatusLabel(
+                          order.orderStatus
+                        )}
+                      </span>
+
+                    </td>
+
                   </tr>
-                )}
+
+                ))}
+
               </tbody>
+
             </table>
+
           </div>
-        </div>
+
+        )}
+
       </section>
 
-      {/* PERIOD LOADING */}
+      {/* =====================================================
+          MINI SUMMARY
+      ===================================================== */}
 
-      {periodLoading && (
-        <div className="period-loading">
-          <div className="mini-spinner"></div>
-          Updating dashboard...
+      <section className="dashboard-mini-grid">
+
+        {/* PENDING */}
+
+        <div className="mini-summary-card pending">
+
+          <div className="mini-summary-icon">
+            <i className="bi bi-clock-history"></i>
+          </div>
+
+          <div>
+            <span>
+              Pending Orders
+            </span>
+
+            <strong>
+              {summary.pendingOrders.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
         </div>
-      )}
+
+        {/* DELIVERED */}
+
+        <div className="mini-summary-card delivered">
+
+          <div className="mini-summary-icon">
+            <i className="bi bi-check-circle"></i>
+          </div>
+
+          <div>
+            <span>
+              Delivered Orders
+            </span>
+
+            <strong>
+              {summary.completedOrders.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        {/* CANCELLED */}
+
+        <div className="mini-summary-card cancelled">
+
+          <div className="mini-summary-icon">
+            <i className="bi bi-x-circle"></i>
+          </div>
+
+          <div>
+            <span>
+              Cancelled Orders
+            </span>
+
+            <strong>
+              {summary.cancelledOrders.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        {/* PAID */}
+
+        <div className="mini-summary-card paid">
+
+          <div className="mini-summary-icon">
+            <i className="bi bi-credit-card"></i>
+          </div>
+
+          <div>
+            <span>
+              Paid Orders
+            </span>
+
+            <strong>
+              {summary.sales.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+      </section>
+
     </div>
   );
-}
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function formatCurrency(value) {
-  const number = Number(value) || 0;
-
-  return `₹${number.toLocaleString("en-IN", {
-    maximumFractionDigits: 0,
-  })}`;
-}
-
-function formatCompactCurrency(value) {
-  const number = Number(value) || 0;
-
-  if (number >= 10000000) {
-    return `₹${(number / 10000000).toFixed(1)}Cr`;
-  }
-
-  if (number >= 100000) {
-    return `₹${(number / 100000).toFixed(1)}L`;
-  }
-
-  if (number >= 1000) {
-    return `₹${(number / 1000).toFixed(1)}K`;
-  }
-
-  return `₹${number}`;
-}
-
-function getInitial(name) {
-  if (!name) {
-    return "C";
-  }
-
-  return String(name)
-    .trim()
-    .charAt(0)
-    .toUpperCase();
-}
-
-function formatStatus(status) {
-  if (!status) {
-    return "-";
-  }
-
-  return String(status)
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase()
-    );
 }
 
 export default Dashboard;

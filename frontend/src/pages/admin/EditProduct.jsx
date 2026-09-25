@@ -30,11 +30,31 @@ function EditProduct() {
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
 
+  // =========================================================
+  // LETTER SIZES
+  // =========================================================
+
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
-  /* =========================================================
-     FETCH PRODUCT
-  ========================================================= */
+  // =========================================================
+  // NUMERIC SIZES
+  // =========================================================
+
+  const numericSizes = [
+    "28",
+    "30",
+    "32",
+    "34",
+    "36",
+    "38",
+    "40",
+    "42",
+    "44",
+  ];
+
+  // =========================================================
+  // FETCH PRODUCT
+  // =========================================================
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -56,20 +76,31 @@ function EditProduct() {
         setProduct({
           sku: p.sku || "",
           name: p.name || "",
-          category: p.category?._id || p.category || "",
-          regularPrice: p.regularPrice ?? "",
-          salePrice: p.salePrice ?? "",
-          stock: p.stock ?? "",
+          category:
+            p.category?._id ||
+            p.category ||
+            "",
+          regularPrice:
+            p.regularPrice ?? "",
+          salePrice:
+            p.salePrice ?? "",
+          stock:
+            p.stock ?? "",
           variants: Array.isArray(p.variants)
             ? p.variants
             : [],
-          description: p.description || "",
-          status: p.status || "active",
-          isBestSeller: p.isBestSeller === true,
+          description:
+            p.description || "",
+          status:
+            p.status || "active",
+          isBestSeller:
+            p.isBestSeller === true,
         });
 
         setExistingImages(
-          Array.isArray(p.images) ? p.images : []
+          Array.isArray(p.images)
+            ? p.images
+            : []
         );
       } catch (error) {
         console.error(
@@ -78,7 +109,8 @@ function EditProduct() {
         );
 
         alert(
-          error.message || "Failed to load product."
+          error.message ||
+            "Failed to load product."
         );
       } finally {
         setLoadingProduct(false);
@@ -90,9 +122,9 @@ function EditProduct() {
     }
   }, [id]);
 
-  /* =========================================================
-     FETCH CATEGORIES
-  ========================================================= */
+  // =========================================================
+  // FETCH CATEGORIES
+  // =========================================================
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -113,9 +145,13 @@ function EditProduct() {
 
         if (Array.isArray(data)) {
           setCategories(data);
-        } else if (Array.isArray(data.categories)) {
+        } else if (
+          Array.isArray(data.categories)
+        ) {
           setCategories(data.categories);
-        } else if (Array.isArray(data.data)) {
+        } else if (
+          Array.isArray(data.data)
+        ) {
           setCategories(data.data);
         } else {
           setCategories([]);
@@ -126,7 +162,9 @@ function EditProduct() {
           error
         );
 
-        alert("Failed to load categories.");
+        alert(
+          "Failed to load categories."
+        );
       } finally {
         setLoadingCategories(false);
       }
@@ -135,36 +173,43 @@ function EditProduct() {
     fetchCategories();
   }, []);
 
-  /* =========================================================
-     MAIN CATEGORIES
-  ========================================================= */
+  // =========================================================
+  // MAIN CATEGORIES
+  // =========================================================
 
   const mainCategories = categories.filter(
     (category) => !category.parent
   );
 
-  /* =========================================================
-     GET SUBCATEGORIES
-  ========================================================= */
+  // =========================================================
+  // GET SUBCATEGORIES
+  // =========================================================
 
-  const getSubcategories = (mainCategoryId) => {
-    return categories.filter((subcategory) => {
-      if (!subcategory.parent) {
-        return false;
+  const getSubcategories = (
+    mainCategoryId
+  ) => {
+    return categories.filter(
+      (subcategory) => {
+        if (!subcategory.parent) {
+          return false;
+        }
+
+        const parentId =
+          typeof subcategory.parent ===
+          "object"
+            ? subcategory.parent?._id
+            : subcategory.parent;
+
+        return (
+          parentId === mainCategoryId
+        );
       }
-
-      const parentId =
-        typeof subcategory.parent === "object"
-          ? subcategory.parent?._id
-          : subcategory.parent;
-
-      return parentId === mainCategoryId;
-    });
+    );
   };
 
-  /* =========================================================
-     HANDLE INPUT
-  ========================================================= */
+  // =========================================================
+  // HANDLE INPUT
+  // =========================================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -175,9 +220,9 @@ function EditProduct() {
     }));
   };
 
-  /* =========================================================
-     SIZE SELECTION
-  ========================================================= */
+  // =========================================================
+  // SIZE SELECTION
+  // =========================================================
 
   const handleSizeChange = (size) => {
     setProduct((prev) => {
@@ -186,30 +231,35 @@ function EditProduct() {
 
       return {
         ...prev,
+
         variants: alreadySelected
           ? prev.variants.filter(
               (item) => item !== size
             )
-          : [...prev.variants, size],
+          : [
+              ...prev.variants,
+              size,
+            ],
       };
     });
   };
 
-  /* =========================================================
-     BEST SELLER
-  ========================================================= */
+  // =========================================================
+  // BEST SELLER
+  // =========================================================
 
   const handleBestSellerChange = (e) => {
     setProduct((prev) => ({
       ...prev,
-      isBestSeller: e.target.checked,
+      isBestSeller:
+        e.target.checked,
     }));
   };
 
-  /* =========================================================
-     NEW IMAGE SELECTION
-     MAXIMUM 5 IMAGES TOTAL
-  ========================================================= */
+  // =========================================================
+  // NEW IMAGE SELECTION
+  // MAXIMUM 5 IMAGES TOTAL
+  // =========================================================
 
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(
@@ -221,9 +271,11 @@ function EditProduct() {
     }
 
     const totalImages =
-      existingImages.length + newImages.length;
+      existingImages.length +
+      newImages.length;
 
-    const remainingSlots = 5 - totalImages;
+    const remainingSlots =
+      5 - totalImages;
 
     if (remainingSlots <= 0) {
       alert(
@@ -234,13 +286,15 @@ function EditProduct() {
       return;
     }
 
-    const filesToAdd = selectedFiles.slice(
-      0,
-      remainingSlots
-    );
+    const filesToAdd =
+      selectedFiles.slice(
+        0,
+        remainingSlots
+      );
 
     if (
-      selectedFiles.length > remainingSlots
+      selectedFiles.length >
+      remainingSlots
     ) {
       alert(
         `Only ${remainingSlots} more image(s) can be added.`
@@ -255,11 +309,13 @@ function EditProduct() {
     e.target.value = "";
   };
 
-  /* =========================================================
-     REMOVE EXISTING IMAGE
-  ========================================================= */
+  // =========================================================
+  // REMOVE EXISTING IMAGE
+  // =========================================================
 
-  const removeExistingImage = (index) => {
+  const removeExistingImage = (
+    index
+  ) => {
     setExistingImages((prev) =>
       prev.filter(
         (_, imageIndex) =>
@@ -268,9 +324,9 @@ function EditProduct() {
     );
   };
 
-  /* =========================================================
-     REMOVE NEW IMAGE
-  ========================================================= */
+  // =========================================================
+  // REMOVE NEW IMAGE
+  // =========================================================
 
   const removeNewImage = (index) => {
     setNewImages((prev) =>
@@ -281,42 +337,57 @@ function EditProduct() {
     );
   };
 
-  /* =========================================================
-     GENERATE SLUG
-  ========================================================= */
+  // =========================================================
+  // GENERATE SLUG
+  // =========================================================
 
   const generateSlug = (name) => {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+      .replace(
+        /[^a-z0-9]+/g,
+        "-"
+      )
+      .replace(
+        /(^-|-$)/g,
+        "");
   };
 
-  /* =========================================================
-     UPDATE PRODUCT
-  ========================================================= */
+  // =========================================================
+  // UPDATE PRODUCT
+  // =========================================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!product.name.trim()) {
-      alert("Please enter product name.");
+      alert(
+        "Please enter product name."
+      );
       return;
     }
 
     if (!product.category) {
-      alert("Please select a category.");
+      alert(
+        "Please select a category."
+      );
       return;
     }
 
-    if (product.regularPrice === "") {
-      alert("Please enter regular price.");
+    if (
+      product.regularPrice === ""
+    ) {
+      alert(
+        "Please enter regular price."
+      );
       return;
     }
 
     if (product.stock === "") {
-      alert("Please enter stock.");
+      alert(
+        "Please enter stock."
+      );
       return;
     }
 
@@ -344,18 +415,21 @@ function EditProduct() {
     try {
       setSaving(true);
 
-      /* =====================================================
-         PRODUCT DATA
-      ===================================================== */
+      // =====================================================
+      // PRODUCT DATA
+      // =====================================================
 
       const productData = {
         sku: product.sku.trim(),
 
         name: product.name.trim(),
 
-        slug: generateSlug(product.name),
+        slug: generateSlug(
+          product.name
+        ),
 
-        category: product.category,
+        category:
+          product.category,
 
         regularPrice: Number(
           product.regularPrice
@@ -364,24 +438,33 @@ function EditProduct() {
         salePrice:
           product.salePrice === ""
             ? 0
-            : Number(product.salePrice),
+            : Number(
+                product.salePrice
+              ),
 
-        stock: Number(product.stock),
+        stock: Number(
+          product.stock
+        ),
 
-        variants: product.variants,
+        // Includes:
+        // XS, S, M, L, XL, XXL
+        // 28, 30, 32, 34, 36, 38, 40, 42, 44
+        variants:
+          product.variants,
 
         description:
           product.description.trim(),
 
-        status: product.status,
+        status:
+          product.status,
 
         isBestSeller:
           product.isBestSeller,
       };
 
-      /* =====================================================
-         UPDATE PRODUCT
-      ===================================================== */
+      // =====================================================
+      // UPDATE PRODUCT
+      // =====================================================
 
       const response = await fetch(
         `${PRODUCT_API_URL}/${id}`,
@@ -393,11 +476,14 @@ function EditProduct() {
               "application/json",
           },
 
-          body: JSON.stringify(productData),
+          body: JSON.stringify(
+            productData
+          ),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -406,12 +492,13 @@ function EditProduct() {
         );
       }
 
-      /* =====================================================
-         UPLOAD NEW IMAGES
-      ===================================================== */
+      // =====================================================
+      // UPLOAD NEW IMAGES
+      // =====================================================
 
       if (newImages.length > 0) {
-        const imageFormData = new FormData();
+        const imageFormData =
+          new FormData();
 
         newImages.forEach((image) => {
           imageFormData.append(
@@ -440,11 +527,15 @@ function EditProduct() {
         }
       }
 
-      /* =====================================================
-         UPDATE EXISTING IMAGE LIST
-      ===================================================== */
+      // =====================================================
+      // UPDATE EXISTING IMAGE LIST
+      // =====================================================
 
-      if (Array.isArray(existingImages)) {
+      if (
+        Array.isArray(
+          existingImages
+        )
+      ) {
         try {
           const imageUpdateResponse =
             await fetch(
@@ -458,12 +549,15 @@ function EditProduct() {
                 },
 
                 body: JSON.stringify({
-                  images: existingImages,
+                  images:
+                    existingImages,
                 }),
               }
             );
 
-          if (!imageUpdateResponse.ok) {
+          if (
+            !imageUpdateResponse.ok
+          ) {
             console.warn(
               "Existing image list could not be updated."
             );
@@ -480,7 +574,9 @@ function EditProduct() {
         "Product updated successfully!"
       );
 
-      navigate("/admin/products");
+      navigate(
+        "/admin/products"
+      );
     } catch (error) {
       console.error(
         "Update product error:",
@@ -496,17 +592,19 @@ function EditProduct() {
     }
   };
 
-  /* =========================================================
-     CANCEL
-  ========================================================= */
+  // =========================================================
+  // CANCEL
+  // =========================================================
 
   const handleCancel = () => {
-    navigate("/admin/products");
+    navigate(
+      "/admin/products"
+    );
   };
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loadingProduct) {
     return (
@@ -517,7 +615,8 @@ function EditProduct() {
               minHeight: "300px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent:
+                "center",
               color: "#777",
               fontSize: "13px",
             }}
@@ -529,25 +628,23 @@ function EditProduct() {
     );
   }
 
-  /* =========================================================
-     JSX
-  ========================================================= */
+  // =========================================================
+  // JSX
+  // =========================================================
 
   return (
     <div className="add-product-page">
       <div className="add-product-content">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+        {/* HEADER */}
 
         <div className="add-product-header">
           <div className="add-product-heading">
             <h1>Edit Product</h1>
 
             <p>
-              Update product details, pricing,
-              stock and images.
+              Update product details,
+              pricing, stock and images.
             </p>
           </div>
 
@@ -561,16 +658,12 @@ function EditProduct() {
           </button>
         </div>
 
-        {/* =================================================
-            CARD
-        ================================================= */}
+        {/* CARD */}
 
         <div className="add-product-card">
           <form onSubmit={handleSubmit}>
 
-            {/* =================================================
-                SKU + NAME
-            ================================================= */}
+            {/* SKU + NAME */}
 
             <div className="form-row">
 
@@ -584,7 +677,9 @@ function EditProduct() {
                   id="sku"
                   name="sku"
                   value={product.sku}
-                  onChange={handleChange}
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Enter SKU"
                 />
               </div>
@@ -599,7 +694,9 @@ function EditProduct() {
                   id="name"
                   name="name"
                   value={product.name}
-                  onChange={handleChange}
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Enter product name"
                   required
                 />
@@ -607,9 +704,7 @@ function EditProduct() {
 
             </div>
 
-            {/* =================================================
-                CATEGORY + STOCK
-            ================================================= */}
+            {/* CATEGORY + STOCK */}
 
             <div className="form-row">
 
@@ -621,8 +716,12 @@ function EditProduct() {
                 <select
                   id="category"
                   name="category"
-                  value={product.category}
-                  onChange={handleChange}
+                  value={
+                    product.category
+                  }
+                  onChange={
+                    handleChange
+                  }
                   required
                 >
                   <option value="">
@@ -645,7 +744,9 @@ function EditProduct() {
 
                         return (
                           <React.Fragment
-                            key={mainCategoryId}
+                            key={
+                              mainCategoryId
+                            }
                           >
                             <option
                               value={
@@ -659,7 +760,9 @@ function EditProduct() {
                             </option>
 
                             {subcategories.map(
-                              (subcategory) => {
+                              (
+                                subcategory
+                              ) => {
                                 const subcategoryId =
                                   subcategory._id ||
                                   subcategory.id;
@@ -703,7 +806,9 @@ function EditProduct() {
                   id="stock"
                   name="stock"
                   value={product.stock}
-                  onChange={handleChange}
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Enter stock quantity"
                   min="0"
                   required
@@ -712,9 +817,7 @@ function EditProduct() {
 
             </div>
 
-            {/* =================================================
-                PRICES
-            ================================================= */}
+            {/* PRICES */}
 
             <div className="form-row">
 
@@ -727,8 +830,12 @@ function EditProduct() {
                   type="number"
                   id="regularPrice"
                   name="regularPrice"
-                  value={product.regularPrice}
-                  onChange={handleChange}
+                  value={
+                    product.regularPrice
+                  }
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Enter regular price"
                   min="0"
                   step="0.01"
@@ -745,8 +852,12 @@ function EditProduct() {
                   type="number"
                   id="salePrice"
                   name="salePrice"
-                  value={product.salePrice}
-                  onChange={handleChange}
+                  value={
+                    product.salePrice
+                  }
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Enter sale price"
                   min="0"
                   step="0.01"
@@ -759,38 +870,82 @@ function EditProduct() {
                 SIZES
             ================================================= */}
 
-            <div className="form-group">
-              <label>Sizes</label>
+            <div className="form-group sizes-group">
+
+              <label>
+                Available Sizes
+              </label>
+
+              {/* LETTER SIZES */}
+
+              <small className="size-category-label">
+                Letter Sizes
+              </small>
 
               <div className="size-selection">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    className={`size-option ${
-                      product.variants.includes(
-                        size
-                      )
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      handleSizeChange(size)
-                    }
-                  >
-                    {size}
-                  </button>
-                ))}
+                {sizes.map(
+                  (size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`size-option ${
+                        product.variants.includes(
+                          size
+                        )
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleSizeChange(
+                          size
+                        )
+                      }
+                    >
+                      {size}
+                    </button>
+                  )
+                )}
+              </div>
+
+              {/* NUMERIC SIZES */}
+
+              <small className="size-category-label numeric-size-label">
+                Numeric Sizes
+              </small>
+
+              <div className="size-selection">
+                {numericSizes.map(
+                  (size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`size-option ${
+                        product.variants.includes(
+                          size
+                        )
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleSizeChange(
+                          size
+                        )
+                      }
+                    >
+                      {size}
+                    </button>
+                  )
+                )}
               </div>
 
               <small className="size-hint">
-                Select the available sizes.
+                Select all sizes available
+                for this product.
               </small>
+
             </div>
 
-            {/* =================================================
-                BEST SELLER
-            ================================================= */}
+            {/* BEST SELLER */}
 
             <div className="form-group best-seller-group">
 
@@ -800,8 +955,8 @@ function EditProduct() {
                 </label>
 
                 <small>
-                  Highlight this product as a
-                  best seller.
+                  Highlight this product as
+                  a best seller.
                 </small>
               </div>
 
@@ -822,17 +977,15 @@ function EditProduct() {
                 </span>
 
               </label>
-
             </div>
 
-            {/* =================================================
-                PRODUCT IMAGES
-            ================================================= */}
+            {/* PRODUCT IMAGES */}
 
             <div className="form-group product-image-full">
 
               <label htmlFor="images">
-                Product Images <span>*</span>
+                Product Images{" "}
+                <span>*</span>
               </label>
 
               <div className="file-upload-box">
@@ -858,17 +1011,20 @@ function EditProduct() {
 
               </div>
 
-              {/* =================================================
-                  EXISTING IMAGES
-              ================================================= */}
+              {/* EXISTING IMAGES */}
 
-              {existingImages.length > 0 && (
+              {existingImages.length >
+                0 && (
                 <div className="product-image-preview">
 
                   {existingImages.map(
-                    (image, index) => {
+                    (
+                      image,
+                      index
+                    ) => {
                       const imageUrl =
-                        typeof image === "string"
+                        typeof image ===
+                        "string"
                           ? image
                           : image?.url ||
                             image?.secure_url ||
@@ -880,7 +1036,6 @@ function EditProduct() {
                           className="preview-image-box"
                           key={`${imageUrl}-${index}`}
                         >
-
                           <img
                             src={imageUrl}
                             alt={`Product ${
@@ -904,7 +1059,6 @@ function EditProduct() {
                           <span className="image-number">
                             {index + 1}
                           </span>
-
                         </div>
                       );
                     }
@@ -913,20 +1067,21 @@ function EditProduct() {
                 </div>
               )}
 
-              {/* =================================================
-                  NEW IMAGES
-              ================================================= */}
+              {/* NEW IMAGES */}
 
-              {newImages.length > 0 && (
+              {newImages.length >
+                0 && (
                 <div className="product-image-preview">
 
                   {newImages.map(
-                    (image, index) => (
+                    (
+                      image,
+                      index
+                    ) => (
                       <div
                         className="preview-image-box"
                         key={`${image.name}-${index}`}
                       >
-
                         <img
                           src={URL.createObjectURL(
                             image
@@ -954,7 +1109,6 @@ function EditProduct() {
                             index +
                             1}
                         </span>
-
                       </div>
                     )
                   )}
@@ -964,11 +1118,10 @@ function EditProduct() {
 
             </div>
 
-            {/* =================================================
-                STATUS
-            ================================================= */}
+            {/* STATUS */}
 
             <div className="form-group">
+
               <label htmlFor="status">
                 Status
               </label>
@@ -976,8 +1129,12 @@ function EditProduct() {
               <select
                 id="status"
                 name="status"
-                value={product.status}
-                onChange={handleChange}
+                value={
+                  product.status
+                }
+                onChange={
+                  handleChange
+                }
               >
                 <option value="active">
                   Active
@@ -987,13 +1144,13 @@ function EditProduct() {
                   Inactive
                 </option>
               </select>
+
             </div>
 
-            {/* =================================================
-                DESCRIPTION
-            ================================================= */}
+            {/* DESCRIPTION */}
 
             <div className="form-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -1001,23 +1158,28 @@ function EditProduct() {
               <textarea
                 id="description"
                 name="description"
-                value={product.description}
-                onChange={handleChange}
+                value={
+                  product.description
+                }
+                onChange={
+                  handleChange
+                }
                 placeholder="Enter product description"
                 rows="5"
               ></textarea>
+
             </div>
 
-            {/* =================================================
-                ACTIONS
-            ================================================= */}
+            {/* ACTIONS */}
 
             <div className="form-actions">
 
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={handleCancel}
+                onClick={
+                  handleCancel
+                }
                 disabled={saving}
               >
                 Cancel

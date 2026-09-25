@@ -305,9 +305,10 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: hidden;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* =========================================================
@@ -317,7 +318,7 @@
 .coupons-table {
   width: 100%;
   max-width: 100%;
-  min-width: 0;
+  min-width: 900px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -483,23 +484,17 @@
   white-space: nowrap;
 }
 
-/* Active */
-
 .status-active {
   background: #e9f8ef;
   color: #208346;
   border: 1px solid #d5efdf;
 }
 
-/* Inactive */
-
 .status-inactive {
   background: #f1f1f1;
   color: #888;
   border: 1px solid #e5e5e5;
 }
-
-/* Expired */
 
 .status-expired {
   background: #fff0f0;
@@ -533,14 +528,11 @@
   min-width: 30px !important;
   max-width: 30px !important;
   flex: 0 0 30px !important;
-
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-
   padding: 0 !important;
   margin: 0;
-
   border-radius: 7px;
   outline: none;
   font-size: 13px;
@@ -677,6 +669,10 @@
     width: 140px;
   }
 
+  .coupons-table {
+    min-width: 900px;
+  }
+
   .coupons-table th,
   .coupons-table td {
     padding-left: 8px;
@@ -715,13 +711,17 @@
     font-size: 24px;
   }
 
-  .coupons-card-header {
-    padding: 16px 18px;
-  }
-
   .coupon-filter-bar {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .coupons-table-card {
+    border-radius: 12px;
+  }
+
+  .coupons-table-wrapper {
+    overflow-x: auto;
   }
 }
 
@@ -741,20 +741,43 @@
     font-size: 23px;
   }
 
+  .coupons-header p {
+    font-size: 12px;
+  }
+
   .add-coupon-btn {
-    width: fit-content;
+    width: 100%;
+    max-width: 170px;
   }
 
   /* Summary */
 
   .coupon-summary {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
   }
 
   .coupon-summary-card {
-    min-height: 90px;
-    padding: 15px;
+    min-height: 88px;
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .coupon-summary-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+
+  .coupon-summary-card span {
+    margin-bottom: 4px;
+    font-size: 9px;
+  }
+
+  .coupon-summary-card strong {
+    font-size: 18px;
   }
 
   /* Filter */
@@ -765,10 +788,12 @@
     justify-content: flex-start;
     flex-direction: column;
     gap: 8px;
+    margin-bottom: 12px;
   }
 
   .coupon-search {
     width: 100%;
+    height: 40px;
   }
 
   .coupon-status-filter {
@@ -781,36 +806,48 @@
 
   /* Table */
 
-  .coupons-table {
+  .coupons-table-card {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    overflow: hidden;
+  }
+
+  .coupons-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .coupons-table {
+    width: 900px;
+    min-width: 900px;
+    max-width: none;
     table-layout: fixed;
   }
 
   .coupons-table th {
-    padding: 10px 4px;
+    padding: 10px 8px;
     font-size: 8px;
   }
 
   .coupons-table td {
-    padding: 10px 4px;
+    padding: 10px 8px;
     font-size: 9px;
   }
 
   .coupon-code {
-    padding: 4px 5px;
+    padding: 4px 6px;
     font-size: 9px;
   }
 
   .coupon-type {
-    padding: 3px 5px;
+    padding: 3px 6px;
     font-size: 8px;
   }
 
   .coupon-status {
     min-width: 52px;
-    padding: 4px 5px;
+    padding: 4px 6px;
     font-size: 8px;
   }
 
@@ -820,7 +857,7 @@
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    gap: 3px !important;
+    gap: 4px !important;
   }
 
   .view-action,
@@ -839,6 +876,12 @@
   .delete-action i {
     font-size: 10px;
   }
+
+  /* Empty */
+
+  .no-coupons {
+    padding: 45px 15px !important;
+  }
 }
 
 /* =========================================================
@@ -850,31 +893,61 @@
     font-size: 21px;
   }
 
+  .coupons-header p {
+    font-size: 11px;
+  }
+
+  .add-coupon-btn {
+    height: 38px;
+    max-width: 160px;
+    font-size: 11px;
+  }
+
+  /* Summary */
+
+  .coupon-summary {
+    gap: 8px;
+  }
+
   .coupon-summary-card {
-    padding: 13px;
+    min-height: 82px;
+    gap: 8px;
+    padding: 11px;
+  }
+
+  .coupon-summary-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .coupon-summary-card span {
+    font-size: 8px;
   }
 
   .coupon-summary-card strong {
-    font-size: 19px;
+    font-size: 17px;
   }
 
-  .coupon-filter-bar {
-    flex-direction: column;
-    align-items: stretch;
+  /* Filter */
+
+  .coupon-search,
+  .coupon-status-filter select {
+    height: 38px;
   }
 
-  .coupon-search {
-    width: 100%;
-  }
+  /* Table */
 
-  .coupon-status-filter {
-    width: 100%;
+  .coupons-table {
+    width: 880px;
+    min-width: 880px;
   }
 
   .coupons-table th,
   .coupons-table td {
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .view-action,
@@ -885,5 +958,34 @@
     min-width: 23px !important;
     max-width: 23px !important;
     flex: 0 0 23px !important;
+  }
+
+  .view-action i,
+  .edit-action i,
+  .delete-action i {
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   EXTRA SMALL MOBILE
+========================================================= */
+
+@media (max-width: 340px) {
+  .coupon-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .coupon-summary-card {
+    min-height: 78px;
+  }
+
+  .add-coupon-btn {
+    max-width: 100%;
+  }
+
+  .coupons-table {
+    width: 880px;
+    min-width: 880px;
   }
 }
