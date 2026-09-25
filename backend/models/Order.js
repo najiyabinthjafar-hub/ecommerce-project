@@ -120,6 +120,7 @@ razorpaySignature: {
         "CONFIRMED",
         "PROCESSING",
         "SHIPPED",
+        "OUT_FOR_DELIVERY",
         "DELIVERED",
         "CANCELLED",
       ],
@@ -184,3 +185,4 @@ razorpaySignature: {
 );
 
 module.exports = mongoose.model("Order", orderSchema);
+
