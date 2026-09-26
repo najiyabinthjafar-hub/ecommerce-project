@@ -3,7 +3,9 @@ const Address = require("../models/Address");
 // ================= GET ADDRESSES =================
 
 const getAddresses = async (userId) => {
-  return await Address.find({ user: userId }).sort({
+  return await Address.find({
+    user: userId,
+  }).sort({
     isDefault: -1,
     createdAt: -1,
   });
@@ -12,26 +14,57 @@ const getAddresses = async (userId) => {
 // ================= ADD ADDRESS =================
 
 const addAddress = async (userId, data) => {
-  const existingAddresses = await Address.countDocuments({
-    user: userId,
-  });
+  const existingAddresses =
+    await Address.countDocuments({
+      user: userId,
+    });
 
   // First address automatically becomes default.
-  // If user explicitly selects default, it also becomes default.
+  // If user explicitly selects default,
+  // it also becomes default.
   const shouldBeDefault =
-    existingAddresses === 0 || data.isDefault === true;
+    existingAddresses === 0 ||
+    data.isDefault === true;
 
   // If this address should become default,
   // remove default status from existing addresses.
   if (shouldBeDefault) {
     await Address.updateMany(
-      { user: userId },
-      { $set: { isDefault: false } }
+      {
+        user: userId,
+      },
+      {
+        $set: {
+          isDefault: false,
+        },
+      }
     );
   }
 
+  // Only use fields that belong to the Address model.
+  const allowedFields = [
+    "fullName",
+    "phone",
+    "addressLine1",
+    "addressLine2",
+    "landmark",
+    "city",
+    "state",
+    "postalCode",
+    "country",
+    "addressType",
+  ];
+
+  const addressData = {};
+
+  allowedFields.forEach((field) => {
+    if (data[field] !== undefined) {
+      addressData[field] = data[field];
+    }
+  });
+
   const address = await Address.create({
-    ...data,
+    ...addressData,
     user: userId,
     isDefault: shouldBeDefault,
   });
@@ -41,7 +74,11 @@ const addAddress = async (userId, data) => {
 
 // ================= UPDATE ADDRESS =================
 
-const updateAddress = async (userId, addressId, data) => {
+const updateAddress = async (
+  userId,
+  addressId,
+  data
+) => {
   const address = await Address.findOne({
     _id: addressId,
     user: userId,
@@ -57,10 +94,14 @@ const updateAddress = async (userId, addressId, data) => {
     await Address.updateMany(
       {
         user: userId,
-        _id: { $ne: addressId },
+        _id: {
+          $ne: addressId,
+        },
       },
       {
-        $set: { isDefault: false },
+        $set: {
+          isDefault: false,
+        },
       }
     );
 
@@ -68,37 +109,73 @@ const updateAddress = async (userId, addressId, data) => {
   }
 
   // Prevent accidentally removing the only default address.
-  if (data.isDefault === false && address.isDefault === true) {
-    const otherAddresses = await Address.countDocuments({
-      user: userId,
-      _id: { $ne: addressId },
-    });
-
-    if (otherAddresses > 0) {
-      address.isDefault = false;
-
-      const newDefaultAddress = await Address.findOne({
+  if (
+    data.isDefault === false &&
+    address.isDefault === true
+  ) {
+    const otherAddresses =
+      await Address.countDocuments({
         user: userId,
-        _id: { $ne: addressId },
-      }).sort({
-        createdAt: -1,
+        _id: {
+          $ne: addressId,
+        },
       });
 
+    if (otherAddresses > 0) {
+      // Current address will no longer be default.
+      address.isDefault = false;
+
+      // Find another address to become default.
+      const newDefaultAddress =
+        await Address.findOne({
+          user: userId,
+          _id: {
+            $ne: addressId,
+          },
+        }).sort({
+          createdAt: -1,
+        });
+
       if (newDefaultAddress) {
+        // Make sure all other addresses are false first.
+        await Address.updateMany(
+          {
+            user: userId,
+            _id: {
+              $ne: newDefaultAddress._id,
+            },
+          },
+          {
+            $set: {
+              isDefault: false,
+            },
+          }
+        );
+
         newDefaultAddress.isDefault = true;
+
         await newDefaultAddress.save();
       }
+    } else {
+      // If this is the only address,
+      // it MUST remain the default address.
+      address.isDefault = true;
     }
   }
 
-  // Update only the fields supplied by the user.
+  // ================= UPDATE ONLY ALLOWED FIELDS =================
+
   const allowedFields = [
     "fullName",
     "phone",
-    "address",
+    "addressLine1",
+    "addressLine2",
+    "landmark",
     "city",
     "state",
-    "pincode",
+    "postalCode",
+    "country",
+    "addressType",
     "isDefault",
   ];
 
@@ -115,7 +192,10 @@ const updateAddress = async (userId, addressId, data) => {
 
 // ================= DELETE ADDRESS =================
 
-const deleteAddress = async (userId, addressId) => {
+const deleteAddress = async (
+  userId,
+  addressId
+) => {
   const address = await Address.findOneAndDelete({
     _id: addressId,
     user: userId,
@@ -132,16 +212,33 @@ const deleteAddress = async (userId, addressId) => {
   }
 
   // Find remaining addresses.
-  const remainingAddresses = await Address.find({
-    user: userId,
-  }).sort({
-    createdAt: -1,
-  });
+  const remainingAddresses =
+    await Address.find({
+      user: userId,
+    }).sort({
+      createdAt: -1,
+    });
 
   // If there are remaining addresses,
   // make the latest one default.
   if (remainingAddresses.length > 0) {
-    const newDefaultAddress = remainingAddresses[0];
+    const newDefaultAddress =
+      remainingAddresses[0];
+
+    // Make all remaining addresses non-default first.
+    await Address.updateMany(
+      {
+        user: userId,
+        _id: {
+          $ne: newDefaultAddress._id,
+        },
+      },
+      {
+        $set: {
+          isDefault: false,
+        },
+      }
+    );
 
     newDefaultAddress.isDefault = true;
 
@@ -153,7 +250,10 @@ const deleteAddress = async (userId, addressId) => {
 
 // ================= SET DEFAULT ADDRESS =================
 
-const setDefaultAddress = async (userId, addressId) => {
+const setDefaultAddress = async (
+  userId,
+  addressId
+) => {
   const address = await Address.findOne({
     _id: addressId,
     user: userId,
@@ -167,10 +267,14 @@ const setDefaultAddress = async (userId, addressId) => {
   await Address.updateMany(
     {
       user: userId,
-      _id: { $ne: addressId },
+      _id: {
+        $ne: addressId,
+      },
     },
     {
-      $set: { isDefault: false },
+      $set: {
+        isDefault: false,
+      },
     }
   );
 
