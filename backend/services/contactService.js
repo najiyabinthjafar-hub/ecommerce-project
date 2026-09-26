@@ -38,10 +38,43 @@ const getAllContacts = async () => {
   return contacts;
 };
 
+// ================= UPDATE CONTACT STATUS =================
+
+const updateContactStatus = async (
+  contactId,
+  status
+) => {
+  // Only allow valid contact statuses
+  if (!["read", "replied"].includes(status)) {
+    throw new Error(
+      "Invalid contact status. Status must be read or replied."
+    );
+  }
+
+  const contact =
+    await Contact.findByIdAndUpdate(
+      contactId,
+      {
+        status,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+  if (!contact) {
+    throw new Error("Contact message not found");
+  }
+
+  return contact;
+};
+
 // ================= DELETE CONTACT =================
 
 const deleteContact = async (contactId) => {
-  const contact = await Contact.findByIdAndDelete(contactId);
+  const contact =
+    await Contact.findByIdAndDelete(contactId);
 
   if (!contact) {
     throw new Error("Contact message not found");
@@ -55,5 +88,6 @@ const deleteContact = async (contactId) => {
 module.exports = {
   createContact,
   getAllContacts,
+  updateContactStatus,
   deleteContact,
 };
