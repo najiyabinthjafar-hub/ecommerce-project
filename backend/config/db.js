@@ -6,29 +6,54 @@ const User = require("../models/User");
 // Use Google and Cloudflare DNS
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-const setupGoogleIdIndex = async () => {
+// ==========================================
+// SETUP USER INDEXES + CLEAN OLD NULL VALUES
+// ==========================================
+
+const setupUserIndexes = async () => {
   try {
     // ==========================================
     // REMOVE OLD googleId: null VALUES
     // ==========================================
 
-    await User.updateMany(
-      {
-        googleId: null,
-      },
-      {
-        $unset: {
-          googleId: "",
+    const googleIdCleanup =
+      await User.updateMany(
+        {
+          googleId: null,
         },
-      }
-    );
+        {
+          $unset: {
+            googleId: "",
+          },
+        }
+      );
 
     console.log(
-      "Old googleId: null values cleaned."
+      `Old googleId: null values cleaned. Modified: ${googleIdCleanup.modifiedCount}`
     );
 
     // ==========================================
-    // CHECK EXISTING GOOGLE ID INDEXES
+    // REMOVE OLD phone: null VALUES
+    // ==========================================
+
+    const phoneCleanup =
+      await User.updateMany(
+        {
+          phone: null,
+        },
+        {
+          $unset: {
+            phone: "",
+          },
+        }
+      );
+
+    console.log(
+      `Old phone: null values cleaned. Modified: ${phoneCleanup.modifiedCount}`
+    );
+
+    // ==========================================
+    // GET EXISTING USER INDEXES
     // ==========================================
 
     const indexes =
@@ -36,15 +61,20 @@ const setupGoogleIdIndex = async () => {
         .listIndexes()
         .toArray();
 
-    const googleIdIndexes = indexes.filter(
-      (index) =>
-        index.key &&
-        index.key.googleId === 1 &&
-        Object.keys(index.key).length === 1
-    );
+    // ==========================================
+    // GOOGLE ID INDEXES
+    // ==========================================
+
+    const googleIdIndexes =
+      indexes.filter(
+        (index) =>
+          index.key &&
+          index.key.googleId === 1 &&
+          Object.keys(index.key).length === 1
+      );
 
     // ==========================================
-    // REMOVE INCORRECT UNIQUE NON-SPARSE INDEX
+    // REMOVE INCORRECT GOOGLE ID INDEXES
     // ==========================================
 
     for (const index of googleIdIndexes) {
@@ -63,7 +93,38 @@ const setupGoogleIdIndex = async () => {
     }
 
     // ==========================================
-    // CREATE CORRECT INDEX
+    // PHONE INDEXES
+    // ==========================================
+
+    const phoneIndexes =
+      indexes.filter(
+        (index) =>
+          index.key &&
+          index.key.phone === 1 &&
+          Object.keys(index.key).length === 1
+      );
+
+    // ==========================================
+    // REMOVE INCORRECT PHONE INDEXES
+    // ==========================================
+
+    for (const index of phoneIndexes) {
+      if (
+        index.unique === true &&
+        index.sparse !== true
+      ) {
+        console.log(
+          `Removing incorrect phone index: ${index.name}`
+        );
+
+        await User.collection.dropIndex(
+          index.name
+        );
+      }
+    }
+
+    // ==========================================
+    // CREATE CORRECT GOOGLE ID INDEX
     // ==========================================
 
     await User.collection.createIndex(
@@ -80,15 +141,38 @@ const setupGoogleIdIndex = async () => {
     console.log(
       "googleId unique sparse index is ready."
     );
+
+    // ==========================================
+    // CREATE CORRECT PHONE INDEX
+    // ==========================================
+
+    await User.collection.createIndex(
+      {
+        phone: 1,
+      },
+      {
+        unique: true,
+        sparse: true,
+        name: "phone_1",
+      }
+    );
+
+    console.log(
+      "phone unique sparse index is ready."
+    );
   } catch (error) {
     console.error(
-      "Google ID index setup failed:",
+      "User index setup failed:",
       error.message
     );
 
     throw error;
   }
 };
+
+// ==========================================
+// CONNECT DATABASE
+// ==========================================
 
 const connectDB = async () => {
   try {
@@ -100,9 +184,16 @@ const connectDB = async () => {
       `MongoDB connected: ${conn.connection.host}`
     );
 
-    await setupGoogleIdIndex();
+    // ======================================
+    // CLEAN OLD DATA + SETUP INDEXES
+    // ======================================
 
-    // Make sure all schema indexes are initialized
+    await setupUserIndexes();
+
+    // ======================================
+    // INITIALIZE SCHEMA INDEXES
+    // ======================================
+
     await User.init();
 
     console.log(

@@ -70,13 +70,13 @@ const registerUser = async ({
         // ======================================
         //
         // IMPORTANT:
-        // Do NOT add googleId here.
+        // googleId is NOT included here.
         //
-        // Normal registration should not create:
+        // Normal users should not have:
         // googleId: null
         //
-        // Google ID is added only during Google
-        // registration.
+        // Google ID is saved only for
+        // Google registration.
 
         const createdUsers =
           await User.create(
@@ -113,6 +113,8 @@ const registerUser = async ({
             session
           );
 
+        // Notification is created only
+        // when an admin user exists.
         if (admin) {
           await notificationService.createNotification(
             {
@@ -122,6 +124,8 @@ const registerUser = async ({
 
               message: `New customer ${user.name} has registered.`,
 
+              // Notification task handles
+              // the USER enum.
               type: "USER",
             },
             session
@@ -434,7 +438,15 @@ const googleLogin = async (idToken) => {
       );
     }
 
-    // Connect Google account if not already connected
+    // ==========================================
+    // CONNECT GOOGLE ACCOUNT
+    // ==========================================
+    //
+    // Existing normal-registration user can
+    // login using Google with the same email.
+    //
+    // Keep the existing connection logic.
+
     if (!user.googleId) {
       user.googleId = googleId;
     }
@@ -452,7 +464,13 @@ const googleLogin = async (idToken) => {
 
   if (!user) {
     // IMPORTANT:
-    // googleId is saved ONLY for Google registration.
+    // googleId is saved ONLY for Google users.
+    //
+    // Do NOT save:
+    // phone: null
+    //
+    // The phone field is intentionally omitted.
+    // User schema no longer has default: null.
 
     user = await User.create({
       name:
@@ -462,8 +480,7 @@ const googleLogin = async (idToken) => {
 
       googleId,
 
-      // Google user will complete phone later
-      phone: null,
+      // Do NOT add phone: null here.
 
       // Google user does not need password
       password: null,

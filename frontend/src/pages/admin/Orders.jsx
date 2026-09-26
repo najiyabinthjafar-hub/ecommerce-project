@@ -228,7 +228,7 @@ const Orders = () => {
     return (
       order?.user?.email ||
       order?.shippingAddress?.email ||
-      "—"
+      "GÇö"
     );
   };
 
@@ -236,7 +236,7 @@ const Orders = () => {
     return (
       order?.user?.phone ||
       order?.shippingAddress?.phone ||
-      "—"
+      "GÇö"
     );
   };
 
@@ -279,7 +279,7 @@ const Orders = () => {
   ========================================================= */
 
   const formatCurrency = (amount) => {
-    return `₹${Number(
+    return `Gé¦${Number(
       amount || 0
     ).toLocaleString("en-IN")}`;
   };
@@ -290,13 +290,13 @@ const Orders = () => {
 
   const formatDate = (date) => {
     if (!date) {
-      return "—";
+      return "GÇö";
     }
 
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
-      return "—";
+      return "GÇö";
     }
 
     return parsedDate.toLocaleDateString(
@@ -335,7 +335,7 @@ const Orders = () => {
 
   const getOrderId = (order) => {
     if (!order?._id) {
-      return "—";
+      return "GÇö";
     }
 
     return `ORD-${String(order._id)
@@ -786,7 +786,7 @@ const Orders = () => {
 
                             <span>
                               {customerEmail !==
-                              "—"
+                              "GÇö"
                                 ? customerEmail
                                 : customerPhone}
                             </span>
