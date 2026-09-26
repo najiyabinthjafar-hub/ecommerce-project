@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Addresses.css";
 
 function Addresses() {
@@ -11,208 +9,100 @@ function Addresses() {
 
   const [addresses, setAddresses] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const [editingAddress, setEditingAddress] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    addressLine1: "",
+    addressLine: "",
     city: "",
     state: "",
-    postalCode: "",
+    pincode: "",
   });
 
-  /* =========================================
-     SCROLL TO TOP WHEN PAGE OPENS
-  ========================================= */
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  /* =========================================
-     GET ADDRESSES
-  ========================================= */
-
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch(
-          "http://localhost:5000/api/addresses",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch addresses"
-          );
-        }
-
-        setAddresses(data.addresses || data);
-      } catch (error) {
-        console.error("Address fetch error:", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAddresses();
-  }, [navigate]);
-
-  /* =========================================
-     HANDLE INPUT CHANGE
-  ========================================= */
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "phone") {
-      const numbersOnly = value.replace(/\D/g, "");
-
-      if (numbersOnly.length <= 10) {
-        setFormData((prev) => ({
-          ...prev,
-          phone: numbersOnly,
-        }));
-      }
-
-      setError("");
-      return;
-    }
-
-    if (name === "postalCode") {
-      const numbersOnly = value.replace(/\D/g, "");
-
-      if (numbersOnly.length <= 6) {
-        setFormData((prev) => ({
-          ...prev,
-          postalCode: numbersOnly,
-        }));
-      }
-
-      setError("");
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setError("");
-  };
-
-  /* =========================================
-     ADD ADDRESS
-  ========================================= */
-
-  const handleAddAddress = () => {
-    setEditingAddress(null);
-
-    setFormData({
-      fullName: "",
-      phone: "",
-      addressLine1: "",
-      city: "",
-      state: "",
-      postalCode: "",
-    });
-
-    setError("");
-    setShowForm(true);
-
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "smooth",
-    });
-  };
-
-  /* =========================================
-     EDIT ADDRESS
-  ========================================= */
-
-  const handleEdit = (address) => {
-    setEditingAddress(address);
-
-    setFormData({
-      fullName: address.fullName || "",
-      phone: address.phone || "",
-      addressLine1: address.addressLine1 || "",
-      city: address.city || "",
-      state: address.state || "",
-      postalCode: address.postalCode || "",
-    });
-
-    setError("");
-    setShowForm(true);
-
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "smooth",
-    });
-  };
-
-  /* =========================================
-     SAVE / UPDATE ADDRESS
-  ========================================= */
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem("token");
-
     if (!token) {
       navigate("/login");
       return;
     }
 
-    setError("");
+    fetchAddresses();
+  }, [token, navigate]);
 
-    if (formData.phone.length !== 10) {
-      setError("Phone number must be exactly 10 digits.");
-      return;
-    }
+  const fetchAddresses = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/addresses",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (formData.postalCode.length !== 6) {
-      setError("Postal code must be exactly 6 digits.");
-      return;
+      const data = await response.json();
+
+      if (response.ok) {
+        setAddresses(data.addresses || []);
+      }
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
     }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleAddAddress = () => {
+    setEditingId(null);
+
+    setFormData({
+      fullName: "",
+      phone: "",
+      addressLine: "",
+      city: "",
+      state: "",
+      pincode: "",
+    });
+
+    setShowForm(true);
+  };
+
+  const handleEdit = (address) => {
+    setEditingId(address._id);
+
+    setFormData({
+      fullName: address.fullName || "",
+      phone: address.phone || "",
+      addressLine: address.addressLine || "",
+      city: address.city || "",
+      state: address.state || "",
+      pincode: address.pincode || "",
+    });
+
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
-      setSaving(true);
+      const url = editingId
+        ? `http://localhost:5000/api/addresses/${editingId}`
+        : "http://localhost:5000/api/addresses";
 
-      let url = "http://localhost:5000/api/addresses";
-      let method = "POST";
-
-      if (editingAddress) {
-        url = `http://localhost:5000/api/addresses/${editingAddress._id}`;
-        method = "PUT";
-      }
+      const method = editingId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -225,131 +115,50 @@ function Addresses() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            `Failed to ${
-              editingAddress ? "update" : "add"
-            } address`
-        );
-      }
-
-      const savedAddress = data.address || data;
-
-      if (editingAddress) {
-        setAddresses((prev) =>
-          prev.map((address) =>
-            address._id === editingAddress._id
-              ? savedAddress
-              : address
-          )
-        );
+      if (response.ok) {
+        setShowForm(false);
+        setEditingId(null);
+        fetchAddresses();
       } else {
-        setAddresses((prev) => [
-          ...prev,
-          savedAddress,
-        ]);
+        alert(data.message || "Something went wrong");
       }
-
-      setFormData({
-        fullName: "",
-        phone: "",
-        addressLine1: "",
-        city: "",
-        state: "",
-        postalCode: "",
-      });
-
-      setEditingAddress(null);
-      setShowForm(false);
     } catch (error) {
-      console.error("Address save error:", error);
-      setError(error.message);
-    } finally {
-      setSaving(false);
+      console.error("Error saving address:", error);
     }
   };
 
-  /* =========================================
-     DELETE ADDRESS
-  ========================================= */
-
   const handleDelete = async (id) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this address?"
     );
 
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     try {
-      setError("");
-
       const response = await fetch(
         `http://localhost:5000/api/addresses/${id}`,
         {
           method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to delete address"
-        );
+      if (response.ok) {
+        fetchAddresses();
       }
-
-      setAddresses((prev) =>
-        prev.filter((address) => address._id !== id)
-      );
     } catch (error) {
-      console.error("Delete address error:", error);
-      setError(error.message);
+      console.error("Error deleting address:", error);
     }
-  };
-
-  /* =========================================
-     CANCEL FORM
-  ========================================= */
-
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingAddress(null);
-    setError("");
-
-    setFormData({
-      fullName: "",
-      phone: "",
-      addressLine1: "",
-      city: "",
-      state: "",
-      postalCode: "",
-    });
   };
 
   return (
     <>
       <Navbar />
 
-      <main className="addresses-page">
+      <div className="addresses-page">
         <div className="addresses-container">
-
-          {/* =========================================
-              HEADER
-          ========================================= */}
 
           <div className="addresses-header">
             <h1>MY ADDRESSES</h1>
@@ -362,20 +171,6 @@ function Addresses() {
               + ADD ADDRESS
             </button>
           </div>
-
-          {/* =========================================
-              ERROR MESSAGE
-          ========================================= */}
-
-          {error && (
-            <p className="address-error-message">
-              {error}
-            </p>
-          )}
-
-          {/* =========================================
-              ADDRESS FORM
-          ========================================= */}
 
           {showForm && (
             <form
@@ -392,19 +187,19 @@ function Addresses() {
               />
 
               <input
-                type="tel"
+                type="text"
                 name="phone"
                 placeholder="Phone Number"
                 value={formData.phone}
                 onChange={handleChange}
-                maxLength="10"
                 required
               />
 
-              <textarea
-                name="addressLine1"
-                placeholder="Full Address"
-                value={formData.addressLine1}
+              <input
+                type="text"
+                name="addressLine"
+                placeholder="Address"
+                value={formData.addressLine}
                 onChange={handleChange}
                 required
               />
@@ -429,35 +224,25 @@ function Addresses() {
 
               <input
                 type="text"
-                name="postalCode"
+                name="pincode"
                 placeholder="Pincode"
-                value={formData.postalCode}
+                value={formData.pincode}
                 onChange={handleChange}
-                maxLength="6"
                 required
               />
 
-              {/* =========================================
-                  FORM BUTTONS
-              ========================================= */}
-
-              <div className="address-form-buttons">
+              <div className="form-actions">
                 <button
                   type="submit"
-                  disabled={saving}
+                  className="save-address-btn"
                 >
-                  {saving
-                    ? "SAVING..."
-                    : editingAddress
-                    ? "UPDATE ADDRESS"
-                    : "SAVE ADDRESS"}
+                  {editingId ? "UPDATE" : "SAVE"}
                 </button>
 
                 <button
                   type="button"
                   className="cancel-address-btn"
                   onClick={handleCancel}
-                  disabled={saving}
                 >
                   CANCEL
                 </button>
@@ -465,64 +250,32 @@ function Addresses() {
             </form>
           )}
 
-          {/* =========================================
-              LOADING
-          ========================================= */}
-
-          {loading && (
-            <div className="no-address">
-              <p>Loading addresses...</p>
-            </div>
-          )}
-
-          {/* =========================================
-              ADDRESS LIST
-          ========================================= */}
-
-          {!loading && (
+          {!showForm && addresses.length > 0 && (
             <div className="addresses-list">
-              {addresses.length === 0 ? (
-                <div className="no-address">
-                  <p>No addresses added yet.</p>
-                </div>
-              ) : (
-                addresses.map((address) => (
-                  <div
-                    className="address-card"
-                    key={address._id}
-                  >
-                    <h3>
-                      {address.fullName}
-                    </h3>
+              {addresses.map((address) => (
+                <div
+                  className="address-wrapper"
+                  key={address._id}
+                >
+                  <div className="address-card">
+
+                    <h3>{address.fullName}</h3>
+
+                    <p>{address.phone}</p>
+
+                    <p>{address.addressLine}</p>
 
                     <p>
-                      {address.phone}
+                      {address.city}, {address.state} -{" "}
+                      {address.pincode}
                     </p>
-
-                    <p>
-                      {address.addressLine1}
-                    </p>
-
-                    <p>
-                      {address.city},{" "}
-                      {address.state}
-                    </p>
-
-                    <p>
-                      {address.postalCode}
-                    </p>
-
-                    {/* =========================================
-                        ADDRESS ACTIONS
-                    ========================================= */}
 
                     <div className="address-actions">
+
                       <button
                         type="button"
                         className="edit-address-btn"
-                        onClick={() =>
-                          handleEdit(address)
-                        }
+                        onClick={() => handleEdit(address)}
                       >
                         EDIT
                       </button>
@@ -536,14 +289,35 @@ function Addresses() {
                       >
                         DELETE
                       </button>
+
                     </div>
+
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
           )}
+
+          {!showForm && addresses.length === 0 && (
+            <div className="no-address">
+              <p>No addresses added yet.</p>
+            </div>
+          )}
+
         </div>
-      </main>
+
+        {/* BACK BUTTON IS OUTSIDE THE BIG GLASS CARD */}
+        {!showForm && addresses.length > 0 && (
+          <button
+            type="button"
+            className="back-btn"
+            onClick={() => navigate(-1)}
+          >
+            ← BACK
+          </button>
+        )}
+
+      </div>
 
       <Footer />
     </>

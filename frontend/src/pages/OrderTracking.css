@@ -1,6 +1,6 @@
-/* =========================
+/* =========================================================
    ORDER TRACKING PAGE
-========================= */
+========================================================= */
 
 .tracking-page {
   width: 100%;
@@ -17,9 +17,9 @@
   color: #202020;
 }
 
-/* =========================
+/* =========================================================
    CONTAINER
-========================= */
+========================================================= */
 
 .tracking-container {
   width: 88%;
@@ -27,9 +27,9 @@
   margin: 0 auto;
 }
 
-/* =========================
+/* =========================================================
    HEADER
-========================= */
+========================================================= */
 
 .tracking-header {
   text-align: center;
@@ -53,9 +53,9 @@
   color: #202020;
 }
 
-/* =========================
+/* =========================================================
    ORDER INFORMATION
-========================= */
+========================================================= */
 
 .tracking-order-info {
   display: grid;
@@ -93,9 +93,9 @@
   color: #202020;
 }
 
-/* =========================
+/* =========================================================
    TRACKING STEPS
-========================= */
+========================================================= */
 
 .tracking-steps {
   width: 70%;
@@ -189,9 +189,98 @@
   letter-spacing: 1px;
 }
 
-/* =========================
+/* =========================================================
+   RETURN SECTION
+========================================================= */
+
+.return-section {
+  width: 70%;
+  margin: 0 auto 45px;
+  padding: 40px 30px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.return-section h2 {
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  color: #202020;
+}
+
+.return-section p {
+  margin: 0 auto 25px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #777;
+  max-width: 500px;
+}
+
+.return-order-btn {
+  width: 150px;
+  height: 42px;
+  border: none;
+  border-radius: 6px;
+  background: #202020;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.return-order-btn:hover {
+  background: #3a3a3a;
+  transform: translateY(-1px);
+}
+
+.return-order-btn.disabled,
+.return-order-btn:disabled {
+  background: #858585;
+  color: #fff;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================
+   RETURN SUCCESS / ERROR MESSAGE
+========================================================= */
+
+.tracking-return-message {
+  width: 70%;
+  margin: 0 auto 25px;
+  padding: 13px 18px;
+  border-radius: 6px;
+  text-align: center;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+}
+
+.tracking-return-message.success {
+  background: rgba(46, 125, 50, 0.1);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+  color: #2e7d32;
+}
+
+.tracking-return-message.error {
+  background: rgba(198, 40, 40, 0.1);
+  border: 1px solid rgba(198, 40, 40, 0.25);
+  color: #c62828;
+}
+
+/* =========================================================
    ORDER ITEMS
-========================= */
+========================================================= */
 
 .tracking-products {
   padding: 25px;
@@ -276,9 +365,9 @@
   color: #202020;
 }
 
-/* =========================
+/* =========================================================
    CANCELLED
-========================= */
+========================================================= */
 
 .cancelled-box {
   width: 70%;
@@ -320,9 +409,9 @@
   color: #777;
 }
 
-/* =========================
+/* =========================================================
    EMPTY STATE
-========================= */
+========================================================= */
 
 .tracking-empty {
   width: 420px;
@@ -351,9 +440,9 @@
   color: #777;
 }
 
-/* =========================
-   BUTTON
-========================= */
+/* =========================================================
+   BACK BUTTON
+========================================================= */
 
 .tracking-back-btn,
 .tracking-empty button {
@@ -377,9 +466,255 @@
   background: #3a3a3a;
 }
 
-/* =========================
+/* =========================================================
+   RETURN MODAL OVERLAY
+========================================================= */
+
+.return-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 9999;
+}
+
+/* =========================================================
+   RETURN MODAL
+========================================================= */
+
+.return-modal {
+  position: relative;
+  width: 100%;
+  max-width: 470px;
+  padding: 38px 40px 35px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  animation: returnModalOpen 0.2s ease-out;
+}
+
+@keyframes returnModalOpen {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   MODAL CLOSE
+========================================================= */
+
+.return-modal-close {
+  position: absolute;
+  top: 15px;
+  right: 17px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #777;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.return-modal-close:hover {
+  color: #111;
+}
+
+.return-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   MODAL HEADING
+========================================================= */
+
+.return-modal h2 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  color: #202020;
+}
+
+.return-modal-description {
+  margin: 0 0 28px;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #777;
+}
+
+/* =========================================================
+   MODAL LABEL
+========================================================= */
+
+.return-modal label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #333;
+}
+
+/* =========================================================
+   MODAL SELECT
+========================================================= */
+
+.return-modal select {
+  width: 100%;
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
+  color: #333;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.return-modal select:focus {
+  border-color: #777;
+  box-shadow: 0 0 0 3px rgba(32, 32, 32, 0.08);
+}
+
+.return-modal select:disabled {
+  background: #f3f3f3;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   CUSTOM REASON TEXTAREA
+========================================================= */
+
+.return-modal textarea {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px 13px;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  outline: none;
+  resize: vertical;
+  min-height: 90px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #333;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  line-height: 1.5;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.return-modal textarea::placeholder {
+  color: #aaa;
+}
+
+.return-modal textarea:focus {
+  border-color: #777;
+  box-shadow: 0 0 0 3px rgba(32, 32, 32, 0.08);
+}
+
+.return-modal textarea:disabled {
+  background: #f3f3f3;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   MODAL ERROR
+========================================================= */
+
+.return-modal-error {
+  margin: 12px 0 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9px;
+  line-height: 1.5;
+  color: #c62828;
+}
+
+/* =========================================================
+   MODAL ACTION BUTTONS
+========================================================= */
+
+.return-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.return-cancel-btn,
+.return-submit-btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 5px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.return-cancel-btn {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #555;
+}
+
+.return-cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.return-submit-btn {
+  border: 1px solid #202020;
+  background: #202020;
+  color: #fff;
+}
+
+.return-submit-btn:hover {
+  background: #3a3a3a;
+}
+
+.return-cancel-btn:disabled,
+.return-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
    MOBILE
-========================= */
+========================================================= */
 
 @media (max-width: 700px) {
   .tracking-page {
@@ -410,6 +745,24 @@
     margin-bottom: 35px;
   }
 
+  .return-section {
+    width: 100%;
+    padding: 35px 20px;
+    margin-bottom: 35px;
+  }
+
+  .return-section h2 {
+    font-size: 22px;
+  }
+
+  .return-section p {
+    font-size: 9px;
+  }
+
+  .tracking-return-message {
+    width: 100%;
+  }
+
   .tracking-products {
     padding: 20px;
   }
@@ -437,11 +790,40 @@
   .cancelled-box {
     width: 100%;
   }
+
+  /* MODAL */
+
+  .return-modal-overlay {
+    padding: 18px;
+  }
+
+  .return-modal {
+    max-width: 100%;
+    padding: 35px 25px 28px;
+    border-radius: 9px;
+  }
+
+  .return-modal h2 {
+    font-size: 22px;
+  }
+
+  .return-modal-description {
+    font-size: 9px;
+    margin-bottom: 23px;
+  }
+
+  .return-modal select {
+    height: 42px;
+  }
+
+  .return-modal-actions {
+    margin-top: 22px;
+  }
 }
 
-/* =========================
+/* =========================================================
    SMALL MOBILE
-========================= */
+========================================================= */
 
 @media (max-width: 450px) {
   .tracking-order-info {
@@ -471,5 +853,76 @@
 
   .tracking-product-price {
     font-size: 9px;
+  }
+
+  /* MODAL */
+
+  .return-modal {
+    padding: 32px 20px 25px;
+  }
+
+  .return-modal-close {
+    top: 12px;
+    right: 12px;
+  }
+
+  .return-modal h2 {
+    font-size: 20px;
+  }
+
+  .return-modal-description {
+    font-size: 8.5px;
+  }
+
+  .return-modal label {
+    font-size: 8px;
+  }
+
+  .return-modal select {
+    height: 40px;
+    font-size: 9px;
+  }
+
+  .return-modal textarea {
+    font-size: 9px;
+  }
+
+  .return-modal-actions {
+    justify-content: stretch;
+  }
+
+  .return-cancel-btn,
+  .return-submit-btn {
+    flex: 1;
+    padding: 0 10px;
+    font-size: 7px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 360px) {
+  .return-modal-overlay {
+    padding: 12px;
+  }
+
+  .return-modal {
+    padding: 30px 17px 22px;
+  }
+
+  .return-modal h2 {
+    font-size: 19px;
+  }
+
+  .return-modal-actions {
+    gap: 7px;
+  }
+
+  .return-cancel-btn,
+  .return-submit-btn {
+    height: 36px;
+    font-size: 6.5px;
   }
 }

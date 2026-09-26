@@ -5,8 +5,9 @@
 .new-arrivals {
   width: 100%;
   background: #ffffff;
-  padding: 55px 0 75px;
+  padding: 100px 0 75px;
   box-sizing: border-box;
+  margin-top: 0;
 }
 
 /* =========================
