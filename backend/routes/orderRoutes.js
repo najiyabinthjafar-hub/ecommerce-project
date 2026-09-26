@@ -52,6 +52,13 @@ router.get(
   orderController.getAllOrders
 );
 
+// DOWNLOAD ORDER INVOICE
+router.get(
+  "/:id/invoice",
+  protect,
+  orderController.downloadInvoice
+);
+
 // SINGLE ORDER
 router.get(
   "/:id",
@@ -82,5 +89,8 @@ router.post("/:id/return", protect, orderController.requestReturn);
 router.put("/:id/return-status", protect, adminOnly, orderController.updateReturnStatus);
 
 module.exports = router;
+
+
+
 
 

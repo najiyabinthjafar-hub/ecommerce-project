@@ -1,5 +1,6 @@
 const orderService = require("../services/orderService");
 const razorpayService = require("../services/razorpayService");
+const { generateInvoicePdf } = require("../services/invoiceService");
 
 // CREATE ORDER
 const createOrder = async (req, res) => {
@@ -387,6 +388,48 @@ const getBestSellingProducts = async (req, res) => {
     });
   }
 };
+// ================= DOWNLOAD ORDER INVOICE ==========
+
+const downloadInvoice = async (req, res) => {
+  try {
+    const order = await orderService.getOrderById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Customer can download only their own invoice
+    if (
+      req.user.role !== "admin" &&
+      String(order.user?._id || order.user) !== String(req.user._id)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to download this invoice",
+      });
+    }
+
+    const invoiceBuffer = await generateInvoicePdf(order);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="invoice-${order._id}.pdf"`
+    );
+
+    return res.status(200).send(invoiceBuffer);
+  } catch (error) {
+    console.error("Invoice download failed:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate invoice",
+    });
+  }
+};
 module.exports = {
   createOrder,
   getOrders,
@@ -399,5 +442,9 @@ module.exports = {
   verifyRazorpayPayment,
   requestReturn,
   updateReturnStatus,
+  downloadInvoice,
 };
+
+
+
 

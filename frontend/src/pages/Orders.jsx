@@ -133,6 +133,63 @@ function Orders() {
     });
   };
 
+  // ================= DOWNLOAD INVOICE =================
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setError("");
+      setMessage("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_URL}/orders/${orderId}/invoice`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      const blob = new Blob([response.data], {
+        type: "application/pdf",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${orderId}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      setMessage("Invoice downloaded successfully.");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
+    } catch (err) {
+      console.error("Download invoice error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to download invoice."
+      );
+
+      setTimeout(() => {
+        setError("");
+      }, 2500);
+    }
+  };
   // ================= CANCEL ORDER =================
   const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm(
@@ -358,6 +415,15 @@ function Orders() {
                         TRACK YOUR ORDER
                       </button>
 
+                      {/* DOWNLOAD INVOICE */}
+                      <button
+                        className="invoice-button"
+                        onClick={() =>
+                          handleDownloadInvoice(order._id)
+                        }
+                      >
+                        DOWNLOAD INVOICE
+                      </button>
                       {/* CANCEL ORDER */}
                       {status.toUpperCase() !== "CANCELLED" &&
                         status.toUpperCase() !== "DELIVERED" &&
@@ -398,3 +464,6 @@ function Orders() {
 }
 
 export default Orders;
+
+
+

@@ -1,4 +1,4 @@
-const Order = require("../models/Order");
+﻿const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -6,6 +6,8 @@ const User = require("../models/User");
 const notificationService = require("./notificationService");
 const productService = require("./productService");
 const razorpayService = require("./razorpayService");
+const { sendOrderConfirmationEmail } = require("./emailService");
+const { generateInvoicePdf } = require("./invoiceService");
 
 // ================= STOCK HELPERS ==========
 const getProductId = (item) => {
@@ -191,6 +193,29 @@ const createOrder = async (orderData) => {
       type: "ORDER",
     });
   }
+    // Send COD order confirmation email with invoice
+    if (paymentMethod === "COD") {
+      try {
+        const user = await User.findById(order.user);
+
+        if (!user?.email) {
+          console.log("COD EMAIL SKIPPED: Customer email not found");
+        } else {
+          const invoiceBuffer = await generateInvoicePdf(order);
+
+          await sendOrderConfirmationEmail({
+            order,
+            user,
+            invoiceBuffer,
+          });
+
+          console.log("COD ORDER EMAIL SENT SUCCESSFULLY");
+        }
+      } catch (emailError) {
+        console.error("COD ORDER EMAIL FAILED:");
+        console.error(emailError.message);
+      }
+    }
 
   return order;
 };
@@ -301,7 +326,7 @@ const getAllOrders = async ({
 
 // ================= GET ORDER BY ID ==========
 const getOrderById = async (orderId) => {
-  const order = await Order.findById(orderId)
+const order = await Order.findById(orderId)
     .populate("items.product")
     .populate({
       path: "user",
@@ -345,8 +370,7 @@ const updateOrderStatus = async (
   ) {
     await restoreStock(existingOrder.items);
   }
-
-  const order = await Order.findByIdAndUpdate(
+const order = await Order.findByIdAndUpdate(
     orderId,
     {
       orderStatus,
@@ -379,8 +403,7 @@ const cancelOrderByUser = async (
 ) => {
   const isAdmin =
     String(userRole || "").toLowerCase() === "admin";
-
-  const order = isAdmin
+const order = isAdmin
     ? await Order.findById(orderId)
     : await Order.findOne({
         _id: orderId,
@@ -452,7 +475,7 @@ const requestReturn = async (
   userId,
   reason
 ) => {
-  const order = await Order.findById(orderId);
+const order = await Order.findById(orderId);
 
   if (!order) {
     throw new Error("Order not found");
@@ -494,7 +517,7 @@ const updateReturnStatus = async (
   orderId,
   returnStatus
 ) => {
-  const order = await Order.findById(orderId);
+const order = await Order.findById(orderId);
 
   if (!order) {
     return null;
@@ -663,7 +686,7 @@ const updateRazorpayOrder = async (
   razorpayOrderId,
   userId
 ) => {
-  const order = await Order.findOneAndUpdate(
+const order = await Order.findOneAndUpdate(
     {
       _id: orderId,
       user: userId,
@@ -717,7 +740,7 @@ const verifyRazorpayPayment = async (
   );
 
   try {
-    const order = await Order.findOneAndUpdate(
+const order = await Order.findOneAndUpdate(
       {
         _id: orderId,
         user: userId,
@@ -778,4 +801,8 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
+
+
 
