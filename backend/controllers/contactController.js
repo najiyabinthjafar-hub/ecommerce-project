@@ -13,19 +13,22 @@ const createContact = async (req, res) => {
 
     if (!name || !email || !phone || !comment) {
       return res.status(400).json({
-        message: "Name, email, phone and comment are required",
+        message:
+          "Name, email, phone and comment are required",
       });
     }
 
-    const contact = await contactService.createContact({
-      name,
-      email,
-      phone,
-      comment,
-    });
+    const contact =
+      await contactService.createContact({
+        name,
+        email,
+        phone,
+        comment,
+      });
 
     res.status(201).json({
-      message: "Your message has been submitted successfully",
+      message:
+        "Your message has been submitted successfully",
       contact,
     });
   } catch (error) {
@@ -39,7 +42,8 @@ const createContact = async (req, res) => {
 
 const getAllContacts = async (req, res) => {
   try {
-    const contacts = await contactService.getAllContacts();
+    const contacts =
+      await contactService.getAllContacts();
 
     res.status(200).json({
       count: contacts.length,
@@ -52,13 +56,52 @@ const getAllContacts = async (req, res) => {
   }
 };
 
+// ================= UPDATE CONTACT STATUS =================
+
+const updateContactStatus = async (
+  req,
+  res
+) => {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        message: "Status is required",
+      });
+    }
+
+    const contact =
+      await contactService.updateContactStatus(
+        req.params.id,
+        status
+      );
+
+    res.status(200).json({
+      message:
+        "Contact status updated successfully",
+      contact,
+    });
+  } catch (error) {
+    const statusCode =
+      error.message === "Contact message not found"
+        ? 404
+        : 400;
+
+    res.status(statusCode).json({
+      message: error.message,
+    });
+  }
+};
+
 // ================= DELETE CONTACT =================
 
 const deleteContact = async (req, res) => {
   try {
-    const result = await contactService.deleteContact(
-      req.params.id
-    );
+    const result =
+      await contactService.deleteContact(
+        req.params.id
+      );
 
     res.status(200).json(result);
   } catch (error) {
@@ -71,5 +114,6 @@ const deleteContact = async (req, res) => {
 module.exports = {
   createContact,
   getAllContacts,
+  updateContactStatus,
   deleteContact,
 };

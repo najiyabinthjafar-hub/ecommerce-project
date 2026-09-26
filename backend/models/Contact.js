@@ -26,6 +26,14 @@ const contactSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    // ================= CONTACT STATUS =================
+    // New contact messages will be unread initially.
+    status: {
+      type: String,
+      enum: ["unread", "read", "replied"],
+      default: "unread",
+    },
   },
   {
     timestamps: true,
