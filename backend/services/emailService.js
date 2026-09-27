@@ -181,9 +181,7 @@ Total Amount: Rs. ${finalAmount.toFixed(2)}
 
 Your invoice is attached to this email as a PDF.
 
-Thank you for shopping with us!
-
-E-Commerce Store
+Thank you for choosing Rizo Fashion!
       `,
       attachments: invoiceBuffer
         ? [
@@ -215,3 +213,4 @@ module.exports = {
   sendContactEmail,
   sendOrderConfirmationEmail,
 };
+
