@@ -379,3 +379,30 @@
   }
 }
 
+
+/* =========================
+   CART / WISHLIST COUNT
+========================= */
+
+.wishlist-nav-icon,
+.cart-nav-icon {
+  position: relative;
+}
+
+.nav-count {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  min-width: 11px;
+  height: 11px;
+  padding: 0 3px;
+  border-radius: 20px;
+  background: #0b2d4d;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  line-height: 11px;
+  text-align: center;
+  box-sizing: border-box;
+}

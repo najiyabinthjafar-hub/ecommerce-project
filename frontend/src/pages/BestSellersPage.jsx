@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
+
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+
 import axios from "axios";
 
+import toast from "react-hot-toast";
+
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./BestSellersPage.css";
@@ -11,21 +16,29 @@ const API_URL = "http://localhost:5000/api";
 
 function BestSellersPage() {
   const [searchParams] = useSearchParams();
+
   const navigate = useNavigate();
 
   const searchQuery = searchParams.get("search")?.trim() || "";
 
   const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   const [wishlistIds, setWishlistIds] = useState([]);
+
   const [loadingWishlist, setLoadingWishlist] = useState(true);
+
   const [updatingWishlist, setUpdatingWishlist] = useState(null);
 
   const [availability, setAvailability] = useState("all");
+
   const [priceOrder, setPriceOrder] = useState("default");
+
   const [sortBy, setSortBy] = useState("newest");
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const [pagination, setPagination] = useState({
@@ -53,7 +66,9 @@ function BestSellersPage() {
 
   const getProductPrice = (product) => {
     const salePrice = Number(product.salePrice);
+
     const regularPrice = Number(product.regularPrice);
+
     const price = Number(product.price);
 
     if (!Number.isNaN(salePrice) && salePrice > 0) {
@@ -79,6 +94,7 @@ function BestSellersPage() {
     const fetchBestSellers = async () => {
       try {
         setLoading(true);
+
         setError("");
 
         const params = {
@@ -87,16 +103,19 @@ function BestSellersPage() {
         };
 
         // SEARCH
+
         if (searchQuery) {
           params.search = searchQuery;
         }
 
         // AVAILABILITY
+
         if (availability !== "all") {
           params.availability = availability;
         }
 
         // SORT
+
         if (priceOrder === "low-high") {
           params.sort = "price-low";
         } else if (priceOrder === "high-low") {
@@ -214,7 +233,9 @@ function BestSellersPage() {
 
       if (!token) {
         setWishlistIds([]);
+
         setLoadingWishlist(false);
+
         return;
       }
 
@@ -253,13 +274,19 @@ function BestSellersPage() {
 
   const handleWishlist = async (e, product) => {
     e.preventDefault();
+
     e.stopPropagation();
 
     const token = getToken();
 
+    // NOT LOGGED IN
     if (!token) {
-      alert("Please login to add products to your wishlist.");
+      toast.error(
+        "Please login to add products to your wishlist."
+      );
+
       navigate("/login");
+
       return;
     }
 
@@ -273,6 +300,10 @@ function BestSellersPage() {
     try {
       setUpdatingWishlist(productId);
 
+      // =========================
+      // REMOVE FROM WISHLIST
+      // =========================
+
       if (isWishlisted) {
         await axios.delete(
           `${API_URL}/wishlist/remove/${productId}`,
@@ -282,7 +313,22 @@ function BestSellersPage() {
         setWishlistIds((prev) =>
           prev.filter((id) => id !== productId)
         );
-      } else {
+
+        toast.success(
+          "Product removed from wishlist!"
+        );
+
+        // UPDATE NAVBAR WISHLIST COUNT
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
+      }
+
+      // =========================
+      // ADD TO WISHLIST
+      // =========================
+
+      else {
         await axios.post(
           `${API_URL}/wishlist/add`,
           {
@@ -295,9 +341,23 @@ function BestSellersPage() {
           ...prev,
           productId,
         ]);
+
+        toast.success(
+          "Product added to wishlist!"
+        );
+
+        // UPDATE NAVBAR WISHLIST COUNT
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
       }
     } catch (error) {
-      alert(
+      console.error(
+        "WISHLIST ERROR:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
         error.response?.data?.message ||
           "Failed to update wishlist"
       );
@@ -312,17 +372,21 @@ function BestSellersPage() {
 
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
+
     setCurrentPage(1);
   };
 
   const handlePriceChange = (value) => {
     setPriceOrder(value);
+
     setCurrentPage(1);
   };
 
   const handleSortChange = (value) => {
     setSortBy(value);
+
     setPriceOrder("default");
+
     setCurrentPage(1);
   };
 
@@ -352,7 +416,6 @@ function BestSellersPage() {
       <Navbar />
 
       <main className="best-sellers-page">
-
         {/* HEADING */}
 
         <section className="best-sellers-heading">
@@ -369,9 +432,7 @@ function BestSellersPage() {
         {/* FILTER BAR */}
 
         <section className="best-sellers-filter-bar">
-
           <div className="best-sellers-filter-left">
-
             <span className="best-sellers-filter-title">
               FILTER
             </span>
@@ -417,13 +478,10 @@ function BestSellersPage() {
                 HIGH TO LOW
               </option>
             </select>
-
           </div>
 
           <div className="best-sellers-filter-right">
-
             <div className="best-sellers-sort-by">
-
               <span>SORT BY:</span>
 
               <select
@@ -442,15 +500,12 @@ function BestSellersPage() {
                   FEATURED
                 </option>
               </select>
-
             </div>
 
             <span className="best-sellers-product-count">
               {pagination.totalProducts} PRODUCTS
             </span>
-
           </div>
-
         </section>
 
         {/* LOADING */}
@@ -473,10 +528,8 @@ function BestSellersPage() {
 
         {!loading && !error && (
           <section className="best-sellers-products">
-
             {products.length > 0 ? (
               products.map((product) => {
-
                 const productId =
                   product._id || product.id;
 
@@ -503,9 +556,7 @@ function BestSellersPage() {
                     className="best-sellers-product-card"
                     key={productId}
                   >
-
                     <div className="best-sellers-product-image">
-
                       <button
                         type="button"
                         className={`best-sellers-wishlist-btn ${
@@ -537,11 +588,9 @@ function BestSellersPage() {
                           "Product"
                         }
                       />
-
                     </div>
 
                     <div className="best-sellers-product-info">
-
                       <h3>
                         {product.name}
                       </h3>
@@ -552,9 +601,7 @@ function BestSellersPage() {
                           "en-IN"
                         )}
                       </p>
-
                     </div>
-
                   </Link>
                 );
               })
@@ -563,7 +610,6 @@ function BestSellersPage() {
                 No best selling products found.
               </p>
             )}
-
           </section>
         )}
 
@@ -572,9 +618,7 @@ function BestSellersPage() {
         {!loading &&
           !error &&
           pagination.totalPages > 1 && (
-
             <div className="best-sellers-pagination">
-
               <button
                 onClick={() =>
                   handlePageChange(
@@ -626,10 +670,8 @@ function BestSellersPage() {
               >
                 →
               </button>
-
             </div>
           )}
-
       </main>
 
       <Footer />

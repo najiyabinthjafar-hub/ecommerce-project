@@ -1,20 +1,34 @@
 import { useEffect, useState } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
+
+import toast from "react-hot-toast";
+
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+
 import "./ProductDetails.css";
 
 function ProductDetails() {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
+
   const [relatedProducts, setRelatedProducts] = useState([]);
+
   const [selectedImage, setSelectedImage] = useState("");
+
   const [selectedSize, setSelectedSize] = useState("");
+
   const [quantity, setQuantity] = useState(1);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
+
   const [addingToCart, setAddingToCart] = useState(false);
 
   // ================= SCROLL TO TOP =================
@@ -33,7 +47,9 @@ function ProductDetails() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
+
         setError("");
+
         setRelatedProducts([]);
 
         const response = await fetch(
@@ -43,7 +59,9 @@ function ProductDetails() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch product");
+          throw new Error(
+            data.message || "Failed to fetch product"
+          );
         }
 
         const fetchedProduct = data.product;
@@ -51,6 +69,7 @@ function ProductDetails() {
         setProduct(fetchedProduct);
 
         // Product image
+
         if (fetchedProduct.images?.length > 0) {
           setSelectedImage(fetchedProduct.images[0]);
         } else {
@@ -58,6 +77,7 @@ function ProductDetails() {
         }
 
         // Product variant / size
+
         if (fetchedProduct.variants?.length > 0) {
           setSelectedSize(fetchedProduct.variants[0]);
         } else {
@@ -67,6 +87,7 @@ function ProductDetails() {
         setQuantity(1);
       } catch (error) {
         console.error("Product API Error:", error);
+
         setError(error.message);
       } finally {
         setLoading(false);
@@ -91,7 +112,8 @@ function ProductDetails() {
 
         if (!response.ok) {
           throw new Error(
-            data.message || "Failed to fetch related products"
+            data.message ||
+              "Failed to fetch related products"
           );
         }
 
@@ -105,6 +127,7 @@ function ProductDetails() {
         const related = products
           .filter((item) => {
             // Exclude current product
+
             if (String(item._id) === String(id)) {
               return false;
             }
@@ -128,7 +151,11 @@ function ProductDetails() {
 
         setRelatedProducts(related);
       } catch (error) {
-        console.error("Related Products Error:", error);
+        console.error(
+          "Related Products Error:",
+          error
+        );
+
         setRelatedProducts([]);
       }
     };
@@ -190,22 +217,31 @@ function ProductDetails() {
   };
 
   const decreaseQuantity = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+    setQuantity((prev) =>
+      prev > 1 ? prev - 1 : 1
+    );
   };
 
   // ================= ADD TO CART =================
 
   const handleAddToCart = async () => {
     if (product.stock === 0) {
-      alert("This product is currently out of stock.");
+      toast.error(
+        "This product is currently out of stock."
+      );
+
       return;
     }
 
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Please login to add products to your cart.");
+      toast.error(
+        "Please login to add products to your cart."
+      );
+
       navigate("/login");
+
       return;
     }
 
@@ -216,10 +252,12 @@ function ProductDetails() {
         "http://localhost:5000/api/cart/add",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify({
             productId: product._id,
             quantity: quantity,
@@ -231,16 +269,25 @@ function ProductDetails() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to add product to cart"
+          data.message ||
+            "Failed to add product to cart"
         );
       }
 
-      alert("Product added to cart successfully!");
-      navigate("/cart");
-    } catch (error) {
-      console.error("Add To Cart Error:", error);
+      toast.success(
+        "Product added to cart successfully!"
+      );
 
-      alert(
+      window.dispatchEvent(
+        new Event("cartUpdated")
+      );
+    } catch (error) {
+      console.error(
+        "Add To Cart Error:",
+        error
+      );
+
+      toast.error(
         error.message ||
           "Something went wrong while adding the product to cart."
       );
@@ -253,21 +300,29 @@ function ProductDetails() {
 
   const handleBuyNow = () => {
     if (product.stock === 0) {
-      alert("This product is currently out of stock.");
+      toast.error(
+        "This product is currently out of stock."
+      );
+
       return;
     }
 
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Please login to continue.");
+      toast.error(
+        "Please login to continue."
+      );
+
       navigate("/login");
+
       return;
     }
 
     navigate("/checkout", {
       state: {
         buyNow: true,
+
         product: {
           ...product,
           quantity: quantity,
@@ -313,25 +368,29 @@ function ProductDetails() {
 
             {product.images?.length > 0 && (
               <div className="product-thumbnails">
-                {product.images.map((image, index) => (
-                  <button
-                    type="button"
-                    key={index}
-                    className={`thumbnail ${
-                      selectedImage === image
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setSelectedImage(image)
-                    }
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                    />
-                  </button>
-                ))}
+                {product.images.map(
+                  (image, index) => (
+                    <button
+                      type="button"
+                      key={index}
+                      className={`thumbnail ${
+                        selectedImage === image
+                          ? "active"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        setSelectedImage(image)
+                      }
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} ${
+                          index + 1
+                        }`}
+                      />
+                    </button>
+                  )
+                )}
               </div>
             )}
 
@@ -345,9 +404,9 @@ function ProductDetails() {
 
             <div className="product-price">
               ₹{" "}
-              {Number(productPrice || 0).toLocaleString(
-                "en-IN"
-              )}
+              {Number(
+                productPrice || 0
+              ).toLocaleString("en-IN")}
             </div>
 
             <p className="tax-info">
@@ -364,22 +423,24 @@ function ProductDetails() {
                 </div>
 
                 <div className="size-options">
-                  {product.variants.map((size) => (
-                    <button
-                      type="button"
-                      key={size}
-                      className={
-                        selectedSize === size
-                          ? "size-selected"
-                          : ""
-                      }
-                      onClick={() =>
-                        setSelectedSize(size)
-                      }
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {product.variants.map(
+                    (size) => (
+                      <button
+                        type="button"
+                        key={size}
+                        className={
+                          selectedSize === size
+                            ? "size-selected"
+                            : ""
+                        }
+                        onClick={() =>
+                          setSelectedSize(size)
+                        }
+                      >
+                        {size}
+                      </button>
+                    )
+                  )}
                 </div>
 
               </div>
@@ -464,6 +525,7 @@ function ProductDetails() {
             </p>
 
           </div>
+
         </div>
 
         {/* RELATED PRODUCTS */}
@@ -471,7 +533,9 @@ function ProductDetails() {
         {relatedProducts.length > 0 && (
           <section className="you-may-like">
 
-            <h2>Find your next favourite</h2>
+            <h2>
+              Find your next favourite
+            </h2>
 
             <div className="related-products-grid">
 
@@ -488,11 +552,14 @@ function ProductDetails() {
                     className="related-product-card"
                     key={item._id}
                     onClick={() =>
-                      navigate(`/product/${item._id}`)
+                      navigate(
+                        `/product/${item._id}`
+                      )
                     }
                   >
 
                     <div className="related-image">
+
                       <img
                         src={
                           item.images?.[0] ||
@@ -500,6 +567,7 @@ function ProductDetails() {
                         }
                         alt={item.name}
                       />
+
                     </div>
 
                     <p>{item.name}</p>
@@ -516,6 +584,7 @@ function ProductDetails() {
               })}
 
             </div>
+
           </section>
         )}
 

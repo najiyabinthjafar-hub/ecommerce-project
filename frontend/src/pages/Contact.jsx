@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+
+import toast from "react-hot-toast";
 
 import "./Contact.css";
 
@@ -57,14 +60,10 @@ function Contact() {
         );
       }
 
-      setMessage(
+      // Success toast
+      toast.success(
         "Message sent successfully! We will contact you soon."
       );
-
-      // Message will disappear after 2 seconds
-      setTimeout(() => {
-        setMessage("");
-      }, 2000);
 
       setFormData({
         name: "",

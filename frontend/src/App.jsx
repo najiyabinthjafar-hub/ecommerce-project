@@ -25,6 +25,7 @@ import VerifyOtp from "./pages/VerifyOtp";
 import Wishlist from "./pages/Wishlist";
 import CategoriesPage from "./pages/CategoriesPage";
 import OrderTracking from "./pages/OrderTracking";
+import NotFound from "./pages/NotFound";
 
 // ================= FOOTER PAGES =================
 
@@ -57,7 +58,6 @@ import OrderDetails from "./pages/admin/OrderDetails";
 import Coupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
 import ContactMessages from "./pages/admin/ContactMessages";
-
 import AdminProfile from "./pages/admin/AdminProfile";
 import AddBanner from "./pages/admin/AddBanner";
 import EditBanner from "./pages/admin/EditBanner";
@@ -81,32 +81,30 @@ function App() {
         {/* ================= CUSTOMER SIDE ================= */}
 
         <Route path="/" element={<Home />} />
+
         <Route path="/shop" element={<Shop />} />
+
         <Route path="/product/:id" element={<ProductDetails />} />
+
         <Route path="/cart" element={<Cart />} />
+
         <Route path="/checkout" element={<Checkout />} />
+
         <Route path="/orders" element={<Orders />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
 
         {/* ================= PROFILE ================= */}
 
         <Route path="/profile" element={<Profile />} />
 
-        <Route
-          path="/profile/personal"
-          element={<PersonalInformation />}
-        />
+        <Route path="/profile/personal" element={<PersonalInformation />} />
 
-        <Route
-          path="/profile/addresses"
-          element={<Addresses />}
-        />
+        <Route path="/profile/addresses" element={<Addresses />} />
 
-        <Route
-          path="/profile/change-password"
-          element={<ChangePassword />}
-        />
+        <Route path="/profile/change-password" element={<ChangePassword />} />
 
         {/* ================= AUTH ================= */}
 
@@ -119,6 +117,7 @@ function App() {
         {/* ================= OTHER CUSTOMER PAGES ================= */}
 
         <Route path="/about" element={<About />} />
+
         <Route path="/contact" element={<Contact />} />
 
         <Route path="/new-arrivals" element={<NewArrivalsPage />} />
@@ -127,46 +126,35 @@ function App() {
 
         <Route path="/category/:slug" element={<Category />} />
 
-        <Route
-          path="/category/:slug/:subcategorySlug"
-          element={<Category />}
-        />
+        <Route path="/category/:slug/:subcategorySlug" element={<Category />} />
 
         <Route path="/categories" element={<CategoriesPage />} />
 
         <Route path="/wishlist" element={<Wishlist />} />
 
-        <Route
-          path="/track-order/:orderId"
-          element={<OrderTracking />}
-        />
+        <Route path="/track-order/:orderId" element={<OrderTracking />} />
 
         {/* ================= FOOTER PAGES ================= */}
 
         <Route path="/support" element={<Support />} />
+
         <Route path="/invoicing" element={<Invoicing />} />
+
         <Route path="/careers" element={<Careers />} />
+
         <Route path="/blog" element={<Blog />} />
+
         <Route path="/faqs" element={<FAQs />} />
 
         {/* ================= POLICY PAGES ================= */}
 
         <Route path="/refund-policy" element={<RefundPolicy />} />
 
-        <Route
-          path="/shipping-policy"
-          element={<ShippingPolicy />}
-        />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
-        <Route
-          path="/privacy-policy"
-          element={<PrivacyPolicy />}
-        />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        <Route
-          path="/terms-of-service"
-          element={<TermsOfService />}
-        />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
 
         {/* ================= ADMIN LOGIN ================= */}
 
@@ -177,10 +165,7 @@ function App() {
           element={<AdminForgotPassword />}
         />
 
-        <Route
-          path="/admin/reset-password"
-          element={<AdminResetPassword />}
-        />
+        <Route path="/admin/reset-password" element={<AdminResetPassword />} />
 
         {/* ================= PROTECTED ADMIN SIDE ================= */}
 
@@ -238,14 +223,16 @@ function App() {
               </AdminLayout>
             }
           />
-           <Route
+
+          <Route
             path="/admin/categories/:id"
-          element={
-             <AdminLayout>
-             <ViewCategories />
-            </AdminLayout>
-           }
-        />
+            element={
+              <AdminLayout>
+                <ViewCategories />
+              </AdminLayout>
+            }
+          />
+
           <Route
             path="/admin/banners"
             element={
@@ -354,7 +341,7 @@ function App() {
             }
           />
 
-          {/* Inventory */}
+          {/* ================= INVENTORY ================= */}
 
           <Route
             path="/admin/inventory"
@@ -365,7 +352,7 @@ function App() {
             }
           />
 
-          {/* Contact Messages */}
+          {/* ================= CONTACT MESSAGES ================= */}
 
           <Route
             path="/admin/contact-messages"
@@ -385,7 +372,7 @@ function App() {
             }
           />
 
-          {/* Admin Profile */}
+          {/* ================= ADMIN PROFILE ================= */}
 
           <Route
             path="/admin/profile"
@@ -396,6 +383,10 @@ function App() {
             }
           />
         </Route>
+
+        {/* ================= 404 PAGE ================= */}
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
