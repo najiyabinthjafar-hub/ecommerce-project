@@ -564,11 +564,36 @@ const reduceProductStock = async (id, quantity) => {
   return product;
 };
 
+// ================= SEARCH SUGGESTIONS =================
+
+const getSearchSuggestions = async (search = "") => {
+  const searchText = search.trim();
+
+  if (!searchText) {
+    return [];
+  }
+
+  const regex = new RegExp(searchText, "i");
+
+  const suggestions = await Product.find({
+    status: "active",
+    $or: [
+      { name: regex },
+      { sku: regex },
+    ],
+  })
+    .select("_id name sku")
+    .limit(10);
+
+  return suggestions;
+};
+
 // ================= EXPORTS =================
 
 module.exports = {
   createProduct,
   getAllProducts,
+  getSearchSuggestions,
   getActiveProducts,
   getBestSellerProducts,
   getProductById,
