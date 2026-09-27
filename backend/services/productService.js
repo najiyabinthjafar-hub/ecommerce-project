@@ -27,7 +27,6 @@ const getAllProducts = async ({
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
       { sku: { $regex: search, $options: "i" } },
     ];
   }
