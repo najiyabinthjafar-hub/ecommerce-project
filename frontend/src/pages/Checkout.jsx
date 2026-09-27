@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./Checkout.css";
@@ -176,7 +177,7 @@ function Checkout() {
   }, 0);
 
   const deliveryCharge =
-    subtotal >= 999 || subtotal === 0 ? 0 : 99;
+    subtotal === 0 ? 0 : subtotal < 699 ? 50 : 0;
 
   const discount = coupon?.discountAmount || 0;
 
@@ -970,6 +971,7 @@ function Checkout() {
       <Navbar />
 
       <main className="figma-checkout">
+
         {/* ERROR */}
 
         {error && (
@@ -984,11 +986,13 @@ function Checkout() {
           className="figma-checkout-container"
           onSubmit={handlePlaceOrder}
         >
+
           {/* =================================================
               LEFT SIDE
               ================================================= */}
 
           <section className="delivery-section">
+
             {/* DELIVERY */}
 
             <h2 className="delivery-title">
@@ -1058,6 +1062,7 @@ function Checkout() {
             {/* CITY / STATE / PIN */}
 
             <div className="checkout-location-row">
+
               <div className="checkout-field">
                 <input
                   type="text"
@@ -1105,6 +1110,7 @@ function Checkout() {
                   required
                 />
               </div>
+
             </div>
 
             {/* PHONE */}
@@ -1138,11 +1144,13 @@ function Checkout() {
                 ================================================= */}
 
             <div className="coupon-section">
+
               <h2>
                 Discount code
               </h2>
 
               <div className="discount-box">
+
                 <input
                   type="text"
                   placeholder="Discount code or gift card"
@@ -1173,6 +1181,7 @@ function Checkout() {
                     Remove
                   </button>
                 )}
+
               </div>
 
               {couponMessage && (
@@ -1180,7 +1189,9 @@ function Checkout() {
                   {couponMessage}
                 </p>
               )}
+
             </div>
+
           </section>
 
           {/* =================================================
@@ -1188,9 +1199,11 @@ function Checkout() {
               ================================================= */}
 
           <section className="checkout-right">
+
             {/* PRODUCTS */}
 
             <div className="order-summary-products">
+
               {cartItems.map(
                 (item, index) => {
                   const product =
@@ -1230,7 +1243,9 @@ function Checkout() {
                       className="figma-product"
                       key={productId}
                     >
+
                       <div className="figma-product-image">
+
                         <img
                           src={image}
                           alt={
@@ -1242,9 +1257,11 @@ function Checkout() {
                         <span className="product-quantity">
                           {quantity}
                         </span>
+
                       </div>
 
                       <div className="figma-product-name">
+
                         <h4>
                           {product.name ||
                             "Product"}
@@ -1255,6 +1272,7 @@ function Checkout() {
                             Size: {item.size}
                           </small>
                         )}
+
                       </div>
 
                       <strong>
@@ -1265,15 +1283,18 @@ function Checkout() {
                           "en-IN"
                         )}
                       </strong>
+
                     </div>
                   );
                 }
               )}
+
             </div>
 
             {/* PRICE DETAILS */}
 
             <div className="price-details">
+
               <div className="price-row">
                 <span>
                   Subtotal
@@ -1289,6 +1310,7 @@ function Checkout() {
 
               {discount > 0 && (
                 <div className="price-row">
+
                   <span>
                     Discount
                     {coupon?.code
@@ -1302,10 +1324,12 @@ function Checkout() {
                       "en-IN"
                     )}
                   </span>
+
                 </div>
               )}
 
               <div className="price-row">
+
                 <span>
                   Shipping
                 </span>
@@ -1315,12 +1339,15 @@ function Checkout() {
                     ? "FREE"
                     : `₹${deliveryCharge}`}
                 </span>
+
               </div>
+
             </div>
 
             {/* TOTAL */}
 
             <div className="figma-total">
+
               <div>
                 <h2>
                   Total
@@ -1332,6 +1359,7 @@ function Checkout() {
               </div>
 
               <strong>
+
                 <span className="currency">
                   INR
                 </span>
@@ -1340,7 +1368,9 @@ function Checkout() {
                 {totalAmount.toLocaleString(
                   "en-IN"
                 )}
+
               </strong>
+
             </div>
 
             {/* =================================================
@@ -1348,6 +1378,7 @@ function Checkout() {
                 ================================================= */}
 
             <div className="payment-section">
+
               <h2>
                 Payment
               </h2>
@@ -1366,6 +1397,7 @@ function Checkout() {
                     : ""
                 }`}
               >
+
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -1387,6 +1419,7 @@ function Checkout() {
                 <span className="payment-icons">
                   COD
                 </span>
+
               </label>
 
               {paymentMethod === "cod" && (
@@ -1407,6 +1440,7 @@ function Checkout() {
                     : ""
                 }`}
               >
+
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -1432,6 +1466,7 @@ function Checkout() {
                 <span className="payment-icons">
                   UPI&nbsp;&nbsp;VISA&nbsp;&nbsp;MC
                 </span>
+
               </label>
 
               {paymentMethod ===
@@ -1444,6 +1479,7 @@ function Checkout() {
                   </p>
                 </div>
               )}
+
             </div>
 
             {/* =================================================
@@ -1451,11 +1487,13 @@ function Checkout() {
                 ================================================= */}
 
             <div className="billing-section">
+
               <h2>
                 Billing address
               </h2>
 
               <label className="billing-option">
+
                 <input
                   type="radio"
                   name="billing"
@@ -1471,9 +1509,11 @@ function Checkout() {
                 <span>
                   Same as shipping address
                 </span>
+
               </label>
 
               <label className="billing-option">
+
                 <input
                   type="radio"
                   name="billing"
@@ -1493,6 +1533,7 @@ function Checkout() {
                   Use a different billing
                   address
                 </span>
+
               </label>
 
               {billingAddress ===
@@ -1502,6 +1543,7 @@ function Checkout() {
                   support can be added later.
                 </p>
               )}
+
             </div>
 
             {/* PLACE ORDER */}
@@ -1521,6 +1563,7 @@ function Checkout() {
             {/* POLICY LINKS */}
 
             <div className="checkout-policy-links">
+
               <Link to="/refund-policy">
                 Refund policy
               </Link>
@@ -1542,8 +1585,11 @@ function Checkout() {
               <Link to="/terms-of-service">
                 Terms of service
               </Link>
+
             </div>
+
           </section>
+
         </form>
 
         {/* =====================================================
@@ -1558,6 +1604,7 @@ function Checkout() {
         >
           ← Back
         </button>
+
       </main>
 
       <Footer />

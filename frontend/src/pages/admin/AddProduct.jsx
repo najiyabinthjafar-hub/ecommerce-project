@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./AddProduct.css";
 
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
@@ -71,7 +72,8 @@ function AddProduct() {
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
-        alert("Failed to load categories.");
+
+        toast.error("Failed to load categories.");
       } finally {
         setLoadingCategories(false);
       }
@@ -126,12 +128,15 @@ function AddProduct() {
 
   const handleSizeChange = (size) => {
     setProduct((prev) => {
-      const alreadySelected = prev.variants.includes(size);
+      const alreadySelected =
+        prev.variants.includes(size);
 
       return {
         ...prev,
         variants: alreadySelected
-          ? prev.variants.filter((item) => item !== size)
+          ? prev.variants.filter(
+              (item) => item !== size
+            )
           : [...prev.variants, size],
       };
     });
@@ -154,7 +159,9 @@ function AddProduct() {
   // =========================================================
 
   const handleImageChange = (e) => {
-    const selectedFiles = Array.from(e.target.files || []);
+    const selectedFiles = Array.from(
+      e.target.files || []
+    );
 
     if (!selectedFiles.length) {
       return;
@@ -163,20 +170,29 @@ function AddProduct() {
     const remainingSlots = 5 - images.length;
 
     if (remainingSlots <= 0) {
-      alert("You can upload a maximum of 5 images.");
+      toast.error(
+        "You can upload a maximum of 5 images."
+      );
+
       e.target.value = "";
       return;
     }
 
-    const filesToAdd = selectedFiles.slice(0, remainingSlots);
+    const filesToAdd = selectedFiles.slice(
+      0,
+      remainingSlots
+    );
 
     if (selectedFiles.length > remainingSlots) {
-      alert(
+      toast.warning(
         `You can select only ${remainingSlots} more image(s).`
       );
     }
 
-    setImages((prev) => [...prev, ...filesToAdd]);
+    setImages((prev) => [
+      ...prev,
+      ...filesToAdd,
+    ]);
 
     // Allow selecting the same image again later
     e.target.value = "";
@@ -188,7 +204,10 @@ function AddProduct() {
 
   const removeImage = (index) => {
     setImages((prev) =>
-      prev.filter((_, imageIndex) => imageIndex !== index)
+      prev.filter(
+        (_, imageIndex) =>
+          imageIndex !== index
+      )
     );
   };
 
@@ -212,27 +231,29 @@ function AddProduct() {
     e.preventDefault();
 
     if (!product.name.trim()) {
-      alert("Please enter product name.");
+      toast.error("Please enter product name.");
       return;
     }
 
     if (!product.category) {
-      alert("Please select a category.");
+      toast.error("Please select a category.");
       return;
     }
 
     if (product.regularPrice === "") {
-      alert("Please enter regular price.");
+      toast.error("Please enter regular price.");
       return;
     }
 
     if (product.stock === "") {
-      alert("Please enter stock.");
+      toast.error("Please enter stock.");
       return;
     }
 
     if (images.length === 0) {
-      alert("Please select at least one product image.");
+      toast.error(
+        "Please select at least one product image."
+      );
       return;
     }
 
@@ -245,54 +266,57 @@ function AddProduct() {
 
       const productData = {
         sku: product.sku.trim(),
-
         name: product.name.trim(),
-
         slug: generateSlug(product.name),
-
         category: product.category,
-
-        regularPrice: Number(product.regularPrice),
-
+        regularPrice: Number(
+          product.regularPrice
+        ),
         salePrice:
           product.salePrice === ""
             ? 0
             : Number(product.salePrice),
-
         stock: Number(product.stock),
 
         // XS/S/M/L + 28/30/32 etc.
         variants: product.variants,
 
-        description: product.description.trim(),
+        description:
+          product.description.trim(),
 
-        isBestSeller: product.isBestSeller,
+        isBestSeller:
+          product.isBestSeller,
       };
 
       // =====================================================
       // CREATE PRODUCT
       // =====================================================
 
-      const response = await fetch(PRODUCT_API_URL, {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(productData),
-      });
+      const response = await fetch(
+        PRODUCT_API_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(productData),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to create product"
+          data.message ||
+            "Failed to create product"
         );
       }
 
       const createdProduct =
-        data.product || data.data || data;
+        data.product ||
+        data.data ||
+        data;
 
       if (!createdProduct?._id) {
         throw new Error(
@@ -304,21 +328,27 @@ function AddProduct() {
       // UPLOAD ALL PRODUCT IMAGES
       // =====================================================
 
-      const imageFormData = new FormData();
+      const imageFormData =
+        new FormData();
 
       images.forEach((image) => {
-        imageFormData.append("images", image);
+        imageFormData.append(
+          "images",
+          image
+        );
       });
 
-      const imageResponse = await fetch(
-        `${PRODUCT_API_URL}/${createdProduct._id}/images`,
-        {
-          method: "POST",
-          body: imageFormData,
-        }
-      );
+      const imageResponse =
+        await fetch(
+          `${PRODUCT_API_URL}/${createdProduct._id}/images`,
+          {
+            method: "POST",
+            body: imageFormData,
+          }
+        );
 
-      const imageData = await imageResponse.json();
+      const imageData =
+        await imageResponse.json();
 
       if (!imageResponse.ok) {
         throw new Error(
@@ -327,7 +357,13 @@ function AddProduct() {
         );
       }
 
-      alert("Product added successfully!");
+      // =====================================================
+      // SUCCESS TOAST
+      // =====================================================
+
+      toast.success(
+        "Product added successfully!"
+      );
 
       // =====================================================
       // RESET FORM
@@ -347,11 +383,16 @@ function AddProduct() {
 
       setImages([]);
 
-      navigate("/admin/products");
+      setTimeout(() => {
+        navigate("/admin/products");
+      }, 700);
     } catch (error) {
-      console.error("Add product error:", error);
+      console.error(
+        "Add product error:",
+        error
+      );
 
-      alert(
+      toast.error(
         error.message ||
           "Something went wrong while adding the product."
       );
@@ -488,40 +529,56 @@ function AddProduct() {
                   </option>
 
                   {!loadingCategories &&
-                    mainCategories.map((mainCategory) => {
-                      const mainCategoryId =
-                        mainCategory._id ||
-                        mainCategory.id;
+                    mainCategories.map(
+                      (mainCategory) => {
+                        const mainCategoryId =
+                          mainCategory._id ||
+                          mainCategory.id;
 
-                      const subcategories =
-                        getSubcategories(mainCategoryId);
+                        const subcategories =
+                          getSubcategories(
+                            mainCategoryId
+                          );
 
-                      return (
-                        <React.Fragment
-                          key={mainCategoryId}
-                        >
-                          <option value={mainCategoryId}>
-                            {mainCategory.name}
-                          </option>
+                        return (
+                          <React.Fragment
+                            key={mainCategoryId}
+                          >
+                            <option
+                              value={
+                                mainCategoryId
+                              }
+                            >
+                              {mainCategory.name}
+                            </option>
 
-                          {subcategories.map((subcategory) => {
-                            const subcategoryId =
-                              subcategory._id ||
-                              subcategory.id;
+                            {subcategories.map(
+                              (subcategory) => {
+                                const subcategoryId =
+                                  subcategory._id ||
+                                  subcategory.id;
 
-                            return (
-                              <option
-                                key={subcategoryId}
-                                value={subcategoryId}
-                              >
-                                {"   ↳ "}
-                                {subcategory.name}
-                              </option>
-                            );
-                          })}
-                        </React.Fragment>
-                      );
-                    })}
+                                return (
+                                  <option
+                                    key={
+                                      subcategoryId
+                                    }
+                                    value={
+                                      subcategoryId
+                                    }
+                                  >
+                                    {"   ↳ "}
+                                    {
+                                      subcategory.name
+                                    }
+                                  </option>
+                                );
+                              }
+                            )}
+                          </React.Fragment>
+                        );
+                      }
+                    )}
                 </select>
 
                 <small className="size-hint">
@@ -582,7 +639,9 @@ function AddProduct() {
                     type="number"
                     id="regularPrice"
                     name="regularPrice"
-                    value={product.regularPrice}
+                    value={
+                      product.regularPrice
+                    }
                     onChange={handleChange}
                     placeholder="Enter regular price"
                     min="0"
@@ -606,7 +665,9 @@ function AddProduct() {
                     type="number"
                     id="salePrice"
                     name="salePrice"
-                    value={product.salePrice}
+                    value={
+                      product.salePrice
+                    }
                     onChange={handleChange}
                     placeholder="Enter sale price"
                     min="0"
@@ -639,7 +700,9 @@ function AddProduct() {
                     key={size}
                     type="button"
                     className={`size-option ${
-                      product.variants.includes(size)
+                      product.variants.includes(
+                        size
+                      )
                         ? "selected"
                         : ""
                     }`}
@@ -664,7 +727,9 @@ function AddProduct() {
                     key={size}
                     type="button"
                     className={`size-option ${
-                      product.variants.includes(size)
+                      product.variants.includes(
+                        size
+                      )
                         ? "selected"
                         : ""
                     }`}
@@ -690,7 +755,6 @@ function AddProduct() {
             <div className="form-group best-seller-group">
 
               <div className="best-seller-content">
-
                 <label className="best-seller-title">
                   Best Seller
                 </label>
@@ -698,21 +762,22 @@ function AddProduct() {
                 <small>
                   Highlight this product as a best seller.
                 </small>
-
               </div>
 
               <label className="best-seller-checkbox">
-
                 <input
                   type="checkbox"
-                  checked={product.isBestSeller}
-                  onChange={handleBestSellerChange}
+                  checked={
+                    product.isBestSeller
+                  }
+                  onChange={
+                    handleBestSellerChange
+                  }
                 />
 
                 <span>
                   Mark this product as Best Seller
                 </span>
-
               </label>
 
             </div>
@@ -743,7 +808,9 @@ function AddProduct() {
                   name="images"
                   accept="image/*"
                   multiple
-                  onChange={handleImageChange}
+                  onChange={
+                    handleImageChange
+                  }
                 />
 
               </div>
@@ -753,36 +820,42 @@ function AddProduct() {
               {images.length > 0 && (
                 <div className="product-image-preview">
 
-                  {images.map((image, index) => (
-                    <div
-                      className="preview-image-box"
-                      key={`${image.name}-${index}`}
-                    >
-
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Product ${index + 1}`}
-                      />
-
-                      <button
-                        type="button"
-                        className="remove-preview-btn"
-                        onClick={() =>
-                          removeImage(index)
-                        }
-                        aria-label={`Remove image ${
-                          index + 1
-                        }`}
+                  {images.map(
+                    (image, index) => (
+                      <div
+                        className="preview-image-box"
+                        key={`${image.name}-${index}`}
                       >
-                        <i className="bi bi-x"></i>
-                      </button>
 
-                      <span className="image-number">
-                        {index + 1}
-                      </span>
+                        <img
+                          src={URL.createObjectURL(
+                            image
+                          )}
+                          alt={`Product ${
+                            index + 1
+                          }`}
+                        />
 
-                    </div>
-                  ))}
+                        <button
+                          type="button"
+                          className="remove-preview-btn"
+                          onClick={() =>
+                            removeImage(index)
+                          }
+                          aria-label={`Remove image ${
+                            index + 1
+                          }`}
+                        >
+                          <i className="bi bi-x"></i>
+                        </button>
+
+                        <span className="image-number">
+                          {index + 1}
+                        </span>
+
+                      </div>
+                    )
+                  )}
 
                 </div>
               )}
@@ -802,7 +875,9 @@ function AddProduct() {
               <textarea
                 id="description"
                 name="description"
-                value={product.description}
+                value={
+                  product.description
+                }
                 onChange={handleChange}
                 placeholder="Enter product description"
                 rows="5"

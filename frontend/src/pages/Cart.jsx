@@ -291,9 +291,9 @@ function Cart() {
   );
 
   const delivery =
-    subtotal === 0 || subtotal >= 999
+    subtotal === 0 || subtotal >= 699
       ? 0
-      : 99;
+      : 50;
 
   const total = subtotal + delivery;
 
@@ -499,7 +499,7 @@ function Cart() {
               </div>
 
               <p className="delivery-note">
-                Free delivery on orders above ₹999
+                Free delivery on orders above &#8377;699
               </p>
 
               <Link
@@ -531,3 +531,6 @@ function Cart() {
 }
 
 export default Cart;
+
+
+

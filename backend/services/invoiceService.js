@@ -32,7 +32,7 @@ const generateInvoicePdf = async (order) => {
       doc
         .fontSize(22)
         .font("Helvetica-Bold")
-        .text("E-COMMERCE STORE", { align: "center" });
+        .text("RIZO FASHION", { align: "center" });
 
       doc
         .moveDown(0.5)
@@ -196,3 +196,4 @@ const generateInvoicePdf = async (order) => {
 module.exports = {
   generateInvoicePdf,
 };
+

@@ -7,7 +7,6 @@ import React, {
 } from "react";
 
 import {
-  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -36,6 +35,10 @@ const ORDER_STATUS_OPTIONS = [
   {
     value: "SHIPPED",
     label: "Shipped",
+  },
+  {
+    value: "OUT_FOR_DELIVERY",
+    label: "Out for Delivery",
   },
   {
     value: "DELIVERED",
@@ -78,19 +81,14 @@ const REFUND_STATUS_LABELS = {
 function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   /* =======================================================
      STATE
   ======================================================= */
 
-  const [order, setOrder] = useState(
-    location.state?.order || null
-  );
+  const [order, setOrder] = useState(null);
 
-  const [loading, setLoading] = useState(
-    !location.state?.order
-  );
+  const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
 
@@ -106,7 +104,7 @@ function OrderDetails() {
   const statusDropdownRef = useRef(null);
 
   /* =======================================================
-     CLOSE CUSTOM DROPDOWN WHEN CLICKING OUTSIDE
+     CLOSE DROPDOWN WHEN CLICKING OUTSIDE
   ======================================================= */
 
   useEffect(() => {
@@ -162,7 +160,7 @@ function OrderDetails() {
   };
 
   /* =======================================================
-     SAFE JSON RESPONSE
+     SAFE RESPONSE PARSER
   ======================================================= */
 
   const parseResponse = async (response) => {
@@ -186,30 +184,37 @@ function OrderDetails() {
   };
 
   /* =======================================================
-     FIND ORDER FROM ALL ORDERS
+     FETCH ORDER DIRECTLY BY ID
      
-     IMPORTANT:
-     Backend pagination is 10 orders per request.
-     We continue through totalPages until the required
-     order is found.
+     Backend:
+     GET /api/orders/:id
   ======================================================= */
 
-  const findOrderFromAllOrders = useCallback(
-    async (orderId) => {
-      const token = getToken();
+  const fetchOrder = useCallback(
+    async ({ showLoader = true } = {}) => {
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
 
-      if (!token) {
-        throw new Error(
-          "Authentication required. Please login again."
-        );
-      }
+        setError("");
 
-      let page = 1;
-      let totalPages = 1;
+        const token = getToken();
 
-      while (page <= totalPages) {
+        if (!token) {
+          throw new Error(
+            "Authentication required. Please login again."
+          );
+        }
+
+        if (!id) {
+          throw new Error(
+            "Order ID is missing."
+          );
+        }
+
         const response = await fetch(
-          `${API_URL}/orders/all?page=${page}&limit=10`,
+          `${API_URL}/orders/${id}`,
           {
             method: "GET",
             headers: {
@@ -224,95 +229,51 @@ function OrderDetails() {
         if (!response.ok) {
           throw new Error(
             data?.message ||
-              "Failed to fetch orders."
+              "Failed to fetch order details."
           );
         }
 
-        const orders = Array.isArray(
-          data?.orders
-        )
-          ? data.orders
-          : [];
+        /*
+          Backend may return:
 
-        const foundOrder = orders.find(
-          (item) =>
-            String(item?._id) ===
-            String(orderId)
-        );
+          {
+            success: true,
+            order: {...}
+          }
 
-        if (foundOrder) {
-          return foundOrder;
+          or directly:
+
+          {...}
+        */
+
+        const fetchedOrder =
+          data?.order || data;
+
+        if (!fetchedOrder?._id) {
+          throw new Error(
+            "Order not found."
+          );
         }
 
-        totalPages = Math.max(
-          Number(data?.totalPages || 1),
-          1
+        setOrder(fetchedOrder);
+      } catch (err) {
+        console.error(
+          "Fetch order error:",
+          err
         );
 
-        page += 1;
+        setError(
+          err.message ||
+            "Failed to load order details."
+        );
+      } finally {
+        if (showLoader) {
+          setLoading(false);
+        }
       }
-
-      return null;
     },
-    []
+    [id]
   );
-
-  /* =======================================================
-     FETCH ORDER
-  ======================================================= */
-
-  const fetchOrder = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      /*
-        If Orders page already passed the order through
-        location.state, use it directly.
-      */
-
-      if (
-        location.state?.order &&
-        String(
-          location.state.order._id
-        ) === String(id)
-      ) {
-        setOrder(location.state.order);
-        return;
-      }
-
-      /*
-        Otherwise fetch from backend.
-      */
-
-      const foundOrder =
-        await findOrderFromAllOrders(id);
-
-      if (!foundOrder) {
-        throw new Error(
-          "Order not found."
-        );
-      }
-
-      setOrder(foundOrder);
-    } catch (err) {
-      console.error(
-        "Fetch order error:",
-        err
-      );
-
-      setError(
-        err.message ||
-          "Failed to load order details."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    id,
-    location.state,
-    findOrderFromAllOrders,
-  ]);
 
   /* =======================================================
      INITIAL LOAD
@@ -376,8 +337,7 @@ function OrderDetails() {
 
   const getRefundStatusLabel = (value) => {
     const status = String(
-      value ||
-        "NOT_APPLICABLE"
+      value || "NOT_APPLICABLE"
     ).toUpperCase();
 
     return (
@@ -504,8 +464,7 @@ function OrderDetails() {
     return (
       currentOrder?.user?.name ||
       currentOrder?.user?.fullName ||
-      currentOrder
-        ?.shippingAddress
+      currentOrder?.shippingAddress
         ?.fullName ||
       currentOrder?.user?.email ||
       "Unknown Customer"
@@ -534,8 +493,7 @@ function OrderDetails() {
   ) => {
     return (
       currentOrder?.user?.phone ||
-      currentOrder
-        ?.shippingAddress
+      currentOrder?.shippingAddress
         ?.phone ||
       "—"
     );
@@ -661,10 +619,8 @@ function OrderDetails() {
   ) => {
     return Number(
       item?.price ||
-        item?.product
-          ?.salePrice ||
-        item?.product
-          ?.regularPrice ||
+        item?.product?.salePrice ||
+        item?.product?.regularPrice ||
         0
     );
   };
@@ -694,6 +650,8 @@ function OrderDetails() {
 
   /* =======================================================
      UPDATE ORDER STATUS
+     
+     PUT /api/orders/:id/status
   ======================================================= */
 
   const handleStatusChange =
@@ -730,7 +688,7 @@ function OrderDetails() {
 
         if (!token) {
           throw new Error(
-            "Authentication required."
+            "Authentication required. Please login again."
           );
         }
 
@@ -739,12 +697,7 @@ function OrderDetails() {
             `${API_URL}/orders/${order._id}/status`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type":
-                  "application/json",
-                Authorization:
-                  `Bearer ${token}`,
-              },
+              headers: getHeaders(),
               body: JSON.stringify({
                 orderStatus:
                   newStatus,
@@ -764,18 +717,22 @@ function OrderDetails() {
           );
         }
 
-        const updatedOrder =
-          data?.order;
+        /*
+          Do not depend on the update
+          response structure.
 
-        if (!updatedOrder) {
-          throw new Error(
-            "Order status updated, but updated order data was not returned."
-          );
-        }
+          Fetch the order again from
+          the actual backend so that:
 
-        setOrder(
-          updatedOrder
-        );
+          - status is fresh
+          - user is populated
+          - products are populated
+          - return/refund values are fresh
+        */
+
+        await fetchOrder({
+          showLoader: false,
+        });
       } catch (err) {
         console.error(
           "Update order status error:",
@@ -795,6 +752,8 @@ function OrderDetails() {
 
   /* =======================================================
      UPDATE RETURN STATUS
+     
+     PUT /api/orders/:id/return-status
   ======================================================= */
 
   const handleReturnStatusChange =
@@ -842,7 +801,7 @@ function OrderDetails() {
 
         if (!token) {
           throw new Error(
-            "Authentication required."
+            "Authentication required. Please login again."
           );
         }
 
@@ -851,12 +810,7 @@ function OrderDetails() {
             `${API_URL}/orders/${order._id}/return-status`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type":
-                  "application/json",
-                Authorization:
-                  `Bearer ${token}`,
-              },
+              headers: getHeaders(),
               body: JSON.stringify({
                 returnStatus:
                   newReturnStatus,
@@ -876,18 +830,19 @@ function OrderDetails() {
           );
         }
 
-        const updatedOrder =
-          data?.order;
+        /*
+          Refresh complete order from
+          backend after return/refund
+          operation.
 
-        if (!updatedOrder) {
-          throw new Error(
-            "Return status updated, but updated order data was not returned."
-          );
-        }
+          This is important because
+          Razorpay refund information
+          may be generated by backend.
+        */
 
-        setOrder(
-          updatedOrder
-        );
+        await fetchOrder({
+          showLoader: false,
+        });
       } catch (err) {
         console.error(
           "Update return status error:",
@@ -910,8 +865,7 @@ function OrderDetails() {
   ======================================================= */
 
   const shippingAddress =
-    order?.shippingAddress ||
-    {};
+    order?.shippingAddress || {};
 
   /* =======================================================
      RETURN VALUES
@@ -933,9 +887,10 @@ function OrderDetails() {
     returnStatus ===
     "REQUESTED";
 
-  const paymentMethod = String(
-    order?.paymentMethod || ""
-  ).toUpperCase();
+  const paymentMethod =
+    String(
+      order?.paymentMethod || ""
+    ).toUpperCase();
 
   const isCODOrder =
     paymentMethod === "COD";
@@ -946,6 +901,8 @@ function OrderDetails() {
 
   /* =======================================================
      TIMELINE
+     
+     Includes OUT_FOR_DELIVERY
   ======================================================= */
 
   const timelineItems = [
@@ -970,6 +927,11 @@ function OrderDetails() {
       icon: "bi-truck",
     },
     {
+      key: "OUT_FOR_DELIVERY",
+      label: "Out for Delivery",
+      icon: "bi-box-arrow-right",
+    },
+    {
       key: "DELIVERED",
       label: "Delivered",
       icon: "bi-house-check",
@@ -989,6 +951,7 @@ function OrderDetails() {
       "CONFIRMED",
       "PROCESSING",
       "SHIPPED",
+      "OUT_FOR_DELIVERY",
       "DELIVERED",
     ];
 
@@ -1129,6 +1092,7 @@ function OrderDetails() {
       <div className="order-details-header">
 
         <div className="order-header-left">
+
           <div>
 
             <div className="page-eyebrow">
@@ -1144,6 +1108,7 @@ function OrderDetails() {
             </p>
 
           </div>
+
         </div>
 
         {/* =================================================
@@ -1156,9 +1121,7 @@ function OrderDetails() {
 
           <div
             className="order-status-control"
-            ref={
-              statusDropdownRef
-            }
+            ref={statusDropdownRef}
           >
 
             <label>
@@ -1258,14 +1221,17 @@ function OrderDetails() {
               )
             }
           >
+
             <i className="bi bi-arrow-left"></i>
 
             <span>
               Back to Orders
             </span>
+
           </button>
 
         </div>
+
       </div>
 
       {/* =================================================
@@ -1297,15 +1263,15 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <span>
               Customer
             </span>
 
             <strong className="breakable">
-              {getCustomerName(
-                order
-              )}
+              {getCustomerName(order)}
             </strong>
+
           </div>
 
         </div>
@@ -1317,6 +1283,7 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <span>
               Order Date
             </span>
@@ -1326,6 +1293,7 @@ function OrderDetails() {
                 order.createdAt
               )}
             </strong>
+
           </div>
 
         </div>
@@ -1337,6 +1305,7 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <span>
               Items
             </span>
@@ -1344,6 +1313,7 @@ function OrderDetails() {
             <strong>
               {totalItems}
             </strong>
+
           </div>
 
         </div>
@@ -1355,6 +1325,7 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <span>
               Final Amount
             </span>
@@ -1364,6 +1335,7 @@ function OrderDetails() {
                 order.finalAmount
               )}
             </strong>
+
           </div>
 
         </div>
@@ -1387,6 +1359,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Customer Information
               </h2>
@@ -1394,6 +1367,7 @@ function OrderDetails() {
               <p>
                 Customer contact details
               </p>
+
             </div>
 
           </div>
@@ -1401,39 +1375,39 @@ function OrderDetails() {
           <div className="info-list">
 
             <div className="info-row">
+
               <span>
                 Name
               </span>
 
               <strong className="breakable">
-                {getCustomerName(
-                  order
-                )}
+                {getCustomerName(order)}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Email
               </span>
 
               <strong className="breakable">
-                {getCustomerEmail(
-                  order
-                )}
+                {getCustomerEmail(order)}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Phone
               </span>
 
               <strong className="breakable">
-                {getCustomerPhone(
-                  order
-                )}
+                {getCustomerPhone(order)}
               </strong>
+
             </div>
 
           </div>
@@ -1451,6 +1425,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Shipping Address
               </h2>
@@ -1458,6 +1433,7 @@ function OrderDetails() {
               <p>
                 Delivery information
               </p>
+
             </div>
 
           </div>
@@ -1519,6 +1495,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Payment Information
               </h2>
@@ -1526,6 +1503,7 @@ function OrderDetails() {
               <p>
                 Payment and transaction details
               </p>
+
             </div>
 
           </div>
@@ -1533,6 +1511,7 @@ function OrderDetails() {
           <div className="info-list">
 
             <div className="info-row">
+
               <span>
                 Payment Method
               </span>
@@ -1541,14 +1520,17 @@ function OrderDetails() {
                 {order.paymentMethod ||
                   "—"}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Payment Status
               </span>
 
               <strong>
+
                 <span
                   className={`payment-status ${getPaymentStatusClass(
                     order
@@ -1558,10 +1540,13 @@ function OrderDetails() {
                     order
                   )}
                 </span>
+
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Order Created
               </span>
@@ -1571,6 +1556,7 @@ function OrderDetails() {
                   order.createdAt
                 )}
               </strong>
+
             </div>
 
             {order.razorpayOrderId && (
@@ -1620,6 +1606,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Order Information
               </h2>
@@ -1627,6 +1614,7 @@ function OrderDetails() {
               <p>
                 Basic order details
               </p>
+
             </div>
 
           </div>
@@ -1634,6 +1622,7 @@ function OrderDetails() {
           <div className="info-list">
 
             <div className="info-row">
+
               <span>
                 Order ID
               </span>
@@ -1641,9 +1630,11 @@ function OrderDetails() {
               <strong className="breakable">
                 {order._id}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Status
               </span>
@@ -1653,9 +1644,11 @@ function OrderDetails() {
                   order.orderStatus
                 )}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Items
               </span>
@@ -1663,9 +1656,11 @@ function OrderDetails() {
               <strong>
                 {totalItems}
               </strong>
+
             </div>
 
             <div className="info-row">
+
               <span>
                 Payment Method
               </span>
@@ -1674,6 +1669,7 @@ function OrderDetails() {
                 {order.paymentMethod ||
                   "—"}
               </strong>
+
             </div>
 
           </div>
@@ -1695,6 +1691,7 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <h2>
               Ordered Products
             </h2>
@@ -1702,6 +1699,7 @@ function OrderDetails() {
             <p>
               Products included in this order
             </p>
+
           </div>
 
         </div>
@@ -1728,8 +1726,7 @@ function OrderDetails() {
 
                 const quantity =
                   Number(
-                    item?.quantity ||
-                      0
+                    item?.quantity || 0
                   );
 
                 return (
@@ -1748,20 +1745,18 @@ function OrderDetails() {
                     <div className="product-image">
 
                       {image ? (
+
                         <img
                           src={image}
                           alt={getProductName(
                             item
                           )}
-                          onError={(
-                            event
-                          ) => {
+                          onError={(event) => {
                             event.currentTarget.style.display =
                               "none";
 
                             const parent =
-                              event
-                                .currentTarget
+                              event.currentTarget
                                 .parentElement;
 
                             if (
@@ -1787,10 +1782,13 @@ function OrderDetails() {
                             }
                           }}
                         />
+
                       ) : (
+
                         <div className="image-placeholder">
                           <i className="bi bi-image"></i>
                         </div>
+
                       )}
 
                     </div>
@@ -1808,8 +1806,7 @@ function OrderDetails() {
                         <span>
                           SKU:{" "}
                           {
-                            item
-                              .product
+                            item.product
                               .sku
                           }
                         </span>
@@ -1821,8 +1818,7 @@ function OrderDetails() {
                       ) &&
                         item.product
                           .variants
-                          .length >
-                          0 && (
+                          .length > 0 && (
                           <span className="breakable">
                             Available sizes:{" "}
                             {item.product.variants.join(
@@ -1896,6 +1892,7 @@ function OrderDetails() {
           </div>
 
           <div>
+
             <h2>
               Return & Refund
             </h2>
@@ -1903,6 +1900,7 @@ function OrderDetails() {
             <p>
               Return request and refund information
             </p>
+
           </div>
 
         </div>
@@ -1910,6 +1908,7 @@ function OrderDetails() {
         <div className="return-refund-grid">
 
           <div className="return-refund-item">
+
             <span>
               Return Status
             </span>
@@ -1919,9 +1918,11 @@ function OrderDetails() {
                 returnStatus
               )}
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Requested At
             </span>
@@ -1931,14 +1932,17 @@ function OrderDetails() {
                 order.returnRequestedAt
               )}
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Refund Status
             </span>
 
             <strong>
+
               <span
                 className={`refund-status ${refundStatus.toLowerCase()}`}
               >
@@ -1948,10 +1952,13 @@ function OrderDetails() {
                       refundStatus
                     )}
               </span>
+
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Refund Amount
             </span>
@@ -1961,9 +1968,11 @@ function OrderDetails() {
                 order.refundAmount
               )}
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Return Reason
             </span>
@@ -1972,9 +1981,11 @@ function OrderDetails() {
               {order.returnReason ||
                 "No return reason provided"}
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Refund ID
             </span>
@@ -1984,9 +1995,11 @@ function OrderDetails() {
                 ? "Not Applicable"
                 : order.refundId || "—"}
             </strong>
+
           </div>
 
           <div className="return-refund-item">
+
             <span>
               Refunded At
             </span>
@@ -1998,6 +2011,7 @@ function OrderDetails() {
                     order.refundedAt
                   )}
             </strong>
+
           </div>
 
         </div>
@@ -2007,7 +2021,9 @@ function OrderDetails() {
         <div className="return-control">
 
           {hasPendingReturn ? (
+
             <>
+
               <div
                 style={{
                   display: "flex",
@@ -2029,11 +2045,13 @@ function OrderDetails() {
                     )
                   }
                 >
+
                   <i className="bi bi-check-circle"></i>
 
                   {updatingReturn
                     ? "Updating..."
                     : "Approve Return"}
+
                 </button>
 
                 <button
@@ -2048,30 +2066,42 @@ function OrderDetails() {
                     )
                   }
                 >
+
                   <i className="bi bi-x-circle"></i>
 
                   {updatingReturn
                     ? "Updating..."
                     : "Reject Return"}
+
                 </button>
 
               </div>
 
               <small>
+
                 {isCODOrder
                   ? "COD return approval does not create an online refund. Handle the cash refund according to your store return process."
-                  : "Approving a paid Razorpay return automatically creates the refund through the backend."}
+                  : isRazorpayOrder
+                  ? "Approving a paid Razorpay return automatically creates the refund through the backend."
+                  : "Return approval will be processed by the backend."}
+
               </small>
+
             </>
+
           ) : (
+
             <small>
+
               {returnStatus ===
               "NONE"
                 ? "No return request has been submitted for this order."
                 : `Return status is ${getReturnStatusLabel(
                     returnStatus
                   )}. No further return decision is available.`}
+
             </small>
+
           )}
 
         </div>
@@ -2095,6 +2125,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Order Summary
               </h2>
@@ -2102,6 +2133,7 @@ function OrderDetails() {
               <p>
                 Payment breakdown
               </p>
+
             </div>
 
           </div>
@@ -2109,6 +2141,7 @@ function OrderDetails() {
           <div className="summary-list">
 
             <div className="summary-row">
+
               <span>
                 Subtotal
               </span>
@@ -2118,24 +2151,29 @@ function OrderDetails() {
                   order.totalAmount
                 )}
               </strong>
+
             </div>
 
             <div className="summary-row">
+
               <span>
                 Discount
               </span>
 
               <strong className="discount-value">
-                -{" "}
+                -
+                {" "}
                 {formatCurrency(
                   order.discountAmount
                 )}
               </strong>
+
             </div>
 
             <div className="summary-divider"></div>
 
             <div className="summary-row total">
+
               <span>
                 Final Amount
               </span>
@@ -2145,6 +2183,7 @@ function OrderDetails() {
                   order.finalAmount
                 )}
               </strong>
+
             </div>
 
           </div>
@@ -2162,6 +2201,7 @@ function OrderDetails() {
             </div>
 
             <div>
+
               <h2>
                 Order Timeline
               </h2>
@@ -2169,6 +2209,7 @@ function OrderDetails() {
               <p>
                 Current order progress
               </p>
+
             </div>
 
           </div>
@@ -2186,6 +2227,7 @@ function OrderDetails() {
                 </div>
 
                 <div>
+
                   <strong>
                     Order Cancelled
                   </strong>
@@ -2193,6 +2235,7 @@ function OrderDetails() {
                   <span>
                     This order has been cancelled.
                   </span>
+
                 </div>
 
               </div>
@@ -2201,6 +2244,7 @@ function OrderDetails() {
 
               timelineItems.map(
                 (item) => (
+
                   <div
                     key={item.key}
                     className={`timeline-item ${
@@ -2213,12 +2257,15 @@ function OrderDetails() {
                   >
 
                     <div className="timeline-dot">
+
                       <i
                         className={`bi ${item.icon}`}
                       ></i>
+
                     </div>
 
                     <div>
+
                       <strong>
                         {item.label}
                       </strong>
@@ -2230,9 +2277,11 @@ function OrderDetails() {
                           ? "Completed"
                           : "Waiting"}
                       </span>
+
                     </div>
 
                   </div>
+
                 )
               )
 
@@ -2243,11 +2292,6 @@ function OrderDetails() {
         </div>
 
       </div>
-
-      {/* =================================================
-          BOTTOM ACTION REMOVED
-          Back button is now in top-right
-      ================================================= */}
 
     </div>
   );

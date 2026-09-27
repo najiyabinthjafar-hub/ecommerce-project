@@ -48,6 +48,10 @@ function Login() {
 
       const { token, user } = response.data;
 
+      if (user?.role === "admin") {
+        throw new Error("Admin account cannot login here.");
+      }
+
       localStorage.setItem("token", token);
 
       localStorage.setItem(

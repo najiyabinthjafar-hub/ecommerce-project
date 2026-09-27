@@ -42,8 +42,13 @@ const createContact = async (req, res) => {
 
 const getAllContacts = async (req, res) => {
   try {
+    const { search, status } = req.query;
+
     const contacts =
-      await contactService.getAllContacts();
+      await contactService.getAllContacts({
+        search,
+        status,
+      });
 
     res.status(200).json({
       count: contacts.length,

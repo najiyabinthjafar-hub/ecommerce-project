@@ -6,7 +6,10 @@ const User = require("../models/User");
 const notificationService = require("./notificationService");
 const productService = require("./productService");
 const razorpayService = require("./razorpayService");
-const { sendOrderConfirmationEmail } = require("./emailService");
+const {
+  sendOrderConfirmationEmail,
+  sendNewOrderAdminEmail,
+} = require("./emailService");
 const { generateInvoicePdf } = require("./invoiceService");
 
 // ================= STOCK HELPERS ==========
@@ -136,6 +139,18 @@ const createOrder = async (orderData) => {
   });
   const items = orderData.items || [];
 
+    const totalAmount = Number(orderData.totalAmount) || 0;
+
+    const shippingCharge =
+      totalAmount === 0 ? 0 : totalAmount < 699 ? 50 : 0;
+
+    const finalAmount = Math.max(
+      0,
+      totalAmount +
+        shippingCharge -
+        (Number(orderData.discountAmount) || 0)
+    );
+
   const paymentMethod = String(
     orderData.paymentMethod || ""
   ).toUpperCase();
@@ -155,7 +170,11 @@ const createOrder = async (orderData) => {
   let order;
 
   try {
-    order = await Order.create(orderData);
+    order = await Order.create({
+      ...orderData,
+      shippingCharge,
+      finalAmount,
+    });
   } catch (error) {
     if (reducedItems.length > 0) {
       await restoreStock(reducedItems);
@@ -195,6 +214,22 @@ const createOrder = async (orderData) => {
       type: "ORDER",
     });
   }
+    // Send new order email to admin
+    if (admin) {
+      try {
+        const customer = await User.findById(order.user);
+
+        await sendNewOrderAdminEmail({
+          order,
+          customer,
+        });
+
+        console.log("NEW ORDER ADMIN EMAIL SENT SUCCESSFULLY");
+      } catch (adminEmailError) {
+        console.error("NEW ORDER ADMIN EMAIL FAILED:");
+        console.error(adminEmailError.message);
+      }
+    }
     // Send COD order confirmation email with invoice
     if (paymentMethod === "COD") {
       try {
@@ -827,6 +862,9 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
+
 
 
 

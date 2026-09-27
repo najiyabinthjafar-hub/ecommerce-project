@@ -58,10 +58,10 @@ function ShippingPolicy() {
             <section className="shipping-policy-section">
               <h2>Shipping Charges</h2>
 
-              <p>We offer free shipping on orders above ₹999.</p>
+              <p>We offer free shipping on orders of &#8377;699 and above.</p>
 
               <p>
-                For orders below ₹999, a standard delivery charge may apply.
+                For orders below &#8377;699, a standard shipping charge of &#8377;50 applies.
               </p>
             </section>
 
@@ -113,3 +113,6 @@ function ShippingPolicy() {
 }
 
 export default ShippingPolicy;
+
+
+
