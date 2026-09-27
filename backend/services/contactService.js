@@ -30,8 +30,58 @@ const createContact = async ({
 
 // ================= GET ALL CONTACTS =================
 
-const getAllContacts = async () => {
-  const contacts = await Contact.find().sort({
+const getAllContacts = async ({
+  search,
+  status,
+} = {}) => {
+  // ==========================================
+  // BUILD FILTER
+  // ==========================================
+
+  const filter = {};
+
+  // ==========================================
+  // SEARCH BY NAME OR EMAIL ONLY
+  // ==========================================
+
+  if (search && search.trim()) {
+    const searchValue = search.trim();
+
+    filter.$or = [
+      {
+        name: {
+          $regex: searchValue,
+          $options: "i",
+        },
+      },
+      {
+        email: {
+          $regex: searchValue,
+          $options: "i",
+        },
+      },
+    ];
+  }
+
+  // ==========================================
+  // STATUS FILTER
+  // ==========================================
+
+  if (status && status !== "all") {
+    if (!["read", "replied"].includes(status)) {
+      throw new Error(
+        "Invalid contact status. Status must be read or replied."
+      );
+    }
+
+    filter.status = status;
+  }
+
+  // ==========================================
+  // GET CONTACTS
+  // ==========================================
+
+  const contacts = await Contact.find(filter).sort({
     createdAt: -1,
   });
 
