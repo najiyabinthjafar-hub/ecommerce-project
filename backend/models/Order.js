@@ -84,6 +84,13 @@ const orderSchema = new mongoose.Schema(
       min: 0,
     },
 
+    
+    shippingCharge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     finalAmount: {
       type: Number,
       required: true,
@@ -185,4 +192,5 @@ razorpaySignature: {
 );
 
 module.exports = mongoose.model("Order", orderSchema);
+
 
