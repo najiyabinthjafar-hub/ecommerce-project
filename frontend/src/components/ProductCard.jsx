@@ -1,20 +1,62 @@
 import { useEffect, useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
+import toast from "react-hot-toast";
 
 import "./ProductCard.css";
 
 const API_URL = "http://localhost:5000/api";
 
-function ProductCard({ product }) {
+function ProductCard({ product, loading = false }) {
   const navigate = useNavigate();
 
   const [wishlistIds, setWishlistIds] = useState([]);
   const [updatingWishlist, setUpdatingWishlist] = useState(false);
 
+  // ================= SKELETON LOADING =================
+
+  if (loading) {
+    return (
+      <div className="product-card">
+        <div className="product-image-wrapper">
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: "300px",
+              background: "#f1f1f1",
+            }}
+          />
+        </div>
+
+        <div className="product-info">
+          <div
+            style={{
+              width: "70%",
+              height: "18px",
+              background: "#f1f1f1",
+              marginBottom: "10px",
+            }}
+          />
+
+          <div
+            style={{
+              width: "40%",
+              height: "16px",
+              background: "#f1f1f1",
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // ================= PRODUCT ID =================
 
-  const productId = product._id || product.id;
+  const productId = product?._id || product?.id;
 
   // ================= TOKEN =================
 
@@ -55,8 +97,8 @@ function ProductCard({ product }) {
         const products =
           response.data.wishlist?.products || [];
 
-        const ids = products.map((item) =>
-          String(item._id || item.id || item)
+        const ids = products.map(
+          (item) => String(item?._id || item?.id || item)
         );
 
         setWishlistIds(ids);
@@ -76,8 +118,8 @@ function ProductCard({ product }) {
   // ================= PRODUCT IMAGE =================
 
   let productImage =
-    product.images?.[0] ||
-    product.image ||
+    product?.images?.[0] ||
+    product?.image ||
     "";
 
   if (
@@ -98,12 +140,12 @@ function ProductCard({ product }) {
   // ================= PRODUCT PRICE =================
 
   const productPrice =
-    product.salePrice !== null &&
-    product.salePrice !== undefined &&
-    product.salePrice !== ""
+    product?.salePrice !== null &&
+    product?.salePrice !== undefined &&
+    product?.salePrice !== ""
       ? product.salePrice
-      : product.regularPrice ??
-        product.price ??
+      : product?.regularPrice ??
+        product?.price ??
         0;
 
   // ================= WISHLIST CHECK =================
@@ -115,36 +157,37 @@ function ProductCard({ product }) {
   // ================= WISHLIST =================
 
   const handleWishlist = async (e) => {
-    console.log("❤️ HEART CLICKED");
-
     e.preventDefault();
     e.stopPropagation();
 
+    console.log("❤️ HEART CLICKED");
     console.log("PRODUCT ID:", productId);
     console.log("IS WISHLISTED:", isWishlisted);
 
     const token = getToken();
 
-    console.log("TOKEN:", token ? "EXISTS" : "NOT FOUND");
+    console.log(
+      "TOKEN:",
+      token ? "EXISTS" : "NOT FOUND"
+    );
 
-    // User login ചെയ്തിട്ടില്ലെങ്കിൽ
+    // ================= LOGIN CHECK =================
 
     if (!token) {
-      alert(
+      toast.error(
         "Please login to add products to your wishlist."
       );
 
       navigate("/login");
-
       return;
     }
 
     try {
       setUpdatingWishlist(true);
 
-      if (isWishlisted) {
-        // ================= REMOVE =================
+      // ================= REMOVE =================
 
+      if (isWishlisted) {
         console.log(
           "REMOVING FROM WISHLIST:",
           productId
@@ -165,9 +208,20 @@ function ProductCard({ product }) {
             (id) => id !== String(productId)
           )
         );
-      } else {
-        // ================= ADD =================
 
+        toast.success(
+          "Product removed from wishlist!"
+        );
+
+        // Navbar wishlist count update
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
+      }
+
+      // ================= ADD =================
+
+      else {
         console.log(
           "ADDING TO WISHLIST:",
           productId
@@ -190,6 +244,15 @@ function ProductCard({ product }) {
           ...prev,
           String(productId),
         ]);
+
+        toast.success(
+          "Product added to wishlist!"
+        );
+
+        // Navbar wishlist count update
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
       }
     } catch (error) {
       console.error(
@@ -197,7 +260,7 @@ function ProductCard({ product }) {
         error.response?.data || error.message
       );
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
           "Failed to update wishlist"
       );
@@ -213,8 +276,11 @@ function ProductCard({ product }) {
       "https://via.placeholder.com/500x600?text=No+Image";
   };
 
+  // ================= UI =================
+
   return (
     <div className="product-card">
+
       {/* WISHLIST BUTTON */}
 
       <button
@@ -224,7 +290,11 @@ function ProductCard({ product }) {
         }`}
         onClick={handleWishlist}
         disabled={updatingWishlist}
-        aria-label="Add to wishlist"
+        aria-label={
+          isWishlisted
+            ? "Remove from wishlist"
+            : "Add to wishlist"
+        }
       >
         {isWishlisted ? "♥" : "♡"}
       </button>
@@ -238,7 +308,7 @@ function ProductCard({ product }) {
         <div className="product-image-wrapper">
           <img
             src={productImage}
-            alt={product.name || "Product"}
+            alt={product?.name || "Product"}
             className="product-image"
             onError={handleImageError}
           />
@@ -246,7 +316,7 @@ function ProductCard({ product }) {
 
         <div className="product-info">
           <h3>
-            {product.name || "Product Name"}
+            {product?.name || "Product Name"}
           </h3>
 
           <p className="product-price">

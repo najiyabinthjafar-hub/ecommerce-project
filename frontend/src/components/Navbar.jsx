@@ -14,10 +14,18 @@ import logo from "../assets/logo.png";
 
 import "./Navbar.css";
 
+const API_URL = "http://localhost:5000/api";
+
 function Navbar() {
   const [showSearch, setShowSearch] = useState(false);
+
   const [search, setSearch] = useState("");
+
   const [showMenu, setShowMenu] = useState(false);
+
+  const [cartCount, setCartCount] = useState(0);
+
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   const navigate = useNavigate();
 
@@ -26,7 +34,104 @@ function Navbar() {
   // User login ചെയ്തിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
   const token = localStorage.getItem("token");
 
-  // Close search and menu
+  // =========================
+  // FETCH CART + WISHLIST COUNT
+  // =========================
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!token) {
+        setCartCount(0);
+        setWishlistCount(0);
+        return;
+      }
+
+      try {
+        // CART
+        const cartResponse = await fetch(`${API_URL}/cart`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (cartResponse.ok) {
+          const cartData = await cartResponse.json();
+
+          const cartItems = cartData.cart?.items || [];
+
+          // Number of products/items in cart
+          setCartCount(cartItems.length);
+        } else {
+          setCartCount(0);
+        }
+
+        // WISHLIST
+        const wishlistResponse = await fetch(
+          `${API_URL}/wishlist`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (wishlistResponse.ok) {
+          const wishlistData =
+            await wishlistResponse.json();
+
+          const wishlistProducts =
+            wishlistData.wishlist?.products || [];
+
+          // Number of products in wishlist
+          setWishlistCount(wishlistProducts.length);
+        } else {
+          setWishlistCount(0);
+        }
+      } catch (error) {
+        console.error(
+          "Navbar count fetch error:",
+          error
+        );
+
+        setCartCount(0);
+        setWishlistCount(0);
+      }
+    };
+
+    fetchCounts();
+
+    // Refresh count when cart/wishlist changes
+    const handleCartWishlistUpdate = () => {
+      fetchCounts();
+    };
+
+    window.addEventListener(
+      "cartUpdated",
+      handleCartWishlistUpdate
+    );
+
+    window.addEventListener(
+      "wishlistUpdated",
+      handleCartWishlistUpdate
+    );
+
+    return () => {
+      window.removeEventListener(
+        "cartUpdated",
+        handleCartWishlistUpdate
+      );
+
+      window.removeEventListener(
+        "wishlistUpdated",
+        handleCartWishlistUpdate
+      );
+    };
+  }, [token]);
+
+  // =========================
+  // CLOSE SEARCH AND MENU
+  // =========================
+
   const closeSearch = () => {
     setShowSearch(false);
   };
@@ -36,7 +141,10 @@ function Navbar() {
     setShowSearch(false);
   };
 
+  // =========================
   // SEARCH FUNCTION
+  // =========================
+
   const handleSearch = (e) => {
     e.preventDefault();
 
@@ -53,7 +161,10 @@ function Navbar() {
     }
   };
 
-  // Close search when clicking outside
+  // =========================
+  // CLOSE SEARCH WHEN CLICKING OUTSIDE
+  // =========================
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -77,7 +188,10 @@ function Navbar() {
     };
   }, []);
 
-  // Close search when pressing Escape
+  // =========================
+  // CLOSE SEARCH ON ESCAPE
+  // =========================
+
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") {
@@ -105,6 +219,7 @@ function Navbar() {
       ref={navbarRef}
     >
       {/* LOGO */}
+
       <Link
         to="/"
         replace
@@ -115,6 +230,7 @@ function Navbar() {
       </Link>
 
       {/* DESKTOP NAVIGATION LINKS */}
+
       <nav
         className={`nav-links ${
           showMenu ? "mobile-open" : ""
@@ -158,9 +274,11 @@ function Navbar() {
       </nav>
 
       {/* NAV ICONS */}
+
       <div className="nav-icons">
 
         {/* SEARCH ICON */}
+
         <button
           type="button"
           aria-label="Search"
@@ -176,6 +294,7 @@ function Navbar() {
         </button>
 
         {/* ACCOUNT / LOGIN ICON */}
+
         <Link
           to={token ? "/profile" : "/login"}
           aria-label={
@@ -198,6 +317,7 @@ function Navbar() {
         </Link>
 
         {/* WISHLIST ICON */}
+
         <Link
           to="/wishlist"
           aria-label="Wishlist"
@@ -208,9 +328,16 @@ function Navbar() {
             size={14}
             strokeWidth={1.5}
           />
+
+          {wishlistCount > 0 && (
+            <span className="nav-count wishlist-count">
+              {wishlistCount}
+            </span>
+          )}
         </Link>
 
         {/* CART / SHOPPING BAG ICON */}
+
         <Link
           to="/cart"
           aria-label="Cart"
@@ -221,9 +348,16 @@ function Navbar() {
             size={14}
             strokeWidth={1.5}
           />
+
+          {cartCount > 0 && (
+            <span className="nav-count cart-count">
+              {cartCount}
+            </span>
+          )}
         </Link>
 
         {/* MOBILE MENU BUTTON */}
+
         <button
           type="button"
           className="menu-toggle"
@@ -235,9 +369,11 @@ function Navbar() {
         >
           {showMenu ? "✕" : "☰"}
         </button>
+
       </div>
 
       {/* SEARCH BOX */}
+
       {showSearch && (
         <form
           className="search-box"

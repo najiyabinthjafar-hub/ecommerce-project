@@ -2,9 +2,19 @@
   box-sizing: border-box;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
-  background: white;
-  color: black;
+  min-height: 100%;
+}
+
+html {
+  background: #ffffff;
+}
+
+body {
+  background: #ffffff;
+  color: #000000;
   font-family: Arial, sans-serif;
 }

@@ -140,6 +140,18 @@ const createOrder = async (orderData) => {
 
   const items = orderData.items || [];
 
+  const totalAmount = Number(orderData.totalAmount) || 0;
+
+  const shippingCharge =
+    totalAmount === 0 ? 0 : totalAmount < 699 ? 50 : 0;
+
+  const finalAmount = Math.max(
+    0,
+    totalAmount +
+      shippingCharge -
+      (Number(orderData.discountAmount) || 0)
+  );
+
   const paymentMethod = String(
     orderData.paymentMethod || ""
   ).toUpperCase();
@@ -159,7 +171,11 @@ const createOrder = async (orderData) => {
   let order;
 
   try {
-    order = await Order.create(orderData);
+    order = await Order.create({
+      ...orderData,
+      shippingCharge,
+      finalAmount,
+    });
   } catch (error) {
     if (reducedItems.length > 0) {
       await restoreStock(reducedItems);

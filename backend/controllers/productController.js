@@ -87,6 +87,23 @@ const getActiveProducts = async (req, res, next) => {
   }
 };
 
+// GET SEARCH SUGGESTIONS
+const getSearchSuggestions = async (req, res, next) => {
+  try {
+    const { search } = req.query;
+
+    const suggestions =
+      await productService.getSearchSuggestions(search);
+
+    res.status(200).json({
+      success: true,
+      suggestions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // UPDATE PRODUCT
 const updateProduct = async (req, res, next) => {
   try {
@@ -272,6 +289,7 @@ module.exports = {
   createProduct,
   getProducts,
   getActiveProducts,
+  getSearchSuggestions,
   getBestSellerProducts,
   getProduct,
   updateProduct,

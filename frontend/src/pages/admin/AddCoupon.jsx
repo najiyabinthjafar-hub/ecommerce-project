@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./AddCoupon.css";
 
-const COUPON_API_URL = "http://localhost:5000/api/coupons/create";
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
-const PRODUCT_API_URL = "http://localhost:5000/api/products";
+const COUPON_API_URL =
+  "http://localhost:5000/api/coupons/create";
+
+const CATEGORY_API_URL =
+  "http://localhost:5000/api/categories";
+
+const PRODUCT_API_URL =
+  "http://localhost:5000/api/products";
 
 function AddCoupon() {
   const navigate = useNavigate();
@@ -25,13 +31,15 @@ function AddCoupon() {
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-
   const [productSearch, setProductSearch] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState(null);
 
   const [loading, setLoading] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingCategories, setLoadingCategories] =
+    useState(false);
+  const [loadingProducts, setLoadingProducts] =
+    useState(false);
 
   // =========================================================
   // FETCH CATEGORIES
@@ -42,10 +50,14 @@ function AddCoupon() {
       try {
         setLoadingCategories(true);
 
-        const response = await fetch(CATEGORY_API_URL);
+        const response = await fetch(
+          CATEGORY_API_URL
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch categories");
+          throw new Error(
+            "Failed to fetch categories"
+          );
         }
 
         const data = await response.json();
@@ -56,7 +68,10 @@ function AddCoupon() {
 
         setCategories(categoryList);
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error(
+          "Error fetching categories:",
+          error
+        );
       } finally {
         setLoadingCategories(false);
       }
@@ -71,7 +86,8 @@ function AddCoupon() {
 
   useEffect(() => {
     const searchProducts = async () => {
-      const searchValue = productSearch.trim();
+      const searchValue =
+        productSearch.trim();
 
       // Don't search when empty
       if (!searchValue) {
@@ -94,19 +110,29 @@ function AddCoupon() {
         );
 
         if (!firstResponse.ok) {
-          throw new Error("Failed to search products");
+          throw new Error(
+            "Failed to search products"
+          );
         }
 
-        const firstData = await firstResponse.json();
+        const firstData =
+          await firstResponse.json();
 
-        const firstProducts = Array.isArray(firstData)
+        const firstProducts = Array.isArray(
+          firstData
+        )
           ? firstData
-          : firstData.products || firstData.data || [];
+          : firstData.products ||
+            firstData.data ||
+            [];
 
         const totalPages =
-          firstData.pagination?.totalPages || 1;
+          firstData.pagination?.totalPages ||
+          1;
 
-        let allSearchResults = [...firstProducts];
+        let allSearchResults = [
+          ...firstProducts,
+        ];
 
         // -----------------------------------------------------
         // FETCH REMAINING PAGES
@@ -115,7 +141,11 @@ function AddCoupon() {
         if (totalPages > 1) {
           const pageRequests = [];
 
-          for (let page = 2; page <= totalPages; page++) {
+          for (
+            let page = 2;
+            page <= totalPages;
+            page++
+          ) {
             pageRequests.push(
               fetch(
                 `${PRODUCT_API_URL}?search=${encodeURIComponent(
@@ -134,23 +164,34 @@ function AddCoupon() {
                 .then((data) => {
                   return Array.isArray(data)
                     ? data
-                    : data.products || data.data || [];
+                    : data.products ||
+                        data.data ||
+                        [];
                 })
             );
           }
 
-          const remainingPages = await Promise.all(
-            pageRequests
-          );
+          const remainingPages =
+            await Promise.all(
+              pageRequests
+            );
 
-          remainingPages.forEach((pageProducts) => {
-            allSearchResults.push(...pageProducts);
-          });
+          remainingPages.forEach(
+            (pageProducts) => {
+              allSearchResults.push(
+                ...pageProducts
+              );
+            }
+          );
         }
 
         setProducts(allSearchResults);
       } catch (error) {
-        console.error("Product search error:", error);
+        console.error(
+          "Product search error:",
+          error
+        );
+
         setProducts([]);
       } finally {
         setLoadingProducts(false);
@@ -169,11 +210,19 @@ function AddCoupon() {
   // =========================================================
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setCoupon((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   };
 
@@ -242,7 +291,13 @@ function AddCoupon() {
     // -------------------------------------------------------
 
     if (!coupon.code.trim()) {
-      alert("Please enter coupon code");
+      toast.error(
+        "Please enter coupon code",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -254,7 +309,13 @@ function AddCoupon() {
       coupon.couponType === "category" &&
       !coupon.category
     ) {
-      alert("Please select a category");
+      toast.error(
+        "Please select a category",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -266,7 +327,13 @@ function AddCoupon() {
       coupon.couponType === "product" &&
       !coupon.product
     ) {
-      alert("Please select a product");
+      toast.error(
+        "Please select a product",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -278,8 +345,12 @@ function AddCoupon() {
       coupon.discountValue === "" ||
       Number(coupon.discountValue) <= 0
     ) {
-      alert(
-        "Please enter a valid discount value greater than 0"
+      toast.error(
+        "Please enter a valid discount value greater than 0",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
       return;
     }
@@ -289,11 +360,16 @@ function AddCoupon() {
     // -------------------------------------------------------
 
     if (
-      coupon.discountType === "percentage" &&
+      coupon.discountType ===
+        "percentage" &&
       Number(coupon.discountValue) > 100
     ) {
-      alert(
-        "Percentage discount cannot be more than 100%"
+      toast.error(
+        "Percentage discount cannot be more than 100%",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
       return;
     }
@@ -306,7 +382,13 @@ function AddCoupon() {
       coupon.minimumPurchase === "" ||
       Number(coupon.minimumPurchase) < 1
     ) {
-      alert("Minimum purchase must be at least ₹1");
+      toast.error(
+        "Minimum purchase must be at least ₹1",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -318,8 +400,12 @@ function AddCoupon() {
       coupon.maximumDiscount === "" ||
       Number(coupon.maximumDiscount) <= 0
     ) {
-      alert(
-        "Maximum discount must be greater than 0"
+      toast.error(
+        "Maximum discount must be greater than 0",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
       return;
     }
@@ -332,7 +418,13 @@ function AddCoupon() {
       coupon.usageLimit === "" ||
       Number(coupon.usageLimit) < 1
     ) {
-      alert("Usage limit must be at least 1");
+      toast.error(
+        "Usage limit must be at least 1",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -341,7 +433,13 @@ function AddCoupon() {
     // -------------------------------------------------------
 
     if (!coupon.expiryDate) {
-      alert("Please select expiry date");
+      toast.error(
+        "Please select expiry date",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
       return;
     }
 
@@ -353,14 +451,17 @@ function AddCoupon() {
       // =====================================================
 
       const requestBody = {
-        code: coupon.code.trim().toUpperCase(),
+        code: coupon.code
+          .trim()
+          .toUpperCase(),
 
         couponType:
           coupon.couponType === "general"
             ? "cart"
             : coupon.couponType,
 
-        discountType: coupon.discountType,
+        discountType:
+          coupon.discountType,
 
         discountValue: Number(
           coupon.discountValue
@@ -387,16 +488,24 @@ function AddCoupon() {
       // CATEGORY COUPON
       // -----------------------------------------------------
 
-      if (coupon.couponType === "category") {
-        requestBody.category = coupon.category;
+      if (
+        coupon.couponType ===
+        "category"
+      ) {
+        requestBody.category =
+          coupon.category;
       }
 
       // -----------------------------------------------------
       // PRODUCT COUPON
       // -----------------------------------------------------
 
-      if (coupon.couponType === "product") {
-        requestBody.product = coupon.product;
+      if (
+        coupon.couponType ===
+        "product"
+      ) {
+        requestBody.product =
+          coupon.product;
       }
 
       // =====================================================
@@ -409,10 +518,13 @@ function AddCoupon() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(
+            requestBody
+          ),
         }
       );
 
@@ -421,17 +533,23 @@ function AddCoupon() {
       // =====================================================
 
       const contentType =
-        response.headers.get("content-type");
+        response.headers.get(
+          "content-type"
+        );
 
       let data;
 
       if (
         contentType &&
-        contentType.includes("application/json")
+        contentType.includes(
+          "application/json"
+        )
       ) {
-        data = await response.json();
+        data =
+          await response.json();
       } else {
-        const text = await response.text();
+        const text =
+          await response.text();
 
         throw new Error(
           `Server returned ${response.status} instead of JSON. ${text.slice(
@@ -448,9 +566,18 @@ function AddCoupon() {
         );
       }
 
-      alert(
+      // =====================================================
+      // TOASTIFY SUCCESS
+      // =====================================================
+
+      toast.success(
         data.message ||
-          "Coupon created successfully"
+          "Coupon created successfully",
+        {
+          className:
+            "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
 
       navigate("/admin/coupons");
@@ -460,9 +587,18 @@ function AddCoupon() {
         error
       );
 
-      alert(
+      // =====================================================
+      // TOASTIFY ERROR
+      // =====================================================
+
+      toast.error(
         error.message ||
-          "Something went wrong"
+          "Something went wrong",
+        {
+          className:
+            "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
     } finally {
       setLoading(false);
@@ -475,13 +611,11 @@ function AddCoupon() {
 
   return (
     <div className="add-coupon-page">
-
       {/* =====================================================
           HEADER
       ===================================================== */}
 
       <div className="add-coupon-header">
-
         <div>
           <h1>Add Coupon</h1>
 
@@ -500,7 +634,6 @@ function AddCoupon() {
           <i className="bi bi-arrow-left"></i>
           Back to Coupons
         </button>
-
       </div>
 
       {/* =====================================================
@@ -508,27 +641,23 @@ function AddCoupon() {
       ===================================================== */}
 
       <div className="add-coupon-card">
-
         <form onSubmit={handleSubmit}>
-
           {/* =================================================
               COUPON DETAILS
           ================================================= */}
 
           <div className="form-section">
-
             <h2>Coupon Details</h2>
 
             <div className="form-grid">
-
               {/* =================================================
                   COUPON CODE
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
-                  Coupon Code <span>*</span>
+                  Coupon Code{" "}
+                  <span>*</span>
                 </label>
 
                 <input
@@ -539,7 +668,6 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
-
               </div>
 
               {/* =================================================
@@ -547,14 +675,16 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
-                  Coupon Type <span>*</span>
+                  Coupon Type{" "}
+                  <span>*</span>
                 </label>
 
                 <select
                   name="couponType"
-                  value={coupon.couponType}
+                  value={
+                    coupon.couponType
+                  }
                   onChange={
                     handleCouponTypeChange
                   }
@@ -572,16 +702,15 @@ function AddCoupon() {
                     Product Coupon
                   </option>
                 </select>
-
               </div>
 
               {/* =================================================
                   CATEGORY
               ================================================= */}
 
-              {coupon.couponType === "category" && (
+              {coupon.couponType ===
+                "category" && (
                 <div className="form-group">
-
                   <label>
                     Select Category{" "}
                     <span>*</span>
@@ -589,8 +718,12 @@ function AddCoupon() {
 
                   <select
                     name="category"
-                    value={coupon.category}
-                    onChange={handleChange}
+                    value={
+                      coupon.category
+                    }
+                    onChange={
+                      handleChange
+                    }
                     required
                   >
                     <option value="">
@@ -602,15 +735,18 @@ function AddCoupon() {
                     {categories.map(
                       (category) => (
                         <option
-                          key={category._id}
-                          value={category._id}
+                          key={
+                            category._id
+                          }
+                          value={
+                            category._id
+                          }
                         >
                           {category.name}
                         </option>
                       )
                     )}
                   </select>
-
                 </div>
               )}
 
@@ -618,9 +754,9 @@ function AddCoupon() {
                   PRODUCT SEARCH
               ================================================= */}
 
-              {coupon.couponType === "product" && (
+              {coupon.couponType ===
+                "product" && (
                 <div className="form-group product-select-group">
-
                   <label>
                     Select Product{" "}
                     <span>*</span>
@@ -633,24 +769,32 @@ function AddCoupon() {
                   {!selectedProduct && (
                     <>
                       <div className="product-search-box">
-
                         <i className="bi bi-search"></i>
 
                         <input
                           type="text"
                           placeholder="Search product by name or SKU..."
-                          value={productSearch}
+                          value={
+                            productSearch
+                          }
                           onChange={(e) => {
                             const value =
                               e.target.value;
 
-                            setProductSearch(value);
+                            setProductSearch(
+                              value
+                            );
 
-                            if (coupon.product) {
+                            if (
+                              coupon.product
+                            ) {
                               setCoupon(
-                                (prev) => ({
+                                (
+                                  prev
+                                ) => ({
                                   ...prev,
-                                  product: "",
+                                  product:
+                                    "",
                                 })
                               );
 
@@ -666,14 +810,18 @@ function AddCoupon() {
                             type="button"
                             className="clear-product-search"
                             onClick={() => {
-                              setProductSearch("");
-                              setProducts([]);
+                              setProductSearch(
+                                ""
+                              );
+
+                              setProducts(
+                                []
+                              );
                             }}
                           >
                             <i className="bi bi-x"></i>
                           </button>
                         )}
-
                       </div>
 
                       {/* =================================================
@@ -681,68 +829,63 @@ function AddCoupon() {
                       ================================================= */}
 
                       <div className="product-search-results">
-
                         {loadingProducts ? (
-
                           <div className="product-loading">
                             <i className="bi bi-arrow-repeat"></i>
+
                             Searching products...
                           </div>
-
-                        ) : productSearch.trim() === "" ? (
-
+                        ) : productSearch.trim() ===
+                          "" ? (
                           <div className="product-loading">
                             <i className="bi bi-search"></i>
+
                             Type a product name or SKU to search
                           </div>
-
-                        ) : products.length > 0 ? (
-
+                        ) : products.length >
+                          0 ? (
                           products.map(
                             (product) => (
-
                               <button
                                 type="button"
                                 className="product-result-item"
-                                key={product._id}
+                                key={
+                                  product._id
+                                }
                                 onClick={() =>
                                   handleProductSelect(
                                     product
                                   )
                                 }
                               >
-
                                 {/* PRODUCT IMAGE */}
 
                                 <div className="product-result-image">
-
                                   {product.images &&
-                                  product.images.length > 0 ? (
-
+                                  product
+                                    .images
+                                    .length >
+                                    0 ? (
                                     <img
                                       src={
-                                        product.images[0]
+                                        product
+                                          .images[0]
                                       }
                                       alt={
                                         product.name ||
                                         "Product"
                                       }
                                     />
-
                                   ) : (
-
                                     <div className="product-no-image">
                                       <i className="bi bi-image"></i>
                                     </div>
-
                                   )}
-
                                 </div>
 
                                 {/* PRODUCT NAME */}
 
                                 <div className="product-result-info">
-
                                   <strong>
                                     {product.name ||
                                       product.productName ||
@@ -753,27 +896,24 @@ function AddCoupon() {
                                   {product.sku && (
                                     <small>
                                       SKU:{" "}
-                                      {product.sku}
+                                      {
+                                        product.sku
+                                      }
                                     </small>
                                   )}
-
                                 </div>
 
                                 <i className="bi bi-chevron-right"></i>
-
                               </button>
                             )
                           )
-
                         ) : (
-
                           <div className="no-products-found">
                             <i className="bi bi-box"></i>
+
                             No products found
                           </div>
-
                         )}
-
                       </div>
                     </>
                   )}
@@ -784,38 +924,33 @@ function AddCoupon() {
 
                   {selectedProduct && (
                     <div className="selected-product-box">
-
                       {/* PRODUCT IMAGE */}
 
                       <div className="selected-product-image">
-
                         {selectedProduct.images &&
-                        selectedProduct.images.length > 0 ? (
-
+                        selectedProduct
+                          .images.length >
+                          0 ? (
                           <img
                             src={
-                              selectedProduct.images[0]
+                              selectedProduct
+                                .images[0]
                             }
                             alt={
                               selectedProduct.name ||
                               "Selected Product"
                             }
                           />
-
                         ) : (
-
                           <div className="product-no-image">
                             <i className="bi bi-image"></i>
                           </div>
-
                         )}
-
                       </div>
 
                       {/* PRODUCT NAME */}
 
                       <div className="selected-product-info">
-
                         <strong>
                           {selectedProduct.name ||
                             selectedProduct.productName ||
@@ -826,10 +961,11 @@ function AddCoupon() {
                         {selectedProduct.sku && (
                           <small>
                             SKU:{" "}
-                            {selectedProduct.sku}
+                            {
+                              selectedProduct.sku
+                            }
                           </small>
                         )}
-
                       </div>
 
                       {/* REMOVE */}
@@ -844,7 +980,6 @@ function AddCoupon() {
                       >
                         <i className="bi bi-x"></i>
                       </button>
-
                     </div>
                   )}
 
@@ -861,7 +996,6 @@ function AddCoupon() {
                       "product"
                     }
                   />
-
                 </div>
               )}
 
@@ -870,7 +1004,6 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Discount Type{" "}
                   <span>*</span>
@@ -892,7 +1025,6 @@ function AddCoupon() {
                     Fixed Amount
                   </option>
                 </select>
-
               </div>
 
               {/* =================================================
@@ -900,14 +1032,12 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Discount Value{" "}
                   <span>*</span>
                 </label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="discountValue"
@@ -927,9 +1057,7 @@ function AddCoupon() {
                       ? "%"
                       : "₹"}
                   </span>
-
                 </div>
-
               </div>
 
               {/* =================================================
@@ -937,14 +1065,12 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Minimum Purchase{" "}
                   <span>*</span>
                 </label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="minimumPurchase"
@@ -959,9 +1085,7 @@ function AddCoupon() {
                   />
 
                   <span>₹</span>
-
                 </div>
-
               </div>
 
               {/* =================================================
@@ -969,14 +1093,12 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Maximum Discount{" "}
                   <span>*</span>
                 </label>
 
                 <div className="input-with-symbol">
-
                   <input
                     type="number"
                     name="maximumDiscount"
@@ -991,9 +1113,7 @@ function AddCoupon() {
                   />
 
                   <span>₹</span>
-
                 </div>
-
               </div>
 
               {/* =================================================
@@ -1001,7 +1121,6 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Usage Limit{" "}
                   <span>*</span>
@@ -1019,7 +1138,6 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
-
               </div>
 
               {/* =================================================
@@ -1027,7 +1145,6 @@ function AddCoupon() {
               ================================================= */}
 
               <div className="form-group">
-
                 <label>
                   Expiry Date{" "}
                   <span>*</span>
@@ -1042,9 +1159,7 @@ function AddCoupon() {
                   onChange={handleChange}
                   required
                 />
-
               </div>
-
             </div>
           </div>
 
@@ -1053,9 +1168,7 @@ function AddCoupon() {
           ===================================================== */}
 
           <div className="coupon-status-section">
-
             <div>
-
               <h3>
                 Coupon Status
               </h3>
@@ -1064,11 +1177,9 @@ function AddCoupon() {
                 Enable this coupon
                 immediately after creation.
               </p>
-
             </div>
 
             <label className="switch">
-
               <input
                 type="checkbox"
                 name="isActive"
@@ -1079,9 +1190,7 @@ function AddCoupon() {
               />
 
               <span className="slider"></span>
-
             </label>
-
           </div>
 
           {/* =====================================================
@@ -1089,7 +1198,6 @@ function AddCoupon() {
           ===================================================== */}
 
           <div className="form-actions">
-
             <button
               type="button"
               className="cancel-coupon-btn"
@@ -1108,21 +1216,15 @@ function AddCoupon() {
               className="save-coupon-btn"
               disabled={loading}
             >
-
               <i className="bi bi-check-lg"></i>
 
               {loading
                 ? "Creating..."
                 : "Create Coupon"}
-
             </button>
-
           </div>
-
         </form>
-
       </div>
-
     </div>
   );
 }

@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+
 import { useLocation } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+
 import ProductCard from "../components/ProductCard";
 
 import "./NewArrivalsPage.css";
@@ -50,7 +53,10 @@ function NewArrivalsPage() {
         setLoading(true);
         setError("");
 
-        const response = await fetch(`${API_URL}/categories/tree`);
+        const response = await fetch(
+          `${API_URL}/categories/tree`
+        );
+
         const data = await response.json();
 
         if (!response.ok) {
@@ -62,6 +68,7 @@ function NewArrivalsPage() {
         setCategoryTree(data.categories || []);
       } catch (error) {
         console.error("Category API Error:", error);
+
         setError(error.message);
       } finally {
         setLoading(false);
@@ -101,7 +108,6 @@ function NewArrivalsPage() {
       return (
         slug === "womens-fashion" ||
         slug === "women-s-fashion" ||
-        slug === "womens-fashion" ||
         slug === "women-fashion" ||
         name === "women's fashion" ||
         name === "womens fashion" ||
@@ -137,7 +143,11 @@ function NewArrivalsPage() {
         childCategoryIds
       );
     }
-  }, [selectedCategory, childCategoryIds, activeFashion]);
+  }, [
+    selectedCategory,
+    childCategoryIds,
+    activeFashion,
+  ]);
 
   // ================= FETCH PRODUCTS =================
 
@@ -152,6 +162,7 @@ function NewArrivalsPage() {
       );
 
       setProducts([]);
+
       setPagination({
         currentPage: 1,
         limit: productsPerPage,
@@ -238,6 +249,7 @@ function NewArrivalsPage() {
         );
 
         setError(error.message);
+
         setProducts([]);
 
         setPagination({
@@ -265,7 +277,10 @@ function NewArrivalsPage() {
   // ================= CHANGE PAGE =================
 
   const handlePageChange = (page) => {
-    if (page < 1 || page > pagination.totalPages) {
+    if (
+      page < 1 ||
+      page > pagination.totalPages
+    ) {
       return;
     }
 
@@ -281,6 +296,7 @@ function NewArrivalsPage() {
 
   const handleFashionChange = (fashion) => {
     setActiveFashion(fashion);
+
     setCurrentPage(1);
 
     window.scrollTo({
@@ -293,6 +309,7 @@ function NewArrivalsPage() {
 
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
+
     setCurrentPage(1);
   };
 
@@ -300,6 +317,7 @@ function NewArrivalsPage() {
 
   const handlePriceChange = (value) => {
     setPriceOrder(value);
+
     setCurrentPage(1);
   };
 
@@ -353,7 +371,6 @@ function NewArrivalsPage() {
           {/* ================= FASHION BUTTONS ================= */}
 
           <div className="fashion-buttons">
-
             <button
               className={`fashion-btn ${
                 activeFashion === "MEN'S FASHION"
@@ -379,7 +396,6 @@ function NewArrivalsPage() {
             >
               Women's Fashion
             </button>
-
           </div>
         </section>
 
@@ -393,7 +409,6 @@ function NewArrivalsPage() {
             <section className="shop-filter-bar">
 
               <div className="filter-left">
-
                 <span className="filter-title">
                   FILTER
                 </span>
@@ -439,13 +454,11 @@ function NewArrivalsPage() {
                     HIGH TO LOW
                   </option>
                 </select>
-
               </div>
 
               <div className="filter-right">
 
                 <div className="sort-by">
-
                   <span>SORT BY:</span>
 
                   <select
@@ -464,7 +477,6 @@ function NewArrivalsPage() {
                       FEATURED
                     </option>
                   </select>
-
                 </div>
 
                 <span className="product-count">
@@ -476,12 +488,19 @@ function NewArrivalsPage() {
             </section>
           )}
 
-          {/* ================= LOADING ================= */}
+          {/* ================= SKELETON LOADING ================= */}
 
           {loading && (
-            <p className="new-arrivals-page-message">
-              Loading products...
-            </p>
+            <div className="new-arrivals-page-grid">
+              {Array.from({
+                length: productsPerPage,
+              }).map((_, index) => (
+                <ProductCard
+                  key={index}
+                  loading={true}
+                />
+              ))}
+            </div>
           )}
 
           {/* ================= ERROR ================= */}
@@ -499,12 +518,14 @@ function NewArrivalsPage() {
               {products.length > 0 ? (
                 <>
                   <div className="new-arrivals-page-grid">
+
                     {products.map((product) => (
                       <ProductCard
                         key={product._id}
                         product={product}
                       />
                     ))}
+
                   </div>
 
                   {/* ================= PAGINATION ================= */}
