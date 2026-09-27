@@ -1,4 +1,4 @@
-﻿const Order = require("../models/Order");
+const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -785,6 +785,27 @@ const order = await Order.findOneAndUpdate(
       await cart.save();
     }
 
+    // Send Razorpay order confirmation email with invoice
+    try {
+      const user = await User.findById(order.user);
+
+      if (!user?.email) {
+        console.log("RAZORPAY EMAIL SKIPPED: Customer email not found");
+      } else {
+        const invoiceBuffer = await generateInvoicePdf(order);
+
+        await sendOrderConfirmationEmail({
+          order,
+          user,
+          invoiceBuffer,
+        });
+
+        console.log("RAZORPAY ORDER EMAIL SENT SUCCESSFULLY");
+      }
+    } catch (emailError) {
+      console.error("RAZORPAY ORDER EMAIL FAILED:");
+      console.error(emailError.message);
+    }
     return order;
   } catch (error) {
     await restoreStock(reducedItems);
@@ -806,6 +827,7 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
 
 
 
