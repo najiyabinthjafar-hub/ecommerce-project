@@ -10,6 +10,11 @@ router.post("/", productController.createProduct);
 // GET ALL
 router.get("/", productController.getProducts);
 
+router.get(
+  "/search-suggestions",
+  productController.getSearchSuggestions
+);
+
 router.put("/:id/stock", productController.updateProductStock);
 
 router.get("/active", productController.getActiveProducts);
