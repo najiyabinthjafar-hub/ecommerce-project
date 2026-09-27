@@ -9,8 +9,8 @@
   display: grid;
   grid-template-columns: 55% 45%;
   background: #ffffff;
-  margin-top: 100px;
-  margin-bottom: 75px;
+  margin: 0;
+  padding: 0;
   overflow: visible;
   box-sizing: border-box;
 }
@@ -176,11 +176,11 @@
 ========================= */
 
 @media (max-width: 1000px) {
-
   .summer-section {
     grid-template-columns: 55% 45%;
     height: 340px;
-    margin-top: 80px;
+    margin-top: 0;
+    margin-bottom: 50px;
   }
 
   .summer-content {
@@ -211,14 +211,13 @@
 ========================= */
 
 @media (max-width: 768px) {
-
   .summer-section {
     width: 100%;
     height: auto;
     display: flex;
     flex-direction: column;
-    margin-top: 70px;
-    margin-bottom: 90px;
+    margin-top: 0;
+    margin-bottom: 60px;
     overflow: visible;
   }
 
@@ -287,10 +286,9 @@
 ========================= */
 
 @media (max-width: 600px) {
-
   .summer-section {
-    margin-top: 55px;
-    margin-bottom: 85px;
+    margin-top: 0;
+    margin-bottom: 55px;
   }
 
   .summer-image {
@@ -355,10 +353,9 @@
 ========================= */
 
 @media (max-width: 400px) {
-
   .summer-section {
-    margin-top: 45px;
-    margin-bottom: 80px;
+    margin-top: 0;
+    margin-bottom: 50px;
   }
 
   .summer-image {

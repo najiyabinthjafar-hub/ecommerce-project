@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
+
 import "./Navbar.css";
 
 function Navbar() {
@@ -19,8 +21,20 @@ function Navbar() {
 
   const navigate = useNavigate();
 
+  const navbarRef = useRef(null);
+
   // User login ചെയ്തിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
   const token = localStorage.getItem("token");
+
+  // Close search and menu
+  const closeSearch = () => {
+    setShowSearch(false);
+  };
+
+  const closeMenu = () => {
+    setShowMenu(false);
+    setShowSearch(false);
+  };
 
   // SEARCH FUNCTION
   const handleSearch = (e) => {
@@ -28,7 +42,9 @@ function Navbar() {
 
     if (search.trim()) {
       navigate(
-        `/shop?search=${encodeURIComponent(search)}`
+        `/shop?search=${encodeURIComponent(
+          search.trim()
+        )}`
       );
 
       setSearch("");
@@ -37,13 +53,57 @@ function Navbar() {
     }
   };
 
-  const closeMenu = () => {
-    setShowMenu(false);
-  };
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        navbarRef.current &&
+        !navbarRef.current.contains(event.target)
+      ) {
+        setShowSearch(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+    };
+  }, []);
+
+  // Close search when pressing Escape
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowSearch(false);
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, []);
 
   return (
-    <header className="navbar">
-
+    <header
+      className="navbar"
+      ref={navbarRef}
+    >
       {/* LOGO */}
       <Link
         to="/"
@@ -104,9 +164,10 @@ function Navbar() {
         <button
           type="button"
           aria-label="Search"
-          onClick={() =>
-            setShowSearch(!showSearch)
-          }
+          onClick={() => {
+            setShowSearch((prev) => !prev);
+            setShowMenu(false);
+          }}
         >
           <Search
             size={14}
@@ -121,6 +182,7 @@ function Navbar() {
             token ? "Account" : "Login"
           }
           className="account-icon"
+          onClick={closeSearch}
         >
           {token ? (
             <UserRoundCheck
@@ -140,6 +202,7 @@ function Navbar() {
           to="/wishlist"
           aria-label="Wishlist"
           className="wishlist-nav-icon"
+          onClick={closeSearch}
         >
           <Heart
             size={14}
@@ -152,6 +215,7 @@ function Navbar() {
           to="/cart"
           aria-label="Cart"
           className="cart-nav-icon"
+          onClick={closeSearch}
         >
           <ShoppingBag
             size={14}
@@ -164,9 +228,10 @@ function Navbar() {
           type="button"
           className="menu-toggle"
           aria-label="Menu"
-          onClick={() =>
-            setShowMenu(!showMenu)
-          }
+          onClick={() => {
+            setShowMenu((prev) => !prev);
+            setShowSearch(false);
+          }}
         >
           {showMenu ? "✕" : "☰"}
         </button>

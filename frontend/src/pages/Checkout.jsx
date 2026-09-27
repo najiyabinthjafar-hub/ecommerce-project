@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Checkout.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -41,8 +36,7 @@ function Checkout() {
   const [couponLoading, setCouponLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [billingAddress, setBillingAddress] =
-    useState("same");
+  const [billingAddress, setBillingAddress] = useState("same");
 
   const [error, setError] = useState("");
 
@@ -57,6 +51,33 @@ function Checkout() {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  };
+
+  // =========================================================
+  // LOAD RAZORPAY SCRIPT
+  // =========================================================
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      const script = document.createElement("script");
+
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+
+      script.onload = () => {
+        resolve(true);
+      };
+
+      script.onerror = () => {
+        resolve(false);
+      };
+
+      document.body.appendChild(script);
+    });
   };
 
   // =========================================================
@@ -84,10 +105,7 @@ function Checkout() {
 
       setCart(response.data.cart || response.data);
     } catch (error) {
-      console.error(
-        "Error fetching cart:",
-        error
-      );
+      console.error("Error fetching cart:", error);
 
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
@@ -129,11 +147,7 @@ function Checkout() {
   };
 
   const getProduct = (item) => {
-    return (
-      item.product ||
-      item.productId ||
-      item
-    );
+    return item.product || item.productId || item;
   };
 
   const getQuantity = (item) => {
@@ -158,23 +172,14 @@ function Checkout() {
   // PRICE CALCULATIONS
   // =========================================================
 
-  const subtotal = cartItems.reduce(
-    (total, item) => {
-      return (
-        total +
-        getPrice(item) * getQuantity(item)
-      );
-    },
-    0
-  );
+  const subtotal = cartItems.reduce((total, item) => {
+    return total + getPrice(item) * getQuantity(item);
+  }, 0);
 
   const deliveryCharge =
-    subtotal >= 999 || subtotal === 0
-      ? 0
-      : 99;
+    subtotal >= 999 || subtotal === 0 ? 0 : 99;
 
-  const discount =
-    coupon?.discountAmount || 0;
+  const discount = coupon?.discountAmount || 0;
 
   const totalAmount = Math.max(
     0,
@@ -186,17 +191,11 @@ function Checkout() {
   // =========================================================
 
   const validateCoupon = async () => {
-    const code = couponCode
-      .trim()
-      .toUpperCase();
+    const code = couponCode.trim().toUpperCase();
 
     if (!code) {
-      setCouponMessage(
-        "Please enter a coupon code."
-      );
-
+      setCouponMessage("Please enter a coupon code.");
       setCoupon(null);
-
       return;
     }
 
@@ -210,35 +209,25 @@ function Checkout() {
       );
 
       const couponData =
-        response.data.coupon ||
-        response.data;
+        response.data.coupon || response.data;
 
       if (!couponData) {
         setCoupon(null);
-        setCouponMessage(
-          "Invalid coupon."
-        );
-
+        setCouponMessage("Invalid coupon.");
         return;
       }
 
       // Active check
-
       if (
         couponData.active === false ||
         couponData.isActive === false
       ) {
         setCoupon(null);
-
-        setCouponMessage(
-          "This coupon is inactive."
-        );
-
+        setCouponMessage("This coupon is inactive.");
         return;
       }
 
       // Expiry check
-
       const expiryDate =
         couponData.expiryDate ||
         couponData.expiry;
@@ -248,32 +237,24 @@ function Checkout() {
         new Date(expiryDate) < new Date()
       ) {
         setCoupon(null);
-
-        setCouponMessage(
-          "This coupon has expired."
-        );
-
+        setCouponMessage("This coupon has expired.");
         return;
       }
 
       // Minimum purchase
-
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
 
       if (subtotal < minimumPurchase) {
         setCoupon(null);
-
         setCouponMessage(
           `Minimum purchase should be ₹${minimumPurchase}.`
         );
-
         return;
       }
 
       // Calculate discount
-
       let discountAmount = 0;
 
       const discountType =
@@ -286,18 +267,14 @@ function Checkout() {
           0
       );
 
-      if (
-        discountType === "percentage"
-      ) {
+      if (discountType === "percentage") {
         discountAmount =
           (subtotal * discountValue) / 100;
       } else {
-        discountAmount =
-          discountValue;
+        discountAmount = discountValue;
       }
 
       // Maximum discount
-
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -308,14 +285,11 @@ function Checkout() {
       if (couponData.maximumDiscount) {
         discountAmount = Math.min(
           discountAmount,
-          Number(
-            couponData.maximumDiscount
-          )
+          Number(couponData.maximumDiscount)
         );
       }
 
       // Discount cannot exceed subtotal
-
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -337,10 +311,7 @@ function Checkout() {
         } applied successfully.`
       );
     } catch (error) {
-      console.error(
-        "Coupon error:",
-        error
-      );
+      console.error("Coupon error:", error);
 
       setCoupon(null);
 
@@ -353,6 +324,10 @@ function Checkout() {
     }
   };
 
+  // =========================================================
+  // REMOVE COUPON
+  // =========================================================
+
   const removeCoupon = () => {
     setCoupon(null);
     setCouponCode("");
@@ -360,13 +335,413 @@ function Checkout() {
   };
 
   // =========================================================
+  // CREATE ORDER DATA
+  // =========================================================
+
+  const getOrderData = (form) => {
+    const formData = new FormData(form);
+
+    // =======================================================
+    // SHIPPING ADDRESS
+    // =======================================================
+
+    const firstName =
+      formData.get("firstName") || "";
+
+    const lastName =
+      formData.get("lastName") || "";
+
+    const shippingAddressData = {
+      fullName:
+        `${firstName} ${lastName}`.trim(),
+
+      phone:
+        formData.get("phone") || "",
+
+      address:
+        formData.get("address") || "",
+
+      apartment:
+        formData.get("apartment") || "",
+
+      city:
+        formData.get("city") || "",
+
+      state:
+        formData.get("state") || "",
+
+      pincode:
+        formData.get("pincode") || "",
+
+      country:
+        formData.get("country") || "India",
+    };
+
+    // =======================================================
+    // VALIDATION
+    // =======================================================
+
+    if (!shippingAddressData.fullName) {
+      throw new Error("Please enter your name.");
+    }
+
+    if (!shippingAddressData.phone) {
+      throw new Error(
+        "Please enter your phone number."
+      );
+    }
+
+    if (!shippingAddressData.address) {
+      throw new Error(
+        "Please enter your address."
+      );
+    }
+
+    if (!shippingAddressData.city) {
+      throw new Error(
+        "Please enter your city."
+      );
+    }
+
+    if (!shippingAddressData.state) {
+      throw new Error(
+        "Please select your state."
+      );
+    }
+
+    if (!shippingAddressData.pincode) {
+      throw new Error(
+        "Please enter your pincode."
+      );
+    }
+
+    // =======================================================
+    // ORDER ITEMS
+    // =======================================================
+
+    const orderItems = cartItems.map((item) => {
+      const product = getProduct(item);
+
+      return {
+        product:
+          product._id ||
+          product.id ||
+          item.product,
+
+        quantity:
+          getQuantity(item),
+
+        price:
+          getPrice(item),
+
+        size:
+          item.size ||
+          item.selectedSize ||
+          "",
+      };
+    });
+
+    // =======================================================
+    // ORDER DATA
+    // =======================================================
+
+    return {
+      user: userId,
+
+      items: orderItems,
+
+      shippingAddress:
+        shippingAddressData,
+
+      totalAmount: subtotal,
+
+      discountAmount: discount,
+
+      finalAmount: totalAmount,
+
+      couponCode:
+        coupon?.code ||
+        couponCode.trim().toUpperCase() ||
+        null,
+
+      paymentMethod:
+        paymentMethod === "razorpay"
+          ? "RAZORPAY"
+          : "COD",
+    };
+  };
+
+  // =========================================================
+  // RAZORPAY PAYMENT
+  // =========================================================
+
+  const handleRazorpayPayment = async (form) => {
+    try {
+      setPlacingOrder(true);
+      setError("");
+
+      // Load Razorpay
+      const razorpayLoaded =
+        await loadRazorpayScript();
+
+      if (!razorpayLoaded) {
+        throw new Error(
+          "Razorpay SDK failed to load. Please check your internet connection."
+        );
+      }
+
+      // Prepare order data
+      const orderData =
+        getOrderData(form);
+
+      console.log(
+        "RAZORPAY ORDER DATA:",
+        orderData
+      );
+
+      // =====================================================
+      // STEP 1: CREATE MONGODB ORDER
+      // =====================================================
+
+      const mongoOrderResponse =
+        await axios.post(
+          `${API_URL}/orders`,
+          orderData,
+          authConfig
+        );
+
+      console.log(
+        "MONGODB ORDER RESPONSE:",
+        mongoOrderResponse.data
+      );
+
+      const mongoOrder =
+        mongoOrderResponse.data.order;
+
+      if (!mongoOrder?._id) {
+        throw new Error(
+          "MongoDB order was not created."
+        );
+      }
+
+      const mongoOrderId =
+        mongoOrder._id;
+
+      // =====================================================
+      // STEP 2: CREATE RAZORPAY ORDER
+      // =====================================================
+
+      const razorpayOrderResponse =
+        await axios.post(
+          `${API_URL}/orders/razorpay/create-order`,
+          {
+            amount: totalAmount,
+            orderId: mongoOrderId,
+          },
+          authConfig
+        );
+
+      console.log(
+        "RAZORPAY ORDER RESPONSE:",
+        razorpayOrderResponse.data
+      );
+
+      const razorpayOrder =
+        razorpayOrderResponse.data.order;
+
+      if (!razorpayOrder?.id) {
+        throw new Error(
+          "Razorpay order was not created."
+        );
+      }
+
+      // =====================================================
+      // STEP 3: GET RAZORPAY KEY
+      // =====================================================
+
+      const razorpayKey =
+        import.meta.env
+          .VITE_RAZORPAY_KEY_ID;
+
+      if (!razorpayKey) {
+        throw new Error(
+          "Razorpay Key ID is missing. Add VITE_RAZORPAY_KEY_ID to frontend .env file."
+        );
+      }
+
+      // =====================================================
+      // STEP 4: OPEN RAZORPAY CHECKOUT
+      // =====================================================
+
+      const options = {
+        key: razorpayKey,
+
+        amount:
+          razorpayOrder.amount,
+
+        currency:
+          razorpayOrder.currency || "INR",
+
+        name: "Rizo",
+
+        description:
+          "Rizo E-commerce Order",
+
+        order_id:
+          razorpayOrder.id,
+
+        handler: async function (
+          razorpayResponse
+        ) {
+          try {
+            console.log(
+              "RAZORPAY SUCCESS RESPONSE:",
+              razorpayResponse
+            );
+
+            // =================================================
+            // STEP 5: VERIFY PAYMENT
+            // =================================================
+
+            const verifyResponse =
+              await axios.post(
+                `${API_URL}/orders/razorpay/verify`,
+                {
+                  orderId:
+                    mongoOrderId,
+
+                  razorpay_order_id:
+                    razorpayResponse.razorpay_order_id,
+
+                  razorpay_payment_id:
+                    razorpayResponse.razorpay_payment_id,
+
+                  razorpay_signature:
+                    razorpayResponse.razorpay_signature,
+                },
+                authConfig
+              );
+
+            console.log(
+              "PAYMENT VERIFICATION RESPONSE:",
+              verifyResponse.data
+            );
+
+            if (
+              verifyResponse.data.success
+            ) {
+              alert(
+                "Payment successful! Order placed successfully."
+              );
+
+              if (!isBuyNow) {
+                await fetchCart();
+              }
+
+              navigate("/orders");
+            } else {
+              setError(
+                "Payment verification failed."
+              );
+            }
+          } catch (error) {
+            console.error(
+              "PAYMENT VERIFICATION ERROR:",
+              error.response?.data ||
+                error.message
+            );
+
+            setError(
+              error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Payment verification failed."
+            );
+          } finally {
+            setPlacingOrder(false);
+          }
+        },
+
+        prefill: {
+          name:
+            orderData.shippingAddress
+              .fullName,
+
+          contact:
+            orderData.shippingAddress
+              .phone,
+        },
+
+        notes: {
+          orderId:
+            mongoOrderId,
+        },
+
+        theme: {
+          color: "#202020",
+        },
+
+        modal: {
+          ondismiss: function () {
+            console.log(
+              "Razorpay payment popup closed."
+            );
+
+            setPlacingOrder(false);
+
+            setError(
+              "Payment was cancelled."
+            );
+          },
+        },
+      };
+
+      const razorpay =
+        new window.Razorpay(options);
+
+      razorpay.on(
+        "payment.failed",
+        function (response) {
+          console.error(
+            "RAZORPAY PAYMENT FAILED:",
+            response
+          );
+
+          setPlacingOrder(false);
+
+          setError(
+            response.error?.description ||
+              "Payment failed. Please try again."
+          );
+        }
+      );
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "RAZORPAY ERROR:",
+        error.response?.data ||
+          error.message
+      );
+
+      setError(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to start Razorpay payment."
+      );
+
+      setPlacingOrder(false);
+    }
+  };
+
+  // =========================================================
   // PLACE ORDER
   // =========================================================
 
-  const handlePlaceOrder = async (
-    event
-  ) => {
+  const handlePlaceOrder = async (event) => {
     event.preventDefault();
+
+    const form = event.currentTarget;
 
     if (!token) {
       navigate("/login");
@@ -377,7 +752,6 @@ function Checkout() {
       setError(
         "User information not found. Please login again."
       );
-
       return;
     }
 
@@ -385,27 +759,26 @@ function Checkout() {
       setError(
         "No products available to place the order."
       );
-
       return;
     }
 
-    // Razorpay
+    // =======================================================
+    // RAZORPAY
+    // =======================================================
 
-    if (
-      paymentMethod === "razorpay"
-    ) {
-      alert(
-        "Razorpay payment integration will be added later."
-      );
-
+    if (paymentMethod === "razorpay") {
+      await handleRazorpayPayment(form);
       return;
     }
+
+    // =======================================================
+    // COD
+    // =======================================================
 
     if (paymentMethod !== "cod") {
       alert(
         "Online payment is not available yet. Please select Cash on Delivery."
       );
-
       return;
     }
 
@@ -413,179 +786,16 @@ function Checkout() {
       setPlacingOrder(true);
       setError("");
 
-      const formData = new FormData(
-        event.currentTarget
-      );
-
-      // =====================================================
-      // SHIPPING ADDRESS
-      // =====================================================
-
-      const firstName =
-        formData.get("firstName") || "";
-
-      const lastName =
-        formData.get("lastName") || "";
-
-      const shippingAddress = {
-        fullName:
-          `${firstName} ${lastName}`.trim(),
-
-        phone:
-          formData.get("phone") || "",
-
-        address:
-          formData.get("address") || "",
-
-        apartment:
-          formData.get("apartment") || "",
-
-        city:
-          formData.get("city") || "",
-
-        state:
-          formData.get("state") || "",
-
-        pincode:
-          formData.get("pincode") || "",
-
-        country:
-          formData.get("country") ||
-          "India",
-      };
-
-      // =====================================================
-      // VALIDATION
-      // =====================================================
-
-      if (
-        !shippingAddress.fullName
-      ) {
-        alert(
-          "Please enter your name."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      if (!shippingAddress.phone) {
-        alert(
-          "Please enter your phone number."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      if (
-        !shippingAddress.address
-      ) {
-        alert(
-          "Please enter your address."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      if (!shippingAddress.city) {
-        alert(
-          "Please enter your city."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      if (!shippingAddress.state) {
-        alert(
-          "Please select your state."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      if (
-        !shippingAddress.pincode
-      ) {
-        alert(
-          "Please enter your pincode."
-        );
-
-        setPlacingOrder(false);
-
-        return;
-      }
-
-      // =====================================================
-      // ORDER ITEMS
-      // =====================================================
-
-      const orderItems =
-        cartItems.map((item) => {
-          const product =
-            getProduct(item);
-
-          return {
-            product:
-              product._id ||
-              product.id ||
-              item.product,
-
-            quantity:
-              getQuantity(item),
-
-            price:
-              getPrice(item),
-
-            size:
-              item.size ||
-              item.selectedSize ||
-              "",
-          };
-        });
-
-      // =====================================================
-      // ORDER DATA
-      // =====================================================
-
-      const orderData = {
-        user: userId,
-
-        items: orderItems,
-
-        shippingAddress,
-
-        totalAmount: subtotal,
-
-        discountAmount: discount,
-
-        finalAmount: totalAmount,
-
-        couponCode:
-          coupon?.code ||
-          couponCode
-            .trim()
-            .toUpperCase() ||
-          null,
-
-        paymentMethod: "COD",
-      };
+      const orderData =
+        getOrderData(form);
 
       console.log(
-        "ORDER DATA:",
+        "COD ORDER DATA:",
         orderData
       );
 
       // =====================================================
-      // CREATE ORDER
+      // CREATE COD ORDER
       // =====================================================
 
       const response =
@@ -596,7 +806,7 @@ function Checkout() {
         );
 
       console.log(
-        "ORDER SUCCESS:",
+        "COD ORDER SUCCESS:",
         response.data
       );
 
@@ -605,8 +815,8 @@ function Checkout() {
       );
 
       if (!isBuyNow) {
-        await fetchCart();
-      }
+          setCart(null);
+        }
 
       navigate("/orders");
     } catch (error) {
@@ -619,6 +829,7 @@ function Checkout() {
       setError(
         error.response?.data?.error ||
           error.response?.data?.message ||
+          error.message ||
           "Failed to place order."
       );
     } finally {
@@ -642,8 +853,8 @@ function Checkout() {
             </h2>
 
             <p>
-              Please login before proceeding
-              to checkout.
+              Please login before
+              proceeding to checkout.
             </p>
 
             <Link
@@ -730,25 +941,14 @@ function Checkout() {
 
       <main className="figma-checkout">
 
-        {/* MOBILE BACK BUTTON */}
-
-        <button
-          type="button"
-          className="checkout-back-button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-        >
-          ←
-        </button>
-
         {/* ERROR */}
-
         {error && (
           <div className="checkout-error">
             {error}
           </div>
         )}
 
+        {/* CHECKOUT CARD */}
         <form
           className="figma-checkout-container"
           onSubmit={handlePlaceOrder}
@@ -756,27 +956,16 @@ function Checkout() {
 
           {/* =================================================
               LEFT SIDE
-          ================================================= */}
+              ================================================= */}
 
           <section className="delivery-section">
 
-            {/* LOGO */}
-
-            <div className="checkout-logo">
-              <img
-                src="/logo.png"
-                alt="Rizo"
-              />
-            </div>
-
             {/* DELIVERY */}
-
             <h2 className="delivery-title">
               Delivery
             </h2>
 
             {/* COUNTRY */}
-
             <div className="checkout-field">
               <label>
                 Country/region
@@ -793,7 +982,6 @@ function Checkout() {
             </div>
 
             {/* NAME */}
-
             <div className="checkout-row">
 
               <div className="checkout-field">
@@ -817,7 +1005,6 @@ function Checkout() {
             </div>
 
             {/* ADDRESS */}
-
             <div className="checkout-field">
               <input
                 type="text"
@@ -828,7 +1015,6 @@ function Checkout() {
             </div>
 
             {/* APARTMENT */}
-
             <div className="checkout-field">
               <input
                 type="text"
@@ -838,7 +1024,6 @@ function Checkout() {
             </div>
 
             {/* CITY / STATE / PIN */}
-
             <div className="checkout-location-row">
 
               <div className="checkout-field">
@@ -892,7 +1077,6 @@ function Checkout() {
             </div>
 
             {/* PHONE */}
-
             <div className="checkout-field">
               <input
                 type="tel"
@@ -905,8 +1089,8 @@ function Checkout() {
             </div>
 
             {/* SAVE INFO */}
-
             <label className="save-info">
+
               <input
                 type="checkbox"
                 name="saveInfo"
@@ -915,11 +1099,12 @@ function Checkout() {
               <span>
                 Save this information for next time
               </span>
+
             </label>
 
             {/* =================================================
                 COUPON
-            ================================================= */}
+                ================================================= */}
 
             <div className="coupon-section">
 
@@ -944,12 +1129,8 @@ function Checkout() {
                 {!coupon ? (
                   <button
                     type="button"
-                    onClick={
-                      validateCoupon
-                    }
-                    disabled={
-                      couponLoading
-                    }
+                    onClick={validateCoupon}
+                    disabled={couponLoading}
                   >
                     {couponLoading
                       ? "Applying..."
@@ -958,9 +1139,7 @@ function Checkout() {
                 ) : (
                   <button
                     type="button"
-                    onClick={
-                      removeCoupon
-                    }
+                    onClick={removeCoupon}
                   >
                     Remove
                   </button>
@@ -980,12 +1159,11 @@ function Checkout() {
 
           {/* =================================================
               RIGHT SIDE
-          ================================================= */}
+              ================================================= */}
 
           <section className="checkout-right">
 
             {/* PRODUCTS */}
-
             <div className="order-summary-products">
 
               {cartItems.map(
@@ -1012,9 +1190,7 @@ function Checkout() {
 
                   if (
                     image &&
-                    !image.startsWith(
-                      "http"
-                    )
+                    !image.startsWith("http")
                   ) {
                     image =
                       `http://localhost:5000${
@@ -1064,8 +1240,7 @@ function Checkout() {
                       <strong>
                         ₹
                         {(
-                          price *
-                          quantity
+                          price * quantity
                         ).toLocaleString(
                           "en-IN"
                         )}
@@ -1079,7 +1254,6 @@ function Checkout() {
             </div>
 
             {/* PRICE DETAILS */}
-
             <div className="price-details">
 
               <div className="price-row">
@@ -1134,7 +1308,6 @@ function Checkout() {
             </div>
 
             {/* TOTAL */}
-
             <div className="figma-total">
 
               <div>
@@ -1166,7 +1339,7 @@ function Checkout() {
 
             {/* =================================================
                 PAYMENT
-            ================================================= */}
+                ================================================= */}
 
             <div className="payment-section">
 
@@ -1180,7 +1353,6 @@ function Checkout() {
               </p>
 
               {/* COD */}
-
               <label
                 className={`payment-method ${
                   paymentMethod === "cod"
@@ -1194,13 +1366,10 @@ function Checkout() {
                   name="paymentMethod"
                   value="cod"
                   checked={
-                    paymentMethod ===
-                    "cod"
+                    paymentMethod === "cod"
                   }
                   onChange={() =>
-                    setPaymentMethod(
-                      "cod"
-                    )
+                    setPaymentMethod("cod")
                   }
                 />
 
@@ -1218,24 +1387,19 @@ function Checkout() {
 
               </label>
 
-              {paymentMethod ===
-                "cod" && (
+              {paymentMethod === "cod" && (
                 <div className="payment-info-box">
-
                   <p>
                     You can pay cash when
                     your order is delivered.
                   </p>
-
                 </div>
               )}
 
               {/* RAZORPAY */}
-
               <label
                 className={`payment-method ${
-                  paymentMethod ===
-                  "razorpay"
+                  paymentMethod === "razorpay"
                     ? "active-payment"
                     : ""
                 }`}
@@ -1276,10 +1440,9 @@ function Checkout() {
                 <div className="payment-info-box">
 
                   <p>
-                    Razorpay payment gateway
-                    UI is ready. Payment API
-                    integration will be added
-                    later.
+                    You will be redirected to
+                    Razorpay secure payment
+                    checkout.
                   </p>
 
                 </div>
@@ -1289,7 +1452,7 @@ function Checkout() {
 
             {/* =================================================
                 BILLING
-            ================================================= */}
+                ================================================= */}
 
             <div className="billing-section">
 
@@ -1304,13 +1467,10 @@ function Checkout() {
                   name="billing"
                   value="same"
                   checked={
-                    billingAddress ===
-                    "same"
+                    billingAddress === "same"
                   }
                   onChange={() =>
-                    setBillingAddress(
-                      "same"
-                    )
+                    setBillingAddress("same")
                   }
                 />
 
@@ -1354,27 +1514,20 @@ function Checkout() {
 
             </div>
 
-            {/* =================================================
-                PLACE ORDER
-            ================================================= */}
-
+            {/* PLACE ORDER */}
             <button
               type="submit"
               className="figma-pay-button"
-              disabled={
-                placingOrder
-              }
+              disabled={placingOrder}
             >
               {placingOrder
-                ? "PLACING ORDER..."
-                : paymentMethod ===
-                  "cod"
+                ? "PROCESSING..."
+                : paymentMethod === "cod"
                 ? "PLACE ORDER"
                 : "PAY WITH RAZORPAY"}
             </button>
 
             {/* POLICY LINKS */}
-
             <div className="checkout-policy-links">
 
               <Link to="/refund-policy">
@@ -1405,6 +1558,19 @@ function Checkout() {
 
         </form>
 
+        {/* =====================================================
+            BACK BUTTON — BELOW CARD + CENTER
+            ===================================================== */}
+
+        <button
+          type="button"
+          className="checkout-back-button"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+        >
+          ← Back
+        </button>
+
       </main>
 
       <Footer />
@@ -1413,3 +1579,4 @@ function Checkout() {
 }
 
 export default Checkout;
+

@@ -69,6 +69,7 @@ import ViewCoupon from "./pages/admin/ViewCoupon";
 import EditCoupon from "./pages/admin/EditCoupon";
 import CustomerDetails from "./pages/admin/CustomerDetails";
 import ContactMessageDetails from "./pages/admin/ContactMessageDetails";
+import ViewCategories from "./pages/admin/ViewCategories";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -237,7 +238,14 @@ function App() {
               </AdminLayout>
             }
           />
-
+           <Route
+            path="/admin/categories/:id"
+          element={
+             <AdminLayout>
+             <ViewCategories />
+            </AdminLayout>
+           }
+        />
           <Route
             path="/admin/banners"
             element={

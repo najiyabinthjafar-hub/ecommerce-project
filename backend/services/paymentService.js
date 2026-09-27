@@ -63,12 +63,12 @@ const updatePaymentStatus = async (
   console.log("Payment updated:", payment._id);
 
   // Update related Order payment status
-  if (paymentStatus === "PAID") {
+  if (paymentStatus === "PAID" || paymentStatus === "FAILED") {
     const updatedOrder = await Order.findByIdAndUpdate(
       payment.order,
       {
         $set: {
-          paymentStatus: "PAID",
+          paymentStatus,
         },
       },
       {

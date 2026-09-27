@@ -16,18 +16,22 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Normal registration -> required
-    // Google registration -> can be empty initially
+    // Normal registration -> phone is required
+    // Google registration -> phone can be added later
+    //
+    // IMPORTANT:
+    // No default: null here.
+    // Sparse unique index allows multiple users
+    // without a phone field.
     phone: {
       type: String,
       unique: true,
       sparse: true,
       trim: true,
-      default: null,
     },
 
     // Normal registration -> password exists
-    // Google registration -> password can be empty initially
+    // Google registration -> password can be empty
     password: {
       type: String,
       minlength: 6,
@@ -35,11 +39,14 @@ const userSchema = new mongoose.Schema(
     },
 
     // Google account unique ID
+    //
+    // IMPORTANT:
+    // No default: null here.
+    // Normal users should not have googleId field.
     googleId: {
       type: String,
       unique: true,
       sparse: true,
-      default: null,
     },
 
     role: {

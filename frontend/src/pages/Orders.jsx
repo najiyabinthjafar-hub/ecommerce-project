@@ -1,85 +1,196 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
 
 function Orders() {
-  const navigate = useNavigate();
-
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // ================= FETCH ORDERS =================
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // ================= FETCH ORDERS =================
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError("");
 
       const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId");
 
-      if (!token || !userId) {
-        setOrders([]);
-        setLoading(false);
+      if (!token) {
+        navigate("/login");
         return;
       }
 
-      const response = await axios.get(
-        `${API_URL}/orders?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_URL}/orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      console.log("ORDERS RESPONSE:", response.data);
-
-      const ordersData =
-        response.data?.orders ||
-        response.data?.data ||
-        response.data;
-
-      setOrders(
-        Array.isArray(ordersData)
-          ? ordersData
-          : []
-      );
+      setOrders(response.data.orders || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
 
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        navigate("/login");
+        return;
+      }
+
       setError(
-        err.response?.data?.message ||
-          "Failed to load your orders."
+        err.response?.data?.message || "Failed to load your orders."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  // ================= FORMAT STATUS =================
+  const formatStatus = (status) => {
+    if (!status) return "Pending";
+
+    return status
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  // ================= PRODUCT IMAGE =================
+  const getProductImage = (item) => {
+    const image =
+      item?.product?.images?.[0] ||
+      item?.product?.image ||
+      item?.image ||
+      item?.productImage;
+
+    if (!image) {
+      return "/images/product-placeholder.jpg";
+    }
+
+    if (image.startsWith("http")) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return image;
+    }
+
+    return `http://localhost:5000/${image}`;
+  };
+
+  // ================= PRODUCT NAME =================
+  const getProductName = (item) => {
+    return (
+      item?.product?.name ||
+      item?.productName ||
+      item?.name ||
+      "Product"
+    );
+  };
+
+  // ================= PRODUCT PRICE =================
+  const getProductPrice = (item) => {
+    return (
+      item?.price ??
+      item?.salePrice ??
+      item?.regularPrice ??
+      item?.product?.salePrice ??
+      item?.product?.price ??
+      0
+    );
+  };
+
+  // ================= PRODUCT SIZE =================
+  const getProductSize = (item) => {
+    return item?.size || item?.selectedSize || "N/A";
+  };
+
+  // ================= QUANTITY =================
+  const getQuantity = (item) => {
+    return item?.quantity || 1;
+  };
 
   // ================= TRACK ORDER =================
-
   const handleTrackOrder = (order) => {
     navigate(`/track-order/${order._id}`, {
       state: {
-        order: order,
+        order,
       },
     });
   };
 
-  // ================= CANCEL ORDER =================
+  // ================= DOWNLOAD INVOICE =================
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setError("");
+      setMessage("");
 
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_URL}/orders/${orderId}/invoice`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      const blob = new Blob([response.data], {
+        type: "application/pdf",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${orderId}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      setMessage("Invoice downloaded successfully.");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
+    } catch (err) {
+      console.error("Download invoice error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Failed to download invoice."
+      );
+
+      setTimeout(() => {
+        setError("");
+      }, 2500);
+    }
+  };
+  // ================= CANCEL ORDER =================
   const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this order?"
@@ -88,13 +199,22 @@ function Orders() {
     if (!confirmCancel) return;
 
     try {
+      setError("");
+      setMessage("");
+
       const token = localStorage.getItem("token");
 
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      // IMPORTANT:
+      // Customer/Admin cancellation endpoint
+      // Do NOT use /status here because that route is admin-only.
       const response = await axios.put(
-        `${API_URL}/orders/${orderId}/status`,
-        {
-          orderStatus: "CANCELLED",
-        },
+        `${API_URL}/orders/${orderId}/cancel`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,103 +222,47 @@ function Orders() {
         }
       );
 
-      console.log(
-        "CANCEL ORDER RESPONSE:",
-        response.data
+      const updatedOrder = response.data.order;
+
+      // Update cancelled order in current page
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? updatedOrder
+            : order
+        )
       );
 
-      const updatedOrder =
-        response.data?.order ||
-        response.data?.data;
+      setMessage("Order cancelled successfully.");
 
-      if (updatedOrder) {
-        setOrders((previousOrders) =>
-          previousOrders.map((order) =>
-            order._id === orderId
-              ? updatedOrder
-              : order
-          )
-        );
-      } else {
-        await fetchOrders();
-      }
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
+    } catch (err) {
+      console.error("Cancel order error:", err);
 
-      alert("Your order has been cancelled.");
-    } catch (error) {
-      console.error(
-        "Cancel order error:",
-        error
+      setError(
+        err.response?.data?.message ||
+          "Failed to cancel the order."
       );
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to cancel order."
-      );
+      setTimeout(() => {
+        setError("");
+      }, 2500);
     }
-  };
-
-  // ================= FORMAT STATUS =================
-
-  const formatStatus = (status) => {
-    if (!status) return "Pending";
-
-    return status
-      .toLowerCase()
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (letter) =>
-        letter.toUpperCase()
-      );
-  };
-
-  // ================= PRODUCT NAME =================
-
-  const getProductName = (item) => {
-    if (item?.product?.name) {
-      return item.product.name;
-    }
-
-    if (item?.productName) {
-      return item.productName;
-    }
-
-    if (item?.name) {
-      return item.name;
-    }
-
-    return "Product";
-  };
-
-  // ================= PRODUCT IMAGE =================
-
-  const getProductImage = (item) => {
-    if (item?.image) {
-      return item.image;
-    }
-
-    if (item?.product?.image) {
-      return item.product.image;
-    }
-
-    if (
-      item?.product?.images &&
-      item.product.images.length > 0
-    ) {
-      return item.product.images[0];
-    }
-
-    return "";
   };
 
   // ================= LOADING =================
-
   if (loading) {
     return (
       <>
         <Navbar />
 
         <main className="orders-page">
-          <div className="orders-loading">
-            Loading your orders...
+          <div className="orders-container">
+            <div className="orders-message">
+              Loading your orders...
+            </div>
           </div>
         </main>
 
@@ -207,332 +271,190 @@ function Orders() {
     );
   }
 
-  // ================= LOGIN CHECK =================
-
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-
-  if (!token || !userId) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-login">
-            <p>MY ACCOUNT</p>
-
-            <h1>My Orders</h1>
-
-            <span>
-              Please login to view your orders.
-            </span>
-
-            <Link
-              to="/login"
-              className="orders-login-btn"
-            >
-              LOGIN
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // ================= ERROR =================
-
-  if (error) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-error">
-            <p>{error}</p>
-
-            <button
-              className="orders-retry"
-              onClick={fetchOrders}
-            >
-              TRY AGAIN
-            </button>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // ================= EMPTY ORDERS =================
-
-  if (orders.length === 0) {
-    return (
-      <>
-        <Navbar />
-
-        <main className="orders-page">
-          <div className="orders-empty">
-            <h2>No Orders Yet</h2>
-
-            <p>
-              You haven't placed any orders yet.
-            </p>
-
-            <Link
-              to="/shop"
-              className="orders-shop-btn"
-            >
-              SHOP NOW
-            </Link>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
-
-  // ================= ORDERS PAGE =================
-
+  // ================= PAGE =================
   return (
     <>
       <Navbar />
 
       <main className="orders-page">
-        <div className="orders-table-header">
-          <span>PRODUCT</span>
-          <span>STATUS</span>
-        </div>
+        <div className="orders-container">
 
-        <div className="orders-list">
-          {orders.map((order) => {
-            const status =
-              order.orderStatus || "PENDING";
+          {/* SUCCESS MESSAGE */}
+          {message && (
+            <div className="orders-message success">
+              {message}
+            </div>
+          )}
 
-            const firstItem = order.items?.[0];
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="orders-message error">
+              {error}
+            </div>
+          )}
 
-            const productName =
-              getProductName(firstItem);
+          {/* NO ORDERS */}
+          {orders.length === 0 ? (
+            <div className="orders-message">
+              <h3>No orders found</h3>
 
-            const productImage =
-              getProductImage(firstItem);
+              <p>
+                You haven't placed any orders yet.
+              </p>
 
-            return (
-              <article
-                className="order-row"
-                key={order._id}
+              <button
+                className="orders-back-button"
+                onClick={() => navigate(-1)}
               >
-                {/* ================= ORDER HEADER ================= */}
+                ← BACK
+              </button>
+            </div>
+          ) : (
+            <section className="orders-content">
 
-                <div className="order-header">
-                  <div>
-                    <span>ORDER ID</span>
-
-                    <strong>
-                      #{order._id}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>DATE</span>
-
-                    <strong>
-                      {order.createdAt
-                        ? new Date(
-                            order.createdAt
-                          ).toLocaleDateString(
-                            "en-IN"
-                          )
-                        : "-"}
-                    </strong>
-                  </div>
+              {/* HEADER */}
+              <div className="orders-header">
+                <div className="product-heading">
+                  PRODUCT
                 </div>
 
-                {/* ================= PRODUCT SECTION ================= */}
+                <div className="status-heading">
+                  STATUS
+                </div>
+              </div>
 
-                <div className="order-product-section">
-                  <div className="order-product">
-                    <div className="order-image">
-                      {productImage ? (
+              {/* ORDERS */}
+              {orders.map((order) => {
+                const items = order.items || [];
+                const firstItem = items[0];
+
+                if (!firstItem) return null;
+
+                const status =
+                  order.orderStatus ||
+                  order.status ||
+                  "PENDING";
+
+                const normalizedStatus = status
+                  .toLowerCase()
+                  .replace(/\s+/g, "-");
+
+                const itemCount = items.length;
+
+                return (
+                  <div
+                    className="order-item"
+                    key={order._id}
+                  >
+                    {/* ================= PRODUCT ================= */}
+                    <div className="product-section">
+                      <div className="product-item">
+
                         <img
-                          src={productImage}
-                          alt={productName}
+                          src={getProductImage(firstItem)}
+                          alt={getProductName(firstItem)}
+                          className="product-image"
+                          onError={(e) => {
+                            e.target.src =
+                              "/images/product-placeholder.jpg";
+                          }}
                         />
-                      ) : (
-                        <span>No Image</span>
-                      )}
+
+                        <div className="product-details">
+
+                          <h3>
+                            {getProductName(firstItem)}
+                          </h3>
+
+                          <p className="product-price">
+                            ₹
+                            {Number(
+                              getProductPrice(firstItem)
+                            ).toLocaleString("en-IN")}
+                          </p>
+
+                          <p className="product-meta">
+                            Size: {getProductSize(firstItem)}
+                            &nbsp; | &nbsp;
+                            Quantity: {getQuantity(firstItem)}
+                          </p>
+
+                          {itemCount > 1 && (
+                            <p className="product-meta">
+                              + {itemCount - 1} more{" "}
+                              {itemCount - 1 === 1
+                                ? "item"
+                                : "items"}
+                            </p>
+                          )}
+
+                          <p className="product-meta order-id">
+                            Order #{order._id?.slice(-8)}
+                          </p>
+
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="order-details">
-                      <h3>
-                        {productName}
-                      </h3>
+                    {/* ================= STATUS ================= */}
+                    <div className="status-section">
 
-                      <p>
-                        ₹
-                        {Number(
-                          firstItem?.price || 0
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
-                      </p>
+                      <div
+                        className={`status ${normalizedStatus}`}
+                      >
+                        {formatStatus(status)}
+                      </div>
 
-                      <span>
-                        Quantity:{" "}
-                        {firstItem?.quantity || 1}
-
-                        {firstItem?.size
-                          ? ` • Size: ${firstItem.size}`
-                          : ""}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ================= STATUS ================= */}
-
-                  <div className="order-status-section">
-                    <span
-                      className={`order-status ${status
-                        .toLowerCase()
-                        .replace(/_/g, "-")}`}
-                    >
-                      {formatStatus(status)}
-                    </span>
-
-                    <button
-                      className="track-order-btn"
-                      onClick={() =>
-                        handleTrackOrder(order)
-                      }
-                    >
-                      Track Your Order
-                    </button>
-                  </div>
-                </div>
-
-                {/* ================= ALL ORDER PRODUCTS ================= */}
-
-                {order.items?.length > 1 && (
-                  <div className="order-products">
-                    {order.items.map(
-                      (item, index) => {
-                        const product =
-                          item.product || {};
-
-                        const itemName =
-                          product.name ||
-                          item.name ||
-                          getProductName(item);
-
-                        const itemImage =
-                          product.images?.[0] ||
-                          product.image ||
-                          item.image ||
-                          "";
-
-                        return (
-                          <div
-                            className="order-product"
-                            key={`${order._id}-${index}`}
-                          >
-                            <div className="order-product-image">
-                              {itemImage ? (
-                                <img
-                                  src={itemImage}
-                                  alt={itemName}
-                                />
-                              ) : (
-                                <span>
-                                  No Image
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="order-product-info">
-                              <h3>
-                                {itemName}
-                              </h3>
-
-                              {item.size && (
-                                <p>
-                                  Size: {item.size}
-                                </p>
-                              )}
-
-                              <p>
-                                Quantity:{" "}
-                                {item.quantity || 1}
-                              </p>
-                            </div>
-
-                            <strong>
-                              ₹
-                              {(
-                                (item.price || 0) *
-                                (item.quantity || 1)
-                              ).toLocaleString(
-                                "en-IN"
-                              )}
-                            </strong>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                )}
-
-                {/* ================= ORDER FOOTER ================= */}
-
-                <div className="order-footer">
-                  <div>
-                    <span>PAYMENT</span>
-
-                    <strong>
-                      {order.paymentMethod ||
-                        "COD"}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>TOTAL</span>
-
-                    <strong>
-                      ₹
-                      {Number(
-                        order.finalAmount ??
-                          order.totalAmount ??
-                          order.total ??
-                          0
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
-                    </strong>
-                  </div>
-                </div>
-
-                {/* ================= ORDER ACTIONS ================= */}
-
-                <div className="order-actions">
-                  {status !== "CANCELLED" &&
-                    status !== "DELIVERED" && (
+                      {/* TRACK ORDER */}
                       <button
-                        className="cancel-order-btn"
+                        className="track-button"
                         onClick={() =>
-                          handleCancelOrder(
-                            order._id
-                          )
+                          handleTrackOrder(order)
                         }
                       >
-                        Cancel Order
+                        TRACK YOUR ORDER
                       </button>
-                    )}
-                </div>
-              </article>
-            );
-          })}
+
+                      {/* DOWNLOAD INVOICE */}
+                      <button
+                        className="invoice-button"
+                        onClick={() =>
+                          handleDownloadInvoice(order._id)
+                        }
+                      >
+                        DOWNLOAD INVOICE
+                      </button>
+                      {/* CANCEL ORDER */}
+                      {status.toUpperCase() !== "CANCELLED" &&
+                        status.toUpperCase() !== "DELIVERED" &&
+                        (
+                          <button
+                            className="cancel-order-btn"
+                            onClick={() =>
+                              handleCancelOrder(order._id)
+                            }
+                          >
+                            CANCEL ORDER
+                          </button>
+                        )}
+
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
+          {/* BACK BUTTON */}
+          {orders.length > 0 && (
+            <button
+              className="orders-back-button"
+              onClick={() => navigate(-1)}
+            >
+              ← BACK
+            </button>
+          )}
+
         </div>
       </main>
 
@@ -542,3 +464,6 @@ function Orders() {
 }
 
 export default Orders;
+
+
+

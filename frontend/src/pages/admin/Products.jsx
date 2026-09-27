@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Products.css";
 
@@ -11,7 +11,7 @@ function Products() {
   const navigate = useNavigate();
 
   // =========================================================
-  // STATES
+  // STATE
   // =========================================================
 
   const [products, setProducts] = useState([]);
@@ -28,458 +28,87 @@ function Products() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
+
+  // Product summary
+  const [summary, setSummary] = useState({
+    total: 0,
+    active: 0,
+    lowStock: 0,
+    outOfStock: 0,
+  });
 
   // =========================================================
-  // FETCH CATEGORIES
+  // AUTH HELPERS
   // =========================================================
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(CATEGORY_API_URL);
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("adminToken") ||
+      ""
+    );
+  };
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
+  const getHeaders = () => {
+    const token = getToken();
 
-      const data = await response.json();
-
-      const categoryList = Array.isArray(data)
-        ? data
-        : data.categories || data.data || [];
-
-      setCategories(categoryList);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setCategories([]);
-    }
+    return {
+      "Content-Type": "application/json",
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+    };
   };
 
   // =========================================================
-  // GET CATEGORY ID
+  // CATEGORY HELPERS
   // =========================================================
 
-  const getCategoryId = (product) => {
-    if (!product) return "";
-
-    if (
-      typeof product.category === "object" &&
-      product.category !== null
-    ) {
-      return String(product.category._id || "");
-    }
-
-    return String(product.category || "");
-  };
-
-  // =========================================================
-  // GET PARENT ID
-  // =========================================================
-
-  const getParentId = (cat) => {
+  const getCategoryId = (cat) => {
     if (!cat) return "";
 
-    if (
-      typeof cat.parent === "object" &&
-      cat.parent !== null
-    ) {
-      return String(cat.parent._id || "");
+    if (typeof cat === "string") {
+      return cat;
     }
 
-    return String(
-      cat.parent ||
-        cat.parentId ||
-        cat.parentCategory ||
-        cat.parentCategoryId ||
-        ""
-    );
+    return cat._id || cat.id || "";
   };
 
-  // =========================================================
-  // GET ALL CHILD CATEGORY IDS
-  // =========================================================
-
-  const getChildCategoryIds = (parentId) => {
-    if (!parentId) return [];
-
-    const childIds = [];
-
-    const findChildren = (currentParentId) => {
-      categories.forEach((cat) => {
-        const catParentId = getParentId(cat);
-
-        if (
-          catParentId &&
-          String(catParentId) === String(currentParentId)
-        ) {
-          const childId = String(cat._id);
-
-          if (!childIds.includes(childId)) {
-            childIds.push(childId);
-          }
-
-          findChildren(childId);
-        }
-      });
-    };
-
-    findChildren(String(parentId));
-
-    return childIds;
-  };
-
-  // =========================================================
-  // GET ALLOWED CATEGORY IDS
-  // MAIN CATEGORY + ALL CHILDREN
-  // =========================================================
-
-  const getAllowedCategoryIds = (parentId) => {
-    if (!parentId) return [];
-
-    const childIds = getChildCategoryIds(parentId);
-
-    return [
-      String(parentId),
-      ...childIds.map((id) => String(id)),
-    ];
-  };
-
-  // =========================================================
-  // EFFECTIVE PRICE
-  // =========================================================
-
-  const getEffectivePrice = (product) => {
-    const salePrice = Number(product.salePrice || 0);
-
-    const regularPrice = Number(
-      product.regularPrice || product.price || 0
-    );
-
-    if (salePrice > 0) {
-      return salePrice;
+  const getParentId = (cat) => {
+    if (!cat || !cat.parent) {
+      return null;
     }
 
-    return regularPrice;
-  };
-
-  // =========================================================
-  // SORT PRODUCTS
-  // =========================================================
-
-  const sortProducts = (productList, sortType) => {
-    const result = [...productList];
-
-    if (sortType === "price-low") {
-      result.sort(
-        (a, b) =>
-          getEffectivePrice(a) - getEffectivePrice(b)
-      );
+    if (typeof cat.parent === "string") {
+      return cat.parent;
     }
 
-    if (sortType === "price-high") {
-      result.sort(
-        (a, b) =>
-          getEffectivePrice(b) - getEffectivePrice(a)
-      );
-    }
-
-    if (sortType === "newest") {
-      result.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) -
-          new Date(a.createdAt || 0)
-      );
-    }
-
-    return result;
+    return cat.parent._id || cat.parent.id || null;
   };
 
-  // =========================================================
-  // FETCH ALL PRODUCTS FROM BACKEND
-  // =========================================================
-
-  const fetchAllProductsFromBackend = async () => {
-    let allProducts = [];
-    let page = 1;
-    let backendTotalPages = 1;
-
-    do {
-      const params = new URLSearchParams();
-
-      // Search
-      if (search.trim()) {
-        params.append("search", search.trim());
-      }
-
-      // Subcategory
-      if (subcategory) {
-        params.append("category", subcategory);
-      }
-
-      // Availability
-      if (availability) {
-        params.append("availability", availability);
-      }
-
-      // Sort
-      if (sort) {
-        params.append("sort", sort);
-      }
-
-      params.append("page", page);
-      params.append("limit", PRODUCTS_PER_PAGE);
-
-      const response = await fetch(
-        `${API_URL}?${params.toString()}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-
-      const data = await response.json();
-
-      const list = Array.isArray(data)
-        ? data
-        : data.products || data.data || [];
-
-      allProducts = [...allProducts, ...list];
-
-      backendTotalPages = Number(
-        data.pagination?.totalPages || 1
-      );
-
-      page++;
-    } while (page <= backendTotalPages);
-
-    return allProducts;
-  };
-
-  // =========================================================
-  // FETCH PRODUCTS
-  // =========================================================
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-
-      // =====================================================
-      // CASE 1:
-      // MAIN CATEGORY / BEST SELLER FILTER
-      // =====================================================
-
-      if (
-        (category && !subcategory) ||
-        bestSeller
-      ) {
-        const allProducts =
-          await fetchAllProductsFromBackend();
-
-        let filtered = allProducts;
-
-        // Main category
-        if (category && !subcategory) {
-          const allowedCategoryIds =
-            getAllowedCategoryIds(category);
-
-          filtered = filtered.filter((product) => {
-            const productCategoryId =
-              getCategoryId(product);
-
-            return allowedCategoryIds.includes(
-              String(productCategoryId)
-            );
-          });
-        }
-
-        // Subcategory
-        if (subcategory) {
-          filtered = filtered.filter((product) => {
-            return (
-              String(getCategoryId(product)) ===
-              String(subcategory)
-            );
-          });
-        }
-
-        // Best Seller
-        if (bestSeller === "best-seller") {
-          filtered = filtered.filter(
-            (product) =>
-              product.isBestSeller === true
-          );
-        }
-
-        // Regular Products
-        if (bestSeller === "regular") {
-          filtered = filtered.filter(
-            (product) =>
-              product.isBestSeller !== true
-          );
-        }
-
-        // Sort
-        filtered = sortProducts(filtered, sort);
-
-        // Pagination
-        setTotalProducts(filtered.length);
-
-        const calculatedPages = Math.max(
-          Math.ceil(
-            filtered.length / PRODUCTS_PER_PAGE
-          ),
-          1
-        );
-
-        setTotalPages(calculatedPages);
-
-        const startIndex =
-          (currentPage - 1) * PRODUCTS_PER_PAGE;
-
-        const endIndex =
-          startIndex + PRODUCTS_PER_PAGE;
-
-        setProducts(
-          filtered.slice(startIndex, endIndex)
-        );
-
-        return;
-      }
-
-      // =====================================================
-      // CASE 2:
-      // NORMAL BACKEND QUERY
-      // =====================================================
-
-      const params = new URLSearchParams();
-
-      // Search
-      if (search.trim()) {
-        params.append(
-          "search",
-          search.trim()
-        );
-      }
-
-      // Subcategory
-      if (subcategory) {
-        params.append(
-          "category",
-          subcategory
-        );
-      }
-
-      // Availability
-      if (availability) {
-        params.append(
-          "availability",
-          availability
-        );
-      }
-
-      // Sort
-      if (sort) {
-        params.append("sort", sort);
-      }
-
-      params.append(
-        "page",
-        currentPage
-      );
-
-      params.append(
-        "limit",
-        PRODUCTS_PER_PAGE
-      );
-
-      const response = await fetch(
-        `${API_URL}?${params.toString()}`
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Failed to fetch products"
-        );
-      }
-
-      const data = await response.json();
-
-      const productList = Array.isArray(data)
-        ? data
-        : data.products || data.data || [];
-
-      setProducts(productList);
-
-      if (data.pagination) {
-        setTotalProducts(
-          Number(
-            data.pagination.totalProducts || 0
-          )
-        );
-
-        setTotalPages(
-          Math.max(
-            Number(
-              data.pagination.totalPages || 1
-            ),
-            1
-          )
-        );
-      } else {
-        setTotalProducts(productList.length);
-        setTotalPages(1);
-      }
-    } catch (error) {
-      console.error(
-        "Error fetching products:",
-        error
-      );
-
-      setProducts([]);
-      setTotalProducts(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
+  const getCategoryName = (product) => {
+    if (!product?.category) {
+      return "Uncategorized";
     }
+
+    if (typeof product.category === "string") {
+      return "Category";
+    }
+
+    return product.category.name || "Uncategorized";
   };
 
-  // =========================================================
-  // INITIAL LOAD
-  // =========================================================
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // =========================================================
-  // FETCH WHEN FILTERS CHANGE
-  // =========================================================
-
-  useEffect(() => {
-    fetchProducts();
-  }, [
-    search,
-    category,
-    subcategory,
-    availability,
-    bestSeller,
-    sort,
-    currentPage,
-  ]);
-
-  // =========================================================
-  // MAIN CATEGORIES
-  // =========================================================
-
-  const parentCategories = useMemo(() => {
+  const mainCategories = useMemo(() => {
     return categories.filter(
       (cat) => !getParentId(cat)
     );
   }, [categories]);
-
-  // =========================================================
-  // SUBCATEGORIES
-  // =========================================================
 
   const subcategories = useMemo(() => {
     if (!category) {
@@ -493,16 +122,547 @@ function Products() {
     );
   }, [categories, category]);
 
+  const getDescendantCategoryIds = useCallback(
+    (parentId) => {
+      const result = [String(parentId)];
+
+      const findChildren = (currentId) => {
+        categories.forEach((cat) => {
+          const catParentId = getParentId(cat);
+
+          if (
+            catParentId &&
+            String(catParentId) ===
+              String(currentId)
+          ) {
+            const childId = getCategoryId(cat);
+
+            if (
+              childId &&
+              !result.includes(
+                String(childId)
+              )
+            ) {
+              result.push(
+                String(childId)
+              );
+
+              findChildren(childId);
+            }
+          }
+        });
+      };
+
+      findChildren(parentId);
+
+      return result;
+    },
+    [categories]
+  );
+
+  // =========================================================
+  // PRODUCT HELPERS
+  // =========================================================
+
+  const getProductImage = (product) => {
+    if (
+      !product?.images ||
+      !Array.isArray(product.images)
+    ) {
+      return null;
+    }
+
+    return product.images[0] || null;
+  };
+
+  const getEffectivePrice = (product) => {
+    const salePrice = Number(
+      product?.salePrice
+    );
+
+    const regularPrice = Number(
+      product?.regularPrice
+    );
+
+    if (salePrice > 0) {
+      return salePrice;
+    }
+
+    return regularPrice || 0;
+  };
+
+  const formatPrice = (price) => {
+    return `₹${Number(
+      price || 0
+    ).toLocaleString("en-IN")}`;
+  };
+
+  const getProductStatus = (product) => {
+    if (product?.status === "inactive") {
+      return {
+        label: "Inactive",
+        className: "status-inactive",
+      };
+    }
+
+    const stock = Number(
+      product?.stock ?? 0
+    );
+
+    if (stock === 0) {
+      return {
+        label: "Out of Stock",
+        className: "status-out",
+      };
+    }
+
+    if (stock <= 10) {
+      return {
+        label: "Low Stock",
+        className: "status-low",
+      };
+    }
+
+    return {
+      label: "Active",
+      className: "status-active",
+    };
+  };
+
+  // =========================================================
+  // FETCH CATEGORIES
+  // =========================================================
+
+  const fetchCategories = useCallback(
+    async () => {
+      try {
+        const response = await fetch(
+          CATEGORY_API_URL,
+          {
+            headers: getHeaders(),
+          }
+        );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to fetch categories"
+          );
+        }
+
+        const categoryList =
+          Array.isArray(data)
+            ? data
+            : data.categories ||
+              data.data ||
+              [];
+
+        setCategories(categoryList);
+      } catch (error) {
+        console.error(
+          "Category fetch error:",
+          error
+        );
+      }
+    },
+    []
+  );
+
+  // =========================================================
+  // FETCH PRODUCT SUMMARY
+  // =========================================================
+
+  const fetchSummary = useCallback(
+    async () => {
+      try {
+        const headers = getHeaders();
+
+        const [
+          totalResponse,
+          activeResponse,
+          lowStockResponse,
+          outOfStockResponse,
+        ] = await Promise.all([
+          fetch(
+            `${API_URL}?limit=1`,
+            {
+              headers,
+            }
+          ),
+
+          fetch(
+            `${API_URL}/active`,
+            {
+              headers,
+            }
+          ),
+
+          fetch(
+            `${API_URL}?availability=low-stock&limit=1`,
+            {
+              headers,
+            }
+          ),
+
+          fetch(
+            `${API_URL}?availability=out-of-stock&limit=1`,
+            {
+              headers,
+            }
+          ),
+        ]);
+
+        const [
+          totalData,
+          activeData,
+          lowStockData,
+          outOfStockData,
+        ] = await Promise.all([
+          totalResponse.json(),
+          activeResponse.json(),
+          lowStockResponse.json(),
+          outOfStockResponse.json(),
+        ]);
+
+        setSummary({
+          total:
+            Number(
+              totalData?.pagination
+                ?.totalProducts
+            ) || 0,
+
+          active:
+            Array.isArray(
+              activeData?.products
+            )
+              ? activeData.products.length
+              : Array.isArray(
+                  activeData
+                )
+              ? activeData.length
+              : 0,
+
+          lowStock:
+            Number(
+              lowStockData?.pagination
+                ?.totalProducts
+            ) || 0,
+
+          outOfStock:
+            Number(
+              outOfStockData?.pagination
+                ?.totalProducts
+            ) || 0,
+        });
+      } catch (error) {
+        console.error(
+          "Product summary error:",
+          error
+        );
+      }
+    },
+    []
+  );
+
+  // =========================================================
+  // FETCH PRODUCTS
+  // =========================================================
+
+  const fetchProducts = useCallback(
+    async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const params =
+          new URLSearchParams();
+
+        params.set(
+          "page",
+          String(currentPage)
+        );
+
+        params.set(
+          "limit",
+          String(PRODUCTS_PER_PAGE)
+        );
+
+        // ---------------------------------------------------
+        // SEARCH
+        // ---------------------------------------------------
+
+        if (search.trim()) {
+          params.set(
+            "search",
+            search.trim()
+          );
+        }
+
+        // ---------------------------------------------------
+        // CATEGORY
+        // ---------------------------------------------------
+
+        if (subcategory) {
+          params.set(
+            "category",
+            subcategory
+          );
+        } else if (category) {
+          const categoryIds =
+            getDescendantCategoryIds(
+              category
+            );
+
+          if (categoryIds.length > 0) {
+            params.set(
+              "category",
+              categoryIds.join(",")
+            );
+          }
+        }
+
+        // ---------------------------------------------------
+        // AVAILABILITY
+        // ---------------------------------------------------
+
+        if (availability) {
+          /*
+            /api/products supports:
+              in-stock
+              low-stock
+              out-of-stock
+
+            /api/products/best-sellers supports:
+              in-stock
+              out-of-stock
+
+            Therefore low-stock is not sent when
+            Best Sellers is selected.
+          */
+
+          if (
+            !(
+              bestSeller ===
+                "best-seller" &&
+              availability ===
+                "low-stock"
+            )
+          ) {
+            params.set(
+              "availability",
+              availability
+            );
+          }
+        }
+
+        // ---------------------------------------------------
+        // SORT
+        // ---------------------------------------------------
+
+        if (sort) {
+          params.set("sort", sort);
+        }
+
+        // ---------------------------------------------------
+        // ENDPOINT
+        // ---------------------------------------------------
+
+        let endpoint = API_URL;
+
+        if (
+          bestSeller ===
+          "best-seller"
+        ) {
+          endpoint = `${API_URL}/best-sellers`;
+        }
+
+        const response =
+          await fetch(
+            `${endpoint}?${params.toString()}`,
+            {
+              headers:
+                getHeaders(),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              "Failed to fetch products"
+          );
+        }
+
+        const productList =
+          Array.isArray(
+            data?.products
+          )
+            ? data.products
+            : [];
+
+        setProducts(productList);
+
+        setTotalProducts(
+          Number(
+            data?.pagination
+              ?.totalProducts
+          ) || 0
+        );
+
+        setTotalPages(
+          Math.max(
+            Number(
+              data?.pagination
+                ?.totalPages
+            ) || 1,
+            1
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Product fetch error:",
+          error
+        );
+
+        setProducts([]);
+        setTotalProducts(0);
+        setTotalPages(1);
+
+        setError(
+          error.message ||
+            "Unable to load products."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      currentPage,
+      search,
+      category,
+      subcategory,
+      availability,
+      bestSeller,
+      sort,
+      getDescendantCategoryIds,
+    ]
+  );
+
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
+
+  useEffect(() => {
+    fetchCategories();
+    fetchSummary();
+  }, [
+    fetchCategories,
+    fetchSummary,
+  ]);
+
+  // =========================================================
+  // PRODUCT LOAD
+  // =========================================================
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // =========================================================
+  // RESET PAGE WHEN FILTER CHANGES
+  // =========================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    category,
+    subcategory,
+    availability,
+    bestSeller,
+    sort,
+  ]);
+
   // =========================================================
   // CATEGORY CHANGE
   // =========================================================
 
-  const handleCategoryChange = (e) => {
-    const value = e.target.value;
-
+  const handleCategoryChange = (
+    value
+  ) => {
     setCategory(value);
     setSubcategory("");
     setCurrentPage(1);
+  };
+
+  const handleSubcategoryChange = (
+    value
+  ) => {
+    setSubcategory(value);
+    setCurrentPage(1);
+  };
+
+  // =========================================================
+  // DELETE PRODUCT
+  // =========================================================
+
+  const handleDelete = async (
+    productId
+  ) => {
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to delete this product?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(productId);
+
+      const response =
+        await fetch(
+          `${API_URL}/${productId}`,
+          {
+            method: "DELETE",
+            headers:
+              getHeaders(),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            "Failed to delete product"
+        );
+      }
+
+      await Promise.all([
+        fetchProducts(),
+        fetchSummary(),
+      ]);
+    } catch (error) {
+      console.error(
+        "Delete product error:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Failed to delete product."
+      );
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // =========================================================
@@ -519,11 +679,19 @@ function Products() {
     setCurrentPage(1);
   };
 
+  const hasFilters =
+    search ||
+    category ||
+    subcategory ||
+    availability ||
+    bestSeller ||
+    sort;
+
   // =========================================================
-  // PAGE CHANGE
+  // PAGINATION
   // =========================================================
 
-  const handlePageChange = (page) => {
+  const goToPage = (page) => {
     if (
       page < 1 ||
       page > totalPages ||
@@ -535,160 +703,60 @@ function Products() {
     setCurrentPage(page);
   };
 
-  // =========================================================
-  // DELETE PRODUCT
-  // =========================================================
+  const paginationItems =
+    useMemo(() => {
+      const pages = [];
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_URL}/${id}`,
-        {
-          method: "DELETE",
+      if (totalPages <= 7) {
+        for (
+          let i = 1;
+          i <= totalPages;
+          i++
+        ) {
+          pages.push(i);
         }
+
+        return pages;
+      }
+
+      pages.push(1);
+
+      if (currentPage > 4) {
+        pages.push("...");
+      }
+
+      const start = Math.max(
+        2,
+        currentPage - 1
       );
 
-      if (!response.ok) {
-        throw new Error(
-          "Failed to delete product"
-        );
+      const end = Math.min(
+        totalPages - 1,
+        currentPage + 1
+      );
+
+      for (
+        let i = start;
+        i <= end;
+        i++
+      ) {
+        pages.push(i);
       }
 
       if (
-        products.length === 1 &&
-        currentPage > 1
+        currentPage <
+        totalPages - 3
       ) {
-        setCurrentPage(
-          (prev) => prev - 1
-        );
-      } else {
-        await fetchProducts();
+        pages.push("...");
       }
-    } catch (error) {
-      console.error(
-        "Error deleting product:",
-        error
-      );
 
-      alert("Failed to delete product.");
-    }
-  };
+      pages.push(totalPages);
 
-  // =========================================================
-  // PRODUCT STATUS
-  // =========================================================
-
-  const getProductStatus = (product) => {
-    if (product.status === "inactive") {
-      return {
-        label: "Inactive",
-        className: "status-inactive",
-      };
-    }
-
-    if (Number(product.stock || 0) === 0) {
-      return {
-        label: "Out of Stock",
-        className: "status-out",
-      };
-    }
-
-    if (Number(product.stock || 0) <= 10) {
-      return {
-        label: "Low Stock",
-        className: "status-low",
-      };
-    }
-
-    return {
-      label: "Active",
-      className: "status-active",
-    };
-  };
-
-  // =========================================================
-  // GET CATEGORY NAME
-  // =========================================================
-
-  const getCategoryName = (product) => {
-    if (
-      typeof product.category === "object" &&
-      product.category !== null
-    ) {
-      return (
-        product.category.name ||
-        "Uncategorized"
-      );
-    }
-
-    const foundCategory =
-      categories.find(
-        (cat) =>
-          String(cat._id) ===
-          String(product.category)
-      );
-
-    return (
-      foundCategory?.name ||
-      "Uncategorized"
-    );
-  };
-
-  // =========================================================
-  // PAGINATION PAGES
-  // =========================================================
-
-  const getPaginationPages = () => {
-    if (totalPages <= 5) {
-      return Array.from(
-        { length: totalPages },
-        (_, index) => index + 1
-      );
-    }
-
-    const pages = [1];
-
-    if (currentPage > 3) {
-      pages.push("...");
-    }
-
-    const startPage = Math.max(
-      2,
-      currentPage - 1
-    );
-
-    const endPage = Math.min(
-      totalPages - 1,
-      currentPage + 1
-    );
-
-    for (
-      let page = startPage;
-      page <= endPage;
-      page++
-    ) {
-      pages.push(page);
-    }
-
-    if (
-      currentPage <
-      totalPages - 2
-    ) {
-      pages.push("...");
-    }
-
-    pages.push(totalPages);
-
-    return pages;
-  };
+      return pages;
+    }, [
+      currentPage,
+      totalPages,
+    ]);
 
   // =========================================================
   // RENDER
@@ -696,400 +764,568 @@ function Products() {
 
   return (
     <div className="products-page">
-
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="products-header">
         <div>
           <h1>Products</h1>
 
           <p>
-            Manage your products and inventory
+            Manage your products, stock
+            and product availability.
           </p>
         </div>
 
         <button
+          type="button"
           className="add-product-btn"
           onClick={() =>
-            navigate("/admin/products/add")
+            navigate(
+              "/admin/products/add"
+            )
           }
         >
-          + Add Product
+          <i className="bi bi-plus-lg"></i>
+          Add Product
         </button>
       </div>
 
-      {/* TABLE CARD */}
+      {/* =====================================================
+          SUMMARY CARDS
+      ===================================================== */}
 
-      <div className="products-table-container">
-
-        {/* TABLE HEADER */}
-
-        <div className="products-table-header">
-
-          <div className="products-list-title">
-            <h2>Product List</h2>
-
-            <span>
-              {totalProducts} products
-            </span>
+      <div className="product-summary-grid">
+        {/* TOTAL */}
+        <div className="product-summary-card">
+          <div className="summary-icon summary-icon-products">
+            <i className="bi bi-box-seam"></i>
           </div>
 
-          {/* FILTER AREA */}
+          <div className="summary-content">
+            <span>
+              Total Products
+            </span>
 
-          <div className="products-filters">
+            <strong>
+              {summary.total}
+            </strong>
+          </div>
+        </div>
 
-            {/* SEARCH */}
+        {/* ACTIVE */}
+        <div className="product-summary-card">
+          <div className="summary-icon summary-icon-active">
+            <i className="bi bi-check-circle"></i>
+          </div>
 
-            <div className="products-search">
-              <span className="search-icon">
-                <i className="bi bi-search"></i>
-              </span>
+          <div className="summary-content">
+            <span>
+              Active Products
+            </span>
 
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(
-                    e.target.value
+            <strong>
+              {summary.active}
+            </strong>
+          </div>
+        </div>
+
+        {/* LOW STOCK */}
+        <div className="product-summary-card">
+          <div className="summary-icon summary-icon-low">
+            <i className="bi bi-exclamation-triangle"></i>
+          </div>
+
+          <div className="summary-content">
+            <span>
+              Low Stock
+            </span>
+
+            <strong>
+              {summary.lowStock}
+            </strong>
+          </div>
+        </div>
+
+        {/* OUT OF STOCK */}
+        <div className="product-summary-card">
+          <div className="summary-icon summary-icon-out">
+            <i className="bi bi-x-circle"></i>
+          </div>
+
+          <div className="summary-content">
+            <span>
+              Out of Stock
+            </span>
+
+            <strong>
+              {summary.outOfStock}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================
+          FILTER BAR
+      ===================================================== */}
+
+      <div className="products-filter-card">
+        {/* SEARCH */}
+        <div className="filter-search">
+          <i className="bi bi-search"></i>
+
+          <input
+            type="text"
+            placeholder="Search products, SKU..."
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value
+              )
+            }
+          />
+        </div>
+
+        {/* CATEGORY */}
+        <div className="filter-control">
+          <select
+            value={category}
+            onChange={(event) =>
+              handleCategoryChange(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              All Categories
+            </option>
+
+            {mainCategories.map(
+              (cat) => {
+                const id =
+                  getCategoryId(
+                    cat
                   );
 
-                  setCurrentPage(1);
-                }}
-              />
+                return (
+                  <option
+                    key={id}
+                    value={id}
+                  >
+                    {cat.name}
+                  </option>
+                );
+              }
+            )}
+          </select>
+        </div>
+
+        {/* SUBCATEGORY */}
+        <div className="filter-control">
+          <select
+            value={subcategory}
+            onChange={(event) =>
+              handleSubcategoryChange(
+                event.target.value
+              )
+            }
+            disabled={
+              !category ||
+              subcategories.length ===
+                0
+            }
+          >
+            <option value="">
+              All Subcategories
+            </option>
+
+            {subcategories.map(
+              (cat) => {
+                const id =
+                  getCategoryId(
+                    cat
+                  );
+
+                return (
+                  <option
+                    key={id}
+                    value={id}
+                  >
+                    {cat.name}
+                  </option>
+                );
+              }
+            )}
+          </select>
+        </div>
+
+        {/* AVAILABILITY */}
+        <div className="filter-control">
+          <select
+            value={availability}
+            onChange={(event) =>
+              setAvailability(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              Availability
+            </option>
+
+            <option value="in-stock">
+              In Stock
+            </option>
+
+            <option value="low-stock">
+              Low Stock
+            </option>
+
+            <option value="out-of-stock">
+              Out of Stock
+            </option>
+          </select>
+        </div>
+
+        {/* PRODUCT TYPE */}
+        <div className="filter-control">
+          <select
+            value={bestSeller}
+            onChange={(event) =>
+              setBestSeller(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              Product Type
+            </option>
+
+            <option value="best-seller">
+              Best Sellers
+            </option>
+          </select>
+        </div>
+
+        {/* SORT */}
+        <div className="filter-control">
+          <select
+            value={sort}
+            onChange={(event) =>
+              setSort(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              Sort By
+            </option>
+
+            <option value="newest">
+              Newest
+            </option>
+
+            <option value="price-low">
+              Price: Low to High
+            </option>
+
+            <option value="price-high">
+              Price: High to Low
+            </option>
+
+            <option value="featured">
+              Featured
+            </option>
+          </select>
+        </div>
+
+        {/* CLEAR */}
+        {hasFilters && (
+          <button
+            type="button"
+            className="clear-filter-btn"
+            onClick={
+              handleResetFilters
+            }
+            title="Clear filters"
+          >
+            <i className="bi bi-arrow-counterclockwise"></i>
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* =====================================================
+          RESULT BAR
+      ===================================================== */}
+
+      <div className="products-result-bar">
+        <div>
+          <strong>
+            {totalProducts}
+          </strong>{" "}
+          product
+          {totalProducts !== 1
+            ? "s"
+            : ""}{" "}
+          found
+        </div>
+
+        {bestSeller ===
+          "best-seller" && (
+          <span className="active-filter-label">
+            <i className="bi bi-star-fill"></i>
+            Best Sellers
+          </span>
+        )}
+      </div>
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error && (
+        <div className="products-error">
+          <i className="bi bi-exclamation-circle"></i>
+
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={
+              fetchProducts
+            }
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* =====================================================
+          PRODUCTS TABLE
+      ===================================================== */}
+
+      <div className="products-table-card">
+        {loading ? (
+          <div className="products-loading">
+            <div className="products-spinner"></div>
+
+            <span>
+              Loading products...
+            </span>
+          </div>
+        ) : products.length ===
+          0 ? (
+          <div className="products-empty">
+            <div className="empty-icon">
+              <i className="bi bi-box"></i>
             </div>
 
-            {/* FILTER ROW */}
+            <h3>
+              No products found
+            </h3>
 
-            <div className="products-filter-row">
+            <p>
+              Try changing your
+              filters or search term.
+            </p>
 
-              {/* MAIN CATEGORY */}
-
-              <select
-                className="products-filter"
-                value={category}
-                onChange={
-                  handleCategoryChange
-                }
-              >
-                <option value="">
-                  All Categories
-                </option>
-
-                {parentCategories.map(
-                  (cat) => (
-                    <option
-                      key={cat._id}
-                      value={cat._id}
-                    >
-                      {cat.name}
-                    </option>
-                  )
-                )}
-              </select>
-
-              {/* SUBCATEGORY */}
-
-              <select
-                className="products-filter"
-                value={subcategory}
-                onChange={(e) => {
-                  setSubcategory(
-                    e.target.value
-                  );
-
-                  setCurrentPage(1);
-                }}
-                disabled={!category}
-              >
-                <option value="">
-                  {!category
-                    ? "Select category first"
-                    : subcategories.length === 0
-                    ? "No subcategories"
-                    : "All Subcategories"}
-                </option>
-
-                {subcategories.map(
-                  (cat) => (
-                    <option
-                      key={cat._id}
-                      value={cat._id}
-                    >
-                      {cat.name}
-                    </option>
-                  )
-                )}
-              </select>
-
-              {/* AVAILABILITY */}
-
-              <select
-                className="products-filter"
-                value={availability}
-                onChange={(e) => {
-                  setAvailability(
-                    e.target.value
-                  );
-
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">
-                  Availability
-                </option>
-
-                <option value="in-stock">
-                  In Stock
-                </option>
-
-                <option value="out-of-stock">
-                  Out of Stock
-                </option>
-              </select>
-
-              {/* BEST SELLER */}
-
-              <select
-                className="products-filter"
-                value={bestSeller}
-                onChange={(e) => {
-                  setBestSeller(
-                    e.target.value
-                  );
-
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">
-                  Best Seller
-                </option>
-
-                <option value="best-seller">
-                  Best Sellers
-                </option>
-
-                <option value="regular">
-                  Regular Products
-                </option>
-              </select>
-
-              {/* SORT */}
-
-              <select
-                className="products-filter"
-                value={sort}
-                onChange={(e) => {
-                  setSort(
-                    e.target.value
-                  );
-
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">
-                  Sort By
-                </option>
-
-                <option value="price-low">
-                  Price: Low to High
-                </option>
-
-                <option value="price-high">
-                  Price: High to Low
-                </option>
-
-                <option value="newest">
-                  Newest
-                </option>
-              </select>
-
-              {/* RESET */}
-
+            {hasFilters && (
               <button
-                className="filter-reset-btn"
+                type="button"
                 onClick={
                   handleResetFilters
                 }
               >
-                Reset
+                Clear Filters
               </button>
-            </div>
+            )}
           </div>
-        </div>
-
-        {/* TABLE */}
-
-        <div className="products-table-wrapper">
-
-          {/* LOADING */}
-
-          {loading ? (
-            <div className="products-loading">
-              <div className="loading-spinner"></div>
-
-              <p>
-                Loading products...
-              </p>
-            </div>
-          ) : products.length === 0 ? (
-
-            /* EMPTY */
-
-            <div className="products-empty">
-              <div className="empty-icon">
-                <i className="bi bi-box-seam"></i>
-              </div>
-
-              <h3>
-                No products found
-              </h3>
-
-              <p>
-                Try changing your search or
-                filter options.
-              </p>
-            </div>
-
-          ) : (
-
-            /* PRODUCT TABLE */
-
+        ) : (
+          <div className="products-table-wrapper">
             <table className="products-table">
-
               <thead>
                 <tr>
-                  <th>PRODUCT</th>
-                  <th>CATEGORY</th>
-                  <th>PRICE</th>
-                  <th>STOCK</th>
-                  <th>STATUS</th>
-                  <th>BEST SELLER</th>
-                  <th>ACTION</th>
+                  <th>
+                    Product
+                  </th>
+
+                  <th>
+                    Category
+                  </th>
+
+                  <th>
+                    Price
+                  </th>
+
+                  <th>
+                    Stock
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Best Seller
+                  </th>
+
+                  <th>
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-
                 {products.map(
                   (product) => {
+                    const productId =
+                      product?._id;
+
+                    const image =
+                      getProductImage(
+                        product
+                      );
+
+                    const price =
+                      getEffectivePrice(
+                        product
+                      );
+
                     const status =
                       getProductStatus(
                         product
                       );
 
-                    const image =
-                      product.images &&
-                      product.images.length > 0
-                        ? product.images[0]
-                        : null;
-
                     return (
                       <tr
-                        key={product._id}
+                        key={
+                          productId
+                        }
                       >
-
-                        {/* PRODUCT */}
+                        {/* =====================================
+                            PRODUCT
+                        ===================================== */}
 
                         <td>
                           <div className="product-info">
-
-                            <div className="product-icon">
+                            <div className="product-image">
                               {image ? (
                                 <img
-                                  src={image}
-                                  alt={
-                                    product.name
+                                  src={
+                                    image
                                   }
+                                  alt={
+                                    product.name ||
+                                    "Product"
+                                  }
+                                  onError={(
+                                    event
+                                  ) => {
+                                    event.currentTarget.style.display =
+                                      "none";
+
+                                    event.currentTarget.parentElement.classList.add(
+                                      "image-fallback"
+                                    );
+                                  }}
                                 />
                               ) : (
-                                <i className="bi bi-image"></i>
+                                <div className="image-placeholder">
+                                  <i className="bi bi-image"></i>
+                                </div>
                               )}
                             </div>
 
                             <div className="product-details">
-
-                              <strong className="product-name">
-                                {product.name}
+                              <strong>
+                                {product.name ||
+                                  "Unnamed Product"}
                               </strong>
 
-                              <span className="product-sku">
+                              <span>
+                                SKU:{" "}
                                 {product.sku ||
-                                  "No SKU"}
+                                  "N/A"}
                               </span>
-
                             </div>
                           </div>
                         </td>
 
-                        {/* CATEGORY */}
+                        {/* =====================================
+                            CATEGORY
+                        ===================================== */}
 
                         <td>
-                          <span className="product-category">
+                          <span className="category-name">
                             {getCategoryName(
                               product
                             )}
                           </span>
                         </td>
 
-                        {/* PRICE */}
+                        {/* =====================================
+                            PRICE
+                        ===================================== */}
 
                         <td>
-                          <div className="product-price">
+                          <div className="price-cell">
+                            <strong>
+                              {formatPrice(
+                                price
+                              )}
+                            </strong>
 
-                            {product.salePrice ? (
-                              <>
-                                <span className="sale-price">
-                                  ₹
-                                  {Number(
-                                    product.salePrice
-                                  ).toLocaleString(
-                                    "en-IN"
-                                  )}
-                                </span>
-
+                            {Number(
+                              product?.salePrice
+                            ) >
+                              0 &&
+                              Number(
+                                product.salePrice
+                              ) <
+                                Number(
+                                  product.regularPrice
+                                ) && (
                                 <span className="regular-price">
-                                  ₹
-                                  {Number(
+                                  {formatPrice(
                                     product.regularPrice
-                                  ).toLocaleString(
-                                    "en-IN"
                                   )}
                                 </span>
-                              </>
-                            ) : (
-                              <span className="sale-price">
-                                ₹
-                                {Number(
-                                  product.regularPrice ||
-                                    product.price ||
-                                    0
-                                ).toLocaleString(
-                                  "en-IN"
-                                )}
-                              </span>
-                            )}
-
+                              )}
                           </div>
                         </td>
 
-                        {/* STOCK */}
+                        {/* =====================================
+                            STOCK
+                        ===================================== */}
 
                         <td>
                           <span
-                            className={
+                            className={`stock-value ${
                               Number(
-                                product.stock || 0
-                              ) <= 10
+                                product.stock ??
+                                  0
+                              ) === 0
+                                ? "stock-zero"
+                                : Number(
+                                    product.stock
+                                  ) <=
+                                    10
                                 ? "stock-low"
-                                : "stock-normal"
-                            }
+                                : "stock-good"
+                            }`}
                           >
-                            {product.stock ?? 0}
+                            {Number(
+                              product.stock ??
+                                0
+                            )}
                           </span>
                         </td>
 
-                        {/* STATUS */}
+                        {/* =====================================
+                            STATUS
+                        ===================================== */}
 
                         <td>
                           <span
@@ -1097,38 +1333,44 @@ function Products() {
                           >
                             <span className="status-dot"></span>
 
-                            {status.label}
+                            {
+                              status.label
+                            }
                           </span>
                         </td>
 
-                        {/* BEST SELLER */}
+                        {/* =====================================
+                            BEST SELLER
+                        ===================================== */}
 
                         <td>
                           {product.isBestSeller ? (
                             <span className="best-seller-badge">
                               <i className="bi bi-star-fill"></i>
-                              Best Seller
+
+                              BEST SELLER
                             </span>
                           ) : (
-                            <span className="regular-product-badge">
+                            <span className="regular-badge">
                               Regular
                             </span>
                           )}
                         </td>
 
-                        {/* ACTIONS */}
+                        {/* =====================================
+                            ACTIONS
+                        ===================================== */}
 
                         <td>
                           <div className="product-actions">
-
                             {/* VIEW */}
-
                             <button
-                              className="view-btn"
+                              type="button"
+                              className="action-btn view-btn"
                               title="View"
                               onClick={() =>
                                 navigate(
-                                  `/admin/products/view/${product._id}`
+                                  `/admin/products/view/${productId}`
                                 )
                               }
                             >
@@ -1136,13 +1378,13 @@ function Products() {
                             </button>
 
                             {/* EDIT */}
-
                             <button
-                              className="edit-btn"
+                              type="button"
+                              className="action-btn edit-btn"
                               title="Edit"
                               onClick={() =>
                                 navigate(
-                                  `/admin/products/edit/${product._id}`
+                                  `/admin/products/edit/${productId}`
                                 )
                               }
                             >
@@ -1150,119 +1392,117 @@ function Products() {
                             </button>
 
                             {/* DELETE */}
-
                             <button
-                              className="delete-btn"
+                              type="button"
+                              className="action-btn delete-btn"
                               title="Delete"
+                              disabled={
+                                deletingId ===
+                                productId
+                              }
                               onClick={() =>
                                 handleDelete(
-                                  product._id
+                                  productId
                                 )
                               }
                             >
-                              <i className="bi bi-trash"></i>
+                              {deletingId ===
+                              productId ? (
+                                <i className="bi bi-hourglass-split"></i>
+                              ) : (
+                                <i className="bi bi-trash3"></i>
+                              )}
                             </button>
-
                           </div>
                         </td>
-
                       </tr>
                     );
                   }
                 )}
-
               </tbody>
             </table>
-          )}
-        </div>
-
-        {/* PAGINATION */}
-
-        {!loading &&
-          products.length > 0 &&
-          totalPages > 1 && (
-
-            <div className="products-pagination">
-
-              {/* PREVIOUS */}
-
-              <button
-                className="pagination-btn"
-                disabled={
-                  currentPage === 1
-                }
-                onClick={() =>
-                  handlePageChange(
-                    currentPage - 1
-                  )
-                }
-              >
-                <i className="bi bi-chevron-left"></i>
-                Previous
-              </button>
-
-              {/* PAGE NUMBERS */}
-
-              <div className="pagination-pages">
-
-                {getPaginationPages().map(
-                  (page, index) => {
-
-                    if (page === "...") {
-                      return (
-                        <span
-                          key={`dots-${index}`}
-                          className="pagination-dots"
-                        >
-                          ...
-                        </span>
-                      );
-                    }
-
-                    return (
-                      <button
-                        key={page}
-                        className={`page-number ${
-                          currentPage === page
-                            ? "active"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handlePageChange(
-                            page
-                          )
-                        }
-                      >
-                        {page}
-                      </button>
-                    );
-                  }
-                )}
-
-              </div>
-
-              {/* NEXT */}
-
-              <button
-                className="pagination-btn"
-                disabled={
-                  currentPage ===
-                  totalPages
-                }
-                onClick={() =>
-                  handlePageChange(
-                    currentPage + 1
-                  )
-                }
-              >
-                Next
-                <i className="bi bi-chevron-right"></i>
-              </button>
-
-            </div>
-          )}
-
+          </div>
+        )}
       </div>
+
+      {/* =====================================================
+          PAGINATION
+      ===================================================== */}
+
+      {!loading &&
+        products.length > 0 &&
+        totalPages > 1 && (
+          <div className="products-pagination">
+            {/* PREVIOUS */}
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={
+                currentPage === 1
+              }
+              onClick={() =>
+                goToPage(
+                  currentPage - 1
+                )
+              }
+            >
+              <i className="bi bi-chevron-left"></i>
+            </button>
+
+            {/* PAGE NUMBERS */}
+            <div className="pagination-pages">
+              {paginationItems.map(
+                (
+                  page,
+                  index
+                ) =>
+                  page === "..." ? (
+                    <span
+                      key={`dots-${index}`}
+                      className="pagination-dots"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      className={
+                        page ===
+                        currentPage
+                          ? "pagination-page active"
+                          : "pagination-page"
+                      }
+                      onClick={() =>
+                        goToPage(
+                          page
+                        )
+                      }
+                    >
+                      {page}
+                    </button>
+                  )
+              )}
+            </div>
+
+            {/* NEXT */}
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={
+                currentPage ===
+                totalPages
+              }
+              onClick={() =>
+                goToPage(
+                  currentPage + 1
+                )
+              }
+            >
+              <i className="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        )}
     </div>
   );
 }

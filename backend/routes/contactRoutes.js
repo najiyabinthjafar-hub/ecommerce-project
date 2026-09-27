@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createContact,
   getAllContacts,
+  updateContactStatus,
   deleteContact,
 } = require("../controllers/contactController");
 
@@ -19,10 +20,29 @@ router.post("/", createContact);
 
 // ================= GET ALL CONTACTS =================
 // Admin only
-router.get("/", protect, adminOnly, getAllContacts);
+router.get(
+  "/",
+  protect,
+  adminOnly,
+  getAllContacts
+);
+
+// ================= UPDATE CONTACT STATUS =================
+// Admin only
+router.patch(
+  "/:id/status",
+  protect,
+  adminOnly,
+  updateContactStatus
+);
 
 // ================= DELETE CONTACT =================
 // Admin only
-router.delete("/:id", protect, adminOnly, deleteContact);
+router.delete(
+  "/:id",
+  protect,
+  adminOnly,
+  deleteContact
+);
 
 module.exports = router;

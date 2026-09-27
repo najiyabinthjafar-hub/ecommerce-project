@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -6,13 +7,18 @@ import Footer from "../components/Footer";
 import "./Support.css";
 
 function Support() {
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navbar />
 
       <main className="support-page">
-        {/* HEADING */}
 
+        {/* HEADING */}
         <section className="support-heading">
           <p>RIZO SUPPORT</p>
 
@@ -23,13 +29,10 @@ function Support() {
           </span>
         </section>
 
-
         {/* SUPPORT CARDS */}
-
         <section className="support-container">
 
           {/* ORDER */}
-
           <Link to="/faqs" className="support-card">
             <div className="support-icon">📦</div>
 
@@ -44,9 +47,7 @@ function Support() {
             <span className="support-arrow">→</span>
           </Link>
 
-
           {/* RETURNS */}
-
           <Link to="/faqs" className="support-card">
             <div className="support-icon">↩️</div>
 
@@ -61,9 +62,7 @@ function Support() {
             <span className="support-arrow">→</span>
           </Link>
 
-
           {/* PAYMENT */}
-
           <Link to="/faqs" className="support-card">
             <div className="support-icon">💳</div>
 
@@ -78,9 +77,7 @@ function Support() {
             <span className="support-arrow">→</span>
           </Link>
 
-
           {/* ACCOUNT */}
-
           <Link to="/profile" className="support-card">
             <div className="support-icon">👤</div>
 
@@ -97,9 +94,7 @@ function Support() {
 
         </section>
 
-
         {/* CONTACT SUPPORT */}
-
         <section className="support-contact">
 
           <h2>STILL NEED HELP?</h2>

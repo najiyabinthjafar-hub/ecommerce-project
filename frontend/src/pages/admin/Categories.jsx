@@ -1,118 +1,319 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Categories.css";
 
 const API_URL = "http://localhost:5000/api/categories";
+const PRODUCT_API_URL = "http://localhost:5000/api/products";
 
 function Categories() {
   const navigate = useNavigate();
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
-
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("main");
   const [editingCategory, setEditingCategory] = useState(null);
-
-  // main / sub
-  const [categoryMode, setCategoryMode] = useState("main");
 
   const [formData, setFormData] = useState({
     name: "",
     parent: "",
   });
 
-  // =========================
+  // =========================================================
+  // TOKEN
+  // =========================================================
+
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("adminToken") ||
+      ""
+    );
+  };
+
+  // =========================================================
+  // HEADERS
+  // =========================================================
+
+  const getHeaders = () => {
+    const token = getToken();
+
+    return {
+      "Content-Type": "application/json",
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+    };
+  };
+
+  // =========================================================
+  // SORT CATEGORIES
+  //
+  // MAIN CATEGORIES FIRST
+  // NEWEST MAIN CATEGORY FIRST
+  // THEN SUBCATEGORIES
+  // =========================================================
+
+  const sortCategories = (categoryList) => {
+    return [...categoryList].sort((a, b) => {
+      const aIsMain = !a.parent;
+      const bIsMain = !b.parent;
+
+      // Main categories always come first
+      if (aIsMain && !bIsMain) {
+        return -1;
+      }
+
+      if (!aIsMain && bIsMain) {
+        return 1;
+      }
+
+      // Within the same type,
+      // newest category first
+      const aDate = new Date(a.createdAt || 0).getTime();
+      const bDate = new Date(b.createdAt || 0).getTime();
+
+      return bDate - aDate;
+    });
+  };
+
+  // =========================================================
   // FETCH CATEGORIES
-  // =========================
-  const fetchCategories = async () => {
+  // =========================================================
+
+  const fetchCategories = async (
+    searchValue = search,
+    statusValue = status
+  ) => {
     try {
       setLoading(true);
+      setError("");
 
-      const response = await fetch(API_URL);
+      const params = new URLSearchParams();
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
+      if (searchValue.trim()) {
+        params.append("search", searchValue.trim());
       }
+
+      if (statusValue && statusValue !== "all") {
+        params.append("status", statusValue);
+      }
+
+      const query = params.toString();
+
+      const response = await fetch(
+        query ? `${API_URL}?${query}` : API_URL,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
 
       const data = await response.json();
 
-      setCategories(data.categories || []);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      alert("Failed to load categories");
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to fetch categories"
+        );
+      }
+
+      const categoryList = data.categories || [];
+
+      setCategories(sortCategories(categoryList));
+    } catch (err) {
+      console.error("Fetch categories error:", err);
+
+      setError(
+        err.message || "Failed to load categories"
+      );
+
+      setCategories([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================================================
+  // FETCH ALL PRODUCTS
+  //
+  // Product API is paginated.
+  // So we fetch every page to calculate
+  // the correct category product count.
+  // =========================================================
+
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+
+      // -----------------------------------------------------
+      // FIRST PAGE
+      // -----------------------------------------------------
+
+      const firstResponse = await fetch(
+        `${PRODUCT_API_URL}?page=1&limit=10`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
+
+      const firstData = await firstResponse.json();
+
+      if (!firstResponse.ok) {
+        throw new Error(
+          firstData.message || "Failed to fetch products"
+        );
+      }
+
+      const firstProducts = Array.isArray(
+        firstData.products
+      )
+        ? firstData.products
+        : [];
+
+      const pagination = firstData.pagination || {};
+
+      const totalPages =
+        Number(pagination.totalPages) || 1;
+
+      // -----------------------------------------------------
+      // ONLY ONE PAGE
+      // -----------------------------------------------------
+
+      if (totalPages <= 1) {
+        setProducts(firstProducts);
+        return;
+      }
+
+      // -----------------------------------------------------
+      // FETCH REMAINING PAGES
+      // -----------------------------------------------------
+
+      const pageRequests = [];
+
+      for (
+        let page = 2;
+        page <= totalPages;
+        page++
+      ) {
+        pageRequests.push(
+          fetch(
+            `${PRODUCT_API_URL}?page=${page}&limit=10`,
+            {
+              method: "GET",
+              headers: getHeaders(),
+            }
+          ).then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(
+                data.message ||
+                  `Failed to fetch product page ${page}`
+              );
+            }
+
+            return Array.isArray(data.products)
+              ? data.products
+              : [];
+          })
+        );
+      }
+
+      const remainingPages = await Promise.all(
+        pageRequests
+      );
+
+      // -----------------------------------------------------
+      // COMBINE ALL PRODUCTS
+      // -----------------------------------------------------
+
+      const allProducts = [
+        ...firstProducts,
+        ...remainingPages.flat(),
+      ];
+
+      setProducts(allProducts);
+
+      console.log(
+        "Total products loaded:",
+        allProducts.length
+      );
+    } catch (err) {
+      console.error(
+        "Fetch all products error:",
+        err
+      );
+
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
+
   useEffect(() => {
-    fetchCategories();
+    fetchCategories("", "all");
+    fetchProducts();
   }, []);
 
-  // =========================
-  // GENERATE SLUG
-  // =========================
-  const generateSlug = (name) => {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+
+    setSearch(value);
+
+    fetchCategories(value, status);
   };
 
-  // =========================
-  // ADD MAIN CATEGORY
-  // =========================
-  const handleAddMain = () => {
-    setEditingCategory(null);
-    setCategoryMode("main");
+  // =========================================================
+  // STATUS FILTER
+  // =========================================================
 
-    setFormData({
-      name: "",
-      parent: "",
-    });
+  const handleStatusChange = (e) => {
+    const value = e.target.value;
 
-    setShowModal(true);
+    setStatus(value);
+
+    fetchCategories(search, value);
   };
 
-  // =========================
-  // ADD SUBCATEGORY
-  // =========================
-  const handleAddSub = () => {
-    setEditingCategory(null);
-    setCategoryMode("sub");
+  // =========================================================
+  // RESET FILTERS
+  // =========================================================
 
-    setFormData({
-      name: "",
-      parent: "",
-    });
+  const handleResetFilters = () => {
+    setSearch("");
+    setStatus("all");
 
-    setShowModal(true);
+    fetchCategories("", "all");
   };
 
-  // =========================
-  // EDIT CATEGORY
-  // =========================
-  const handleEdit = (category) => {
-    setEditingCategory(category);
+  // =========================================================
+  // FORM CHANGE
+  // =========================================================
 
-    // If parent exists => subcategory
-    // Otherwise => main category
-    setCategoryMode(category.parent ? "sub" : "main");
-
-    setFormData({
-      name: category.name || "",
-      parent: category.parent?._id || category.parent || "",
-    });
-
-    setShowModal(true);
-  };
-
-  // =========================
-  // HANDLE INPUT
-  // =========================
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
@@ -121,134 +322,85 @@ function Categories() {
     }));
   };
 
-  // =========================
-  // SUBMIT CATEGORY
-  // =========================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // =========================================================
+  // ADD MAIN CATEGORY
+  // =========================================================
 
-    const categoryName = formData.name.trim();
+  const openAddMainModal = () => {
+    setEditingCategory(null);
+    setModalType("main");
 
-    if (!categoryName) {
-      alert("Please enter category name");
-      return;
-    }
+    setFormData({
+      name: "",
+      parent: "",
+    });
 
-    // Subcategory must have a parent
-    if (categoryMode === "sub" && !formData.parent) {
-      alert("Please select a parent category");
-      return;
-    }
-
-    const slug = generateSlug(categoryName);
-
-    try {
-      // Main category => parent null
-      // Subcategory => selected parent id
-      const payload = {
-        name: categoryName,
-        slug: slug,
-        parent: categoryMode === "main" ? null : formData.parent,
-      };
-
-      // =========================
-      // UPDATE
-      // =========================
-      if (editingCategory) {
-        const response = await fetch(
-          `${API_URL}/${editingCategory._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to update category");
-        }
-
-        alert("Category updated successfully!");
-      }
-
-      // =========================
-      // ADD
-      // =========================
-      else {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to add category");
-        }
-
-        if (categoryMode === "main") {
-          alert("Main category added successfully!");
-        } else {
-          alert("Subcategory added successfully!");
-        }
-      }
-
-      setShowModal(false);
-      setEditingCategory(null);
-
-      setFormData({
-        name: "",
-        parent: "",
-      });
-
-      fetchCategories();
-    } catch (error) {
-      console.error("Category error:", error);
-      alert(error.message || "Something went wrong");
-    }
+    setShowModal(true);
   };
 
-  // =========================
-  // DELETE CATEGORY
-  // =========================
-  const handleDelete = async (categoryId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this category?"
+  // =========================================================
+  // ADD SUBCATEGORY
+  // =========================================================
+
+  const openAddSubModal = () => {
+    setEditingCategory(null);
+    setModalType("sub");
+
+    setFormData({
+      name: "",
+      parent: "",
+    });
+
+    setShowModal(true);
+  };
+
+  // =========================================================
+  // EDIT CATEGORY
+  // =========================================================
+
+  const openEditModal = (category) => {
+    setEditingCategory(category);
+
+    setModalType(
+      category.parent ? "sub" : "main"
     );
 
-    if (!confirmDelete) return;
+    setFormData({
+      name: category.name || "",
+      parent: category.parent
+        ? String(
+            category.parent._id ||
+              category.parent
+          )
+        : "",
+    });
 
-    try {
-      const response = await fetch(`${API_URL}/${categoryId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to delete category");
-      }
-
-      alert("Category deleted successfully!");
-
-      fetchCategories();
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert(error.message || "Failed to delete category");
-    }
+    setShowModal(true);
   };
 
-  // =========================
+  // =========================================================
+  // VIEW CATEGORY
+  // =========================================================
+
+  const handleViewCategory = (category) => {
+    if (!category?._id) {
+      return;
+    }
+
+    navigate(
+      `/admin/categories/${category._id}`
+    );
+  };
+
+  // =========================================================
   // CLOSE MODAL
-  // =========================
-  const handleCloseModal = () => {
+  // =========================================================
+
+  const closeModal = () => {
+    if (submitting) {
+      return;
+    }
+
     setShowModal(false);
     setEditingCategory(null);
 
@@ -258,177 +410,670 @@ function Categories() {
     });
   };
 
-  // =========================
-  // GET PARENT NAME
-  // =========================
-  const getParentName = (category) => {
-    if (!category.parent) {
-      return null;
+  // =========================================================
+  // CREATE / UPDATE CATEGORY
+  // =========================================================
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const trimmedName = formData.name.trim();
+
+    if (!trimmedName) {
+      alert("Please enter category name.");
+      return;
     }
 
-    if (typeof category.parent === "object") {
-      return category.parent.name;
+    if (
+      modalType === "sub" &&
+      !formData.parent
+    ) {
+      alert(
+        "Please select a parent category."
+      );
+      return;
     }
 
-    const parentCategory = categories.find(
-      (item) => item._id === category.parent
-    );
+    try {
+      setSubmitting(true);
 
-    return parentCategory?.name || "Unknown";
+      const slug = trimmedName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      const payload = {
+        name: trimmedName,
+        slug,
+        parent:
+          modalType === "sub" &&
+          formData.parent
+            ? formData.parent
+            : null,
+      };
+
+      const isEditing =
+        Boolean(editingCategory);
+
+      const url = isEditing
+        ? `${API_URL}/${editingCategory._id}`
+        : API_URL;
+
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `Failed to ${
+              isEditing
+                ? "update"
+                : "create"
+            } category`
+        );
+      }
+
+      alert(
+        data.message ||
+          `Category ${
+            isEditing
+              ? "updated"
+              : "created"
+          } successfully`
+      );
+
+      closeModal();
+
+      // Refresh categories
+      // sortCategories() automatically
+      // puts the newest main category first.
+
+      await fetchCategories(
+        search,
+        status
+      );
+    } catch (err) {
+      console.error(
+        "Save category error:",
+        err
+      );
+
+      alert(
+        err.message ||
+          `Failed to ${
+            editingCategory
+              ? "update"
+              : "create"
+          } category`
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // =========================
-  // MAIN CATEGORIES
-  // =========================
-  const parentCategories = categories.filter(
-    (category) => !category.parent
-  );
+  // =========================================================
+  // DELETE CATEGORY
+  // =========================================================
 
-  // =========================
-  // SEARCH
-  // =========================
-  const filteredCategories = categories.filter((category) =>
-    category.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleDelete = async (category) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${category.name}"?`
+    );
 
-  // =========================
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(category._id);
+
+      const response = await fetch(
+        `${API_URL}/${category._id}`,
+        {
+          method: "DELETE",
+          headers: getHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to delete category"
+        );
+      }
+
+      alert(
+        data.message ||
+          "Category deleted successfully"
+      );
+
+      await fetchCategories(
+        search,
+        status
+      );
+
+      await fetchProducts();
+    } catch (err) {
+      console.error(
+        "Delete category error:",
+        err
+      );
+
+      alert(
+        err.message ||
+          "Failed to delete category"
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // =========================================================
+  // GET CATEGORY ID
+  // =========================================================
+
+  const getCategoryId = (category) => {
+    if (!category) {
+      return "";
+    }
+
+    if (typeof category === "object") {
+      return String(
+        category._id ||
+          category.id ||
+          ""
+      );
+    }
+
+    return String(category);
+  };
+
+  // =========================================================
+  // GET PARENT NAME
+  // =========================================================
+
+  const getParentName = (category) => {
+    if (!category.parent) {
+      return "—";
+    }
+
+    if (
+      typeof category.parent ===
+      "object"
+    ) {
+      return (
+        category.parent.name ||
+        "—"
+      );
+    }
+
+    const parent = categories.find(
+      (item) =>
+        String(item._id) ===
+        String(category.parent)
+    );
+
+    return parent
+      ? parent.name
+      : "—";
+  };
+
+  // =========================================================
+  // GET CATEGORY TYPE
+  // =========================================================
+
+  const getCategoryType = (category) => {
+    return category.parent
+      ? "Subcategory"
+      : "Main Category";
+  };
+
+  // =========================================================
+  // STATUS CLASS
+  // =========================================================
+
+  const getStatusClass = (
+    categoryStatus
+  ) => {
+    return categoryStatus === "active"
+      ? "active"
+      : "inactive";
+  };
+
+  // =========================================================
+  // GET PRODUCT CATEGORY ID
+  // =========================================================
+
+  const getProductCategoryId = (
+    product
+  ) => {
+    if (!product) {
+      return "";
+    }
+
+    const category = product.category;
+
+    if (!category) {
+      return "";
+    }
+
+    if (
+      typeof category === "object"
+    ) {
+      return String(
+        category._id ||
+          category.id ||
+          ""
+      );
+    }
+
+    return String(category);
+  };
+
+  // =========================================================
+  // GET DESCENDANT CATEGORY IDS
+  // =========================================================
+
+  const getDescendantCategoryIds = (
+    parentId
+  ) => {
+    const childIds = [];
+
+    categories.forEach(
+      (category) => {
+        if (!category.parent) {
+          return;
+        }
+
+        const parentIdValue =
+          typeof category.parent ===
+          "object"
+            ? category.parent._id
+            : category.parent;
+
+        if (
+          String(parentIdValue) ===
+          String(parentId)
+        ) {
+          childIds.push(
+            String(category._id)
+          );
+
+          const nestedIds =
+            getDescendantCategoryIds(
+              category._id
+            );
+
+          childIds.push(
+            ...nestedIds
+          );
+        }
+      }
+    );
+
+    return childIds;
+  };
+
+  // =========================================================
+  // GET PRODUCT COUNT
+  // =========================================================
+
+  const getProductCount = (
+    category
+  ) => {
+    const categoryId =
+      getCategoryId(category);
+
+    if (!categoryId) {
+      return 0;
+    }
+
+    const categoryIds = [
+      categoryId,
+      ...getDescendantCategoryIds(
+        categoryId
+      ),
+    ];
+
+    return products.filter(
+      (product) => {
+        const productCategoryId =
+          getProductCategoryId(
+            product
+          );
+
+        return categoryIds.includes(
+          productCategoryId
+        );
+      }
+    ).length;
+  };
+
+  // =========================================================
   // STATS
-  // =========================
-  const totalCategories = categories.length;
+  // =========================================================
 
-  const mainCategories = categories.filter(
-    (category) => !category.parent
-  ).length;
+  const mainCategories =
+    categories.filter(
+      (category) =>
+        !category.parent
+    );
 
-  const subCategories = categories.filter(
-    (category) => category.parent
-  ).length;
+  const subCategories =
+    categories.filter(
+      (category) =>
+        category.parent
+    );
+
+  const activeCategories =
+    categories.filter(
+      (category) =>
+        category.status === "active"
+    );
+
+  const inactiveCategories =
+    categories.filter(
+      (category) =>
+        category.status === "inactive"
+    );
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div className="categories-page">
-      {/* =========================
-          PAGE HEADER
-      ========================= */}
-      <div className="category-page-header">
-        <div>
-          <span className="category-eyebrow">
-            PRODUCT MANAGEMENT
-          </span>
 
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="categories-header">
+        <div>
           <h1>Categories</h1>
 
           <p>
-            Organize products with main categories and subcategories.
+            Manage product categories
+            and subcategories
           </p>
         </div>
 
-        <div className="category-header-actions">
+        <div className="categories-header-actions">
+
           <button
-            className="add-category-btn"
-            onClick={handleAddMain}
+            className="btn-secondary"
+            onClick={
+              openAddSubModal
+            }
           >
-            <i className="bi bi-plus-lg"></i>
-            Main Category
+            <i className="bi bi-diagram-3"></i>
+            Add Subcategory
           </button>
 
           <button
-            className="add-subcategory-btn"
-            onClick={handleAddSub}
+            className="btn-primary"
+            onClick={
+              openAddMainModal
+            }
           >
-            <i className="bi bi-diagram-3"></i>
-            Subcategory
+            <i className="bi bi-plus-lg"></i>
+            Add Category
           </button>
+
         </div>
       </div>
 
-      {/* =========================
+      {/* =====================================================
           STATS
-      ========================= */}
+      ===================================================== */}
+
       <div className="category-stats">
+
         <div className="category-stat-card">
-          <div className="category-stat-icon">
+          <div className="stat-icon total">
             <i className="bi bi-grid"></i>
           </div>
 
           <div>
-            <span>Total Categories</span>
-            <strong>{totalCategories}</strong>
+            <span>
+              Total Categories
+            </span>
+
+            <strong>
+              {categories.length}
+            </strong>
           </div>
         </div>
 
         <div className="category-stat-card">
-          <div className="category-stat-icon">
+          <div className="stat-icon main">
             <i className="bi bi-folder"></i>
           </div>
 
           <div>
-            <span>Main Categories</span>
-            <strong>{mainCategories}</strong>
+            <span>
+              Main Categories
+            </span>
+
+            <strong>
+              {mainCategories.length}
+            </strong>
           </div>
         </div>
 
         <div className="category-stat-card">
-          <div className="category-stat-icon">
+          <div className="stat-icon sub">
             <i className="bi bi-diagram-3"></i>
           </div>
 
           <div>
-            <span>Subcategories</span>
-            <strong>{subCategories}</strong>
+            <span>
+              Subcategories
+            </span>
+
+            <strong>
+              {subCategories.length}
+            </strong>
           </div>
         </div>
+
+        <div className="category-stat-card">
+          <div className="stat-icon active">
+            <i className="bi bi-check-circle"></i>
+          </div>
+
+          <div>
+            <span>Active</span>
+
+            <strong>
+              {activeCategories.length}
+            </strong>
+          </div>
+        </div>
+
+        <div className="category-stat-card">
+          <div className="stat-icon inactive">
+            <i className="bi bi-x-circle"></i>
+          </div>
+
+          <div>
+            <span>Inactive</span>
+
+            <strong>
+              {inactiveCategories.length}
+            </strong>
+          </div>
+        </div>
+
       </div>
 
-      {/* =========================
-          MAIN CATEGORY TABLE CARD
-      ========================= */}
-      <div className="categories-card">
-        <div className="categories-card-header">
+      {/* =====================================================
+          FILTERS
+      ===================================================== */}
+
+      <div className="categories-toolbar">
+
+        <div className="category-search">
+          <i className="bi bi-search"></i>
+
+          <input
+            type="text"
+            placeholder="Search categories..."
+            value={search}
+            onChange={handleSearch}
+          />
+        </div>
+
+        <div className="category-filter">
+          <i className="bi bi-funnel"></i>
+
+          <select
+            value={status}
+            onChange={
+              handleStatusChange
+            }
+          >
+            <option value="all">
+              All Status
+            </option>
+
+            <option value="active">
+              Active
+            </option>
+
+            <option value="inactive">
+              Inactive
+            </option>
+          </select>
+        </div>
+
+        {(search ||
+          status !== "all") && (
+          <button
+            className="reset-filter-btn"
+            onClick={
+              handleResetFilters
+            }
+          >
+            <i className="bi bi-arrow-counterclockwise"></i>
+            Reset
+          </button>
+        )}
+
+      </div>
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error && (
+        <div className="categories-error">
+
+          <i className="bi bi-exclamation-circle"></i>
+
+          <span>
+            {error}
+          </span>
+
+          <button
+            onClick={() =>
+              fetchCategories(
+                search,
+                status
+              )
+            }
+          >
+            Retry
+          </button>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          TABLE
+      ===================================================== */}
+
+      <div className="categories-table-card">
+
+        <div className="table-card-header">
+
           <div>
-            <h2>All Categories</h2>
+            <h2>
+              Category List
+            </h2>
 
             <p>
-              Manage your product categories and subcategories.
+              {loading
+                ? "Loading categories..."
+                : `${categories.length} categories found`}
             </p>
           </div>
 
-          <div className="category-search">
-            <i className="bi bi-search"></i>
-
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
         </div>
 
-        {/* =========================
-            TABLE
-        ========================= */}
         <div className="categories-table-wrapper">
-          {loading ? (
-            <div className="category-loading">
-              <i className="bi bi-arrow-repeat"></i>
-              <span>Loading categories...</span>
-            </div>
-          ) : filteredCategories.length === 0 ? (
-            <div className="category-empty">
-              <i className="bi bi-folder2-open"></i>
 
-              <h3>No categories found</h3>
+          {loading ||
+          productsLoading ? (
+            <div className="categories-loading">
+
+              <i className="bi bi-arrow-repeat"></i>
+
+              <span>
+                {loading
+                  ? "Loading categories..."
+                  : "Calculating product counts..."}
+              </span>
+
+            </div>
+          ) : categories.length === 0 ? (
+
+            <div className="categories-empty">
+
+              <div className="empty-icon">
+                <i className="bi bi-folder-x"></i>
+              </div>
+
+              <h3>
+                No categories found
+              </h3>
 
               <p>
-                Add a main category or subcategory to get started.
+                Try changing your
+                search or filter.
               </p>
+
+              {(search ||
+                status !== "all") && (
+                <button
+                  onClick={
+                    handleResetFilters
+                  }
+                  className="btn-secondary"
+                >
+                  Clear Filters
+                </button>
+              )}
+
             </div>
+
           ) : (
+
             <table className="categories-table">
+
               <thead>
                 <tr>
-                  <th>#</th>
                   <th>Category</th>
+                  <th>Slug</th>
+                  <th>Parent</th>
                   <th>Type</th>
                   <th>Products</th>
                   <th>Status</th>
@@ -437,300 +1082,377 @@ function Categories() {
               </thead>
 
               <tbody>
-                {filteredCategories.map((category, index) => {
-                  const parentName = getParentName(category);
-                  const isSubcategory = !!category.parent;
 
-                  return (
-                    <tr key={category._id}>
-                      {/* NUMBER */}
-                      <td className="category-number">
-                        {index + 1}
-                      </td>
+                {categories.map(
+                  (category) => (
+
+                    <tr
+                      key={
+                        category._id
+                      }
+                    >
 
                       {/* CATEGORY */}
+
                       <td>
-                        <div className="category-info">
+                        <div className="category-name-cell">
+
                           <div className="category-icon">
-                            {category.name
-                              ?.charAt(0)
-                              ?.toUpperCase()}
+
+                            <i
+                              className={
+                                category.parent
+                                  ? "bi bi-diagram-3"
+                                  : "bi bi-folder"
+                              }
+                            ></i>
+
                           </div>
 
                           <div>
-                            <strong>{category.name}</strong>
 
-                            <span>
-                              {category.slug ||
-                                generateSlug(category.name)}
-                            </span>
+                            <strong>
+                              {
+                                category.name
+                              }
+                            </strong>
 
-                            {parentName && (
+                            {category.description && (
                               <small>
-                                Subcategory of {parentName}
+                                {
+                                  category.description
+                                }
                               </small>
                             )}
+
                           </div>
+
                         </div>
                       </td>
 
-                      {/* TYPE */}
-                      <td>
-                        {isSubcategory ? (
-                          <span className="category-type subcategory-type">
-                            Subcategory
-                          </span>
-                        ) : (
-                          <span className="category-type main-category-type">
-                            Main Category
-                          </span>
-                        )}
-                      </td>
+                      {/* SLUG */}
 
-                      {/* PRODUCTS */}
                       <td>
-                        <span className="product-count">
-                          {category.productCount ||
-                            category.productsCount ||
-                            category.products?.length ||
-                            0}
+                        <span className="category-slug">
+                          {category.slug ||
+                            "—"}
                         </span>
                       </td>
 
-                      {/* STATUS */}
+                      {/* PARENT */}
+
                       <td>
-                        {category.status === "inactive" ? (
-                          <span className="category-status inactive">
-                            Inactive
-                          </span>
-                        ) : (
-                          <span className="category-status active">
-                            Active
-                          </span>
-                        )}
+                        <span className="parent-category">
+                          {getParentName(
+                            category
+                          )}
+                        </span>
+                      </td>
+
+                      {/* TYPE */}
+
+                      <td>
+
+                        <span
+                          className={`category-type ${
+                            category.parent
+                              ? "subcategory"
+                              : "main-category"
+                          }`}
+                        >
+                          {getCategoryType(
+                            category
+                          )}
+                        </span>
+
+                      </td>
+
+                      {/* PRODUCTS */}
+
+                      <td>
+
+                        <span className="product-count">
+                          {getProductCount(
+                            category
+                          )}
+                        </span>
+
+                      </td>
+
+                      {/* STATUS */}
+
+                      <td>
+
+                        <span
+                          className={`category-status ${getStatusClass(
+                            category.status
+                          )}`}
+                        >
+
+                          <span className="status-dot"></span>
+
+                          {category.status ===
+                          "active"
+                            ? "Active"
+                            : "Inactive"}
+
+                        </span>
+
                       </td>
 
                       {/* ACTIONS */}
+
                       <td>
+
                         <div className="category-actions">
+
+                          {/* VIEW */}
+
                           <button
-                            className="category-edit-btn"
-                            onClick={() => handleEdit(category)}
+                            className="action-btn view"
+                            title="View Category"
+                            onClick={() =>
+                              handleViewCategory(
+                                category
+                              )
+                            }
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+
+                          {/* EDIT */}
+
+                          <button
+                            className="action-btn edit"
                             title="Edit"
+                            onClick={() =>
+                              openEditModal(
+                                category
+                              )
+                            }
                           >
                             <i className="bi bi-pencil"></i>
                           </button>
 
+                          {/* DELETE */}
+
                           <button
-                            className="category-delete-btn"
-                            onClick={() =>
-                              handleDelete(category._id)
-                            }
+                            className="action-btn delete"
                             title="Delete"
+                            disabled={
+                              deletingId ===
+                              category._id
+                            }
+                            onClick={() =>
+                              handleDelete(
+                                category
+                              )
+                            }
                           >
-                            <i className="bi bi-trash3"></i>
+
+                            {deletingId ===
+                            category._id ? (
+                              <i className="bi bi-arrow-repeat"></i>
+                            ) : (
+                              <i className="bi bi-trash3"></i>
+                            )}
+
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
-                  );
-                })}
+
+                  )
+                )}
+
               </tbody>
+
             </table>
+
           )}
+
         </div>
+
       </div>
 
-      {/* =========================
-          ADD / EDIT MODAL
-      ========================= */}
+      {/* =====================================================
+          MODAL
+      ===================================================== */}
+
       {showModal && (
+
         <div
           className="category-modal-overlay"
-          onClick={handleCloseModal}
+          onClick={closeModal}
         >
+
           <div
             className="category-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
+
             {/* MODAL HEADER */}
+
             <div className="category-modal-header">
+
               <div>
-                <span className="modal-eyebrow">
-                  {editingCategory
-                    ? "CATEGORY MANAGEMENT"
-                    : categoryMode === "main"
-                    ? "MAIN CATEGORY"
-                    : "SUBCATEGORY"}
-                </span>
 
                 <h2>
                   {editingCategory
                     ? "Edit Category"
-                    : categoryMode === "main"
-                    ? "Add Main Category"
-                    : "Add Subcategory"}
+                    : modalType === "sub"
+                    ? "Add Subcategory"
+                    : "Add Category"}
                 </h2>
 
                 <p>
                   {editingCategory
-                    ? "Update category information."
-                    : categoryMode === "main"
-                    ? "Create a new main product category."
-                    : "Create a subcategory under a main category."}
+                    ? "Update category information"
+                    : modalType === "sub"
+                    ? "Create a new subcategory"
+                    : "Create a new main category"}
                 </p>
+
               </div>
 
               <button
                 className="modal-close-btn"
-                onClick={handleCloseModal}
+                onClick={closeModal}
+                disabled={submitting}
               >
                 <i className="bi bi-x-lg"></i>
               </button>
+
             </div>
 
             {/* FORM */}
-            <form onSubmit={handleSubmit}>
-              {/* CATEGORY NAME */}
-              <div className="category-form-group">
+
+            <form
+              className="category-form"
+              onSubmit={handleSubmit}
+            >
+
+              <div className="form-group">
+
                 <label>
                   Category Name
                   <span>*</span>
                 </label>
 
-                <div className="category-input-wrapper">
-                  <i className="bi bi-folder"></i>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Enter category name"
+                  value={formData.name}
+                  onChange={
+                    handleInputChange
+                  }
+                  disabled={submitting}
+                  autoFocus
+                />
 
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder={
-                      categoryMode === "main"
-                        ? "e.g. Women's Fashion"
-                        : "e.g. T-Shirts"
-                    }
-                    value={formData.name}
-                    onChange={handleChange}
-                    autoFocus
-                  />
-                </div>
               </div>
 
-              {/* PARENT CATEGORY */}
-              {categoryMode === "sub" && (
-                <div className="category-form-group">
+              {modalType === "sub" && (
+
+                <div className="form-group">
+
                   <label>
                     Parent Category
                     <span>*</span>
                   </label>
 
-                  <div className="category-input-wrapper">
-                    <i className="bi bi-diagram-3"></i>
+                  <select
+                    name="parent"
+                    value={
+                      formData.parent
+                    }
+                    onChange={
+                      handleInputChange
+                    }
+                    disabled={submitting}
+                  >
 
-                    <select
-                      name="parent"
-                      value={formData.parent}
-                      onChange={handleChange}
-                    >
-                      <option value="">
-                        Select Parent Category
-                      </option>
+                    <option value="">
+                      Select parent category
+                    </option>
 
-                      {parentCategories
-                        .filter(
-                          (category) =>
-                            category._id !== editingCategory?._id
-                        )
-                        .map((category) => (
-                          <option
-                            key={category._id}
-                            value={category._id}
-                          >
-                            {category.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
+                    {mainCategories.map(
+                      (category) => (
+
+                        <option
+                          key={
+                            category._id
+                          }
+                          value={
+                            category._id
+                          }
+                        >
+                          {
+                            category.name
+                          }
+                        </option>
+
+                      )
+                    )}
+
+                  </select>
+
                 </div>
+
               )}
 
-              {/* PREVIEW */}
-              <div className="category-preview">
-                <div className="preview-icon">
-                  {formData.name
-                    ? formData.name.charAt(0).toUpperCase()
-                    : "C"}
-                </div>
+              <div className="category-form-actions">
 
-                <div className="preview-content">
-                  <strong>
-                    {formData.name || "Category Name"}
-                  </strong>
-
-                  <span>
-                    {formData.name
-                      ? generateSlug(formData.name)
-                      : "category-slug"}
-                  </span>
-
-                  {categoryMode === "sub" && formData.parent && (
-                    <small>
-                      <i className="bi bi-arrow-return-right"></i>
-
-                      Subcategory of{" "}
-                      {
-                        parentCategories.find(
-                          (category) =>
-                            category._id === formData.parent
-                        )?.name
-                      }
-                    </small>
-                  )}
-
-                  {categoryMode === "main" && (
-                    <small>
-                      <i className="bi bi-folder"></i>
-                      Main Category
-                    </small>
-                  )}
-                </div>
-              </div>
-
-              {/* MODAL ACTIONS */}
-              <div className="category-modal-actions">
                 <button
                   type="button"
-                  className="category-cancel-btn"
-                  onClick={handleCloseModal}
+                  className="btn-cancel"
+                  onClick={closeModal}
+                  disabled={submitting}
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="category-submit-btn"
+                  className="btn-save"
+                  disabled={submitting}
                 >
-                  <i
-                    className={
-                      editingCategory
-                        ? "bi bi-check-lg"
-                        : "bi bi-plus-lg"
-                    }
-                  ></i>
 
-                  {editingCategory
-                    ? "Update Category"
-                    : categoryMode === "main"
-                    ? "Add Main Category"
-                    : "Add Subcategory"}
+                  {submitting ? (
+                    <>
+                      <i className="bi bi-arrow-repeat"></i>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-lg"></i>
+                      {editingCategory
+                        ? "Update Category"
+                        : "Create Category"}
+                    </>
+                  )}
+
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 }
 
 export default Categories;
+

@@ -6,8 +6,9 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  background: #ffffff;
+  background: transparent;
 }
+
 
 /* =========================================
    PRODUCT LINK
@@ -20,6 +21,7 @@
   text-decoration: none;
 }
 
+
 /* =========================================
    PRODUCT IMAGE
 ========================================= */
@@ -29,7 +31,10 @@
   width: 100%;
   aspect-ratio: 0.85;
   overflow: hidden;
-  background: #f2f2f2;
+  background: #f8f8f8;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 4px 14px rgba(50, 50, 50, 0.06);
 }
 
 .product-image {
@@ -41,36 +46,42 @@
   transition: transform 0.4s ease;
 }
 
-/* Hover */
+
+/* =========================================
+   IMAGE HOVER
+========================================= */
 
 .product-card:hover .product-image {
   transform: scale(1.03);
 }
+
 
 /* =========================================
    PRODUCT INFO
 ========================================= */
 
 .product-info {
-  padding-top: 14px;
+  padding-top: 13px;
+  padding-left: 2px;
 }
 
 .product-info h3 {
   margin: 0;
   color: #111111;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
 }
 
 .product-price {
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   color: #444444;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
 }
+
 
 /* =========================================
    WISHLIST
@@ -78,45 +89,49 @@
 
 .wishlist-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
 
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border: none;
-  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 50%;
 
   color: #111111;
-  font-size: 25px;
+  font-size: 22px;
   line-height: 1;
 
   cursor: pointer;
   z-index: 10;
 
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .wishlist-btn:hover {
   transform: scale(1.08);
+  background: #ffffff;
 }
 
 .active-wishlist {
   color: #e53935;
 }
 
+
 /* =========================================
    MOBILE
 ========================================= */
 
 @media (max-width: 768px) {
+
   .product-info {
-    padding-top: 11px;
+    padding-top: 10px;
+    padding-left: 1px;
   }
 
   .product-info h3 {
@@ -124,14 +139,14 @@
   }
 
   .product-price {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .wishlist-btn {
-    width: 36px;
-    height: 36px;
-    top: 9px;
-    right: 9px;
-    font-size: 22px;
+    width: 33px;
+    height: 33px;
+    top: 8px;
+    right: 8px;
+    font-size: 20px;
   }
 }

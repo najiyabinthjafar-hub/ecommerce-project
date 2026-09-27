@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  Link,
-  useSearchParams,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./Shop.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -16,38 +13,48 @@ function Shop() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const searchQuery =
-    searchParams.get("search")?.toLowerCase().trim() ||
-    "";
+  const searchQuery = searchParams.get("search")?.trim() || "";
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // =========================
+  // WISHLIST
+  // =========================
+
   const [wishlistIds, setWishlistIds] = useState([]);
-  const [loadingWishlist, setLoadingWishlist] =
-    useState(true);
-  const [updatingWishlist, setUpdatingWishlist] =
-    useState(null);
+  const [loadingWishlist, setLoadingWishlist] = useState(true);
+  const [updatingWishlist, setUpdatingWishlist] = useState(null);
 
-  const [availability, setAvailability] =
-    useState("all");
+  // =========================
+  // FILTERS
+  // =========================
 
-  const [priceOrder, setPriceOrder] =
-    useState("default");
+  const [availability, setAvailability] = useState("all");
+  const [priceOrder, setPriceOrder] = useState("default");
+  const [sortBy, setSortBy] = useState("newest");
 
-  const [sortBy, setSortBy] =
-    useState("newest");
+  // =========================
+  // PAGINATION
+  // =========================
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const productsPerPage = 8;
 
-  // ================= TOKEN =================
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: productsPerPage,
+    totalProducts: 0,
+    totalPages: 0,
+  });
 
-  const getToken = () =>
-    localStorage.getItem("token");
+  // =========================
+  // AUTH HELPERS
+  // =========================
+
+  const getToken = () => localStorage.getItem("token");
 
   const getAuthConfig = () => ({
     headers: {
@@ -55,7 +62,9 @@ function Shop() {
     },
   });
 
-  // ================= FETCH PRODUCTS =================
+  // =========================
+  // FETCH PRODUCTS
+  // =========================
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -63,22 +72,52 @@ function Shop() {
         setLoading(true);
         setError("");
 
-        const response = await axios.get(
-          `${API_URL}/products?limit=100`
-        );
+        const params = {
+          page: currentPage,
+          limit: productsPerPage,
+        };
 
-        console.log(
-          "PRODUCTS RESPONSE:",
-          response.data
-        );
+        // SEARCH
+        if (searchQuery) {
+          params.search = searchQuery;
+        }
 
-        setProducts(
-          response.data?.products || []
+        // AVAILABILITY
+        if (availability !== "all") {
+          params.availability = availability;
+        }
+
+        // SORTING
+        if (priceOrder === "low-high") {
+          params.sort = "price-low";
+        } else if (priceOrder === "high-low") {
+          params.sort = "price-high";
+        } else {
+          params.sort = sortBy;
+        }
+
+        console.log("SHOP API PARAMS:", params);
+
+        const response = await axios.get(`${API_URL}/products`, {
+          params,
+        });
+
+        console.log("SHOP API RESPONSE:", response.data);
+
+        setProducts(response.data.products || []);
+
+        setPagination(
+          response.data.pagination || {
+            currentPage: currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          }
         );
       } catch (error) {
         console.error(
-          "PRODUCT API ERROR:",
-          error
+          "SHOP PRODUCT API ERROR:",
+          error.response?.data || error.message
         );
 
         setError(
@@ -86,15 +125,45 @@ function Shop() {
             error.message ||
             "Failed to fetch products"
         );
+
+        setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [
+    searchQuery,
+    availability,
+    priceOrder,
+    sortBy,
+    currentPage,
+  ]);
 
-  // ================= FETCH WISHLIST =================
+  // =========================
+  // FIX PAGE IF TOTAL PAGES CHANGE
+  // =========================
+
+  useEffect(() => {
+    if (
+      pagination.totalPages > 0 &&
+      currentPage > pagination.totalPages
+    ) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [pagination.totalPages, currentPage]);
+
+  // =========================
+  // FETCH WISHLIST
+  // =========================
 
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -107,9 +176,7 @@ function Shop() {
       }
 
       try {
-        console.log(
-          "FETCHING SHOP WISHLIST..."
-        );
+        console.log("FETCHING SHOP WISHLIST...");
 
         const response = await axios.get(
           `${API_URL}/wishlist`,
@@ -122,24 +189,17 @@ function Shop() {
         );
 
         const wishlistProducts =
-          response.data?.wishlist?.products ||
-          [];
+          response.data.wishlist?.products || [];
 
-        const ids = wishlistProducts.map(
-          (item) =>
-            String(
-              item?._id ||
-                item?.id ||
-                item
-            )
+        const ids = wishlistProducts.map((item) =>
+          String(item._id || item.id || item)
         );
 
         setWishlistIds(ids);
       } catch (error) {
         console.error(
           "SHOP FETCH WISHLIST ERROR:",
-          error.response?.data ||
-            error.message
+          error.response?.data || error.message
         );
 
         setWishlistIds([]);
@@ -151,22 +211,18 @@ function Shop() {
     fetchWishlist();
   }, []);
 
-  // ================= WISHLIST =================
+  // =========================
+  // WISHLIST HANDLER
+  // =========================
 
-  const handleWishlist = async (
-    e,
-    product
-  ) => {
+  const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
 
     const token = getToken();
 
     if (!token) {
-      alert(
-        "Please login to add products to your wishlist."
-      );
-
+      alert("Please login to add products to your wishlist.");
       navigate("/login");
       return;
     }
@@ -181,17 +237,17 @@ function Shop() {
     try {
       setUpdatingWishlist(productId);
 
+      // REMOVE FROM WISHLIST
       if (isWishlisted) {
         console.log(
           "REMOVING FROM WISHLIST:",
           productId
         );
 
-        const response =
-          await axios.delete(
-            `${API_URL}/wishlist/remove/${productId}`,
-            getAuthConfig()
-          );
+        const response = await axios.delete(
+          `${API_URL}/wishlist/remove/${productId}`,
+          getAuthConfig()
+        );
 
         console.log(
           "REMOVE WISHLIST RESPONSE:",
@@ -199,24 +255,24 @@ function Shop() {
         );
 
         setWishlistIds((prev) =>
-          prev.filter(
-            (id) => id !== productId
-          )
+          prev.filter((id) => id !== productId)
         );
-      } else {
+      }
+
+      // ADD TO WISHLIST
+      else {
         console.log(
           "ADDING TO WISHLIST:",
           productId
         );
 
-        const response =
-          await axios.post(
-            `${API_URL}/wishlist/add`,
-            {
-              productId,
-            },
-            getAuthConfig()
-          );
+        const response = await axios.post(
+          `${API_URL}/wishlist/add`,
+          {
+            productId: productId,
+          },
+          getAuthConfig()
+        );
 
         console.log(
           "ADD WISHLIST RESPONSE:",
@@ -231,8 +287,7 @@ function Shop() {
     } catch (error) {
       console.error(
         "SHOP WISHLIST ERROR:",
-        error.response?.data ||
-          error.message
+        error.response?.data || error.message
       );
 
       alert(
@@ -244,145 +299,11 @@ function Shop() {
     }
   };
 
-  // ================= FILTER PRODUCTS =================
+  // =========================
+  // FILTER HANDLERS
+  // =========================
 
-  let filteredProducts = [...products];
-
-  if (searchQuery) {
-    filteredProducts =
-      filteredProducts.filter(
-        (product) => {
-          const productName =
-            product.name?.toLowerCase() ||
-            "";
-
-          const categoryName =
-            product.category?.name?.toLowerCase() ||
-            "";
-
-          const description =
-            product.description?.toLowerCase() ||
-            "";
-
-          return (
-            productName.includes(
-              searchQuery
-            ) ||
-            categoryName.includes(
-              searchQuery
-            ) ||
-            description.includes(
-              searchQuery
-            )
-          );
-        }
-      );
-  }
-
-  // ================= AVAILABILITY =================
-
-  if (availability === "available") {
-    filteredProducts =
-      filteredProducts.filter(
-        (product) =>
-          Number(product.stock || 0) > 0
-      );
-  } else if (
-    availability === "soldout"
-  ) {
-    filteredProducts =
-      filteredProducts.filter(
-        (product) =>
-          Number(product.stock || 0) === 0
-      );
-  }
-
-  // ================= PRICE SORT =================
-
-  if (priceOrder === "low-high") {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice ||
-            a.price ||
-            0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice ||
-            b.price ||
-            0;
-
-      return priceA - priceB;
-    });
-  } else if (
-    priceOrder === "high-low"
-  ) {
-    filteredProducts.sort((a, b) => {
-      const priceA =
-        a.salePrice !== null &&
-        a.salePrice !== undefined
-          ? a.salePrice
-          : a.regularPrice ||
-            a.price ||
-            0;
-
-      const priceB =
-        b.salePrice !== null &&
-        b.salePrice !== undefined
-          ? b.salePrice
-          : b.regularPrice ||
-            b.price ||
-            0;
-
-      return priceB - priceA;
-    });
-  } else if (sortBy === "newest") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-    );
-  } else if (sortBy === "featured") {
-    filteredProducts.sort(
-      (a, b) =>
-        new Date(a.createdAt || 0) -
-        new Date(b.createdAt || 0)
-    );
-  }
-
-  // ================= PAGINATION =================
-
-  const totalPages = Math.ceil(
-    filteredProducts.length /
-      productsPerPage
-  );
-
-  const safeCurrentPage =
-    currentPage > totalPages &&
-    totalPages > 0
-      ? totalPages
-      : currentPage;
-
-  const startIndex =
-    (safeCurrentPage - 1) *
-    productsPerPage;
-
-  const currentProducts =
-    filteredProducts.slice(
-      startIndex,
-      startIndex + productsPerPage
-    );
-
-  // ================= FILTER HANDLERS =================
-
-  const handleAvailabilityChange = (
-    value
-  ) => {
+  const handleAvailabilityChange = (value) => {
     setAvailability(value);
     setCurrentPage(1);
   };
@@ -398,9 +319,19 @@ function Shop() {
     setCurrentPage(1);
   };
 
-  // ================= PAGE CHANGE =================
+  // =========================
+  // PAGINATION
+  // =========================
 
   const handlePageChange = (page) => {
+    if (
+      page < 1 ||
+      page > pagination.totalPages ||
+      page === currentPage
+    ) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -409,12 +340,19 @@ function Shop() {
     });
   };
 
+  // =========================
+  // UI
+  // =========================
+
   return (
     <>
       <Navbar />
 
       <main className="shop-page">
-        {/* ================= HEADING ================= */}
+
+        {/* =========================
+            HEADING
+        ========================= */}
 
         <section className="shop-heading">
           <h1>SHOP</h1>
@@ -422,17 +360,19 @@ function Shop() {
           {searchQuery && (
             <p className="search-result-text">
               Search results for:{" "}
-              <strong>
-                "{searchQuery}"
-              </strong>
+              <strong>"{searchQuery}"</strong>
             </p>
           )}
         </section>
 
-        {/* ================= FILTER BAR ================= */}
+        {/* =========================
+            FILTER BAR
+        ========================= */}
 
         <section className="shop-filter-bar">
+
           <div className="filter-left">
+
             <span className="filter-title">
               FILTER
             </span>
@@ -449,12 +389,12 @@ function Shop() {
                 AVAILABILITY
               </option>
 
-              <option value="available">
-                AVAILABLE
+              <option value="in-stock">
+                IN STOCK
               </option>
 
-              <option value="soldout">
-                SOLD OUT
+              <option value="out-of-stock">
+                OUT OF STOCK
               </option>
             </select>
 
@@ -478,10 +418,13 @@ function Shop() {
                 HIGH TO LOW
               </option>
             </select>
+
           </div>
 
           <div className="filter-right">
+
             <div className="sort-by">
+
               <span>SORT BY:</span>
 
               <select
@@ -500,16 +443,24 @@ function Shop() {
                   FEATURED
                 </option>
               </select>
+
             </div>
 
+            {/* =========================
+                CURRENT PAGE PRODUCT COUNT
+            ========================= */}
+
             <span className="product-count">
-              {filteredProducts.length}{" "}
-              PRODUCTS
+              {products.length} PRODUCTS
             </span>
+
           </div>
+
         </section>
 
-        {/* ================= LOADING ================= */}
+        {/* =========================
+            LOADING
+        ========================= */}
 
         {loading && (
           <p className="no-products">
@@ -517,7 +468,9 @@ function Shop() {
           </p>
         )}
 
-        {/* ================= ERROR ================= */}
+        {/* =========================
+            ERROR
+        ========================= */}
 
         {!loading && error && (
           <p className="no-products">
@@ -525,135 +478,136 @@ function Shop() {
           </p>
         )}
 
-        {/* ================= PRODUCTS ================= */}
+        {/* =========================
+            PRODUCTS
+        ========================= */}
 
         {!loading && !error && (
           <section className="shop-products">
-            {currentProducts.length > 0 ? (
-              currentProducts.map(
-                (product) => {
-                  const productId =
-                    product._id ||
-                    product.id;
 
-                  const productPrice =
-                    product.salePrice !==
-                      null &&
-                    product.salePrice !==
-                      undefined
-                      ? product.salePrice
-                      : product.regularPrice ||
-                        product.price ||
-                        0;
+            {products.length > 0 ? (
 
-                  const productImage =
-                    product.images?.[0] ||
-                    product.image ||
-                    "https://via.placeholder.com/300";
+              products.map((product) => {
 
-                  const isWishlisted =
-                    wishlistIds.includes(
-                      String(productId)
-                    );
+                const productId =
+                  product._id || product.id;
 
-                  const isUpdating =
-                    updatingWishlist ===
-                    String(productId);
+                const productPrice =
+                  product.salePrice !== null &&
+                  product.salePrice !== undefined
+                    ? product.salePrice
+                    : product.regularPrice ||
+                      product.price ||
+                      0;
 
-                  return (
-                    <Link
-                      to={`/product/${productId}`}
-                      className="shop-product-card"
-                      key={productId}
-                    >
-                      <div className="shop-product-image">
-                        {/* WISHLIST */}
+                const productImage =
+                  product.images?.[0] ||
+                  product.image ||
+                  "https://via.placeholder.com/300";
 
-                        <button
-                          type="button"
-                          className={`shop-wishlist-btn ${
-                            isWishlisted
-                              ? "active-wishlist"
-                              : ""
-                          }`}
-                          onClick={(e) =>
-                            handleWishlist(
-                              e,
-                              product
-                            )
-                          }
-                          disabled={
-                            loadingWishlist ||
-                            isUpdating
-                          }
-                          aria-label="Add to wishlist"
-                        >
-                          {isWishlisted
-                            ? "♥"
-                            : "♡"}
-                        </button>
-
-                        {/* SOLD OUT */}
-
-                        {Number(
-                          product.stock || 0
-                        ) === 0 && (
-                          <span className="sold-out">
-                            SOLD OUT
-                          </span>
-                        )}
-
-                        <img
-                          src={productImage}
-                          alt={
-                            product.name
-                          }
-                        />
-                      </div>
-
-                      <div className="shop-product-info">
-                        <h3>
-                          {product.name}
-                        </h3>
-
-                        <p>
-                          ₹
-                          {Number(
-                            productPrice
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </p>
-                      </div>
-                    </Link>
+                const isWishlisted =
+                  wishlistIds.includes(
+                    String(productId)
                   );
-                }
-              )
+
+                const isUpdating =
+                  updatingWishlist ===
+                  String(productId);
+
+                return (
+
+                  <Link
+                    to={`/product/${productId}`}
+                    className="shop-product-card"
+                    key={productId}
+                  >
+
+                    <div className="shop-product-image">
+
+                      {/* WISHLIST */}
+
+                      <button
+                        type="button"
+                        className={`shop-wishlist-btn ${
+                          isWishlisted
+                            ? "active-wishlist"
+                            : ""
+                        }`}
+                        onClick={(e) =>
+                          handleWishlist(
+                            e,
+                            product
+                          )
+                        }
+                        disabled={
+                          loadingWishlist ||
+                          isUpdating
+                        }
+                        aria-label="Add to wishlist"
+                      >
+                        {isWishlisted
+                          ? "♥"
+                          : "♡"}
+                      </button>
+
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                      />
+
+                    </div>
+
+                    <div className="shop-product-info">
+
+                      <h3>
+                        {product.name}
+                      </h3>
+
+                      <p>
+                        ₹
+                        {Number(
+                          productPrice
+                        ).toLocaleString(
+                          "en-IN"
+                        )}
+                      </p>
+
+                    </div>
+
+                  </Link>
+
+                );
+              })
+
             ) : (
+
               <p className="no-products">
                 No products found.
               </p>
+
             )}
+
           </section>
         )}
 
-        {/* ================= PAGINATION ================= */}
+        {/* =========================
+            BACKEND PAGINATION
+        ========================= */}
 
         {!loading &&
           !error &&
-          totalPages > 1 && (
+          pagination.totalPages > 1 && (
+
             <div className="shop-pagination">
+
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.max(
-                      safeCurrentPage - 1,
-                      1
-                    )
+                    currentPage - 1
                   )
                 }
                 disabled={
-                  safeCurrentPage === 1
+                  currentPage === 1
                 }
               >
                 ←
@@ -661,13 +615,15 @@ function Shop() {
 
               {Array.from(
                 {
-                  length: totalPages,
+                  length:
+                    pagination.totalPages,
                 },
                 (_, index) => (
+
                   <button
                     key={index}
                     className={
-                      safeCurrentPage ===
+                      currentPage ===
                       index + 1
                         ? "active"
                         : ""
@@ -680,27 +636,28 @@ function Shop() {
                   >
                     {index + 1}
                   </button>
+
                 )
               )}
 
               <button
                 onClick={() =>
                   handlePageChange(
-                    Math.min(
-                      safeCurrentPage + 1,
-                      totalPages
-                    )
+                    currentPage + 1
                   )
                 }
                 disabled={
-                  safeCurrentPage ===
-                  totalPages
+                  currentPage ===
+                  pagination.totalPages
                 }
               >
                 →
               </button>
+
             </div>
+
           )}
+
       </main>
 
       <Footer />

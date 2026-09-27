@@ -1,5 +1,4 @@
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Coupons.css";
 
@@ -11,17 +10,38 @@ function Coupons() {
   const [coupons, setCoupons] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  /* =========================================================
-     FETCH COUPONS
-  ========================================================= */
+  // =========================================================
+  // FETCH COUPONS
+  // =========================================================
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
 
-      const response = await fetch(`${API_URL}/all`, {
+      const params = new URLSearchParams();
+
+      if (search.trim()) {
+        params.append("search", search.trim());
+      }
+
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+
+      const queryString = params.toString();
+
+      const url = queryString
+        ? `${API_URL}?${queryString}`
+        : API_URL;
+
+      console.log("COUPONS API URL:", url);
+
+      const response = await fetch(url, {
         cache: "no-store",
       });
 
@@ -42,7 +62,6 @@ function Coupons() {
       const data = await response.json();
 
       console.log("COUPONS API RESPONSE:", data);
-      console.log("COUPONS FROM API:", data.coupons);
 
       if (!response.ok) {
         throw new Error(
@@ -50,11 +69,15 @@ function Coupons() {
         );
       }
 
-      setCoupons(data.coupons || []);
+      setCoupons(
+        Array.isArray(data.coupons)
+          ? data.coupons
+          : []
+      );
     } catch (error) {
       console.error("Error fetching coupons:", error);
 
-      alert(
+      setError(
         error.message || "Failed to fetch coupons"
       );
 
@@ -62,22 +85,32 @@ function Coupons() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter]);
+
+  // =========================================================
+  // FETCH WHEN SEARCH / FILTER CHANGES
+  // =========================================================
 
   useEffect(() => {
-    fetchCoupons();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCoupons();
+    }, 300);
 
-  /* =========================================================
-     COUPON STATUS
-  ========================================================= */
+    return () => clearTimeout(timer);
+  }, [fetchCoupons]);
+
+  // =========================================================
+  // COUPON STATUS
+  // =========================================================
 
   const getCouponStatus = (coupon) => {
-    // Backend field is `expiry`
     if (coupon.expiry) {
       const expiryDate = new Date(coupon.expiry);
 
-      if (expiryDate < new Date()) {
+      if (
+        !Number.isNaN(expiryDate.getTime()) &&
+        expiryDate < new Date()
+      ) {
         return "Expired";
       }
     }
@@ -85,9 +118,9 @@ function Coupons() {
     return coupon.isActive ? "Active" : "Inactive";
   };
 
-  /* =========================================================
-     DISCOUNT FORMAT
-  ========================================================= */
+  // =========================================================
+  // DISCOUNT FORMAT
+  // =========================================================
 
   const formatDiscount = (coupon) => {
     const discountValue = Number(
@@ -101,9 +134,9 @@ function Coupons() {
     return `₹${discountValue.toLocaleString("en-IN")}`;
   };
 
-  /* =========================================================
-     DATE FORMAT
-  ========================================================= */
+  // =========================================================
+  // DATE FORMAT
+  // =========================================================
 
   const formatDate = (date) => {
     if (!date) {
@@ -119,36 +152,9 @@ function Coupons() {
     return parsedDate.toLocaleDateString("en-GB");
   };
 
-  /* =========================================================
-     FILTER COUPONS
-  ========================================================= */
-
-  const filteredCoupons = useMemo(() => {
-    return coupons.filter((coupon) => {
-      const searchValue = search
-        .trim()
-        .toLowerCase();
-
-      const matchesSearch =
-        !searchValue ||
-        coupon.code
-          ?.toLowerCase()
-          .includes(searchValue);
-
-      const status = getCouponStatus(coupon);
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        status.toLowerCase() ===
-          statusFilter.toLowerCase();
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [coupons, search, statusFilter]);
-
-  /* =========================================================
-     SUMMARY
-  ========================================================= */
+  // =========================================================
+  // SUMMARY
+  // =========================================================
 
   const totalCoupons = coupons.length;
 
@@ -159,12 +165,16 @@ function Coupons() {
 
   const expiringSoon = coupons.filter(
     (coupon) => {
-      // Backend field is `expiry`
       if (!coupon.expiry) {
         return false;
       }
 
       const expiryDate = new Date(coupon.expiry);
+
+      if (Number.isNaN(expiryDate.getTime())) {
+        return false;
+      }
+
       const today = new Date();
 
       const difference =
@@ -185,9 +195,9 @@ function Coupons() {
     0
   );
 
-  /* =========================================================
-     DELETE COUPON
-  ========================================================= */
+  // =========================================================
+  // DELETE COUPON
+  // =========================================================
 
   const handleDelete = async (coupon) => {
     const confirmed = window.confirm(
@@ -199,6 +209,8 @@ function Coupons() {
     }
 
     try {
+      setError("");
+
       const response = await fetch(
         `${API_URL}/${coupon._id}`,
         {
@@ -238,11 +250,16 @@ function Coupons() {
           "Coupon deleted successfully"
       );
 
-      fetchCoupons();
+      await fetchCoupons();
     } catch (error) {
       console.error(
         "Error deleting coupon:",
         error
+      );
+
+      setError(
+        error.message ||
+          "Failed to delete coupon"
       );
 
       alert(
@@ -252,9 +269,9 @@ function Coupons() {
     }
   };
 
-  /* =========================================================
-     EDIT COUPON
-  ========================================================= */
+  // =========================================================
+  // EDIT COUPON
+  // =========================================================
 
   const handleEdit = (coupon) => {
     navigate(
@@ -262,9 +279,9 @@ function Coupons() {
     );
   };
 
-  /* =========================================================
-     VIEW COUPON
-  ========================================================= */
+  // =========================================================
+  // VIEW COUPON
+  // =========================================================
 
   const handleView = (coupon) => {
     navigate(
@@ -272,9 +289,9 @@ function Coupons() {
     );
   };
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
@@ -286,9 +303,9 @@ function Coupons() {
     );
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="coupons-page">
@@ -316,6 +333,22 @@ function Coupons() {
           Add Coupon
         </button>
       </div>
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="coupon-error">
+          <i className="bi bi-exclamation-circle"></i>
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={fetchCoupons}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* SUMMARY CARDS */}
 
@@ -442,17 +475,15 @@ function Coupons() {
 
             <tbody>
 
-              {filteredCoupons.length > 0 ? (
+              {coupons.length > 0 ? (
 
-                filteredCoupons.map((coupon) => {
+                coupons.map((coupon) => {
 
                   const status =
                     getCouponStatus(coupon);
 
                   return (
-                    <tr
-                      key={coupon._id}
-                    >
+                    <tr key={coupon._id}>
 
                       {/* CODE */}
 
@@ -528,6 +559,7 @@ function Coupons() {
                       {/* ACTIONS */}
 
                       <td>
+
                         <div className="coupon-actions">
 
                           {/* VIEW */}
@@ -538,7 +570,9 @@ function Coupons() {
                             title="View"
                             aria-label={`View ${coupon.code}`}
                             onClick={() =>
-                              handleView(coupon)
+                              handleView(
+                                coupon
+                              )
                             }
                           >
                             <i className="bi bi-eye"></i>
@@ -552,7 +586,9 @@ function Coupons() {
                             title="Edit"
                             aria-label={`Edit ${coupon.code}`}
                             onClick={() =>
-                              handleEdit(coupon)
+                              handleEdit(
+                                coupon
+                              )
                             }
                           >
                             <i className="bi bi-pencil"></i>
@@ -566,13 +602,16 @@ function Coupons() {
                             title="Delete"
                             aria-label={`Delete ${coupon.code}`}
                             onClick={() =>
-                              handleDelete(coupon)
+                              handleDelete(
+                                coupon
+                              )
                             }
                           >
                             <i className="bi bi-trash"></i>
                           </button>
 
                         </div>
+
                       </td>
 
                     </tr>
@@ -594,8 +633,11 @@ function Coupons() {
                       </p>
 
                       <span>
-                        Try changing your
-                        search or filter.
+                        {search ||
+                        statusFilter !==
+                          "all"
+                          ? "Try changing your search or filter."
+                          : "There are no coupons available yet."}
                       </span>
                     </div>
                   </td>
@@ -615,6 +657,4 @@ function Coupons() {
   );
 }
 
-
 export default Coupons;
-

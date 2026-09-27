@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import "./BestSellers.css";
 
-const API_URL = "http://localhost:5000/api/products/best-sellers";
+const API_URL =
+  "http://localhost:5000/api/products/best-sellers";
 
 function BestSellers() {
   const navigate = useNavigate();
@@ -17,7 +17,6 @@ function BestSellers() {
         setLoading(true);
 
         const response = await fetch(API_URL);
-
         const data = await response.json();
 
         if (!response.ok) {
@@ -49,6 +48,14 @@ function BestSellers() {
     }, 100);
   };
 
+  const handleWishlist = (e, product) => {
+    e.stopPropagation();
+
+    console.log("Wishlist clicked:", product._id || product.id);
+
+    // Wishlist API connect cheyyumbol ivide add cheyyam
+  };
+
   const getImageUrl = (product) => {
     let image =
       product.images?.[0] ||
@@ -76,15 +83,15 @@ function BestSellers() {
   }
 
   if (products.length === 0) {
-  return (
-    <section className="best-sellers">
-      <div className="best-sellers-heading">
-        <h2>Best Sellers</h2>
-        <p>No best seller products found</p>
-      </div>
-    </section>
-  );
-}
+    return (
+      <section className="best-sellers">
+        <div className="best-sellers-heading">
+          <h2>Best Sellers</h2>
+          <p>No best seller products found</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="best-sellers">
@@ -104,17 +111,29 @@ function BestSellers() {
 
           return (
             <div
-              className="best-seller-image"
+              className="best-seller-card"
               key={productId}
               onClick={() =>
                 navigate(`/product/${productId}`)
               }
-              style={{ cursor: "pointer" }}
             >
-              <img
-                src={getImageUrl(product)}
-                alt={product.name || "Best Seller"}
-              />
+              {/* Wishlist Button */}
+              <button
+                className="best-seller-wishlist"
+                onClick={(e) => handleWishlist(e, product)}
+                title="Add to Wishlist"
+                aria-label="Add to Wishlist"
+              >
+                ♡
+              </button>
+
+              {/* Product Image */}
+              <div className="best-seller-image">
+                <img
+                  src={getImageUrl(product)}
+                  alt={product.name || "Best Seller"}
+                />
+              </div>
             </div>
           );
         })}

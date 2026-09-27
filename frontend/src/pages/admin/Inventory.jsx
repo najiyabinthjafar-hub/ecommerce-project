@@ -7,6 +7,10 @@ const CATEGORIES_API = "http://localhost:5000/api/categories";
 const PRODUCTS_PER_PAGE = 10;
 
 function Inventory() {
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -17,6 +21,13 @@ function Inventory() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: PRODUCTS_PER_PAGE,
+    totalProducts: 0,
+    totalPages: 0,
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -26,15 +37,59 @@ function Inventory() {
   const [updating, setUpdating] = useState(false);
 
   // =========================================================
-  // FETCH PRODUCTS
+  // FETCH PRODUCTS - BACKEND SEARCH / FILTER / PAGINATION
   // =========================================================
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = currentPage) => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${PRODUCTS_API}?limit=1000`);
+      const params = new URLSearchParams();
+
+      params.set("page", page);
+      params.set("limit", PRODUCTS_PER_PAGE);
+
+      // SEARCH
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      // STOCK STATUS
+      if (statusFilter) {
+        params.set("availability", statusFilter);
+      }
+
+      // CATEGORY / SUBCATEGORY
+      if (subcategory) {
+        params.set("category", subcategory);
+      } else if (category) {
+        /*
+          Parent category may contain multiple subcategories.
+          Send all matching category IDs to backend.
+        */
+
+        const childCategoryIds = categories
+          .filter((cat) => {
+            const parentId =
+              typeof cat.parent === "object"
+                ? cat.parent?._id
+                : cat.parent;
+
+            return parentId === category;
+          })
+          .map((cat) => cat._id);
+
+        if (childCategoryIds.length > 0) {
+          params.set("category", childCategoryIds.join(","));
+        } else {
+          params.set("category", category);
+        }
+      }
+
+      const response = await fetch(
+        `${PRODUCTS_API}?${params.toString()}`
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch products");
@@ -43,9 +98,33 @@ function Inventory() {
       const data = await response.json();
 
       setProducts(data.products || []);
+
+      setPagination({
+        currentPage:
+          data.pagination?.currentPage || page,
+
+        limit:
+          data.pagination?.limit || PRODUCTS_PER_PAGE,
+
+        totalProducts:
+          data.pagination?.totalProducts || 0,
+
+        totalPages:
+          data.pagination?.totalPages || 0,
+      });
     } catch (err) {
       console.error("Products fetch error:", err);
-      setError("Failed to load products");
+
+      setError("Failed to load inventory");
+
+      setProducts([]);
+
+      setPagination({
+        currentPage: 1,
+        limit: PRODUCTS_PER_PAGE,
+        totalProducts: 0,
+        totalPages: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -75,10 +154,48 @@ function Inventory() {
     }
   };
 
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
+
   useEffect(() => {
-    fetchProducts();
     fetchCategories();
   }, []);
+
+  // =========================================================
+  // FETCH PRODUCTS WHEN FILTERS CHANGE
+  // =========================================================
+
+  useEffect(() => {
+    /*
+      Small debounce for search.
+      Prevents API request on every single keystroke.
+    */
+
+    const timer = setTimeout(() => {
+      fetchProducts(1);
+      setCurrentPage(1);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [
+    search,
+    category,
+    subcategory,
+    statusFilter,
+  ]);
+
+  // =========================================================
+  // FETCH PRODUCTS WHEN PAGE CHANGES
+  // =========================================================
+
+  useEffect(() => {
+    if (currentPage === 1) {
+      return;
+    }
+
+    fetchProducts(currentPage);
+  }, [currentPage]);
 
   // =========================================================
   // PARENT CATEGORIES
@@ -147,7 +264,10 @@ function Inventory() {
   // =========================================================
 
   const getProductImage = (product) => {
-    if (product?.images && product.images.length > 0) {
+    if (
+      product?.images &&
+      product.images.length > 0
+    ) {
       return product.images[0];
     }
 
@@ -182,144 +302,20 @@ function Inventory() {
   };
 
   // =========================================================
-  // FILTER PRODUCTS
-  // =========================================================
-
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const productName = product.name || "";
-      const productSku = product.sku || "";
-
-      const searchValue = search.toLowerCase().trim();
-
-      // SEARCH
-      const matchesSearch =
-        productName.toLowerCase().includes(searchValue) ||
-        productSku.toLowerCase().includes(searchValue);
-
-      // CATEGORY
-      let matchesCategory = true;
-
-      if (category) {
-        let productCategoryId = "";
-
-        if (
-          typeof product.category === "object" &&
-          product.category !== null
-        ) {
-          productCategoryId = product.category._id;
-        } else {
-          productCategoryId = product.category;
-        }
-
-        // SUBCATEGORY SELECTED
-        if (subcategory) {
-          matchesCategory = productCategoryId === subcategory;
-        }
-
-        // ONLY PARENT CATEGORY SELECTED
-        else {
-          const productCategory = categories.find(
-            (cat) => cat._id === productCategoryId
-          );
-
-          const productParentId =
-            typeof productCategory?.parent === "object"
-              ? productCategory?.parent?._id
-              : productCategory?.parent;
-
-          matchesCategory =
-            productCategoryId === category ||
-            productParentId === category;
-        }
-      }
-
-      // STOCK
-      const stock = Number(product.stock) || 0;
-
-      let matchesStatus = true;
-
-      if (statusFilter === "in-stock") {
-        matchesStatus = stock > 10;
-      }
-
-      if (statusFilter === "low-stock") {
-        matchesStatus = stock > 0 && stock <= 10;
-      }
-
-      if (statusFilter === "out-of-stock") {
-        matchesStatus = stock === 0;
-      }
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesStatus
-      );
-    });
-  }, [
-    products,
-    search,
-    category,
-    subcategory,
-    statusFilter,
-    categories,
-  ]);
-
-  // =========================================================
-  // PAGINATION
-  // =========================================================
-
-  const totalPages = Math.ceil(
-    filteredProducts.length / PRODUCTS_PER_PAGE
-  );
-
-  const startIndex =
-    (currentPage - 1) * PRODUCTS_PER_PAGE;
-
-  const endIndex =
-    startIndex + PRODUCTS_PER_PAGE;
-
-  const currentProducts = filteredProducts.slice(
-    startIndex,
-    endIndex
-  );
-
-  // =========================================================
-  // RESET PAGE WHEN FILTER CHANGES
-  // =========================================================
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    search,
-    category,
-    subcategory,
-    statusFilter,
-  ]);
-
-  // =========================================================
-  // KEEP PAGE VALID
-  // =========================================================
-
-  useEffect(() => {
-    if (
-      totalPages > 0 &&
-      currentPage > totalPages
-    ) {
-      setCurrentPage(totalPages);
-    }
-
-    if (totalPages === 0) {
-      setCurrentPage(1);
-    }
-  }, [totalPages, currentPage]);
-
-  // =========================================================
   // INVENTORY STATS
   // =========================================================
 
-  const totalProducts = products.length;
+  /*
+    NOTE:
+    Since products are now server-side paginated,
+    these stats represent the products returned by
+    the current backend request/page.
+
+    For exact global inventory stats, backend should
+    provide a separate summary endpoint.
+  */
+
+  const totalProducts = pagination.totalProducts;
 
   const inStockProducts = products.filter(
     (product) => Number(product.stock) > 10
@@ -356,6 +352,10 @@ function Inventory() {
   // =========================================================
 
   const handleCloseModal = () => {
+    if (updating) {
+      return;
+    }
+
     setShowModal(false);
     setSelectedProduct(null);
     setStockValue("");
@@ -375,7 +375,11 @@ function Inventory() {
 
     const newStock = Number(stockValue);
 
-    if (Number.isNaN(newStock) || newStock < 0) {
+    if (
+      Number.isNaN(newStock) ||
+      newStock < 0 ||
+      !Number.isInteger(newStock)
+    ) {
       alert("Please enter a valid stock quantity.");
       return;
     }
@@ -387,9 +391,11 @@ function Inventory() {
         `${PRODUCTS_API}/${selectedProduct._id}/stock`,
         {
           method: "PUT",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             stock: newStock,
           }),
@@ -406,16 +412,18 @@ function Inventory() {
 
       alert("Stock updated successfully.");
 
-      handleCloseModal();
+      setShowModal(false);
+      setSelectedProduct(null);
+      setStockValue("");
 
-      await fetchProducts();
+      await fetchProducts(currentPage);
     } catch (err) {
       console.error("Stock update error:", err);
 
       alert(
         err.message || "Failed to update stock."
       );
-
+    } finally {
       setUpdating(false);
     }
   };
@@ -433,8 +441,10 @@ function Inventory() {
   };
 
   // =========================================================
-  // PAGINATION HANDLERS
+  // PAGINATION
   // =========================================================
+
+  const totalPages = pagination.totalPages;
 
   const handlePrevious = () => {
     if (currentPage > 1) {
@@ -449,8 +459,53 @@ function Inventory() {
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (
+      page >= 1 &&
+      page <= totalPages &&
+      page !== currentPage
+    ) {
+      setCurrentPage(page);
+    }
   };
+
+  // =========================================================
+  // PAGE NUMBERS
+  // =========================================================
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from(
+        { length: totalPages },
+        (_, index) => index + 1
+      );
+    }
+
+    const pages = [];
+
+    pages.push(1);
+
+    if (currentPage > 3) {
+      pages.push("...");
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(
+      totalPages - 1,
+      currentPage + 1
+    );
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
+  }, [currentPage, totalPages]);
 
   // =========================================================
   // JSX
@@ -482,7 +537,10 @@ function Inventory() {
 
           <div className="stat-content">
             <span>Total Products</span>
-            <strong>{totalProducts}</strong>
+
+            <strong>
+              {totalProducts}
+            </strong>
           </div>
         </div>
 
@@ -493,7 +551,10 @@ function Inventory() {
 
           <div className="stat-content">
             <span>In Stock</span>
-            <strong>{inStockProducts}</strong>
+
+            <strong>
+              {inStockProducts}
+            </strong>
           </div>
         </div>
 
@@ -504,7 +565,10 @@ function Inventory() {
 
           <div className="stat-content">
             <span>Low Stock</span>
-            <strong>{lowStockProducts}</strong>
+
+            <strong>
+              {lowStockProducts}
+            </strong>
           </div>
         </div>
 
@@ -515,7 +579,10 @@ function Inventory() {
 
           <div className="stat-content">
             <span>Out of Stock</span>
-            <strong>{outOfStockProducts}</strong>
+
+            <strong>
+              {outOfStockProducts}
+            </strong>
           </div>
         </div>
 
@@ -526,7 +593,10 @@ function Inventory() {
 
           <div className="stat-content">
             <span>Total Stock Units</span>
-            <strong>{totalStockUnits}</strong>
+
+            <strong>
+              {totalStockUnits}
+            </strong>
           </div>
         </div>
 
@@ -537,6 +607,7 @@ function Inventory() {
       {error && (
         <div className="inventory-error">
           <i className="bi bi-exclamation-circle"></i>
+
           {error}
         </div>
       )}
@@ -545,7 +616,7 @@ function Inventory() {
 
       <div className="inventory-table-container">
 
-        {/* TABLE HEADER + FILTERS */}
+        {/* HEADER + FILTERS */}
 
         <div className="inventory-table-header">
 
@@ -558,7 +629,6 @@ function Inventory() {
             {/* SEARCH */}
 
             <div className="inventory-search">
-
               <i className="bi bi-search"></i>
 
               <input
@@ -569,18 +639,17 @@ function Inventory() {
                   setSearch(e.target.value)
                 }
               />
-
             </div>
 
             {/* CATEGORY */}
 
             <div className="inventory-filter">
-
               <select
                 value={category}
                 onChange={(e) => {
                   setCategory(e.target.value);
                   setSubcategory("");
+                  setCurrentPage(1);
                 }}
               >
                 <option value="">
@@ -596,24 +665,22 @@ function Inventory() {
                   </option>
                 ))}
               </select>
-
             </div>
 
             {/* SUBCATEGORY */}
 
             <div className="inventory-filter">
-
               <select
                 value={subcategory}
-                onChange={(e) =>
-                  setSubcategory(e.target.value)
-                }
+                onChange={(e) => {
+                  setSubcategory(e.target.value);
+                  setCurrentPage(1);
+                }}
                 disabled={
                   !category ||
                   subcategories.length === 0
                 }
               >
-
                 <option value="">
                   {!category
                     ? "Select Category First"
@@ -630,22 +697,19 @@ function Inventory() {
                     {cat.name}
                   </option>
                 ))}
-
               </select>
-
             </div>
 
             {/* STOCK STATUS */}
 
             <div className="inventory-filter">
-
               <select
                 value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value)
-                }
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
-
                 <option value="">
                   All Stock Status
                 </option>
@@ -661,9 +725,7 @@ function Inventory() {
                 <option value="out-of-stock">
                   Out of Stock
                 </option>
-
               </select>
-
             </div>
 
             {/* CLEAR */}
@@ -690,28 +752,26 @@ function Inventory() {
           <div className="inventory-loading">
             <div className="spinner"></div>
 
-            <p>Loading inventory...</p>
+            <p>
+              Loading inventory...
+            </p>
           </div>
-        ) : filteredProducts.length === 0 ? (
-
+        ) : products.length === 0 ? (
           /* EMPTY */
 
           <div className="inventory-empty">
-
             <i className="bi bi-box-seam"></i>
 
-            <h3>No products found</h3>
+            <h3>
+              No products found
+            </h3>
 
             <p>
               Try changing your search or filters.
             </p>
-
           </div>
-
         ) : (
-
           <>
-
             {/* TABLE */}
 
             <div className="inventory-table-wrapper">
@@ -719,7 +779,6 @@ function Inventory() {
               <table className="inventory-table">
 
                 <thead>
-
                   <tr>
                     <th>PRODUCT</th>
                     <th>SKU</th>
@@ -729,12 +788,11 @@ function Inventory() {
                     <th>STATUS</th>
                     <th>ACTION</th>
                   </tr>
-
                 </thead>
 
                 <tbody>
 
-                  {currentProducts.map((product) => {
+                  {products.map((product) => {
 
                     const stock =
                       Number(product.stock) || 0;
@@ -746,28 +804,22 @@ function Inventory() {
                       getProductImage(product);
 
                     return (
-
                       <tr key={product._id}>
 
                         {/* PRODUCT */}
 
                         <td>
-
                           <div className="inventory-product">
 
                             <div className="inventory-product-image">
 
                               {image ? (
-
                                 <img
                                   src={image}
                                   alt={product.name}
                                 />
-
                               ) : (
-
                                 <i className="bi bi-image"></i>
-
                               )}
 
                             </div>
@@ -785,46 +837,38 @@ function Inventory() {
                             </div>
 
                           </div>
-
                         </td>
 
                         {/* SKU */}
 
                         <td>
-
                           <span className="sku-text">
                             {product.sku || "—"}
                           </span>
-
                         </td>
 
                         {/* CATEGORY */}
 
                         <td>
-
                           <span className="category-text">
                             {getCategoryName(product)}
                           </span>
-
                         </td>
 
                         {/* PRICE */}
 
                         <td>
-
                           <span className="price-text">
                             ₹
                             {getProductPrice(
                               product
                             ).toLocaleString("en-IN")}
                           </span>
-
                         </td>
 
                         {/* STOCK */}
 
                         <td>
-
                           <span
                             className={`stock-number ${
                               stock === 0
@@ -836,29 +880,23 @@ function Inventory() {
                           >
                             {stock}
                           </span>
-
                         </td>
 
                         {/* STATUS */}
 
                         <td>
-
                           <span
                             className={`inventory-status ${stockStatus.className}`}
                           >
-
                             <span className="status-dot"></span>
 
                             {stockStatus.label}
-
                           </span>
-
                         </td>
 
                         {/* ACTION */}
 
                         <td>
-
                           <button
                             className="update-stock-btn"
                             onClick={() =>
@@ -867,32 +905,25 @@ function Inventory() {
                               )
                             }
                           >
-
                             <i className="bi bi-pencil-square"></i>
 
                             <span>
                               Update Stock
                             </span>
-
                           </button>
-
                         </td>
 
                       </tr>
-
                     );
                   })}
 
                 </tbody>
-
               </table>
-
             </div>
 
             {/* PAGINATION */}
 
             {totalPages > 1 && (
-
               <div className="inventory-pagination">
 
                 <button
@@ -900,35 +931,44 @@ function Inventory() {
                   onClick={handlePrevious}
                   disabled={currentPage === 1}
                 >
-
                   <i className="bi bi-chevron-left"></i>
 
                   Previous
-
                 </button>
 
                 <div className="pagination-pages">
 
-                  {Array.from(
-                    { length: totalPages },
-                    (_, index) => index + 1
-                  ).map((page) => (
+                  {pageNumbers.map(
+                    (page, index) => {
 
-                    <button
-                      key={page}
-                      className={`pagination-page ${
-                        currentPage === page
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        handlePageChange(page)
+                      if (page === "...") {
+                        return (
+                          <span
+                            key={`dots-${index}`}
+                            className="pagination-dots"
+                          >
+                            ...
+                          </span>
+                        );
                       }
-                    >
-                      {page}
-                    </button>
 
-                  ))}
+                      return (
+                        <button
+                          key={page}
+                          className={`pagination-page ${
+                            currentPage === page
+                              ? "active"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            handlePageChange(page)
+                          }
+                        >
+                          {page}
+                        </button>
+                      );
+                    }
+                  )}
 
                 </div>
 
@@ -939,19 +979,15 @@ function Inventory() {
                     currentPage === totalPages
                   }
                 >
-
                   Next
 
                   <i className="bi bi-chevron-right"></i>
-
                 </button>
 
               </div>
-
             )}
 
           </>
-
         )}
 
       </div>
@@ -959,15 +995,15 @@ function Inventory() {
       {/* UPDATE STOCK MODAL */}
 
       {showModal && selectedProduct && (
-
         <div
           className="inventory-modal-overlay"
           onClick={handleCloseModal}
         >
-
           <div
             className="inventory-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
 
             {/* MODAL HEADER */}
@@ -975,22 +1011,21 @@ function Inventory() {
             <div className="inventory-modal-header">
 
               <div>
-
-                <h3>Update Stock</h3>
+                <h3>
+                  Update Stock
+                </h3>
 
                 <p>
                   Update inventory quantity
                 </p>
-
               </div>
 
               <button
                 className="modal-close-btn"
                 onClick={handleCloseModal}
+                disabled={updating}
               >
-
                 <i className="bi bi-x-lg"></i>
-
               </button>
 
             </div>
@@ -1004,18 +1039,14 @@ function Inventory() {
                 {getProductImage(
                   selectedProduct
                 ) ? (
-
                   <img
                     src={getProductImage(
                       selectedProduct
                     )}
                     alt={selectedProduct.name}
                   />
-
                 ) : (
-
                   <i className="bi bi-image"></i>
-
                 )}
 
               </div>
@@ -1048,12 +1079,16 @@ function Inventory() {
                 <input
                   type="number"
                   min="0"
+                  step="1"
                   value={stockValue}
                   onChange={(e) =>
-                    setStockValue(e.target.value)
+                    setStockValue(
+                      e.target.value
+                    )
                   }
                   placeholder="Enter stock quantity"
                   required
+                  disabled={updating}
                 />
 
               </div>
@@ -1090,19 +1125,17 @@ function Inventory() {
                 >
 
                   {updating ? (
-
                     <>
                       <span className="button-spinner"></span>
+
                       Updating...
                     </>
-
                   ) : (
-
                     <>
                       <i className="bi bi-check-lg"></i>
+
                       Update Stock
                     </>
-
                   )}
 
                 </button>
@@ -1112,9 +1145,7 @@ function Inventory() {
             </form>
 
           </div>
-
         </div>
-
       )}
 
     </div>

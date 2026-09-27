@@ -102,10 +102,8 @@ const sendContactEmail = async ({
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
 
-      // Admin email where contact message should be received
       to: process.env.EMAIL_USER,
 
-      // Customer email
       replyTo: email,
 
       subject: "New Contact Form Message - E-Commerce",
@@ -137,9 +135,83 @@ This message was submitted from the E-Commerce website Contact page.
   }
 };
 
+// ================= SEND ORDER CONFIRMATION EMAIL =================
+
+const sendOrderConfirmationEmail = async ({
+  order,
+  user,
+  invoiceBuffer,
+}) => {
+  try {
+    if (!user?.email) {
+      throw new Error("Customer email not found");
+    }
+
+    const customerName =
+      user.name ||
+      order.shippingAddress?.fullName ||
+      "Customer";
+
+    const orderId = order._id?.toString() || "N/A";
+    const finalAmount = Number(order.finalAmount || 0);
+
+    console.log("=================================");
+    console.log("Sending order confirmation email");
+    console.log("From:", process.env.EMAIL_USER);
+    console.log("To:", user.email);
+    console.log("Order ID:", orderId);
+    console.log("=================================");
+
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: `Order Confirmation - #${orderId}`,
+      text: `
+Hello ${customerName},
+
+Thank you for your order!
+
+Your order has been confirmed successfully.
+
+Order ID: ${orderId}
+Payment Method: ${order.paymentMethod || "N/A"}
+Payment Status: ${order.paymentStatus || "N/A"}
+Order Status: ${order.orderStatus || "N/A"}
+Total Amount: Rs. ${finalAmount.toFixed(2)}
+
+Your invoice is attached to this email as a PDF.
+
+Thank you for shopping with us!
+
+E-Commerce Store
+      `,
+      attachments: invoiceBuffer
+        ? [
+            {
+              filename: `invoice-${orderId}.pdf`,
+              content: invoiceBuffer,
+              contentType: "application/pdf",
+            },
+          ]
+        : [],
+    });
+
+    console.log("Order confirmation email sent successfully");
+    console.log("Message ID:", info.messageId);
+
+    return info;
+  } catch (error) {
+    console.error("Order confirmation email failed:");
+    console.error(error.message);
+
+    throw error;
+  }
+};
+
 module.exports = {
   verifyEmailConnection,
   sendOtpEmail,
   sendResetOtpEmail,
   sendContactEmail,
+  sendOrderConfirmationEmail,
 };

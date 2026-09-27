@@ -1,14 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
+
 import "./NewArrivalsPage.css";
+
+const API_URL = "http://localhost:5000/api";
 
 function NewArrivalsPage() {
   const location = useLocation();
 
   // ================= ACTIVE FASHION =================
+
   const [activeFashion, setActiveFashion] = useState(
     location.state?.activeFashion || "MEN'S FASHION"
   );
@@ -19,157 +24,251 @@ function NewArrivalsPage() {
   const [error, setError] = useState("");
 
   // ================= FILTERS =================
+
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
 
   // ================= PAGINATION =================
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const productsPerPage = 8;
 
-  // ================= FETCH DATA =================
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: productsPerPage,
+    totalProducts: 0,
+    totalPages: 0,
+  });
+
+  // ================= FETCH CATEGORY TREE =================
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const [categoryResponse, productResponse] =
-          await Promise.all([
-            fetch("http://localhost:5000/api/categories/tree"),
-            fetch("http://localhost:5000/api/products?limit=100"),
-          ]);
+        const response = await fetch(`${API_URL}/categories/tree`);
+        const data = await response.json();
 
-        const categoryData = await categoryResponse.json();
-        const productData = await productResponse.json();
-
-        if (!categoryResponse.ok) {
+        if (!response.ok) {
           throw new Error(
-            categoryData.message || "Failed to fetch categories"
+            data.message || "Failed to fetch categories"
           );
         }
 
-        if (!productResponse.ok) {
-          throw new Error(
-            productData.message || "Failed to fetch products"
-          );
-        }
-
-        setCategoryTree(categoryData.categories || []);
-        setProducts(productData.products || []);
+        setCategoryTree(data.categories || []);
       } catch (error) {
-        console.error("New Arrivals Page API Error:", error);
+        console.error("Category API Error:", error);
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchCategories();
   }, []);
 
   // ================= FIND SELECTED CATEGORY =================
-  const selectedCategory = categoryTree.find((category) => {
-    if (activeFashion === "MEN'S FASHION") {
-      return category.slug === "men-s-fashion";
+
+  const selectedCategory = useMemo(() => {
+    if (!categoryTree.length) {
+      return null;
     }
 
-    return category.slug === "womens-fashion";
-  });
+    const isMen = activeFashion === "MEN'S FASHION";
 
-  // ================= GET CHILD CATEGORY IDS =================
-  const childCategoryIds = (
-    selectedCategory?.children || []
-  ).map((category) => String(category._id));
+    return categoryTree.find((category) => {
+      const slug = String(category.slug || "")
+        .toLowerCase()
+        .trim();
 
-  // ================= FILTER PRODUCTS =================
-  const filteredProducts = products
-    .filter((product) => {
-      // Active products only
-      if (product.status !== "active") {
-        return false;
-      }
+      const name = String(category.name || "")
+        .toLowerCase()
+        .trim();
 
-      // Product must have category
-      if (!product.category) {
-        return false;
-      }
-
-      // Product category can be object or ID
-      const productCategoryId =
-        typeof product.category === "object"
-          ? product.category._id
-          : product.category;
-
-      // Men's / Women's child categories only
-      if (
-        !childCategoryIds.includes(
-          String(productCategoryId)
-        )
-      ) {
-        return false;
-      }
-
-      // ================= AVAILABILITY =================
-      if (availability === "available") {
-        return Number(product.stock || 0) > 0;
-      }
-
-      if (availability === "soldout") {
-        return Number(product.stock || 0) <= 0;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      // ================= PRICE =================
-      if (priceOrder === "low-high") {
+      if (isMen) {
         return (
-          Number(a.price || 0) -
-          Number(b.price || 0)
+          slug === "men-s-fashion" ||
+          slug === "mens-fashion" ||
+          name === "men's fashion" ||
+          name === "mens fashion"
         );
       }
 
-      if (priceOrder === "high-low") {
-        return (
-          Number(b.price || 0) -
-          Number(a.price || 0)
-        );
-      }
-
-      // ================= FEATURED =================
-      if (sortBy === "featured") {
-        return (
-          Number(Boolean(b.isBestSeller)) -
-          Number(Boolean(a.isBestSeller))
-        );
-      }
-
-      // ================= NEWEST =================
       return (
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
+        slug === "womens-fashion" ||
+        slug === "women-s-fashion" ||
+        slug === "womens-fashion" ||
+        slug === "women-fashion" ||
+        name === "women's fashion" ||
+        name === "womens fashion" ||
+        name === "women fashion"
       );
     });
+  }, [categoryTree, activeFashion]);
 
-  // ================= PAGINATION CALCULATIONS =================
-  const totalPages = Math.ceil(
-    filteredProducts.length / productsPerPage
-  );
+  // ================= GET CHILD CATEGORY IDS =================
 
-  const indexOfLastProduct =
-    currentPage * productsPerPage;
+  const childCategoryIds = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
 
-  const indexOfFirstProduct =
-    indexOfLastProduct - productsPerPage;
+    return (selectedCategory.children || [])
+      .map((category) => category?._id)
+      .filter(Boolean)
+      .map((id) => String(id));
+  }, [selectedCategory]);
 
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
+  // ================= DEBUG CATEGORY =================
+
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log(
+        `${activeFashion} category:`,
+        selectedCategory
+      );
+
+      console.log(
+        `${activeFashion} child category IDs:`,
+        childCategoryIds
+      );
+    }
+  }, [selectedCategory, childCategoryIds, activeFashion]);
+
+  // ================= FETCH PRODUCTS =================
+
+  useEffect(() => {
+    if (!selectedCategory) {
+      return;
+    }
+
+    if (childCategoryIds.length === 0) {
+      console.warn(
+        `${activeFashion} has no child categories.`
+      );
+
+      setProducts([]);
+      setPagination({
+        currentPage: 1,
+        limit: productsPerPage,
+        totalProducts: 0,
+        totalPages: 0,
+      });
+
+      return;
+    }
+
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const params = new URLSearchParams();
+
+        // ================= PAGINATION =================
+
+        params.append("page", currentPage);
+        params.append("limit", productsPerPage);
+
+        // ================= CATEGORY =================
+
+        params.append(
+          "category",
+          childCategoryIds.join(",")
+        );
+
+        // ================= AVAILABILITY =================
+
+        if (availability === "in-stock") {
+          params.append("availability", "in-stock");
+        }
+
+        if (availability === "out-of-stock") {
+          params.append("availability", "out-of-stock");
+        }
+
+        // ================= SORTING =================
+
+        if (priceOrder === "low-high") {
+          params.append("sort", "price-low");
+        } else if (priceOrder === "high-low") {
+          params.append("sort", "price-high");
+        } else if (sortBy === "featured") {
+          params.append("sort", "featured");
+        } else {
+          params.append("sort", "newest");
+        }
+
+        // ================= API REQUEST =================
+
+        const response = await fetch(
+          `${API_URL}/products?${params.toString()}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch products"
+          );
+        }
+
+        // ================= PRODUCTS =================
+
+        setProducts(data.products || []);
+
+        // ================= PAGINATION =================
+
+        setPagination(
+          data.pagination || {
+            currentPage,
+            limit: productsPerPage,
+            totalProducts: 0,
+            totalPages: 0,
+          }
+        );
+      } catch (error) {
+        console.error(
+          "New Arrivals Product API Error:",
+          error
+        );
+
+        setError(error.message);
+        setProducts([]);
+
+        setPagination({
+          currentPage: 1,
+          limit: productsPerPage,
+          totalProducts: 0,
+          totalPages: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [
+    selectedCategory,
+    childCategoryIds,
+    currentPage,
+    availability,
+    priceOrder,
+    sortBy,
+    activeFashion,
+  ]);
 
   // ================= CHANGE PAGE =================
+
   const handlePageChange = (page) => {
+    if (page < 1 || page > pagination.totalPages) {
+      return;
+    }
+
     setCurrentPage(page);
 
     window.scrollTo({
@@ -179,6 +278,7 @@ function NewArrivalsPage() {
   };
 
   // ================= CHANGE FASHION =================
+
   const handleFashionChange = (fashion) => {
     setActiveFashion(fashion);
     setCurrentPage(1);
@@ -189,7 +289,33 @@ function NewArrivalsPage() {
     });
   };
 
+  // ================= AVAILABILITY CHANGE =================
+
+  const handleAvailabilityChange = (value) => {
+    setAvailability(value);
+    setCurrentPage(1);
+  };
+
+  // ================= PRICE CHANGE =================
+
+  const handlePriceChange = (value) => {
+    setPriceOrder(value);
+    setCurrentPage(1);
+  };
+
+  // ================= SORT CHANGE =================
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
+
+    // Reset price sorting
+    setPriceOrder("default");
+
+    setCurrentPage(1);
+  };
+
   // ================= RESET PAGE WHEN FILTER CHANGES =================
+
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -200,11 +326,13 @@ function NewArrivalsPage() {
   ]);
 
   // ================= PAGE TOP =================
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   // ================= UI =================
+
   return (
     <>
       <Navbar />
@@ -212,18 +340,20 @@ function NewArrivalsPage() {
       <main className="new-arrivals-page">
 
         {/* ================= HEADING ================= */}
+
         <section className="new-arrivals-page-heading">
           <h1>New Arrivals</h1>
 
           <p className="new-arrivals-page-description">
-            Step into the latest drops that define the
-            season.
+            Step into the latest drops that define the season.
             <br />
             From bold basics to fresh fits — just landed.
           </p>
 
           {/* ================= FASHION BUTTONS ================= */}
+
           <div className="fashion-buttons">
+
             <button
               className={`fashion-btn ${
                 activeFashion === "MEN'S FASHION"
@@ -249,13 +379,16 @@ function NewArrivalsPage() {
             >
               Women's Fashion
             </button>
+
           </div>
         </section>
 
         {/* ================= PRODUCTS SECTION ================= */}
+
         <section className="new-arrivals-page-products">
 
-          {/* ================= SHOP STYLE FILTER ================= */}
+          {/* ================= FILTER BAR ================= */}
+
           {!loading && !error && (
             <section className="shop-filter-bar">
 
@@ -268,26 +401,30 @@ function NewArrivalsPage() {
                 <select
                   value={availability}
                   onChange={(e) =>
-                    setAvailability(e.target.value)
+                    handleAvailabilityChange(
+                      e.target.value
+                    )
                   }
                 >
                   <option value="all">
                     AVAILABILITY
                   </option>
 
-                  <option value="available">
-                    AVAILABLE
+                  <option value="in-stock">
+                    IN STOCK
                   </option>
 
-                  <option value="soldout">
-                    SOLD OUT
+                  <option value="out-of-stock">
+                    OUT OF STOCK
                   </option>
                 </select>
 
                 <select
                   value={priceOrder}
                   onChange={(e) =>
-                    setPriceOrder(e.target.value)
+                    handlePriceChange(
+                      e.target.value
+                    )
                   }
                 >
                   <option value="default">
@@ -314,7 +451,9 @@ function NewArrivalsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) =>
-                      setSortBy(e.target.value)
+                      handleSortChange(
+                        e.target.value
+                      )
                     }
                   >
                     <option value="newest">
@@ -329,7 +468,7 @@ function NewArrivalsPage() {
                 </div>
 
                 <span className="product-count">
-                  {filteredProducts.length} PRODUCTS
+                  {products.length} PRODUCTS
                 </span>
 
               </div>
@@ -338,6 +477,7 @@ function NewArrivalsPage() {
           )}
 
           {/* ================= LOADING ================= */}
+
           {loading && (
             <p className="new-arrivals-page-message">
               Loading products...
@@ -345,6 +485,7 @@ function NewArrivalsPage() {
           )}
 
           {/* ================= ERROR ================= */}
+
           {!loading && error && (
             <p className="new-arrivals-page-message">
               Error: {error}
@@ -352,12 +493,13 @@ function NewArrivalsPage() {
           )}
 
           {/* ================= PRODUCTS ================= */}
+
           {!loading && !error && (
             <>
-              {filteredProducts.length > 0 ? (
+              {products.length > 0 ? (
                 <>
                   <div className="new-arrivals-page-grid">
-                    {currentProducts.map((product) => (
+                    {products.map((product) => (
                       <ProductCard
                         key={product._id}
                         product={product}
@@ -366,7 +508,8 @@ function NewArrivalsPage() {
                   </div>
 
                   {/* ================= PAGINATION ================= */}
-                  {totalPages > 1 && (
+
+                  {pagination.totalPages > 1 && (
                     <div className="pagination">
 
                       <button
@@ -383,7 +526,8 @@ function NewArrivalsPage() {
 
                       {Array.from(
                         {
-                          length: totalPages,
+                          length:
+                            pagination.totalPages,
                         },
                         (_, index) => index + 1
                       ).map((page) => (
@@ -410,7 +554,8 @@ function NewArrivalsPage() {
                           )
                         }
                         disabled={
-                          currentPage === totalPages
+                          currentPage ===
+                          pagination.totalPages
                         }
                       >
                         →

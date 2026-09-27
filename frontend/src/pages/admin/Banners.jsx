@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Banners.css";
@@ -14,14 +13,45 @@ function Banners() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   // =========================================================
-  // FETCH BANNERS
+  // FETCH BANNERS FROM BACKEND
   // =========================================================
 
-  const fetchBanners = async () => {
+  const fetchBanners = async (showLoading = false) => {
     try {
-      setLoading(true);
+      // Only show full-page loading during initial load
+      if (showLoading) {
+        setLoading(true);
+      }
 
-      const response = await fetch(API_URL);
+      // -----------------------------------------------------
+      // Build backend query
+      // -----------------------------------------------------
+
+      const params = new URLSearchParams();
+
+      if (search.trim()) {
+        params.append("search", search.trim());
+      }
+
+      // Backend supports active/inactive.
+      // Expired is calculated on frontend because
+      // backend getAllBanners only filters status.
+
+      if (
+        statusFilter !== "all" &&
+        statusFilter !== "expired"
+      ) {
+        params.append("status", statusFilter);
+      }
+
+      const queryString = params.toString();
+
+      const url = queryString
+        ? `${API_URL}?${queryString}`
+        : API_URL;
+
+      const response = await fetch(url);
+
       const responseText = await response.text();
 
       let data;
@@ -35,21 +65,51 @@ function Banners() {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch banners");
+        throw new Error(
+          data.message || "Failed to fetch banners"
+        );
       }
 
-      setBanners(data.banners || []);
+      setBanners(
+        Array.isArray(data.banners)
+          ? data.banners
+          : []
+      );
     } catch (error) {
       console.error("Error fetching banners:", error);
+
       alert(error.message);
+
+      setBanners([]);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
+  // =========================================================
+  // INITIAL FETCH
+  // =========================================================
+
   useEffect(() => {
-    fetchBanners();
+    fetchBanners(true);
   }, []);
+
+  // =========================================================
+  // FETCH WHEN SEARCH / FILTER CHANGES
+  // =========================================================
+
+  useEffect(() => {
+    // Don't run immediately on first render.
+    // Initial fetch above already handles that.
+
+    const timer = setTimeout(() => {
+      fetchBanners(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search, statusFilter]);
 
   // =========================================================
   // DELETE BANNER
@@ -70,9 +130,12 @@ function Banners() {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`${API_URL}/${bannerId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${API_URL}/${bannerId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       const responseText = await response.text();
 
@@ -87,14 +150,25 @@ function Banners() {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to delete banner");
+        throw new Error(
+          data.message || "Failed to delete banner"
+        );
       }
 
-      alert(data.message || "Banner deleted successfully");
+      alert(
+        data.message ||
+          "Banner deleted successfully"
+      );
 
-      fetchBanners();
+      // Refresh backend data
+      // without showing the full-page loader
+      fetchBanners(false);
     } catch (error) {
-      console.error("Error deleting banner:", error);
+      console.error(
+        "Error deleting banner:",
+        error
+      );
+
       alert(error.message);
     }
   };
@@ -111,7 +185,9 @@ function Banners() {
       return;
     }
 
-    navigate(`/admin/banners/edit/${bannerId}`);
+    navigate(
+      `/admin/banners/edit/${bannerId}`
+    );
   };
 
   // =========================================================
@@ -126,7 +202,9 @@ function Banners() {
       return;
     }
 
-    navigate(`/admin/banners/view/${bannerId}`);
+    navigate(
+      `/admin/banners/view/${bannerId}`
+    );
   };
 
   // =========================================================
@@ -134,15 +212,26 @@ function Banners() {
   // =========================================================
 
   const getBannerStatus = (banner) => {
+    const now = new Date();
+
+    // -------------------------------------------------------
+    // Expired
+    // -------------------------------------------------------
+
     if (
       banner.endDate &&
-      new Date(banner.endDate).getTime() < new Date().getTime()
+      new Date(banner.endDate).getTime() <
+        now.getTime()
     ) {
       return {
         label: "Expired",
         className: "expired",
       };
     }
+
+    // -------------------------------------------------------
+    // Active
+    // -------------------------------------------------------
 
     if (banner.status === "active") {
       return {
@@ -151,6 +240,10 @@ function Banners() {
       };
     }
 
+    // -------------------------------------------------------
+    // Inactive
+    // -------------------------------------------------------
+
     return {
       label: "Inactive",
       className: "inactive",
@@ -158,27 +251,32 @@ function Banners() {
   };
 
   // =========================================================
-  // FILTER BANNERS
+  // FRONTEND FILTER
   // =========================================================
 
-  const filteredBanners = banners.filter((banner) => {
-    const searchValue = search.toLowerCase().trim();
+  // Backend handles:
+  // - Search
+  // - Active
+  // - Inactive
+  //
+  // Frontend only handles Expired because it is calculated
+  // using endDate.
 
-    const title = banner.title?.toLowerCase() || "";
-    const description = banner.description?.toLowerCase() || "";
+  const filteredBanners = banners.filter(
+    (banner) => {
+      if (statusFilter === "expired") {
+        const bannerStatus =
+          getBannerStatus(banner);
 
-    const matchesSearch =
-      title.includes(searchValue) ||
-      description.includes(searchValue);
+        return (
+          bannerStatus.className ===
+          "expired"
+        );
+      }
 
-    const bannerStatus = getBannerStatus(banner);
-
-    const matchesStatus =
-      statusFilter === "all" ||
-      bannerStatus.className === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+      return true;
+    }
+  );
 
   // =========================================================
   // DATE FORMAT
@@ -189,21 +287,28 @@ function Banners() {
 
     const formattedDate = new Date(date);
 
-    if (Number.isNaN(formattedDate.getTime())) {
+    if (
+      Number.isNaN(
+        formattedDate.getTime()
+      )
+    ) {
       return "-";
     }
 
-    return formattedDate.toLocaleDateString("en-GB");
+    return formattedDate.toLocaleDateString(
+      "en-GB"
+    );
   };
 
   // =========================================================
-  // LOADING
+  // INITIAL LOADING
   // =========================================================
 
   if (loading) {
     return (
       <div className="banners-page">
         <div className="banners-loading">
+          <i className="bi bi-arrow-repeat"></i>
           Loading banners...
         </div>
       </div>
@@ -224,13 +329,18 @@ function Banners() {
       <div className="banners-header">
         <div className="banners-header-content">
           <h1>Banners</h1>
-          <p>Manage promotional banners</p>
+
+          <p>
+            Manage promotional banners
+          </p>
         </div>
 
         <button
           type="button"
           className="add-banner-btn"
-          onClick={() => navigate("/admin/banners/add")}
+          onClick={() =>
+            navigate("/admin/banners/add")
+          }
         >
           <i className="bi bi-plus-lg"></i>
           Add Banner
@@ -254,7 +364,9 @@ function Banners() {
 
             <span className="banner-count">
               {filteredBanners.length}{" "}
-              {filteredBanners.length === 1 ? "banner" : "banners"}
+              {filteredBanners.length === 1
+                ? "banner"
+                : "banners"}
             </span>
           </div>
 
@@ -273,8 +385,23 @@ function Banners() {
                 type="text"
                 placeholder="Search banners..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
               />
+
+              {search && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() =>
+                    setSearch("")
+                  }
+                  aria-label="Clear search"
+                >
+                  <i className="bi bi-x"></i>
+                </button>
+              )}
             </div>
 
             {/* STATUS FILTER */}
@@ -282,14 +409,28 @@ function Banners() {
             <select
               className="banner-status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value
+                )
+              }
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="expired">Expired</option>
-            </select>
+              <option value="all">
+                All Status
+              </option>
 
+              <option value="active">
+                Active
+              </option>
+
+              <option value="inactive">
+                Inactive
+              </option>
+
+              <option value="expired">
+                Expired
+              </option>
+            </select>
           </div>
         </div>
 
@@ -310,15 +451,17 @@ function Banners() {
               <i className="bi bi-image"></i>
 
               <h3>
-                {banners.length === 0
-                  ? "No banners found"
-                  : "No matching banners"}
+                {search ||
+                statusFilter !== "all"
+                  ? "No matching banners"
+                  : "No banners found"}
               </h3>
 
               <p>
-                {banners.length === 0
-                  ? "Add your first banner to get started."
-                  : "Try changing your search or filter."}
+                {search ||
+                statusFilter !== "all"
+                  ? "Try changing your search or filter."
+                  : "Add your first banner to get started."}
               </p>
 
             </div>
@@ -345,128 +488,175 @@ function Banners() {
 
               <tbody>
 
-                {filteredBanners.map((banner, index) => {
-                  const bannerStatus = getBannerStatus(banner);
+                {filteredBanners.map(
+                  (banner, index) => {
 
-                  return (
-                    <tr key={banner._id || banner.id}>
+                    const bannerStatus =
+                      getBannerStatus(
+                        banner
+                      );
 
-                      {/* NUMBER */}
+                    return (
+                      <tr
+                        key={
+                          banner._id ||
+                          banner.id
+                        }
+                      >
 
-                      <td className="banner-number">
-                        {index + 1}
-                      </td>
+                        {/* NUMBER */}
 
-                      {/* IMAGE */}
+                        <td className="banner-number">
+                          {index + 1}
+                        </td>
 
-                      <td>
-                        <div className="banner-image-wrapper">
+                        {/* IMAGE */}
 
-                          {banner.image ? (
-                            <img
-                              src={banner.image}
-                              alt={banner.title || "Banner"}
-                              className="banner-image"
-                            />
-                          ) : (
-                            <div className="banner-no-image">
-                              <i className="bi bi-image"></i>
-                            </div>
+                        <td>
+                          <div className="banner-image-wrapper">
+
+                            {banner.image ? (
+
+                              <img
+                                src={
+                                  banner.image
+                                }
+                                alt={
+                                  banner.title ||
+                                  "Banner"
+                                }
+                                className="banner-image"
+                              />
+
+                            ) : (
+
+                              <div className="banner-no-image">
+                                <i className="bi bi-image"></i>
+                              </div>
+
+                            )}
+
+                          </div>
+                        </td>
+
+                        {/* TITLE */}
+
+                        <td>
+                          <div className="banner-title-cell">
+
+                            <strong>
+                              {banner.title ||
+                                "-"}
+                            </strong>
+
+                            {banner.description && (
+                              <span>
+                                {
+                                  banner.description
+                                }
+                              </span>
+                            )}
+
+                          </div>
+                        </td>
+
+                        {/* STATUS */}
+
+                        <td>
+
+                          <span
+                            className={`banner-status ${bannerStatus.className}`}
+                          >
+                            <span className="status-dot"></span>
+
+                            {
+                              bannerStatus.label
+                            }
+                          </span>
+
+                        </td>
+
+                        {/* START DATE */}
+
+                        <td>
+                          {formatDate(
+                            banner.startDate
                           )}
+                        </td>
 
-                        </div>
-                      </td>
+                        {/* END DATE */}
 
-                      {/* TITLE */}
-
-                      <td>
-                        <div className="banner-title-cell">
-
-                          <strong>
-                            {banner.title || "-"}
-                          </strong>
-
-                          {banner.description && (
-                            <span>
-                              {banner.description}
-                            </span>
+                        <td>
+                          {formatDate(
+                            banner.endDate
                           )}
+                        </td>
 
-                        </div>
-                      </td>
+                        {/* ACTIONS */}
 
-                      {/* STATUS */}
+                        <td>
 
-                      <td>
-                        <span
-                          className={`banner-status ${bannerStatus.className}`}
-                        >
-                          <span className="status-dot"></span>
-                          {bannerStatus.label}
-                        </span>
-                      </td>
+                          <div className="banner-actions">
 
-                      {/* START DATE */}
+                            {/* VIEW */}
 
-                      <td>
-                        {formatDate(banner.startDate)}
-                      </td>
+                            <button
+                              type="button"
+                              className="view-banner-btn"
+                              title="View banner"
+                              aria-label="View banner"
+                              onClick={() =>
+                                handleView(
+                                  banner
+                                )
+                              }
+                            >
+                              <i className="bi bi-eye"></i>
+                            </button>
 
-                      {/* END DATE */}
+                            {/* EDIT */}
 
-                      <td>
-                        {formatDate(banner.endDate)}
-                      </td>
+                            <button
+                              type="button"
+                              className="edit-banner-btn"
+                              title="Edit banner"
+                              aria-label="Edit banner"
+                              onClick={() =>
+                                handleEdit(
+                                  banner
+                                )
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
 
-                      {/* ACTIONS */}
+                            {/* DELETE */}
 
-                      <td>
-                        <div className="banner-actions">
+                            <button
+                              type="button"
+                              className="delete-banner-btn"
+                              title="Delete banner"
+                              aria-label="Delete banner"
+                              onClick={() =>
+                                handleDelete(
+                                  banner
+                                )
+                              }
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
 
-                          {/* VIEW */}
+                          </div>
 
-                          <button
-                            type="button"
-                            className="view-banner-btn"
-                            title="View banner"
-                            aria-label="View banner"
-                            onClick={() => handleView(banner)}
-                          >
-                            <i className="bi bi-eye"></i>
-                          </button>
+                        </td>
 
-                          {/* EDIT */}
-
-                          <button
-                            type="button"
-                            className="edit-banner-btn"
-                            title="Edit banner"
-                            aria-label="Edit banner"
-                            onClick={() => handleEdit(banner)}
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
-
-                          {/* DELETE */}
-
-                          <button
-                            type="button"
-                            className="delete-banner-btn"
-                            title="Delete banner"
-                            aria-label="Delete banner"
-                            onClick={() => handleDelete(banner)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-
-                        </div>
-                      </td>
-
-                    </tr>
-                  );
-                })}
+                      </tr>
+                    );
+                  }
+                )}
 
               </tbody>
+
             </table>
           )}
 
@@ -477,4 +667,3 @@ function Banners() {
 }
 
 export default Banners;
-

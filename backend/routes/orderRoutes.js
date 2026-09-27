@@ -52,6 +52,13 @@ router.get(
   orderController.getAllOrders
 );
 
+// DOWNLOAD ORDER INVOICE
+router.get(
+  "/:id/invoice",
+  protect,
+  orderController.downloadInvoice
+);
+
 // SINGLE ORDER
 router.get(
   "/:id",
@@ -68,10 +75,22 @@ router.put(
 );
 
 
+
+// CUSTOMER CANCEL ORDER
+router.put(
+  "/:id/cancel",
+  protect,
+  orderController.cancelOrder
+);
 // CUSTOMER REQUEST RETURN
 router.post("/:id/return", protect, orderController.requestReturn);
 
 // ADMIN APPROVE / REJECT RETURN
-router.put("/:id/return-status", protect, orderController.updateReturnStatus);
+router.put("/:id/return-status", protect, adminOnly, orderController.updateReturnStatus);
 
 module.exports = router;
+
+
+
+
+

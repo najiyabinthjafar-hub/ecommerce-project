@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 
@@ -5,6 +6,7 @@ const User = require("../models/User");
 
 const generateOtp = require("../utils/generateOtp");
 const generateToken = require("../utils/generateToken");
+
 const notificationService = require("./notificationService");
 
 const {
@@ -26,64 +28,124 @@ const registerUser = async ({
   phone,
   password,
 }) => {
-  const existingEmail = await User.findOne({ email });
+  const existingEmail = await User.findOne({
+    email,
+  });
 
   if (existingEmail) {
     throw new Error("Email already registered");
   }
 
-  const existingPhone = await User.findOne({ phone });
+  const existingPhone = await User.findOne({
+    phone,
+  });
 
   if (existingPhone) {
-    throw new Error("Phone number already registered");
+    throw new Error(
+      "Phone number already registered"
+    );
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(
+    password,
+    10
+  );
 
   const otp = generateOtp();
 
-feature/milhaj-product-filter
-  
-const user = await User.create({
-  name,
-  email,
-  phone,
-  password: hashedPassword,
-  otp,
-  otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-  otpAttempts: 0,
-});
+  // ==========================================
+  // USER + ADMIN NOTIFICATION TRANSACTION
+  // ==========================================
 
-// Create notification for admin
-const admin = await notificationService.getAdminUser();
+  const session =
+    await mongoose.startSession();
 
-if (admin) {
-  await notificationService.createNotification({
-    user: admin._id,
-    title: "New Customer",
-    message: `New customer ${user.name} has registered.`,
-    type: "USER",
-    
-  const user = await User.create({
-    name,
-    email,
-    phone,
-    password: hashedPassword,
+  let user;
 
-    otp,
-    otpExpiresAt: new Date(
-      Date.now() + 10 * 60 * 1000
-    ),
+  try {
+    await session.withTransaction(
+      async () => {
+        // ======================================
+        // NORMAL USER REGISTRATION
+        // ======================================
+        //
+        // IMPORTANT:
+        // googleId is NOT included here.
+        //
+        // Normal users should not have:
+        // googleId: null
+        //
+        // Google ID is saved only for
+        // Google registration.
 
-    otpAttempts: 0,
- main
-  });
-}
+        const createdUsers =
+          await User.create(
+            [
+              {
+                name,
+                email,
+                phone,
+                password: hashedPassword,
 
-await sendOtpEmail(email, otp);
+                otp,
+
+                otpExpiresAt: new Date(
+                  Date.now() +
+                    10 * 60 * 1000
+                ),
+
+                otpAttempts: 0,
+              },
+            ],
+            {
+              session,
+            }
+          );
+
+        user = createdUsers[0];
+
+        // ======================================
+        // ADMIN NOTIFICATION
+        // ======================================
+
+        const admin =
+          await notificationService.getAdminUser(
+            session
+          );
+
+        // Notification is created only
+        // when an admin user exists.
+        if (admin) {
+          await notificationService.createNotification(
+            {
+              user: admin._id,
+
+              title: "New Customer",
+
+              message: `New customer ${user.name} has registered.`,
+
+              // Notification task handles
+              // the USER enum.
+              type: "USER",
+            },
+            session
+          );
+        }
+      }
+    );
+  } finally {
+    await session.endSession();
+  }
+
+  // ==========================================
+  // SEND OTP
+  // ==========================================
+
+  await sendOtpEmail(email, otp);
 
   return {
     userId: user._id,
+
     message:
       "Registration successful. OTP sent to your email.",
   };
@@ -91,15 +153,22 @@ await sendOtpEmail(email, otp);
 
 // ================= VERIFY EMAIL OTP =================
 
-const verifyEmailOtp = async (email, otp) => {
-  const user = await User.findOne({ email });
+const verifyEmailOtp = async (
+  email,
+  otp
+) => {
+  const user = await User.findOne({
+    email,
+  });
 
   if (!user) {
     throw new Error("User not found");
   }
 
   if (user.isEmailVerified) {
-    throw new Error("Email already verified");
+    throw new Error(
+      "Email already verified"
+    );
   }
 
   if (!user.otp || !user.otpExpiresAt) {
@@ -111,7 +180,9 @@ const verifyEmailOtp = async (email, otp) => {
   }
 
   if (user.otpAttempts >= 5) {
-    throw new Error("Too many OTP attempts");
+    throw new Error(
+      "Too many OTP attempts"
+    );
   }
 
   if (user.otp !== otp) {
@@ -122,21 +193,23 @@ const verifyEmailOtp = async (email, otp) => {
     throw new Error("Invalid OTP");
   }
 
-  // Mark email as verified
+  // ================= MARK EMAIL VERIFIED =================
+
   user.isEmailVerified = true;
 
-  // Clear OTP
   user.otp = null;
   user.otpExpiresAt = null;
   user.otpAttempts = 0;
 
   await user.save();
 
-  // Generate JWT
+  // ================= GENERATE JWT =================
+
   const token = generateToken(user._id);
 
   return {
-    message: "Email verified successfully",
+    message:
+      "Email verified successfully",
 
     token,
 
@@ -146,7 +219,8 @@ const verifyEmailOtp = async (email, otp) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
-      profileCompleted: user.profileCompleted,
+      profileCompleted:
+        user.profileCompleted,
     },
   };
 };
@@ -154,14 +228,18 @@ const verifyEmailOtp = async (email, otp) => {
 // ================= RESEND OTP =================
 
 const resendOtp = async (email) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({
+    email,
+  });
 
   if (!user) {
     throw new Error("User not found");
   }
 
   if (user.isEmailVerified) {
-    throw new Error("Email already verified");
+    throw new Error(
+      "Email already verified"
+    );
   }
 
   const otp = generateOtp();
@@ -176,11 +254,16 @@ const resendOtp = async (email) => {
 
   await user.save();
 
-  console.log("OTP email:", email);
+  console.log(
+    "OTP email:",
+    email
+  );
+
   console.log(
     "EMAIL_USER loaded:",
     !!process.env.EMAIL_USER
   );
+
   console.log(
     "EMAIL_PASS loaded:",
     !!process.env.EMAIL_PASS
@@ -189,7 +272,8 @@ const resendOtp = async (email) => {
   await sendOtpEmail(email, otp);
 
   return {
-    message: "New OTP sent successfully",
+    message:
+      "New OTP sent successfully",
   };
 };
 
@@ -199,10 +283,14 @@ const loginUser = async ({
   email,
   password,
 }) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({
+    email,
+  });
 
   if (!user) {
-    throw new Error("Invalid email or password");
+    throw new Error(
+      "Invalid email or password"
+    );
   }
 
   if (!user.isEmailVerified) {
@@ -212,7 +300,9 @@ const loginUser = async ({
   }
 
   if (user.status !== "active") {
-    throw new Error("Your account is blocked");
+    throw new Error(
+      "Your account is blocked"
+    );
   }
 
   // Google-only user may not have password
@@ -222,16 +312,21 @@ const loginUser = async ({
     );
   }
 
-  const passwordMatch = await bcrypt.compare(
-    password,
-    user.password
-  );
+  const passwordMatch =
+    await bcrypt.compare(
+      password,
+      user.password
+    );
 
   if (!passwordMatch) {
-    throw new Error("Invalid email or password");
+    throw new Error(
+      "Invalid email or password"
+    );
   }
 
-  const token = generateToken(user._id);
+  const token = generateToken(
+    user._id
+  );
 
   return {
     token,
@@ -242,7 +337,8 @@ const loginUser = async ({
       email: user.email,
       phone: user.phone,
       role: user.role,
-      profileCompleted: user.profileCompleted,
+      profileCompleted:
+        user.profileCompleted,
     },
   };
 };
@@ -251,7 +347,9 @@ const loginUser = async ({
 
 const googleLogin = async (idToken) => {
   if (!idToken) {
-    throw new Error("Google ID token is required");
+    throw new Error(
+      "Google ID token is required"
+    );
   }
 
   if (!process.env.GOOGLE_CLIENT_ID) {
@@ -265,10 +363,12 @@ const googleLogin = async (idToken) => {
   let ticket;
 
   try {
-    ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    ticket =
+      await googleClient.verifyIdToken({
+        idToken,
+        audience:
+          process.env.GOOGLE_CLIENT_ID,
+      });
   } catch (error) {
     console.error(
       "GOOGLE TOKEN VERIFICATION ERROR:",
@@ -280,7 +380,8 @@ const googleLogin = async (idToken) => {
     );
   }
 
-  const payload = ticket.getPayload();
+  const payload =
+    ticket.getPayload();
 
   if (!payload) {
     throw new Error(
@@ -309,39 +410,49 @@ const googleLogin = async (idToken) => {
     );
   }
 
-  // ================= FIND USER =================
+  const normalizedEmail =
+    email.toLowerCase();
 
-  // First try googleId
-  let user = await User.findOne({
-    googleId,
-  });
+  // ================= FIND USER BY GOOGLE ID =================
 
-  // If googleId doesn't exist,
-  // check whether same email already exists
-  if (!user) {
-    user = await User.findOne({
-      email: email.toLowerCase(),
+  let user =
+    await User.findOne({
+      googleId,
     });
+
+  // ================= FIND USER BY EMAIL =================
+
+  if (!user) {
+    user =
+      await User.findOne({
+        email: normalizedEmail,
+      });
   }
 
   // ================= EXISTING USER =================
 
   if (user) {
-    // Check account status
     if (user.status !== "active") {
-      throw new Error("Your account is blocked");
+      throw new Error(
+        "Your account is blocked"
+      );
     }
 
-    // If this existing account doesn't have googleId,
-    // connect Google account to existing account.
+    // ==========================================
+    // CONNECT GOOGLE ACCOUNT
+    // ==========================================
+    //
+    // Existing normal-registration user can
+    // login using Google with the same email.
+    //
+    // Keep the existing connection logic.
+
     if (!user.googleId) {
       user.googleId = googleId;
     }
 
-    // Google has verified the email
     user.isEmailVerified = true;
 
-    // Update name only if missing
     if (!user.name && name) {
       user.name = name;
     }
@@ -349,18 +460,27 @@ const googleLogin = async (idToken) => {
     await user.save();
   }
 
-  // ================= CREATE NEW USER =================
+  // ================= CREATE NEW GOOGLE USER =================
 
   if (!user) {
-    user = await User.create({
-      name: name || "Google User",
+    // IMPORTANT:
+    // googleId is saved ONLY for Google users.
+    //
+    // Do NOT save:
+    // phone: null
+    //
+    // The phone field is intentionally omitted.
+    // User schema no longer has default: null.
 
-      email: email.toLowerCase(),
+    user = await User.create({
+      name:
+        name || "Google User",
+
+      email: normalizedEmail,
 
       googleId,
 
-      // Google user will complete phone later
-      phone: null,
+      // Do NOT add phone: null here.
 
       // Google user does not need password
       password: null,
@@ -375,9 +495,11 @@ const googleLogin = async (idToken) => {
     });
   }
 
-  // ================= GENERATE EXISTING JWT =================
+  // ================= GENERATE JWT =================
 
-  const token = generateToken(user._id);
+  const token = generateToken(
+    user._id
+  );
 
   return {
     token,
@@ -388,31 +510,43 @@ const googleLogin = async (idToken) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
-      profileCompleted: user.profileCompleted,
+      profileCompleted:
+        user.profileCompleted,
     },
   };
 };
 
 // ================= FORGOT PASSWORD =================
 
-const forgotPassword = async (email) => {
-  const user = await User.findOne({ email });
+const forgotPassword = async (
+  email
+) => {
+  const user = await User.findOne({
+    email,
+  });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(
+      "User not found"
+    );
   }
 
   const otp = generateOtp();
 
   user.resetOtp = otp;
 
-  user.resetOtpExpiresAt = new Date(
-    Date.now() + 10 * 60 * 1000
-  );
+  user.resetOtpExpiresAt =
+    new Date(
+      Date.now() +
+        10 * 60 * 1000
+    );
 
   await user.save();
 
-  await sendResetOtpEmail(email, otp);
+  await sendResetOtpEmail(
+    email,
+    otp
+  );
 
   return {
     message:
@@ -427,25 +561,38 @@ const resetPassword = async ({
   otp,
   newPassword,
 }) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({
+    email,
+  });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(
+      "User not found"
+    );
   }
 
   if (
     !user.resetOtp ||
     !user.resetOtpExpiresAt
   ) {
-    throw new Error("Reset OTP not found");
+    throw new Error(
+      "Reset OTP not found"
+    );
   }
 
-  if (new Date() > user.resetOtpExpiresAt) {
-    throw new Error("Reset OTP expired");
+  if (
+    new Date() >
+    user.resetOtpExpiresAt
+  ) {
+    throw new Error(
+      "Reset OTP expired"
+    );
   }
 
   if (user.resetOtp !== otp) {
-    throw new Error("Invalid reset OTP");
+    throw new Error(
+      "Invalid reset OTP"
+    );
   }
 
   if (newPassword.length < 6) {
@@ -454,12 +601,14 @@ const resetPassword = async ({
     );
   }
 
-  const hashedPassword = await bcrypt.hash(
-    newPassword,
-    10
-  );
+  const hashedPassword =
+    await bcrypt.hash(
+      newPassword,
+      10
+    );
 
-  user.password = hashedPassword;
+  user.password =
+    hashedPassword;
 
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
@@ -467,9 +616,12 @@ const resetPassword = async ({
   await user.save();
 
   return {
-    message: "Password reset successfully",
+    message:
+      "Password reset successfully",
   };
 };
+
+// ================= EXPORT =================
 
 module.exports = {
   registerUser,
