@@ -106,7 +106,13 @@ const processCheckout = async ({
   }
 
   // 5. Calculate final amount
-  const finalAmount = totalAmount - discountAmount;
+  const shippingCharge =
+    totalAmount === 0 ? 0 : totalAmount < 699 ? 50 : 0;
+
+  const finalAmount = Math.max(
+    0,
+    totalAmount + shippingCharge - discountAmount
+  );
 
   // 6. Prepare order items
   const orderItems = cart.items.map((item) => {
@@ -131,6 +137,7 @@ const processCheckout = async ({
     shippingAddress,
     totalAmount,
     discountAmount,
+    shippingCharge,
     finalAmount,
     paymentMethod,
     paymentStatus: "PENDING",
@@ -175,6 +182,7 @@ const processCheckout = async ({
       payment,
       totalAmount,
       discountAmount,
+      shippingCharge,
       finalAmount,
     };
   }
@@ -192,6 +200,7 @@ const processCheckout = async ({
       razorpayOrder,
       totalAmount,
       discountAmount,
+      shippingCharge,
       finalAmount,
     };
   }
@@ -200,3 +209,8 @@ const processCheckout = async ({
 module.exports = {
   processCheckout,
 };
+
+
+
+
+

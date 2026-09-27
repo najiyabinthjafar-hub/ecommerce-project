@@ -177,7 +177,7 @@ function Checkout() {
   }, 0);
 
   const deliveryCharge =
-    subtotal >= 999 || subtotal === 0 ? 0 : 99;
+    subtotal === 0 ? 0 : subtotal < 699 ? 50 : 0;
 
   const discount = coupon?.discountAmount || 0;
 
@@ -1579,4 +1579,8 @@ function Checkout() {
 }
 
 export default Checkout;
+
+
+
+
 
