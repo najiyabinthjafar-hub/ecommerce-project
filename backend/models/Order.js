@@ -84,7 +84,6 @@ const orderSchema = new mongoose.Schema(
       min: 0,
     },
 
-    
     shippingCharge: {
       type: Number,
       default: 0,
@@ -108,17 +107,18 @@ const orderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
+
     razorpayOrderId: {
-  type: String,
-  },
+      type: String,
+    },
 
-razorpayPaymentId: {
-  type: String,
-},
+    razorpayPaymentId: {
+      type: String,
+    },
 
-razorpaySignature: {
-  type: String,
-},
+    razorpaySignature: {
+      type: String,
+    },
 
     orderStatus: {
       type: String,
@@ -132,6 +132,20 @@ razorpaySignature: {
         "CANCELLED",
       ],
       default: "PENDING",
+    },
+
+    // ================= TRACKING DETAILS =================
+    // Admin can add/update these when the order is shipped.
+    trackingNumber: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    trackingUrl: {
+      type: String,
+      default: "",
+      trim: true,
     },
 
     // RETURN DETAILS
@@ -192,5 +206,3 @@ razorpaySignature: {
 );
 
 module.exports = mongoose.model("Order", orderSchema);
-
-
