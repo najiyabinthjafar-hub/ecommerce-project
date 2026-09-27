@@ -206,11 +206,68 @@ Thank you for choosing Rizo Fashion!
   }
 };
 
+
+// ================= SEND NEW ORDER ADMIN EMAIL =================
+
+const sendNewOrderAdminEmail = async ({
+  order,
+  customer,
+}) => {
+  try {
+    const adminEmail = process.env.EMAIL_USER;
+
+    if (!adminEmail) {
+      throw new Error("Admin email not configured");
+    }
+
+    const orderId = order._id?.toString() || "N/A";
+    const customerName =
+      customer?.name ||
+      order.shippingAddress?.fullName ||
+      "Customer";
+
+    const customerEmail = customer?.email || "N/A";
+    const finalAmount = Number(order.finalAmount || 0);
+
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: adminEmail,
+      subject: `New Order Received - #${orderId}`,
+      text: `
+New Order Received
+
+A new order has been placed on Rizo Fashion.
+
+Order ID: ${orderId}
+Customer Name: ${customerName}
+Customer Email: ${customerEmail}
+Payment Method: ${order.paymentMethod || "N/A"}
+Payment Status: ${order.paymentStatus || "N/A"}
+Order Status: ${order.orderStatus || "N/A"}
+Total Amount: Rs. ${finalAmount.toFixed(2)}
+
+Please log in to the admin panel to view the complete order details.
+      `,
+    });
+
+    console.log("New order admin email sent successfully");
+    console.log("Message ID:", info.messageId);
+
+    return info;
+  } catch (error) {
+    console.error("New order admin email failed:");
+    console.error(error.message);
+
+    throw error;
+  }
+};
+
 module.exports = {
   verifyEmailConnection,
   sendOtpEmail,
   sendResetOtpEmail,
   sendContactEmail,
   sendOrderConfirmationEmail,
+  sendNewOrderAdminEmail,
 };
 

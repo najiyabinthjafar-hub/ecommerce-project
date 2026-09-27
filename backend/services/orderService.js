@@ -6,7 +6,10 @@ const User = require("../models/User");
 const notificationService = require("./notificationService");
 const productService = require("./productService");
 const razorpayService = require("./razorpayService");
-const { sendOrderConfirmationEmail } = require("./emailService");
+const {
+  sendOrderConfirmationEmail,
+  sendNewOrderAdminEmail,
+} = require("./emailService");
 const { generateInvoicePdf } = require("./invoiceService");
 
 // ================= STOCK HELPERS ==========
@@ -195,6 +198,22 @@ const createOrder = async (orderData) => {
       type: "ORDER",
     });
   }
+    // Send new order email to admin
+    if (admin) {
+      try {
+        const customer = await User.findById(order.user);
+
+        await sendNewOrderAdminEmail({
+          order,
+          customer,
+        });
+
+        console.log("NEW ORDER ADMIN EMAIL SENT SUCCESSFULLY");
+      } catch (adminEmailError) {
+        console.error("NEW ORDER ADMIN EMAIL FAILED:");
+        console.error(adminEmailError.message);
+      }
+    }
     // Send COD order confirmation email with invoice
     if (paymentMethod === "COD") {
       try {
@@ -827,6 +846,8 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
 };
+
+
 
 
 
