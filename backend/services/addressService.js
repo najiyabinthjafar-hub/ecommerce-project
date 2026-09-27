@@ -3,12 +3,84 @@ const Address = require("../models/Address");
 // ================= GET ADDRESSES =================
 
 const getAddresses = async (userId) => {
-  return await Address.find({
+  // Make sure existing data has exactly one default address
+  // whenever addresses are fetched.
+  const addresses = await Address.find({
     user: userId,
   }).sort({
     isDefault: -1,
     createdAt: -1,
   });
+
+  // If addresses exist but no default address exists,
+  // make the latest address default.
+  if (
+    addresses.length > 0 &&
+    !addresses.some((address) => address.isDefault === true)
+  ) {
+    const newDefaultAddress = addresses[0];
+
+    await Address.updateMany(
+      {
+        user: userId,
+        _id: {
+          $ne: newDefaultAddress._id,
+        },
+      },
+      {
+        $set: {
+          isDefault: false,
+        },
+      }
+    );
+
+    newDefaultAddress.isDefault = true;
+    await newDefaultAddress.save();
+
+    // Return updated list
+    return await Address.find({
+      user: userId,
+    }).sort({
+      isDefault: -1,
+      createdAt: -1,
+    });
+  }
+
+  // If old data somehow contains multiple defaults,
+  // keep only the first/latest default.
+  const defaultAddresses = addresses.filter(
+    (address) => address.isDefault === true
+  );
+
+  if (defaultAddresses.length > 1) {
+    const keepDefault = defaultAddresses[0];
+
+    await Address.updateMany(
+      {
+        user: userId,
+        _id: {
+          $ne: keepDefault._id,
+        },
+      },
+      {
+        $set: {
+          isDefault: false,
+        },
+      }
+    );
+
+    keepDefault.isDefault = true;
+    await keepDefault.save();
+
+    return await Address.find({
+      user: userId,
+    }).sort({
+      isDefault: -1,
+      createdAt: -1,
+    });
+  }
+
+  return addresses;
 };
 
 // ================= ADD ADDRESS =================
@@ -185,6 +257,25 @@ const updateAddress = async (
     }
   });
 
+  // Final protection:
+  // If this address is being saved as default,
+  // make every other address false.
+  if (address.isDefault === true) {
+    await Address.updateMany(
+      {
+        user: userId,
+        _id: {
+          $ne: addressId,
+        },
+      },
+      {
+        $set: {
+          isDefault: false,
+        },
+      }
+    );
+  }
+
   await address.save();
 
   return address;
@@ -196,7 +287,7 @@ const deleteAddress = async (
   userId,
   addressId
 ) => {
-  const address = await Address.findOneAndDelete({
+  const address = await Address.findOne({
     _id: addressId,
     user: userId,
   });
@@ -205,11 +296,12 @@ const deleteAddress = async (
     throw new Error("Address not found");
   }
 
-  // If deleted address was NOT the default,
-  // nothing else needs to be changed.
-  if (!address.isDefault) {
-    return address;
-  }
+  const wasDefault = address.isDefault === true;
+
+  await Address.deleteOne({
+    _id: addressId,
+    user: userId,
+  });
 
   // Find remaining addresses.
   const remainingAddresses =
@@ -219,31 +311,46 @@ const deleteAddress = async (
       createdAt: -1,
     });
 
-  // If there are remaining addresses,
-  // make the latest one default.
-  if (remainingAddresses.length > 0) {
-    const newDefaultAddress =
-      remainingAddresses[0];
-
-    // Make all remaining addresses non-default first.
-    await Address.updateMany(
-      {
-        user: userId,
-        _id: {
-          $ne: newDefaultAddress._id,
-        },
-      },
-      {
-        $set: {
-          isDefault: false,
-        },
-      }
-    );
-
-    newDefaultAddress.isDefault = true;
-
-    await newDefaultAddress.save();
+  // If no addresses remain, nothing more to do.
+  if (remainingAddresses.length === 0) {
+    return address;
   }
+
+  // After deleting the default address,
+  // automatically select another address as default.
+  //
+  // Also handles old inconsistent data where there
+  // may already be multiple/no default addresses.
+  let newDefaultAddress;
+
+  if (wasDefault) {
+    // Select the latest remaining address.
+    newDefaultAddress = remainingAddresses[0];
+  } else {
+    // If deleted address was not default, preserve the
+    // existing default if one exists.
+    newDefaultAddress =
+      remainingAddresses.find(
+        (item) => item.isDefault === true
+      ) || remainingAddresses[0];
+  }
+
+  // Make every remaining address false first.
+  await Address.updateMany(
+    {
+      user: userId,
+    },
+    {
+      $set: {
+        isDefault: false,
+      },
+    }
+  );
+
+  // Make exactly one address default.
+  newDefaultAddress.isDefault = true;
+
+  await newDefaultAddress.save();
 
   return address;
 };
