@@ -11,23 +11,32 @@ const register = async (req, res) => {
       password,
     } = req.body;
 
-    if (!name || !email || !phone || !password) {
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !password
+    ) {
       return res.status(400).json({
         message:
           "Name, email, phone and password are required",
       });
     }
 
-    const result = await authService.registerUser({
-      name,
-      email,
-      phone,
-      password,
-    });
+    const result =
+      await authService.registerUser({
+        name,
+        email,
+        phone,
+        password,
+      });
 
     res.status(201).json(result);
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
+    console.error(
+      "REGISTER ERROR:",
+      error
+    );
 
     res.status(400).json({
       message: error.message,
@@ -46,23 +55,23 @@ const verifyOtp = async (req, res) => {
 
     if (!email || !otp) {
       return res.status(400).json({
-        message: "Email and OTP are required",
+        message:
+          "Email and OTP are required",
       });
     }
 
-    const result = await authService.verifyEmailOtp(
-      email,
-      otp
-    );
-
-    // Result now contains:
-    // message
-    // token
-    // user
+    const result =
+      await authService.verifyEmailOtp(
+        email,
+        otp
+      );
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("VERIFY OTP ERROR:", error);
+    console.error(
+      "VERIFY OTP ERROR:",
+      error
+    );
 
     res.status(400).json({
       message: error.message,
@@ -84,11 +93,17 @@ const resendOtp = async (req, res) => {
       });
     }
 
-    const result = await authService.resendOtp(email);
+    const result =
+      await authService.resendOtp(
+        email
+      );
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("RESEND OTP ERROR:", error);
+    console.error(
+      "RESEND OTP ERROR:",
+      error
+    );
 
     res.status(400).json({
       message: error.message,
@@ -107,18 +122,23 @@ const login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({
-        message: "Email and password are required",
+        message:
+          "Email and password are required",
       });
     }
 
-    const result = await authService.loginUser({
-      email,
-      password,
-    });
+    const result =
+      await authService.loginUser({
+        email,
+        password,
+      });
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    console.error(
+      "LOGIN ERROR:",
+      error
+    );
 
     res.status(401).json({
       message: error.message,
@@ -126,9 +146,45 @@ const login = async (req, res) => {
   }
 };
 
+// ================= GOOGLE LOGIN =================
+
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        message:
+          "Google ID token is required",
+      });
+    }
+
+    const result =
+      await authService.googleLogin(
+        idToken
+      );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(
+      "GOOGLE LOGIN ERROR:",
+      error
+    );
+
+    res.status(401).json({
+      message:
+        error.message ||
+        "Google login failed",
+    });
+  }
+};
+
 // ================= FORGOT PASSWORD =================
 
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (
+  req,
+  res
+) => {
   try {
     const {
       email,
@@ -140,15 +196,26 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    console.log("Forgot password request received for:", email);
+    console.log(
+      "Forgot password request received for:",
+      email
+    );
 
-    const result = await authService.forgotPassword(email);
+    const result =
+      await authService.forgotPassword(
+        email
+      );
 
-    console.log("Forgot password successful");
+    console.log(
+      "Forgot password successful"
+    );
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("FORGOT PASSWORD ERROR:", error);
+    console.error(
+      "FORGOT PASSWORD ERROR:",
+      error
+    );
 
     res.status(400).json({
       message: error.message,
@@ -158,7 +225,10 @@ const forgotPassword = async (req, res) => {
 
 // ================= RESET PASSWORD =================
 
-const resetPassword = async (req, res) => {
+const resetPassword = async (
+  req,
+  res
+) => {
   try {
     const {
       email,
@@ -166,22 +236,30 @@ const resetPassword = async (req, res) => {
       newPassword,
     } = req.body;
 
-    if (!email || !otp || !newPassword) {
+    if (
+      !email ||
+      !otp ||
+      !newPassword
+    ) {
       return res.status(400).json({
         message:
           "Email, OTP and new password are required",
       });
     }
 
-    const result = await authService.resetPassword({
-      email,
-      otp,
-      newPassword,
-    });
+    const result =
+      await authService.resetPassword({
+        email,
+        otp,
+        newPassword,
+      });
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("RESET PASSWORD ERROR:", error);
+    console.error(
+      "RESET PASSWORD ERROR:",
+      error
+    );
 
     res.status(400).json({
       message: error.message,
@@ -194,6 +272,7 @@ module.exports = {
   verifyOtp,
   resendOtp,
   login,
+  googleLogin,
   forgotPassword,
   resetPassword,
 };

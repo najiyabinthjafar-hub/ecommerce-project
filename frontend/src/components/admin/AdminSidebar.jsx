@@ -69,9 +69,10 @@ function AdminSidebar() {
           <span>Orders</span>
         </NavLink>
 
-        <NavLink to="/admin/settings">
-          <i className="bi bi-gear"></i>
-          <span>Settings</span>
+        {/* Contact Messages */}
+        <NavLink to="/admin/contact-messages">
+          <i className="bi bi-envelope"></i>
+          <span>Contact Messages</span>
         </NavLink>
 
       </nav>

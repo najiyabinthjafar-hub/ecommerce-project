@@ -1,25 +1,30 @@
-
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Categories.css";
 
 const API_URL = "http://localhost:5000/api/categories";
 
 function Categories() {
+  const navigate = useNavigate();
+
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Generate slug automatically from category name
-  const generateSlug = (name) => {
-    return name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-  };
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
-  // Fetch categories
+  // main / sub
+  const [categoryMode, setCategoryMode] = useState("main");
+
+  const [formData, setFormData] = useState({
+    name: "",
+    parent: "",
+  });
+
+  // =========================
+  // FETCH CATEGORIES
+  // =========================
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -32,11 +37,10 @@ function Categories() {
 
       const data = await response.json();
 
-      console.log("Categories API response:", data);
-
       setCategories(data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      alert("Failed to load categories");
     } finally {
       setLoading(false);
     }
@@ -46,297 +50,687 @@ function Categories() {
     fetchCategories();
   }, []);
 
-  // Add category
-  const handleAdd = async () => {
-    const name = prompt("Enter category name:");
+  // =========================
+  // GENERATE SLUG
+  // =========================
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  };
 
-    if (!name || name.trim() === "") {
+  // =========================
+  // ADD MAIN CATEGORY
+  // =========================
+  const handleAddMain = () => {
+    setEditingCategory(null);
+    setCategoryMode("main");
+
+    setFormData({
+      name: "",
+      parent: "",
+    });
+
+    setShowModal(true);
+  };
+
+  // =========================
+  // ADD SUBCATEGORY
+  // =========================
+  const handleAddSub = () => {
+    setEditingCategory(null);
+    setCategoryMode("sub");
+
+    setFormData({
+      name: "",
+      parent: "",
+    });
+
+    setShowModal(true);
+  };
+
+  // =========================
+  // EDIT CATEGORY
+  // =========================
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+
+    // If parent exists => subcategory
+    // Otherwise => main category
+    setCategoryMode(category.parent ? "sub" : "main");
+
+    setFormData({
+      name: category.name || "",
+      parent: category.parent?._id || category.parent || "",
+    });
+
+    setShowModal(true);
+  };
+
+  // =========================
+  // HANDLE INPUT
+  // =========================
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // =========================
+  // SUBMIT CATEGORY
+  // =========================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const categoryName = formData.name.trim();
+
+    if (!categoryName) {
+      alert("Please enter category name");
       return;
     }
 
-    const trimmedName = name.trim();
-    const slug = generateSlug(trimmedName);
+    // Subcategory must have a parent
+    if (categoryMode === "sub" && !formData.parent) {
+      alert("Please select a parent category");
+      return;
+    }
+
+    const slug = generateSlug(categoryName);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: trimmedName,
-          slug: slug,
-        }),
+      // Main category => parent null
+      // Subcategory => selected parent id
+      const payload = {
+        name: categoryName,
+        slug: slug,
+        parent: categoryMode === "main" ? null : formData.parent,
+      };
+
+      // =========================
+      // UPDATE
+      // =========================
+      if (editingCategory) {
+        const response = await fetch(
+          `${API_URL}/${editingCategory._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to update category");
+        }
+
+        alert("Category updated successfully!");
+      }
+
+      // =========================
+      // ADD
+      // =========================
+      else {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to add category");
+        }
+
+        if (categoryMode === "main") {
+          alert("Main category added successfully!");
+        } else {
+          alert("Subcategory added successfully!");
+        }
+      }
+
+      setShowModal(false);
+      setEditingCategory(null);
+
+      setFormData({
+        name: "",
+        parent: "",
+      });
+
+      fetchCategories();
+    } catch (error) {
+      console.error("Category error:", error);
+      alert(error.message || "Something went wrong");
+    }
+  };
+
+  // =========================
+  // DELETE CATEGORY
+  // =========================
+  const handleDelete = async (categoryId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this category?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${categoryId}`, {
+        method: "DELETE",
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to add category");
+        throw new Error(data.message || "Failed to delete category");
       }
 
-      alert(data.message || "Category added successfully");
+      alert("Category deleted successfully!");
 
       fetchCategories();
     } catch (error) {
-      console.error("Error adding category:", error);
-      alert(error.message);
+      console.error("Delete error:", error);
+      alert(error.message || "Failed to delete category");
     }
   };
 
-  // Edit category
-  const handleEdit = async (category) => {
-    const newName = prompt(
-      "Edit category name:",
-      category.name
+  // =========================
+  // CLOSE MODAL
+  // =========================
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingCategory(null);
+
+    setFormData({
+      name: "",
+      parent: "",
+    });
+  };
+
+  // =========================
+  // GET PARENT NAME
+  // =========================
+  const getParentName = (category) => {
+    if (!category.parent) {
+      return null;
+    }
+
+    if (typeof category.parent === "object") {
+      return category.parent.name;
+    }
+
+    const parentCategory = categories.find(
+      (item) => item._id === category.parent
     );
 
-    if (!newName || newName.trim() === "") {
-      return;
-    }
-
-    const trimmedName = newName.trim();
-    const slug = generateSlug(trimmedName);
-
-    try {
-      const categoryId = category._id || category.id;
-
-      const response = await fetch(
-        `${API_URL}/${categoryId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: trimmedName,
-            slug: slug,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to update category"
-        );
-      }
-
-      alert(
-        data.message || "Category updated successfully"
-      );
-
-      fetchCategories();
-    } catch (error) {
-      console.error("Error updating category:", error);
-      alert(error.message);
-    }
+    return parentCategory?.name || "Unknown";
   };
 
-  // Delete category
-  const handleDelete = async (category) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${category.name}"?`
-    );
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      const categoryId = category._id || category.id;
-
-      const response = await fetch(
-        `${API_URL}/${categoryId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to delete category"
-        );
-      }
-
-      alert(
-        data.message || "Category deleted successfully"
-      );
-
-      fetchCategories();
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      alert(error.message);
-    }
-  };
-
-  // Search categories
-  const filteredCategories = categories.filter((category) =>
-    (category.name || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  // =========================
+  // MAIN CATEGORIES
+  // =========================
+  const parentCategories = categories.filter(
+    (category) => !category.parent
   );
+
+  // =========================
+  // SEARCH
+  // =========================
+  const filteredCategories = categories.filter((category) =>
+    category.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // =========================
+  // STATS
+  // =========================
+  const totalCategories = categories.length;
+
+  const mainCategories = categories.filter(
+    (category) => !category.parent
+  ).length;
+
+  const subCategories = categories.filter(
+    (category) => category.parent
+  ).length;
 
   return (
     <div className="categories-page">
-
-      {/* Page Header */}
-      <div className="categories-header">
+      {/* =========================
+          PAGE HEADER
+      ========================= */}
+      <div className="category-page-header">
         <div>
+          <span className="category-eyebrow">
+            PRODUCT MANAGEMENT
+          </span>
+
           <h1>Categories</h1>
-          <p>Manage your product categories</p>
+
+          <p>
+            Organize products with main categories and subcategories.
+          </p>
         </div>
 
-        <button
-          className="add-category-btn"
-          onClick={handleAdd}
-        >
-          + Add Category
-        </button>
+        <div className="category-header-actions">
+          <button
+            className="add-category-btn"
+            onClick={handleAddMain}
+          >
+            <i className="bi bi-plus-lg"></i>
+            Main Category
+          </button>
+
+          <button
+            className="add-subcategory-btn"
+            onClick={handleAddSub}
+          >
+            <i className="bi bi-diagram-3"></i>
+            Subcategory
+          </button>
+        </div>
       </div>
 
-      {/* Categories Card */}
-      <div className="categories-card">
+      {/* =========================
+          STATS
+      ========================= */}
+      <div className="category-stats">
+        <div className="category-stat-card">
+          <div className="category-stat-icon">
+            <i className="bi bi-grid"></i>
+          </div>
 
-        {/* Card Header */}
+          <div>
+            <span>Total Categories</span>
+            <strong>{totalCategories}</strong>
+          </div>
+        </div>
+
+        <div className="category-stat-card">
+          <div className="category-stat-icon">
+            <i className="bi bi-folder"></i>
+          </div>
+
+          <div>
+            <span>Main Categories</span>
+            <strong>{mainCategories}</strong>
+          </div>
+        </div>
+
+        <div className="category-stat-card">
+          <div className="category-stat-icon">
+            <i className="bi bi-diagram-3"></i>
+          </div>
+
+          <div>
+            <span>Subcategories</span>
+            <strong>{subCategories}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================
+          MAIN CATEGORY TABLE CARD
+      ========================= */}
+      <div className="categories-card">
         <div className="categories-card-header">
           <div>
             <h2>All Categories</h2>
 
             <p>
-              {categories.length} categories available
+              Manage your product categories and subcategories.
             </p>
           </div>
 
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="category-search"
-          />
+          <div className="category-search">
+            <i className="bi bi-search"></i>
+
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Categories Table */}
-        <div className="categories-table-container">
-          <table className="categories-table">
+        {/* =========================
+            TABLE
+        ========================= */}
+        <div className="categories-table-wrapper">
+          {loading ? (
+            <div className="category-loading">
+              <i className="bi bi-arrow-repeat"></i>
+              <span>Loading categories...</span>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="category-empty">
+              <i className="bi bi-folder2-open"></i>
 
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Category</th>
-                <th>Products</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+              <h3>No categories found</h3>
 
-            <tbody>
-
-              {loading ? (
+              <p>
+                Add a main category or subcategory to get started.
+              </p>
+            </div>
+          ) : (
+            <table className="categories-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="5"
-                    className="no-category"
-                  >
-                    Loading categories...
-                  </td>
+                  <th>#</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Products</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ) : filteredCategories.length > 0 ? (
-                filteredCategories.map((category, index) => (
-                  <tr
-                    key={category._id || category.id}
-                  >
+              </thead>
 
-                    {/* Number */}
-                    <td className="category-number">
-                      {index + 1}
-                    </td>
+              <tbody>
+                {filteredCategories.map((category, index) => {
+                  const parentName = getParentName(category);
+                  const isSubcategory = !!category.parent;
 
-                    {/* Category */}
-                    <td>
-                      <div className="category-name">
+                  return (
+                    <tr key={category._id}>
+                      {/* NUMBER */}
+                      <td className="category-number">
+                        {index + 1}
+                      </td>
 
-                        <div className="category-icon">
-                          {(category.name || "?")
-                            .charAt(0)
-                            .toUpperCase()}
+                      {/* CATEGORY */}
+                      <td>
+                        <div className="category-info">
+                          <div className="category-icon">
+                            {category.name
+                              ?.charAt(0)
+                              ?.toUpperCase()}
+                          </div>
+
+                          <div>
+                            <strong>{category.name}</strong>
+
+                            <span>
+                              {category.slug ||
+                                generateSlug(category.name)}
+                            </span>
+
+                            {parentName && (
+                              <small>
+                                Subcategory of {parentName}
+                              </small>
+                            )}
+                          </div>
                         </div>
+                      </td>
 
-                        <strong>
-                          {category.name}
-                        </strong>
+                      {/* TYPE */}
+                      <td>
+                        {isSubcategory ? (
+                          <span className="category-type subcategory-type">
+                            Subcategory
+                          </span>
+                        ) : (
+                          <span className="category-type main-category-type">
+                            Main Category
+                          </span>
+                        )}
+                      </td>
 
-                      </div>
-                    </td>
+                      {/* PRODUCTS */}
+                      <td>
+                        <span className="product-count">
+                          {category.productCount ||
+                            category.productsCount ||
+                            category.products?.length ||
+                            0}
+                        </span>
+                      </td>
 
-                    {/* Products */}
-                    <td>
-                      <span className="product-count">
-                        {category.products ||
-                          category.productCount ||
-                          0}{" "}
-                        Products
-                      </span>
-                    </td>
+                      {/* STATUS */}
+                      <td>
+                        {category.status === "inactive" ? (
+                          <span className="category-status inactive">
+                            Inactive
+                          </span>
+                        ) : (
+                          <span className="category-status active">
+                            Active
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Status */}
-                    <td>
-                      <span className="category-status">
-                        Active
-                      </span>
-                    </td>
+                      {/* ACTIONS */}
+                      <td>
+                        <div className="category-actions">
+                          <button
+                            className="category-edit-btn"
+                            onClick={() => handleEdit(category)}
+                            title="Edit"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
 
-                    {/* Actions */}
-                    <td>
-                      <div className="category-actions">
+                          <button
+                            className="category-delete-btn"
+                            onClick={() =>
+                              handleDelete(category._id)
+                            }
+                            title="Delete"
+                          >
+                            <i className="bi bi-trash3"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
 
-                        <button
-                          className="edit-category-btn"
-                          onClick={() =>
-                            handleEdit(category)
-                          }
-                        >
-                          Edit
-                        </button>
+      {/* =========================
+          ADD / EDIT MODAL
+      ========================= */}
+      {showModal && (
+        <div
+          className="category-modal-overlay"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="category-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* MODAL HEADER */}
+            <div className="category-modal-header">
+              <div>
+                <span className="modal-eyebrow">
+                  {editingCategory
+                    ? "CATEGORY MANAGEMENT"
+                    : categoryMode === "main"
+                    ? "MAIN CATEGORY"
+                    : "SUBCATEGORY"}
+                </span>
 
-                        <button
-                          className="delete-category-btn"
-                          onClick={() =>
-                            handleDelete(category)
-                          }
-                        >
-                          Delete
-                        </button>
+                <h2>
+                  {editingCategory
+                    ? "Edit Category"
+                    : categoryMode === "main"
+                    ? "Add Main Category"
+                    : "Add Subcategory"}
+                </h2>
 
-                      </div>
-                    </td>
+                <p>
+                  {editingCategory
+                    ? "Update category information."
+                    : categoryMode === "main"
+                    ? "Create a new main product category."
+                    : "Create a subcategory under a main category."}
+                </p>
+              </div>
 
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="no-category"
-                  >
-                    No categories found
-                  </td>
-                </tr>
+              <button
+                className="modal-close-btn"
+                onClick={handleCloseModal}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            {/* FORM */}
+            <form onSubmit={handleSubmit}>
+              {/* CATEGORY NAME */}
+              <div className="category-form-group">
+                <label>
+                  Category Name
+                  <span>*</span>
+                </label>
+
+                <div className="category-input-wrapper">
+                  <i className="bi bi-folder"></i>
+
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder={
+                      categoryMode === "main"
+                        ? "e.g. Women's Fashion"
+                        : "e.g. T-Shirts"
+                    }
+                    value={formData.name}
+                    onChange={handleChange}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* PARENT CATEGORY */}
+              {categoryMode === "sub" && (
+                <div className="category-form-group">
+                  <label>
+                    Parent Category
+                    <span>*</span>
+                  </label>
+
+                  <div className="category-input-wrapper">
+                    <i className="bi bi-diagram-3"></i>
+
+                    <select
+                      name="parent"
+                      value={formData.parent}
+                      onChange={handleChange}
+                    >
+                      <option value="">
+                        Select Parent Category
+                      </option>
+
+                      {parentCategories
+                        .filter(
+                          (category) =>
+                            category._id !== editingCategory?._id
+                        )
+                        .map((category) => (
+                          <option
+                            key={category._id}
+                            value={category._id}
+                          >
+                            {category.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
               )}
 
-            </tbody>
+              {/* PREVIEW */}
+              <div className="category-preview">
+                <div className="preview-icon">
+                  {formData.name
+                    ? formData.name.charAt(0).toUpperCase()
+                    : "C"}
+                </div>
 
-          </table>
+                <div className="preview-content">
+                  <strong>
+                    {formData.name || "Category Name"}
+                  </strong>
+
+                  <span>
+                    {formData.name
+                      ? generateSlug(formData.name)
+                      : "category-slug"}
+                  </span>
+
+                  {categoryMode === "sub" && formData.parent && (
+                    <small>
+                      <i className="bi bi-arrow-return-right"></i>
+
+                      Subcategory of{" "}
+                      {
+                        parentCategories.find(
+                          (category) =>
+                            category._id === formData.parent
+                        )?.name
+                      }
+                    </small>
+                  )}
+
+                  {categoryMode === "main" && (
+                    <small>
+                      <i className="bi bi-folder"></i>
+                      Main Category
+                    </small>
+                  )}
+                </div>
+              </div>
+
+              {/* MODAL ACTIONS */}
+              <div className="category-modal-actions">
+                <button
+                  type="button"
+                  className="category-cancel-btn"
+                  onClick={handleCloseModal}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="category-submit-btn"
+                >
+                  <i
+                    className={
+                      editingCategory
+                        ? "bi bi-check-lg"
+                        : "bi bi-plus-lg"
+                    }
+                  ></i>
+
+                  {editingCategory
+                    ? "Update Category"
+                    : categoryMode === "main"
+                    ? "Add Main Category"
+                    : "Add Subcategory"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }
 
 export default Categories;
-
