@@ -126,7 +126,9 @@ const reduceStockForItems = async (items = []) => {
   }
 };
 
-// ================= CREATE ORDER ==========
+
+// ================= CREATE ORDER =================
+
 const createOrder = async (orderData) => {
   console.log("CREATE ORDER SERVICE HIT:", {
     user: orderData.user,
@@ -218,9 +220,12 @@ const createOrder = async (orderData) => {
     }
 
   return order;
-};
+}; 
+// ================= GET USER ORDERS =================
+
 
 // ================= GET USER ORDERS ==========
+
 const getOrdersByUser = async (userId) => {
   const orders = await Order.find({ user: userId })
     .populate("items.product")
