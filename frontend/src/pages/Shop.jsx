@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+
+import {
+  Link,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
+
 import axios from "axios";
 
+import toast from "react-hot-toast";
+
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Shop.css";
@@ -11,12 +20,16 @@ const API_URL = "http://localhost:5000/api";
 
 function Shop() {
   const [searchParams] = useSearchParams();
+
   const navigate = useNavigate();
 
-  const searchQuery = searchParams.get("search")?.trim() || "";
+  const searchQuery =
+    searchParams.get("search")?.trim() || "";
 
   const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   // =========================
@@ -24,22 +37,32 @@ function Shop() {
   // =========================
 
   const [wishlistIds, setWishlistIds] = useState([]);
-  const [loadingWishlist, setLoadingWishlist] = useState(true);
-  const [updatingWishlist, setUpdatingWishlist] = useState(null);
+
+  const [loadingWishlist, setLoadingWishlist] =
+    useState(true);
+
+  const [updatingWishlist, setUpdatingWishlist] =
+    useState(null);
 
   // =========================
   // FILTERS
   // =========================
 
-  const [availability, setAvailability] = useState("all");
-  const [priceOrder, setPriceOrder] = useState("default");
-  const [sortBy, setSortBy] = useState("newest");
+  const [availability, setAvailability] =
+    useState("all");
+
+  const [priceOrder, setPriceOrder] =
+    useState("default");
+
+  const [sortBy, setSortBy] =
+    useState("newest");
 
   // =========================
   // PAGINATION
   // =========================
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
   const productsPerPage = 8;
 
@@ -54,7 +77,9 @@ function Shop() {
   // AUTH HELPERS
   // =========================
 
-  const getToken = () => localStorage.getItem("token");
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
 
   const getAuthConfig = () => ({
     headers: {
@@ -70,6 +95,7 @@ function Shop() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+
         setError("");
 
         const params = {
@@ -78,16 +104,19 @@ function Shop() {
         };
 
         // SEARCH
+
         if (searchQuery) {
           params.search = searchQuery;
         }
 
         // AVAILABILITY
+
         if (availability !== "all") {
           params.availability = availability;
         }
 
         // SORTING
+
         if (priceOrder === "low-high") {
           params.sort = "price-low";
         } else if (priceOrder === "high-low") {
@@ -96,15 +125,26 @@ function Shop() {
           params.sort = sortBy;
         }
 
-        console.log("SHOP API PARAMS:", params);
+        console.log(
+          "SHOP API PARAMS:",
+          params
+        );
 
-        const response = await axios.get(`${API_URL}/products`, {
-          params,
-        });
+        const response = await axios.get(
+          `${API_URL}/products`,
+          {
+            params,
+          }
+        );
 
-        console.log("SHOP API RESPONSE:", response.data);
+        console.log(
+          "SHOP API RESPONSE:",
+          response.data
+        );
 
-        setProducts(response.data.products || []);
+        setProducts(
+          response.data.products || []
+        );
 
         setPagination(
           response.data.pagination || {
@@ -117,7 +157,8 @@ function Shop() {
       } catch (error) {
         console.error(
           "SHOP PRODUCT API ERROR:",
-          error.response?.data || error.message
+          error.response?.data ||
+            error.message
         );
 
         setError(
@@ -157,9 +198,14 @@ function Shop() {
       pagination.totalPages > 0 &&
       currentPage > pagination.totalPages
     ) {
-      setCurrentPage(pagination.totalPages);
+      setCurrentPage(
+        pagination.totalPages
+      );
     }
-  }, [pagination.totalPages, currentPage]);
+  }, [
+    pagination.totalPages,
+    currentPage,
+  ]);
 
   // =========================
   // FETCH WISHLIST
@@ -171,12 +217,16 @@ function Shop() {
 
       if (!token) {
         setWishlistIds([]);
+
         setLoadingWishlist(false);
+
         return;
       }
 
       try {
-        console.log("FETCHING SHOP WISHLIST...");
+        console.log(
+          "FETCHING SHOP WISHLIST..."
+        );
 
         const response = await axios.get(
           `${API_URL}/wishlist`,
@@ -189,17 +239,24 @@ function Shop() {
         );
 
         const wishlistProducts =
-          response.data.wishlist?.products || [];
+          response.data.wishlist?.products ||
+          [];
 
-        const ids = wishlistProducts.map((item) =>
-          String(item._id || item.id || item)
+        const ids = wishlistProducts.map(
+          (item) =>
+            String(
+              item._id ||
+                item.id ||
+                item
+            )
         );
 
         setWishlistIds(ids);
       } catch (error) {
         console.error(
           "SHOP FETCH WISHLIST ERROR:",
-          error.response?.data || error.message
+          error.response?.data ||
+            error.message
         );
 
         setWishlistIds([]);
@@ -215,15 +272,27 @@ function Shop() {
   // WISHLIST HANDLER
   // =========================
 
-  const handleWishlist = async (e, product) => {
+  const handleWishlist = async (
+    e,
+    product
+  ) => {
     e.preventDefault();
+
     e.stopPropagation();
 
     const token = getToken();
 
+    // =========================
+    // LOGIN CHECK
+    // =========================
+
     if (!token) {
-      alert("Please login to add products to your wishlist.");
+      toast.error(
+        "Please login to add products to your wishlist."
+      );
+
       navigate("/login");
+
       return;
     }
 
@@ -237,17 +306,21 @@ function Shop() {
     try {
       setUpdatingWishlist(productId);
 
+      // =========================
       // REMOVE FROM WISHLIST
+      // =========================
+
       if (isWishlisted) {
         console.log(
           "REMOVING FROM WISHLIST:",
           productId
         );
 
-        const response = await axios.delete(
-          `${API_URL}/wishlist/remove/${productId}`,
-          getAuthConfig()
-        );
+        const response =
+          await axios.delete(
+            `${API_URL}/wishlist/remove/${productId}`,
+            getAuthConfig()
+          );
 
         console.log(
           "REMOVE WISHLIST RESPONSE:",
@@ -255,24 +328,42 @@ function Shop() {
         );
 
         setWishlistIds((prev) =>
-          prev.filter((id) => id !== productId)
+          prev.filter(
+            (id) => id !== productId
+          )
+        );
+
+        // TOAST
+
+        toast.success(
+          "Product removed from wishlist!"
+        );
+
+        // Update navbar wishlist count
+
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
         );
       }
 
+      // =========================
       // ADD TO WISHLIST
+      // =========================
+
       else {
         console.log(
           "ADDING TO WISHLIST:",
           productId
         );
 
-        const response = await axios.post(
-          `${API_URL}/wishlist/add`,
-          {
-            productId: productId,
-          },
-          getAuthConfig()
-        );
+        const response =
+          await axios.post(
+            `${API_URL}/wishlist/add`,
+            {
+              productId: productId,
+            },
+            getAuthConfig()
+          );
 
         console.log(
           "ADD WISHLIST RESPONSE:",
@@ -283,14 +374,27 @@ function Shop() {
           ...prev,
           productId,
         ]);
+
+        // TOAST
+
+        toast.success(
+          "Product added to wishlist!"
+        );
+
+        // Update navbar wishlist count
+
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
       }
     } catch (error) {
       console.error(
         "SHOP WISHLIST ERROR:",
-        error.response?.data || error.message
+        error.response?.data ||
+          error.message
       );
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
           "Failed to update wishlist"
       );
@@ -303,19 +407,25 @@ function Shop() {
   // FILTER HANDLERS
   // =========================
 
-  const handleAvailabilityChange = (value) => {
+  const handleAvailabilityChange = (
+    value
+  ) => {
     setAvailability(value);
+
     setCurrentPage(1);
   };
 
   const handlePriceChange = (value) => {
     setPriceOrder(value);
+
     setCurrentPage(1);
   };
 
   const handleSortChange = (value) => {
     setSortBy(value);
+
     setPriceOrder("default");
+
     setCurrentPage(1);
   };
 
@@ -360,7 +470,9 @@ function Shop() {
           {searchQuery && (
             <p className="search-result-text">
               Search results for:{" "}
-              <strong>"{searchQuery}"</strong>
+              <strong>
+                "{searchQuery}"
+              </strong>
             </p>
           )}
         </section>
@@ -425,7 +537,9 @@ function Shop() {
 
             <div className="sort-by">
 
-              <span>SORT BY:</span>
+              <span>
+                SORT BY:
+              </span>
 
               <select
                 value={sortBy}
@@ -490,11 +604,14 @@ function Shop() {
               products.map((product) => {
 
                 const productId =
-                  product._id || product.id;
+                  product._id ||
+                  product.id;
 
                 const productPrice =
-                  product.salePrice !== null &&
-                  product.salePrice !== undefined
+                  product.salePrice !==
+                    null &&
+                  product.salePrice !==
+                    undefined
                     ? product.salePrice
                     : product.regularPrice ||
                       product.price ||
@@ -515,7 +632,6 @@ function Shop() {
                   String(productId);
 
                 return (
-
                   <Link
                     to={`/product/${productId}`}
                     className="shop-product-card"
@@ -543,7 +659,11 @@ function Shop() {
                           loadingWishlist ||
                           isUpdating
                         }
-                        aria-label="Add to wishlist"
+                        aria-label={
+                          isWishlisted
+                            ? "Remove from wishlist"
+                            : "Add to wishlist"
+                        }
                       >
                         {isWishlisted
                           ? "♥"
@@ -575,7 +695,6 @@ function Shop() {
                     </div>
 
                   </Link>
-
                 );
               })
 
@@ -655,7 +774,6 @@ function Shop() {
               </button>
 
             </div>
-
           )}
 
       </main>

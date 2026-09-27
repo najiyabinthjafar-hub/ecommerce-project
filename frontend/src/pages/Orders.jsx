@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
 
 import "./Orders.css";
@@ -11,8 +14,11 @@ const API_URL = "http://localhost:5000/api";
 
 function Orders() {
   const [orders, setOrders] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [message, setMessage] = useState("");
+
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -22,6 +28,7 @@ function Orders() {
   }, []);
 
   // ================= FETCH ORDERS =================
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -47,6 +54,7 @@ function Orders() {
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
+
         navigate("/login");
         return;
       }
@@ -60,16 +68,18 @@ function Orders() {
   };
 
   // ================= FORMAT STATUS =================
+
   const formatStatus = (status) => {
     if (!status) return "Pending";
 
     return status
       .toLowerCase()
-      .replace(/_/g, " ")
+      .replace(/\_/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   // ================= PRODUCT IMAGE =================
+
   const getProductImage = (item) => {
     const image =
       item?.product?.images?.[0] ||
@@ -93,6 +103,7 @@ function Orders() {
   };
 
   // ================= PRODUCT NAME =================
+
   const getProductName = (item) => {
     return (
       item?.product?.name ||
@@ -103,6 +114,7 @@ function Orders() {
   };
 
   // ================= PRODUCT PRICE =================
+
   const getProductPrice = (item) => {
     return (
       item?.price ??
@@ -115,16 +127,19 @@ function Orders() {
   };
 
   // ================= PRODUCT SIZE =================
+
   const getProductSize = (item) => {
     return item?.size || item?.selectedSize || "N/A";
   };
 
   // ================= QUANTITY =================
+
   const getQuantity = (item) => {
     return item?.quantity || 1;
   };
 
   // ================= TRACK ORDER =================
+
   const handleTrackOrder = (order) => {
     navigate(`/track-order/${order._id}`, {
       state: {
@@ -133,64 +148,8 @@ function Orders() {
     });
   };
 
-  // ================= DOWNLOAD INVOICE =================
-  const handleDownloadInvoice = async (orderId) => {
-    try {
-      setError("");
-      setMessage("");
-
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const response = await axios.get(
-        `${API_URL}/orders/${orderId}/invoice`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: "blob",
-        }
-      );
-
-      const blob = new Blob([response.data], {
-        type: "application/pdf",
-      });
-
-      const url = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${orderId}.pdf`;
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      window.URL.revokeObjectURL(url);
-
-      setMessage("Invoice downloaded successfully.");
-
-      setTimeout(() => {
-        setMessage("");
-      }, 2000);
-    } catch (err) {
-      console.error("Download invoice error:", err);
-
-      setError(
-        err.response?.data?.message ||
-          "Failed to download invoice."
-      );
-
-      setTimeout(() => {
-        setError("");
-      }, 2500);
-    }
-  };
   // ================= CANCEL ORDER =================
+
   const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this order?"
@@ -212,6 +171,7 @@ function Orders() {
       // IMPORTANT:
       // Customer/Admin cancellation endpoint
       // Do NOT use /status here because that route is admin-only.
+
       const response = await axios.put(
         `${API_URL}/orders/${orderId}/cancel`,
         {},
@@ -225,11 +185,10 @@ function Orders() {
       const updatedOrder = response.data.order;
 
       // Update cancelled order in current page
+
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
-          order._id === orderId
-            ? updatedOrder
-            : order
+          order._id === orderId ? updatedOrder : order
         )
       );
 
@@ -253,6 +212,7 @@ function Orders() {
   };
 
   // ================= LOADING =================
+
   if (loading) {
     return (
       <>
@@ -272,6 +232,7 @@ function Orders() {
   }
 
   // ================= PAGE =================
+
   return (
     <>
       <Navbar />
@@ -280,6 +241,7 @@ function Orders() {
         <div className="orders-container">
 
           {/* SUCCESS MESSAGE */}
+
           {message && (
             <div className="orders-message success">
               {message}
@@ -287,6 +249,7 @@ function Orders() {
           )}
 
           {/* ERROR MESSAGE */}
+
           {error && (
             <div className="orders-message error">
               {error}
@@ -294,6 +257,7 @@ function Orders() {
           )}
 
           {/* NO ORDERS */}
+
           {orders.length === 0 ? (
             <div className="orders-message">
               <h3>No orders found</h3>
@@ -313,6 +277,7 @@ function Orders() {
             <section className="orders-content">
 
               {/* HEADER */}
+
               <div className="orders-header">
                 <div className="product-heading">
                   PRODUCT
@@ -324,8 +289,10 @@ function Orders() {
               </div>
 
               {/* ORDERS */}
+
               {orders.map((order) => {
                 const items = order.items || [];
+
                 const firstItem = items[0];
 
                 if (!firstItem) return null;
@@ -346,7 +313,9 @@ function Orders() {
                     className="order-item"
                     key={order._id}
                   >
+
                     {/* ================= PRODUCT ================= */}
+
                     <div className="product-section">
                       <div className="product-item">
 
@@ -397,6 +366,7 @@ function Orders() {
                     </div>
 
                     {/* ================= STATUS ================= */}
+
                     <div className="status-section">
 
                       <div
@@ -406,6 +376,7 @@ function Orders() {
                       </div>
 
                       {/* TRACK ORDER */}
+
                       <button
                         className="track-button"
                         onClick={() =>
@@ -415,19 +386,10 @@ function Orders() {
                         TRACK YOUR ORDER
                       </button>
 
-                      {/* DOWNLOAD INVOICE */}
-                      <button
-                        className="invoice-button"
-                        onClick={() =>
-                          handleDownloadInvoice(order._id)
-                        }
-                      >
-                        DOWNLOAD INVOICE
-                      </button>
                       {/* CANCEL ORDER */}
+
                       {status.toUpperCase() !== "CANCELLED" &&
-                        status.toUpperCase() !== "DELIVERED" &&
-                        (
+                        status.toUpperCase() !== "DELIVERED" && (
                           <button
                             className="cancel-order-btn"
                             onClick={() =>
@@ -446,6 +408,7 @@ function Orders() {
           )}
 
           {/* BACK BUTTON */}
+
           {orders.length > 0 && (
             <button
               className="orders-back-button"
@@ -464,6 +427,3 @@ function Orders() {
 }
 
 export default Orders;
-
-
-
