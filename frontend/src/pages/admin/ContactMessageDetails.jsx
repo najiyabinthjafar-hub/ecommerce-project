@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./ContactMessageDetails.css";
 
 const API_URL = "http://localhost:5000/api/contacts";
 
 function ContactMessageDetails() {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
   const [contact, setContact] = useState(null);
@@ -14,9 +16,14 @@ function ContactMessageDetails() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken");
 
-  // ================= GET CONTACT MESSAGE =================
+  // =========================================================
+  // GET CONTACT MESSAGE
+  // =========================================================
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -25,8 +32,10 @@ function ContactMessageDetails() {
         setError("");
 
         const response = await fetch(API_URL, {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
@@ -55,19 +64,32 @@ function ContactMessageDetails() {
         setContact(selectedContact);
       } catch (err) {
         console.error("Fetch contact error:", err);
-        setError(err.message || "Failed to load contact message");
+
+        setError(
+          err.message || "Failed to load contact message"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchContact();
+    if (token) {
+      fetchContact();
+    } else {
+      setError("Admin login session not found.");
+      setLoading(false);
+    }
   }, [id, token]);
 
-  // ================= UPDATE STATUS =================
+  // =========================================================
+  // UPDATE STATUS
+  // Backend accepts: read / replied
+  // =========================================================
 
   const handleStatusChange = async (newStatus) => {
-    if (!contact || newStatus === contact.status) return;
+    if (!contact || newStatus === contact.status) {
+      return;
+    }
 
     try {
       setUpdating(true);
@@ -75,7 +97,7 @@ function ContactMessageDetails() {
       const response = await fetch(
         `${API_URL}/${contact._id}/status`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -108,59 +130,173 @@ function ContactMessageDetails() {
         }));
       }
 
-      alert("Contact message status updated successfully");
+      toast.success(
+        "Contact message status updated successfully",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
     } catch (err) {
       console.error("Update status error:", err);
-      alert(err.message || "Failed to update status");
+
+      toast.error(
+        err.message || "Failed to update status",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
     } finally {
       setUpdating(false);
     }
   };
 
-  // ================= DELETE CONTACT =================
+  // =========================================================
+  // DELETE CONTACT
+  // =========================================================
 
   const handleDelete = async () => {
     if (!contact) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this contact message?"
-    );
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            padding: "4px 0",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "14px",
+              color: "#222",
+              marginBottom: "5px",
+            }}
+          >
+            Delete contact message?
+          </div>
 
-    if (!confirmed) return;
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#777",
+              marginBottom: "14px",
+              lineHeight: "1.5",
+            }}
+          >
+            Are you sure you want to delete this contact
+            message?
+          </div>
 
-    try {
-      setDeleting(true);
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "8px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                background: "#f1f1f1",
+                color: "#444",
+                padding: "7px 13px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
 
-      const response = await fetch(
-        `${API_URL}/${contact._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+            <button
+              type="button"
+              onClick={async () => {
+                closeToast();
 
-      const data = await response.json();
+                try {
+                  setDeleting(true);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to delete contact message"
-        );
+                  const response = await fetch(
+                    `${API_URL}/${contact._id}`,
+                    {
+                      method: "DELETE",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                    }
+                  );
+
+                  const data = await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data.message ||
+                        "Failed to delete contact message"
+                    );
+                  }
+
+                  toast.success(
+                    "Contact message deleted successfully",
+                    {
+                      className: "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+
+                  navigate("/admin/contact-messages");
+                } catch (err) {
+                  console.error(
+                    "Delete contact error:",
+                    err
+                  );
+
+                  toast.error(
+                    err.message ||
+                      "Failed to delete contact message",
+                    {
+                      className: "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              style={{
+                border: "none",
+                background: "#dc3545",
+                color: "#fff",
+                padding: "7px 14px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeButton: false,
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
       }
-
-      alert("Contact message deleted successfully");
-
-      navigate("/admin/contact-messages");
-    } catch (err) {
-      console.error("Delete contact error:", err);
-      alert(err.message || "Failed to delete contact message");
-    } finally {
-      setDeleting(false);
-    }
+    );
   };
 
-  // ================= DATE FORMAT =================
+  // =========================================================
+  // DATE FORMAT
+  // =========================================================
 
   const formatDate = (date) => {
     if (!date) return "—";
@@ -181,24 +317,33 @@ function ContactMessageDetails() {
     });
   };
 
-  // ================= STATUS =================
+  // =========================================================
+  // STATUS
+  // =========================================================
 
-  const isResolved = contact?.status === "resolved";
+  const isReplied = contact?.status === "replied";
 
-  // ================= LOADING =================
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
       <div className="contact-details-page">
         <div className="contact-details-loading">
           <div className="contact-loading-spinner"></div>
-          <p>Loading contact message...</p>
+
+          <p>
+            Loading contact message...
+          </p>
         </div>
       </div>
     );
   }
 
-  // ================= ERROR =================
+  // =========================================================
+  // ERROR
+  // =========================================================
 
   if (error || !contact) {
     return (
@@ -206,7 +351,9 @@ function ContactMessageDetails() {
         <div className="contact-details-error">
           <i className="bi bi-exclamation-circle"></i>
 
-          <h3>Contact message not found</h3>
+          <h3>
+            Contact message not found
+          </h3>
 
           <p>
             {error || "Something went wrong."}
@@ -226,16 +373,22 @@ function ContactMessageDetails() {
     );
   }
 
+  // =========================================================
+  // MAIN UI
+  // =========================================================
+
   return (
     <div className="contact-details-page">
-
-      {/* ================= HEADER ================= */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="contact-details-header">
-
         <div className="contact-details-heading">
           <div>
-            <h1>Contact Message</h1>
+            <h1>
+              Contact Message
+            </h1>
 
             <p>
               View and manage customer enquiry details
@@ -244,47 +397,50 @@ function ContactMessageDetails() {
 
           <span
             className={`contact-status-badge ${
-              isResolved ? "resolved" : "pending"
+              isReplied
+                ? "replied"
+                : "read"
             }`}
           >
             <span className="contact-status-dot"></span>
 
-            {isResolved ? "Resolved" : "Pending"}
+            {isReplied
+              ? "Replied"
+              : "Read"}
           </span>
         </div>
-
       </div>
 
-      {/* ================= MAIN CARD ================= */}
+      {/* =====================================================
+          MAIN CARD
+      ===================================================== */}
 
       <div className="contact-details-card">
-
-        {/* ================= CUSTOMER SECTION ================= */}
+        {/* ===================================================
+            CUSTOMER SECTION
+        =================================================== */}
 
         <section className="contact-info-section">
-
           <div className="contact-section-title">
-
             <div className="contact-section-icon">
               <i className="bi bi-person"></i>
             </div>
 
             <div>
-              <h2>Customer Information</h2>
+              <h2>
+                Customer Information
+              </h2>
 
               <p>
                 Customer details submitted with the enquiry
               </p>
             </div>
-
           </div>
 
           <div className="contact-info-grid">
-
-            {/* Name */}
+            {/* NAME */}
 
             <div className="contact-info-item">
-
               <span className="contact-info-label">
                 Name
               </span>
@@ -292,13 +448,11 @@ function ContactMessageDetails() {
               <span className="contact-info-value">
                 {contact.name || "—"}
               </span>
-
             </div>
 
-            {/* Email */}
+            {/* EMAIL */}
 
             <div className="contact-info-item">
-
               <span className="contact-info-label">
                 Email
               </span>
@@ -315,13 +469,11 @@ function ContactMessageDetails() {
                   —
                 </span>
               )}
-
             </div>
 
-            {/* Phone */}
+            {/* PHONE */}
 
             <div className="contact-info-item">
-
               <span className="contact-info-label">
                 Phone
               </span>
@@ -338,13 +490,11 @@ function ContactMessageDetails() {
                   —
                 </span>
               )}
-
             </div>
 
-            {/* Received On */}
+            {/* RECEIVED ON */}
 
             <div className="contact-info-item">
-
               <span className="contact-info-label">
                 Received On
               </span>
@@ -352,53 +502,48 @@ function ContactMessageDetails() {
               <span className="contact-info-value">
                 {formatDate(contact.createdAt)}
               </span>
-
             </div>
-
           </div>
-
         </section>
 
-        {/* ================= MESSAGE SECTION ================= */}
+        {/* ===================================================
+            MESSAGE SECTION
+        =================================================== */}
 
         <section className="contact-message-section">
-
           <div className="contact-section-title">
-
             <div className="contact-section-icon">
               <i className="bi bi-chat-left-text"></i>
             </div>
 
             <div>
-              <h2>Message Details</h2>
+              <h2>
+                Message Details
+              </h2>
 
               <p>
                 Customer enquiry information
               </p>
             </div>
-
           </div>
 
           <div className="contact-message-content">
-
-            {/* Subject */}
+            {/* SUBJECT */}
 
             <div className="contact-subject-block">
-
               <span className="contact-info-label">
                 Subject
               </span>
 
               <h3>
-                {contact.subject || "No subject"}
+                {contact.subject ||
+                  "No subject"}
               </h3>
-
             </div>
 
-            {/* Message */}
+            {/* MESSAGE */}
 
             <div className="contact-message-block">
-
               <span className="contact-info-label">
                 Message
               </span>
@@ -407,53 +552,52 @@ function ContactMessageDetails() {
                 {contact.message ||
                   "No message available."}
               </div>
-
             </div>
-
           </div>
-
         </section>
 
-        {/* ================= STATUS SECTION ================= */}
+        {/* ===================================================
+            STATUS SECTION
+        =================================================== */}
 
         <section className="contact-status-section">
-
           <div className="contact-section-title">
-
             <div className="contact-section-icon">
               <i className="bi bi-check2-circle"></i>
             </div>
 
             <div>
-              <h2>Message Status</h2>
+              <h2>
+                Message Status
+              </h2>
 
               <p>
                 Update the current status of this enquiry
               </p>
             </div>
-
           </div>
 
           <div className="contact-status-control">
-
             <label htmlFor="contact-status">
               Current Status
             </label>
 
             <select
               id="contact-status"
-              value={contact.status || "pending"}
+              value={contact.status || "read"}
               onChange={(e) =>
-                handleStatusChange(e.target.value)
+                handleStatusChange(
+                  e.target.value
+                )
               }
               disabled={updating}
             >
-              <option value="pending">
-                Pending
+              <option value="read">
+                Read
               </option>
 
-              <option value="resolved">
-                Resolved
+              <option value="replied">
+                Replied
               </option>
             </select>
 
@@ -462,19 +606,20 @@ function ContactMessageDetails() {
                 Updating...
               </span>
             )}
-
           </div>
-
         </section>
 
-        {/* ================= ACTIONS ================= */}
+        {/* ===================================================
+            ACTIONS
+        =================================================== */}
 
         <div className="contact-details-actions">
-
           <button
             className="contact-action-back"
             onClick={() =>
-              navigate("/admin/contact-messages")
+              navigate(
+                "/admin/contact-messages"
+              )
             }
           >
             <i className="bi bi-arrow-left"></i>
@@ -492,11 +637,8 @@ function ContactMessageDetails() {
               ? "Deleting..."
               : "Delete Message"}
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }

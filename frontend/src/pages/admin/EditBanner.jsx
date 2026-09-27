@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./EditBanner.css";
 
 const API_URL = "http://localhost:5000/api/banners";
@@ -31,7 +32,6 @@ function EditBanner() {
     const fetchBanner = async () => {
       try {
         const response = await fetch(`${API_URL}/${id}`);
-
         const data = await response.json();
 
         if (!response.ok) {
@@ -61,12 +61,12 @@ function EditBanner() {
 
         setPreview(bannerData.image || "");
       } catch (error) {
-        console.error(
-          "Error fetching banner:",
-          error
-        );
+        console.error("Error fetching banner:", error);
 
-        alert(error.message);
+        toast.error(error.message || "Failed to load banner.", {
+          hideProgressBar: true,
+          className: "rizo-admin-toast",
+        });
 
         navigate("/admin/banners");
       } finally {
@@ -101,26 +101,29 @@ function EditBanner() {
 
     // Only image files
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
 
       e.target.value = "";
-
       return;
     }
 
     // Maximum 5MB
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB.");
+      toast.error("Image size must be less than 5MB.", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
 
       e.target.value = "";
-
       return;
     }
 
     setNewImage(file);
 
     const imageUrl = URL.createObjectURL(file);
-
     setPreview(imageUrl);
   };
 
@@ -132,44 +135,17 @@ function EditBanner() {
     e.preventDefault();
 
     if (!banner.title.trim()) {
-      alert("Please enter banner title.");
+      toast.error("Please enter banner title.", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
+
       return;
     }
 
     setSaving(true);
 
     try {
-      // =====================================================
-      // DETERMINE UPDATED STATUS
-      // =====================================================
-
-      let updatedStatus = banner.status;
-
-      /*
-        IMPORTANT:
-
-        Only if the banner was expired and the new
-        end date is today/future, make it active.
-
-        Manually inactive banners will remain inactive.
-      */
-
-      const today = new Date();
-
-      today.setHours(0, 0, 0, 0);
-
-      if (banner.endDate) {
-        const endDate = new Date(banner.endDate);
-
-        endDate.setHours(23, 59, 59, 999);
-
-        // If selected end date is today or future,
-        // banner can be active again.
-        if (endDate >= today) {
-          updatedStatus = "active";
-        }
-      }
-
       // =====================================================
       // 1. UPDATE BANNER DETAILS
       // =====================================================
@@ -190,7 +166,9 @@ function EditBanner() {
 
             link: banner.link.trim(),
 
-            status: updatedStatus,
+            // Dropdown selected status goes directly
+            // to backend.
+            status: banner.status,
 
             ...(banner.startDate && {
               startDate: banner.startDate,
@@ -200,13 +178,13 @@ function EditBanner() {
               endDate: banner.endDate,
             }),
 
+            // Keep existing image URL
             image: banner.image,
           }),
         }
       );
 
-      const updateData =
-        await updateResponse.json();
+      const updateData = await updateResponse.json();
 
       console.log(
         "Update Banner Status:",
@@ -279,7 +257,10 @@ function EditBanner() {
       // SUCCESS
       // =====================================================
 
-      alert("Banner updated successfully!");
+      toast.success("Banner updated successfully!", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
 
       navigate("/admin/banners");
     } catch (error) {
@@ -288,9 +269,13 @@ function EditBanner() {
         error
       );
 
-      alert(
+      toast.error(
         error.message ||
-          "Something went wrong"
+          "Something went wrong",
+        {
+          hideProgressBar: true,
+          className: "rizo-admin-toast",
+        }
       );
     } finally {
       setSaving(false);
@@ -323,7 +308,6 @@ function EditBanner() {
       ===================================================== */}
 
       <div className="edit-banner-header">
-
         <div>
           <span className="edit-banner-eyebrow">
             BANNER MANAGEMENT
@@ -347,7 +331,6 @@ function EditBanner() {
         >
           ← Back to Banners
         </button>
-
       </div>
 
       {/* =====================================================
@@ -355,7 +338,6 @@ function EditBanner() {
       ===================================================== */}
 
       <div className="edit-banner-card">
-
         <form onSubmit={handleSubmit}>
 
           <div className="edit-banner-layout">
@@ -424,6 +406,10 @@ function EditBanner() {
                   />
 
                 </div>
+
+                {/* =================================================
+                    STATUS
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -544,13 +530,10 @@ function EditBanner() {
 
                 {newImage && (
                   <div className="selected-image">
-
                     New image selected:{" "}
-
                     <strong>
                       {newImage.name}
                     </strong>
-
                   </div>
                 )}
 
@@ -560,9 +543,9 @@ function EditBanner() {
 
           </div>
 
-          {/* =================================================
+          {/* =====================================================
               BUTTONS
-          ================================================= */}
+          ===================================================== */}
 
           <div className="edit-banner-actions">
 
@@ -590,7 +573,6 @@ function EditBanner() {
           </div>
 
         </form>
-
       </div>
 
     </div>

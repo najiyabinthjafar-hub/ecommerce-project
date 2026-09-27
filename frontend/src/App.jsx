@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 // ================= CUSTOMER PAGES =================
 
@@ -396,8 +399,20 @@ function App() {
             }
           />
         </Route>
+
+        
+      
       </Routes>
-    </BrowserRouter>
+      <ToastContainer
+  position="top-center"
+  autoClose={2000}
+  hideProgressBar={false}
+  newestOnTop
+  closeOnClick
+  pauseOnHover
+  theme="light"
+/>
+      </BrowserRouter>
   );
 }
 

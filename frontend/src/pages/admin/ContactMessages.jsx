@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./ContactMessages.css";
 
 const API_URL = "http://localhost:5000/api/contacts";
@@ -44,6 +45,14 @@ const ContactMessages = () => {
       setMessages(data.contacts || data.messages || []);
     } catch (error) {
       console.error("Fetch contact messages error:", error);
+
+      toast.error(
+        error.message || "Failed to fetch contact messages",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -95,13 +104,19 @@ const ContactMessages = () => {
     );
   };
 
-  const getStatus = (message) => {
-    const status = message?.status || "pending";
+  // =========================================================
+  // STATUS
+  // Backend allows ONLY: read / replied
+  // =========================================================
 
-    // Backend allows ONLY pending / resolved
-    return ["pending", "resolved"].includes(status.toLowerCase())
+  const getStatus = (message) => {
+    const status = message?.status || "read";
+
+    return ["read", "replied"].includes(
+      status.toLowerCase()
+    )
       ? status.toLowerCase()
-      : "pending";
+      : "read";
   };
 
   const formatDate = (date) => {
@@ -146,7 +161,8 @@ const ContactMessages = () => {
       const name = getName(message).toLowerCase();
       const email = getEmail(message).toLowerCase();
       const subject = getSubject(message).toLowerCase();
-      const messageText = getMessageText(message).toLowerCase();
+      const messageText =
+        getMessageText(message).toLowerCase();
       const phone = getPhone(message).toLowerCase();
 
       const matchesSearch =
@@ -171,12 +187,12 @@ const ContactMessages = () => {
 
   const totalMessages = messages.length;
 
-  const pendingMessages = messages.filter(
-    (message) => getStatus(message) === "pending"
+  const readMessages = messages.filter(
+    (message) => getStatus(message) === "read"
   ).length;
 
-  const resolvedMessages = messages.filter(
-    (message) => getStatus(message) === "resolved"
+  const repliedMessages = messages.filter(
+    (message) => getStatus(message) === "replied"
   ).length;
 
   // =========================================================
@@ -184,43 +200,141 @@ const ContactMessages = () => {
   // =========================================================
 
   const deleteMessage = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this contact message?"
-    );
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            padding: "4px 0",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "14px",
+              color: "#222",
+              marginBottom: "5px",
+            }}
+          >
+            Delete contact message?
+          </div>
 
-    if (!confirmed) return;
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#777",
+              marginBottom: "14px",
+              lineHeight: "1.5",
+            }}
+          >
+            Are you sure you want to delete this contact
+            message?
+          </div>
 
-    try {
-      const token = getToken();
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "8px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                background: "#f1f1f1",
+                color: "#444",
+                padding: "7px 13px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
 
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+            <button
+              type="button"
+              onClick={async () => {
+                closeToast();
 
-      const data = await response.json();
+                try {
+                  const token = getToken();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to delete contact message"
-        );
+                  const response = await fetch(
+                    `${API_URL}/${id}`,
+                    {
+                      method: "DELETE",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    }
+                  );
+
+                  const data = await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data.message ||
+                        "Failed to delete contact message"
+                    );
+                  }
+
+                  setMessages((prevMessages) =>
+                    prevMessages.filter(
+                      (message) => message._id !== id
+                    )
+                  );
+
+                  toast.success(
+                    data.message ||
+                      "Contact message deleted successfully",
+                    {
+                      className: "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+                } catch (error) {
+                  console.error(
+                    "Delete message error:",
+                    error
+                  );
+
+                  toast.error(
+                    error.message ||
+                      "Failed to delete contact message",
+                    {
+                      className: "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+                }
+              }}
+              style={{
+                border: "none",
+                background: "#dc3545",
+                color: "#fff",
+                padding: "7px 14px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeButton: false,
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
       }
-
-      setMessages((prevMessages) =>
-        prevMessages.filter(
-          (message) => message._id !== id
-        )
-      );
-    } catch (error) {
-      console.error("Delete message error:", error);
-
-      alert(
-        error.message ||
-          "Failed to delete contact message"
-      );
-    }
+    );
   };
 
   // =========================================================
@@ -228,11 +342,11 @@ const ContactMessages = () => {
   // =========================================================
 
   const getStatusClass = (status) => {
-    if (status === "resolved") {
-      return "status-resolved";
+    if (status === "replied") {
+      return "status-replied";
     }
 
-    return "status-pending";
+    return "status-read";
   };
 
   // =========================================================
@@ -241,7 +355,6 @@ const ContactMessages = () => {
 
   return (
     <div className="contact-messages-page">
-
       {/* =====================================================
           PAGE HEADER
       ===================================================== */}
@@ -271,7 +384,6 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-stats">
-
         {/* Total */}
 
         <div className="contact-stat-card">
@@ -285,20 +397,20 @@ const ContactMessages = () => {
           </div>
         </div>
 
-        {/* Pending */}
+        {/* Read */}
 
         <div className="contact-stat-card">
           <div className="stat-icon pending-icon">
-            <i className="bi bi-clock"></i>
+            <i className="bi bi-envelope-open"></i>
           </div>
 
           <div>
-            <span>Pending</span>
-            <strong>{pendingMessages}</strong>
+            <span>Read</span>
+            <strong>{readMessages}</strong>
           </div>
         </div>
 
-        {/* Resolved */}
+        {/* Replied */}
 
         <div className="contact-stat-card">
           <div className="stat-icon resolved-icon">
@@ -306,11 +418,10 @@ const ContactMessages = () => {
           </div>
 
           <div>
-            <span>Resolved</span>
-            <strong>{resolvedMessages}</strong>
+            <span>Replied</span>
+            <strong>{repliedMessages}</strong>
           </div>
         </div>
-
       </div>
 
       {/* =====================================================
@@ -318,7 +429,6 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-toolbar">
-
         {/* Search */}
 
         <div className="contact-search">
@@ -328,7 +438,9 @@ const ContactMessages = () => {
             type="text"
             placeholder="Search by name, email, subject..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
           />
         </div>
 
@@ -347,16 +459,15 @@ const ContactMessages = () => {
               All Status
             </option>
 
-            <option value="pending">
-              Pending
+            <option value="read">
+              Read
             </option>
 
-            <option value="resolved">
-              Resolved
+            <option value="replied">
+              Replied
             </option>
           </select>
         </div>
-
       </div>
 
       {/* =====================================================
@@ -364,7 +475,6 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-table-card">
-
         {/* Table Header */}
 
         <div className="contact-table-header">
@@ -394,13 +504,11 @@ const ContactMessages = () => {
             </span>
           </div>
         ) : filteredMessages.length === 0 ? (
-
           /* =================================================
              EMPTY
           ================================================= */
 
           <div className="contact-empty">
-
             <div className="empty-icon">
               <i className="bi bi-envelope-open"></i>
             </div>
@@ -410,23 +518,19 @@ const ContactMessages = () => {
             </h3>
 
             <p>
-              {search || statusFilter !== "all"
+              {search ||
+              statusFilter !== "all"
                 ? "Try changing your search or filter."
                 : "Customer contact messages will appear here."}
             </p>
-
           </div>
-
         ) : (
-
           /* =================================================
              TABLE
           ================================================= */
 
           <div className="contact-table-wrapper">
-
             <table className="contact-table">
-
               <thead>
                 <tr>
                   <th>Customer</th>
@@ -439,9 +543,7 @@ const ContactMessages = () => {
               </thead>
 
               <tbody>
-
                 {filteredMessages.map((message) => {
-
                   const status = getStatus(message);
 
                   const createdDate =
@@ -450,14 +552,12 @@ const ContactMessages = () => {
 
                   return (
                     <tr key={message._id}>
-
                       {/* =============================
                           CUSTOMER
                       ============================== */}
 
                       <td>
                         <div className="customer-cell">
-
                           <div className="customer-avatar">
                             {getName(message)
                               .charAt(0)
@@ -465,7 +565,6 @@ const ContactMessages = () => {
                           </div>
 
                           <div className="customer-info">
-
                             <strong>
                               {getName(message)}
                             </strong>
@@ -473,9 +572,7 @@ const ContactMessages = () => {
                             <span>
                               {getEmail(message)}
                             </span>
-
                           </div>
-
                         </div>
                       </td>
 
@@ -505,7 +602,6 @@ const ContactMessages = () => {
 
                       <td>
                         <div className="date-cell">
-
                           <strong>
                             {formatDate(createdDate)}
                           </strong>
@@ -513,7 +609,6 @@ const ContactMessages = () => {
                           <span>
                             {formatTime(createdDate)}
                           </span>
-
                         </div>
                       </td>
 
@@ -522,7 +617,6 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
-
                         <span
                           className={`message-status ${getStatusClass(
                             status
@@ -530,11 +624,10 @@ const ContactMessages = () => {
                         >
                           <span className="status-dot"></span>
 
-                          {status === "resolved"
-                            ? "Resolved"
-                            : "Pending"}
+                          {status === "replied"
+                            ? "Replied"
+                            : "Read"}
                         </span>
-
                       </td>
 
                       {/* =============================
@@ -542,9 +635,7 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
-
                         <div className="contact-actions">
-
                           {/* View */}
 
                           <button
@@ -574,24 +665,16 @@ const ContactMessages = () => {
                           >
                             <i className="bi bi-trash3"></i>
                           </button>
-
                         </div>
-
                       </td>
-
                     </tr>
                   );
                 })}
-
               </tbody>
-
             </table>
-
           </div>
         )}
-
       </div>
-
     </div>
   );
 };
