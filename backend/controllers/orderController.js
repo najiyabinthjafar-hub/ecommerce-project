@@ -662,6 +662,23 @@ const downloadInvoice = async (
   }
 };
 
+
+
+const checkRefundStatus = async (req, res, next) => {
+  try {
+    const order = await orderService.checkRefundStatus(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Refund status updated successfully",
+      order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   createOrder,
   getOrders,
@@ -676,4 +693,9 @@ module.exports = {
   requestReturn,
   updateReturnStatus,
   downloadInvoice,
+  checkRefundStatus,
 };
+
+
+
+

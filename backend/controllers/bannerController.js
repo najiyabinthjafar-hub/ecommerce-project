@@ -4,13 +4,42 @@ const cloudinary = require("../config/cloudinary");
 // CREATE BANNER
 const createBanner = async (req, res, next) => {
   try {
-    const banner = await bannerService.createBanner(req.body);
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload an image",
+      });
+    }
 
-    res.status(201).json({
-      success: true,
-      message: "Banner created successfully",
-      banner,
-    });
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "ecommerce/banners",
+      },
+      async (error, result) => {
+        if (error) {
+          return next(error);
+        }
+
+        try {
+          const bannerData = {
+            ...req.body,
+            image: result.secure_url,
+          };
+
+          const banner = await bannerService.createBanner(bannerData);
+
+          res.status(201).json({
+            success: true,
+            message: "Banner created successfully",
+            banner,
+          });
+        } catch (error) {
+          next(error);
+        }
+      }
+    );
+
+    uploadStream.end(req.file.buffer);
   } catch (error) {
     next(error);
   }

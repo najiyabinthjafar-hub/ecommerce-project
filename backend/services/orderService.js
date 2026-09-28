@@ -1115,6 +1115,40 @@ const verifyRazorpayPayment = async (
   }
 };
 
+// ================= CHECK RAZORPAY REFUND STATUS =================
+
+const checkRefundStatus = async (orderId) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  if (!order.refundId) {
+    throw new Error("Refund ID not found for this order");
+  }
+
+  const refund = await razorpayService.getRefund(order.refundId);
+
+  console.log("Razorpay refund status:", refund.status);
+
+  if (refund.status === "processed") {
+    order.refundStatus = "COMPLETED";
+  } else if (refund.status === "failed") {
+    order.refundStatus = "FAILED";
+  } else {
+    order.refundStatus = "PROCESSING";
+  }
+
+  if (refund.created_at) {
+    order.refundedAt = new Date(refund.created_at * 1000);
+  }
+
+  await order.save();
+
+  return order;
+};
+
 // ================= EXPORTS ==========
 
 module.exports = {
@@ -1130,4 +1164,13 @@ module.exports = {
   getBestSellingProducts,
   updateRazorpayOrder,
   verifyRazorpayPayment,
+   checkRefundStatus,
 };
+
+
+
+
+
+
+
+
