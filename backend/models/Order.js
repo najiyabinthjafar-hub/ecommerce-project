@@ -72,6 +72,46 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
+    // ================= BILLING ADDRESS =================
+    // Billing address can be the same as shipping address
+    // or a separate address received from frontend.
+
+    billingAddress: {
+      fullName: {
+        type: String,
+      },
+
+      phone: {
+        type: String,
+      },
+
+      address: {
+        type: String,
+      },
+
+      apartment: {
+        type: String,
+        default: "",
+      },
+
+      city: {
+        type: String,
+      },
+
+      state: {
+        type: String,
+      },
+
+      pincode: {
+        type: String,
+      },
+
+      country: {
+        type: String,
+        default: "India",
+      },
+    },
+
     totalAmount: {
       type: Number,
       required: true,
@@ -136,6 +176,7 @@ const orderSchema = new mongoose.Schema(
 
     // ================= TRACKING DETAILS =================
     // Admin can add/update these when the order is shipped.
+
     trackingNumber: {
       type: String,
       default: "",
@@ -149,6 +190,7 @@ const orderSchema = new mongoose.Schema(
     },
 
     // RETURN DETAILS
+
     returnStatus: {
       type: String,
       enum: [
@@ -172,6 +214,7 @@ const orderSchema = new mongoose.Schema(
     },
 
     // REFUND DETAILS
+
     refundStatus: {
       type: String,
       enum: [
