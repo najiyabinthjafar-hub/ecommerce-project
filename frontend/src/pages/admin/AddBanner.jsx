@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./AddBanner.css";
 
 const API_URL = "http://localhost:5000/api/banners";
@@ -47,7 +48,11 @@ function AddBanner() {
 
     // Only allow image files
     if (!selectedImage.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
+      toast.error("Please select a valid image file.", {
+        className: "rizo-admin-toast",
+        hideProgressBar: true,
+      });
+
       e.target.value = "";
       setImage(null);
       return;
@@ -55,8 +60,12 @@ function AddBanner() {
 
     // Maximum file size: 5MB
     if (selectedImage.size > MAX_IMAGE_SIZE) {
-      alert(
-        "Image size must be 5MB or less. Please choose a smaller image."
+      toast.error(
+        "Image size must be 5MB or less. Please choose a smaller image.",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
 
       e.target.value = "";
@@ -79,24 +88,37 @@ function AddBanner() {
     // -------------------------------------------------------
 
     if (!banner.title.trim()) {
-      alert("Please enter banner title.");
+      toast.error("Please enter banner title.", {
+        className: "rizo-admin-toast",
+        hideProgressBar: true,
+      });
       return;
     }
 
     if (!banner.description.trim()) {
-      alert("Please enter banner description.");
+      toast.error("Please enter banner description.", {
+        className: "rizo-admin-toast",
+        hideProgressBar: true,
+      });
       return;
     }
 
     if (!image) {
-      alert("Please select a banner image.");
+      toast.error("Please select a banner image.", {
+        className: "rizo-admin-toast",
+        hideProgressBar: true,
+      });
       return;
     }
 
     // Final 5MB validation
     if (image.size > MAX_IMAGE_SIZE) {
-      alert(
-        "Image size must be 5MB or less. Please choose a smaller image."
+      toast.error(
+        "Image size must be 5MB or less. Please choose a smaller image.",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
       return;
     }
@@ -111,10 +133,7 @@ function AddBanner() {
       const formData = new FormData();
 
       // Text fields
-      formData.append(
-        "title",
-        banner.title.trim()
-      );
+      formData.append("title", banner.title.trim());
 
       formData.append(
         "description",
@@ -188,8 +207,7 @@ function AddBanner() {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to create banner"
+          data.message || "Failed to create banner"
         );
       }
 
@@ -197,7 +215,10 @@ function AddBanner() {
       // SUCCESS
       // =====================================================
 
-      alert("Banner added successfully!");
+      toast.success("Banner added successfully!", {
+        className: "rizo-admin-toast",
+        hideProgressBar: true,
+      });
 
       navigate("/admin/banners");
     } catch (error) {
@@ -206,9 +227,12 @@ function AddBanner() {
         error
       );
 
-      alert(
-        error.message ||
-          "Something went wrong"
+      toast.error(
+        error.message || "Something went wrong",
+        {
+          className: "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
     } finally {
       setLoading(false);
@@ -294,7 +318,6 @@ function AddBanner() {
             ================================================= */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label>Banner Link</label>
 
@@ -324,7 +347,6 @@ function AddBanner() {
                   </option>
                 </select>
               </div>
-
             </div>
 
             {/* =================================================
@@ -332,7 +354,6 @@ function AddBanner() {
             ================================================= */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label>Start Date</label>
 
@@ -354,7 +375,6 @@ function AddBanner() {
                   onChange={handleChange}
                 />
               </div>
-
             </div>
 
             {/* =================================================
@@ -378,9 +398,7 @@ function AddBanner() {
 
                 Maximum image size:{" "}
                 <strong>5MB</strong>
-
                 {" • "}
-
                 Only image files are allowed.
               </small>
 
@@ -416,7 +434,6 @@ function AddBanner() {
             ================================================= */}
 
             <div className="form-actions">
-
               <button
                 type="button"
                 className="cancel-banner-btn"
@@ -439,7 +456,6 @@ function AddBanner() {
                   ? "Adding..."
                   : "Add Banner"}
               </button>
-
             </div>
 
           </form>

@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { toast } from "react-toastify";
+
 import "./ContactMessages.css";
 
 const API_URL = "http://localhost:5000/api/contacts";
@@ -9,8 +12,11 @@ const ContactMessages = () => {
   const navigate = useNavigate();
 
   const [messages, setMessages] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("all");
 
   const getToken = () => {
@@ -19,16 +25,36 @@ const ContactMessages = () => {
 
   // =========================================================
   // FETCH CONTACT MESSAGES
+  // Search + Status are sent to backend API
   // =========================================================
-
-  const fetchMessages = async () => {
+  const fetchMessages = async (
+    searchValue = "",
+    statusValue = "all"
+  ) => {
     try {
       setLoading(true);
 
       const token = getToken();
 
-      const response = await fetch(API_URL, {
+      const params = new URLSearchParams();
+
+      if (searchValue.trim()) {
+        params.append("search", searchValue.trim());
+      }
+
+      if (statusValue && statusValue !== "all") {
+        params.append("status", statusValue);
+      }
+
+      const queryString = params.toString();
+
+      const requestUrl = queryString
+        ? `${API_URL}?${queryString}`
+        : API_URL;
+
+      const response = await fetch(requestUrl, {
         method: "GET",
+
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -44,7 +70,10 @@ const ContactMessages = () => {
 
       setMessages(data.contacts || data.messages || []);
     } catch (error) {
-      console.error("Fetch contact messages error:", error);
+      console.error(
+        "Fetch contact messages error:",
+        error
+      );
 
       toast.error(
         error.message || "Failed to fetch contact messages",
@@ -58,9 +87,26 @@ const ContactMessages = () => {
     }
   };
 
+  // =========================================================
+  // INITIAL FETCH
+  // =========================================================
   useEffect(() => {
-    fetchMessages();
+    fetchMessages("", "all");
   }, []);
+
+  // =========================================================
+  // SEARCH API CALL
+  // 400ms debounce
+  // =========================================================
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMessages(search, statusFilter);
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   // =========================================================
   // HELPERS
@@ -100,6 +146,7 @@ const ContactMessages = () => {
       message?.message ||
       message?.description ||
       message?.content ||
+      message?.comment ||
       "No message"
     );
   };
@@ -151,37 +198,6 @@ const ContactMessages = () => {
   };
 
   // =========================================================
-  // FILTER MESSAGES
-  // =========================================================
-
-  const filteredMessages = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
-
-    return messages.filter((message) => {
-      const name = getName(message).toLowerCase();
-      const email = getEmail(message).toLowerCase();
-      const subject = getSubject(message).toLowerCase();
-      const messageText =
-        getMessageText(message).toLowerCase();
-      const phone = getPhone(message).toLowerCase();
-
-      const matchesSearch =
-        !searchValue ||
-        name.includes(searchValue) ||
-        email.includes(searchValue) ||
-        subject.includes(searchValue) ||
-        messageText.includes(searchValue) ||
-        phone.includes(searchValue);
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        getStatus(message) === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [messages, search, statusFilter]);
-
-  // =========================================================
   // STATISTICS
   // =========================================================
 
@@ -194,6 +210,19 @@ const ContactMessages = () => {
   const repliedMessages = messages.filter(
     (message) => getStatus(message) === "replied"
   ).length;
+
+  // =========================================================
+  // STATUS FILTER
+  // Immediate API call
+  // =========================================================
+
+  const handleStatusChange = (e) => {
+    const value = e.target.value;
+
+    setStatusFilter(value);
+
+    fetchMessages(search, value);
+  };
 
   // =========================================================
   // DELETE MESSAGE
@@ -267,6 +296,7 @@ const ContactMessages = () => {
                     `${API_URL}/${id}`,
                     {
                       method: "DELETE",
+
                       headers: {
                         Authorization: `Bearer ${token}`,
                       },
@@ -355,6 +385,7 @@ const ContactMessages = () => {
 
   return (
     <div className="contact-messages-page">
+
       {/* =====================================================
           PAGE HEADER
       ===================================================== */}
@@ -370,11 +401,14 @@ const ContactMessages = () => {
 
         <button
           className="refresh-btn"
-          onClick={fetchMessages}
+          onClick={() =>
+            fetchMessages(search, statusFilter)
+          }
           type="button"
           title="Refresh"
         >
           <i className="bi bi-arrow-clockwise"></i>
+
           <span>Refresh</span>
         </button>
       </div>
@@ -384,6 +418,7 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-stats">
+
         {/* Total */}
 
         <div className="contact-stat-card">
@@ -393,6 +428,7 @@ const ContactMessages = () => {
 
           <div>
             <span>Total Messages</span>
+
             <strong>{totalMessages}</strong>
           </div>
         </div>
@@ -406,6 +442,7 @@ const ContactMessages = () => {
 
           <div>
             <span>Read</span>
+
             <strong>{readMessages}</strong>
           </div>
         </div>
@@ -419,9 +456,11 @@ const ContactMessages = () => {
 
           <div>
             <span>Replied</span>
+
             <strong>{repliedMessages}</strong>
           </div>
         </div>
+
       </div>
 
       {/* =====================================================
@@ -429,6 +468,7 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-toolbar">
+
         {/* Search */}
 
         <div className="contact-search">
@@ -451,9 +491,7 @@ const ContactMessages = () => {
 
           <select
             value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value)
-            }
+            onChange={handleStatusChange}
           >
             <option value="all">
               All Status
@@ -468,6 +506,7 @@ const ContactMessages = () => {
             </option>
           </select>
         </div>
+
       </div>
 
       {/* =====================================================
@@ -475,6 +514,7 @@ const ContactMessages = () => {
       ===================================================== */}
 
       <div className="contact-table-card">
+
         {/* Table Header */}
 
         <div className="contact-table-header">
@@ -482,11 +522,8 @@ const ContactMessages = () => {
             <h2>Customer Enquiries</h2>
 
             <p>
-              {filteredMessages.length} message
-              {filteredMessages.length !== 1
-                ? "s"
-                : ""}{" "}
-              found
+              {messages.length} message
+              {messages.length !== 1 ? "s" : ""} found
             </p>
           </div>
         </div>
@@ -503,12 +540,14 @@ const ContactMessages = () => {
               Loading messages...
             </span>
           </div>
-        ) : filteredMessages.length === 0 ? (
+        ) : messages.length === 0 ? (
+
           /* =================================================
              EMPTY
           ================================================= */
 
           <div className="contact-empty">
+
             <div className="empty-icon">
               <i className="bi bi-envelope-open"></i>
             </div>
@@ -523,27 +562,39 @@ const ContactMessages = () => {
                 ? "Try changing your search or filter."
                 : "Customer contact messages will appear here."}
             </p>
+
           </div>
+
         ) : (
+
           /* =================================================
              TABLE
           ================================================= */
 
           <div className="contact-table-wrapper">
+
             <table className="contact-table">
+
               <thead>
                 <tr>
                   <th>Customer</th>
+
                   <th>Subject</th>
+
                   <th>Message</th>
+
                   <th>Date</th>
+
                   <th>Status</th>
+
                   <th>Action</th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredMessages.map((message) => {
+
+                {messages.map((message) => {
+
                   const status = getStatus(message);
 
                   const createdDate =
@@ -552,12 +603,15 @@ const ContactMessages = () => {
 
                   return (
                     <tr key={message._id}>
+
                       {/* =============================
                           CUSTOMER
                       ============================== */}
 
                       <td>
+
                         <div className="customer-cell">
+
                           <div className="customer-avatar">
                             {getName(message)
                               .charAt(0)
@@ -565,6 +619,7 @@ const ContactMessages = () => {
                           </div>
 
                           <div className="customer-info">
+
                             <strong>
                               {getName(message)}
                             </strong>
@@ -572,8 +627,11 @@ const ContactMessages = () => {
                             <span>
                               {getEmail(message)}
                             </span>
+
                           </div>
+
                         </div>
+
                       </td>
 
                       {/* =============================
@@ -581,9 +639,11 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
+
                         <div className="subject-cell">
                           {getSubject(message)}
                         </div>
+
                       </td>
 
                       {/* =============================
@@ -591,9 +651,11 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
+
                         <div className="message-preview">
                           {getMessageText(message)}
                         </div>
+
                       </td>
 
                       {/* =============================
@@ -601,7 +663,9 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
+
                         <div className="date-cell">
+
                           <strong>
                             {formatDate(createdDate)}
                           </strong>
@@ -609,7 +673,9 @@ const ContactMessages = () => {
                           <span>
                             {formatTime(createdDate)}
                           </span>
+
                         </div>
+
                       </td>
 
                       {/* =============================
@@ -617,6 +683,7 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
+
                         <span
                           className={`message-status ${getStatusClass(
                             status
@@ -628,6 +695,7 @@ const ContactMessages = () => {
                             ? "Replied"
                             : "Read"}
                         </span>
+
                       </td>
 
                       {/* =============================
@@ -635,7 +703,9 @@ const ContactMessages = () => {
                       ============================== */}
 
                       <td>
+
                         <div className="contact-actions">
+
                           {/* View */}
 
                           <button
@@ -658,23 +728,29 @@ const ContactMessages = () => {
                             className="icon-action delete-action"
                             title="Delete message"
                             onClick={() =>
-                              deleteMessage(
-                                message._id
-                              )
+                              deleteMessage(message._id)
                             }
                           >
                             <i className="bi bi-trash3"></i>
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
                   );
                 })}
+
               </tbody>
+
             </table>
+
           </div>
         )}
+
       </div>
+
     </div>
   );
 };

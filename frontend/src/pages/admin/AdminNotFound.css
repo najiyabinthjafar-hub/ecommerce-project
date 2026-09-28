@@ -1,0 +1,222 @@
+/* =========================================================
+   RIZO ADMIN 404 PAGE
+   Compact • Clean • Responsive
+   ========================================================= */
+
+.admin-not-found-page {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: #f8f8f8;
+  box-sizing: border-box;
+}
+
+.admin-not-found-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px 28px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  box-shadow: 0 7px 25px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+/* =========================
+   404 NUMBER
+   ========================= */
+
+.admin-404-number {
+  margin: 0;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -4px;
+  color: #111111;
+}
+
+.admin-404-number::after {
+  content: "";
+  display: block;
+  width: 35px;
+  height: 2px;
+  margin: 12px auto 0;
+  border-radius: 10px;
+  background: #111111;
+}
+
+/* =========================
+   HEADING
+   ========================= */
+
+.admin-not-found-card h1 {
+  margin: 18px 0 7px;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #111111;
+}
+
+/* =========================
+   DESCRIPTION
+   ========================= */
+
+.admin-not-found-card p {
+  max-width: 340px;
+  margin: 0 auto 22px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #777777;
+}
+
+/* =========================
+   BUTTON
+   ========================= */
+
+.admin-404-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 155px;
+  height: 38px;
+  padding: 0 17px;
+  border: 1px solid #111111;
+  border-radius: 7px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.admin-404-button:hover {
+  background: #2a2a2a;
+  border-color: #2a2a2a;
+}
+
+.admin-404-button i {
+  font-size: 13px;
+}
+
+/* =========================
+   TABLET
+   ========================= */
+
+@media (max-width: 768px) {
+  .admin-not-found-page {
+    min-height: calc(100vh - 65px);
+    padding: 25px 18px;
+  }
+
+  .admin-not-found-card {
+    max-width: 390px;
+    padding: 32px 24px;
+  }
+
+  .admin-404-number {
+    font-size: 66px;
+  }
+
+  .admin-not-found-card h1 {
+    font-size: 20px;
+  }
+
+  .admin-not-found-card p {
+    font-size: 12px;
+  }
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 576px) {
+  .admin-not-found-page {
+    min-height: calc(100vh - 60px);
+    padding: 20px 14px;
+  }
+
+  .admin-not-found-card {
+    max-width: 350px;
+    padding: 30px 20px;
+    border-radius: 11px;
+  }
+
+  .admin-404-number {
+    font-size: 58px;
+    letter-spacing: -3px;
+  }
+
+  .admin-404-number::after {
+    width: 30px;
+    margin-top: 10px;
+  }
+
+  .admin-not-found-card h1 {
+    margin-top: 16px;
+    font-size: 19px;
+  }
+
+  .admin-not-found-card p {
+    max-width: 300px;
+    margin-bottom: 20px;
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+
+  .admin-404-button {
+    min-width: 145px;
+    height: 36px;
+    padding: 0 15px;
+    font-size: 11.5px;
+  }
+
+  .admin-404-button i {
+    font-size: 12px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+   ========================= */
+
+@media (max-width: 380px) {
+  .admin-not-found-card {
+    padding: 27px 17px;
+  }
+
+  .admin-404-number {
+    font-size: 52px;
+  }
+
+  .admin-not-found-card h1 {
+    font-size: 18px;
+  }
+
+  .admin-not-found-card p {
+    font-size: 11px;
+  }
+
+  .admin-404-button {
+    max-width: 180px;
+    width: 100%;
+  }
+}
+
+/* =========================
+   ACCESSIBILITY
+   ========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-404-button {
+    transition: none;
+  }
+}
