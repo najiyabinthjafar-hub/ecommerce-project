@@ -177,6 +177,12 @@ const orderSchema = new mongoose.Schema(
     // ================= TRACKING DETAILS =================
     // Admin can add/update these when the order is shipped.
 
+    courier: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     trackingNumber: {
       type: String,
       default: "",
