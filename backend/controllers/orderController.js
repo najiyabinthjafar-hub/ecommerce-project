@@ -662,6 +662,7 @@ const downloadInvoice = async (
 
 
 
+
 const checkRefundStatus = async (req, res, next) => {
   try {
     const order = await orderService.checkRefundStatus(req.params.id);
@@ -675,6 +676,26 @@ const checkRefundStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const { paymentStatus } = req.body;
+
+    const order = await orderService.updateOrderPaymentStatus(
+      req.params.id,
+      paymentStatus
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully",
+      order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 module.exports = {
@@ -692,6 +713,7 @@ module.exports = {
   updateReturnStatus,
   downloadInvoice,
   checkRefundStatus,
+  updatePaymentStatus, 
 };
 
 

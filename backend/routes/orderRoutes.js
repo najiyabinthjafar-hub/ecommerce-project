@@ -50,6 +50,13 @@ router.get(
   orderController.getOrders
 );
 
+router.put(
+  "/:id/payment-status",
+  protect,
+  adminOnly,
+  orderController.updatePaymentStatus
+);
+
 // ALL ORDERS - ADMIN ONLY
 router.get(
   "/all",
@@ -113,9 +120,19 @@ router.get(
   orderController.checkRefundStatus
 );
 
+
 module.exports = router;
 
 
+
+
+ 
+router.put(
+  "/:id/return-status",
+  protect,
+  adminOnly,
+  orderController.updateReturnStatus
+);
 
 
 

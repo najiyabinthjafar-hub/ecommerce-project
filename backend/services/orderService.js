@@ -1476,6 +1476,39 @@ const checkRefundStatus = async (orderId) => {
   return order;
 };
 
+const updateOrderPaymentStatus = async (orderId, paymentStatus) => {
+  const allowedStatuses = ["PENDING", "PAID", "FAILED"];
+
+  if (!allowedStatuses.includes(paymentStatus)) {
+    throw new Error(
+      "Invalid payment status. Allowed values: PENDING, PAID, FAILED"
+    );
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // Manual payment status update is only for COD
+  if (order.paymentMethod !== "COD") {
+    throw new Error(
+      "Payment status can be manually updated only for COD orders"
+    );
+  }
+
+  order.paymentStatus = paymentStatus;
+
+  if (paymentStatus === "PAID") {
+    order.paidAt = new Date();
+  }
+
+  await order.save();
+
+  return order;
+};
+
 // ================= EXPORTS ==========
 
 module.exports = {
@@ -1492,7 +1525,11 @@ module.exports = {
   updateRazorpayOrder,
   verifyRazorpayPayment,
    checkRefundStatus,
+
+   updateOrderPaymentStatus,
+
 };
+
 
 
 

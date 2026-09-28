@@ -105,7 +105,7 @@ function ProductDetails() {
     const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/products?limit=100"
+          "http://localhost:5000/api/products?limit=8"
         );
 
         const data = await response.json();
