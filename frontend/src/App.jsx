@@ -70,6 +70,7 @@ import EditCoupon from "./pages/admin/EditCoupon";
 import CustomerDetails from "./pages/admin/CustomerDetails";
 import ContactMessageDetails from "./pages/admin/ContactMessageDetails";
 import ViewCategories from "./pages/admin/ViewCategories";
+import AdminNotFound from "./pages/admin/AdminNotFound";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -455,6 +456,15 @@ function App() {
               </AdminLayout>
             }
           />
+
+          <Route
+  path="/admin/*"
+  element={
+    <AdminLayout>
+      <AdminNotFound />
+    </AdminLayout>
+  }
+/>
 
         </Route>
 
