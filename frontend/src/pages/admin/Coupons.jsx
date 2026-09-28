@@ -1,16 +1,24 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
 import "./Coupons.css";
 
-const API_URL = "http://localhost:5000/api/coupons";
+const API_URL =
+  "http://localhost:5000/api/coupons";
 
 function Coupons() {
   const navigate = useNavigate();
 
   const [coupons, setCoupons] = useState([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-
+  const [statusFilter, setStatusFilter] =
+    useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -26,30 +34,47 @@ function Coupons() {
       const params = new URLSearchParams();
 
       if (search.trim()) {
-        params.append("search", search.trim());
+        params.append(
+          "search",
+          search.trim()
+        );
       }
 
       if (statusFilter !== "all") {
-        params.append("status", statusFilter);
+        params.append(
+          "status",
+          statusFilter
+        );
       }
 
-      const queryString = params.toString();
+      const queryString =
+        params.toString();
 
       const url = queryString
         ? `${API_URL}?${queryString}`
         : API_URL;
 
-      console.log("COUPONS API URL:", url);
+      console.log(
+        "COUPONS API URL:",
+        url
+      );
 
       const response = await fetch(url, {
         cache: "no-store",
       });
 
       const contentType =
-        response.headers.get("content-type") || "";
+        response.headers.get(
+          "content-type"
+        ) || "";
 
-      if (!contentType.includes("application/json")) {
-        const text = await response.text();
+      if (
+        !contentType.includes(
+          "application/json"
+        )
+      ) {
+        const text =
+          await response.text();
 
         throw new Error(
           `Server returned ${response.status}. ${text.slice(
@@ -59,13 +84,18 @@ function Coupons() {
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      console.log("COUPONS API RESPONSE:", data);
+      console.log(
+        "COUPONS API RESPONSE:",
+        data
+      );
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to fetch coupons"
+          data.message ||
+            "Failed to fetch coupons"
         );
       }
 
@@ -75,10 +105,14 @@ function Coupons() {
           : []
       );
     } catch (error) {
-      console.error("Error fetching coupons:", error);
+      console.error(
+        "Error fetching coupons:",
+        error
+      );
 
       setError(
-        error.message || "Failed to fetch coupons"
+        error.message ||
+          "Failed to fetch coupons"
       );
 
       setCoupons([]);
@@ -96,7 +130,8 @@ function Coupons() {
       fetchCoupons();
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () =>
+      clearTimeout(timer);
   }, [fetchCoupons]);
 
   // =========================================================
@@ -105,17 +140,22 @@ function Coupons() {
 
   const getCouponStatus = (coupon) => {
     if (coupon.expiry) {
-      const expiryDate = new Date(coupon.expiry);
+      const expiryDate =
+        new Date(coupon.expiry);
 
       if (
-        !Number.isNaN(expiryDate.getTime()) &&
+        !Number.isNaN(
+          expiryDate.getTime()
+        ) &&
         expiryDate < new Date()
       ) {
         return "Expired";
       }
     }
 
-    return coupon.isActive ? "Active" : "Inactive";
+    return coupon.isActive
+      ? "Active"
+      : "Inactive";
   };
 
   // =========================================================
@@ -127,11 +167,16 @@ function Coupons() {
       coupon.discountValue || 0
     );
 
-    if (coupon.discountType === "percentage") {
+    if (
+      coupon.discountType ===
+      "percentage"
+    ) {
       return `${discountValue}%`;
     }
 
-    return `₹${discountValue.toLocaleString("en-IN")}`;
+    return `₹${discountValue.toLocaleString(
+      "en-IN"
+    )}`;
   };
 
   // =========================================================
@@ -143,35 +188,50 @@ function Coupons() {
       return "-";
     }
 
-    const parsedDate = new Date(date);
+    const parsedDate =
+      new Date(date);
 
-    if (Number.isNaN(parsedDate.getTime())) {
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
       return "-";
     }
 
-    return parsedDate.toLocaleDateString("en-GB");
+    return parsedDate.toLocaleDateString(
+      "en-GB"
+    );
   };
 
   // =========================================================
   // SUMMARY
   // =========================================================
 
-  const totalCoupons = coupons.length;
+  const totalCoupons =
+    coupons.length;
 
-  const activeCoupons = coupons.filter(
-    (coupon) =>
-      getCouponStatus(coupon) === "Active"
-  ).length;
+  const activeCoupons =
+    coupons.filter(
+      (coupon) =>
+        getCouponStatus(coupon) ===
+        "Active"
+    ).length;
 
-  const expiringSoon = coupons.filter(
-    (coupon) => {
+  const expiringSoon =
+    coupons.filter((coupon) => {
       if (!coupon.expiry) {
         return false;
       }
 
-      const expiryDate = new Date(coupon.expiry);
+      const expiryDate =
+        new Date(coupon.expiry);
 
-      if (Number.isNaN(expiryDate.getTime())) {
+      if (
+        Number.isNaN(
+          expiryDate.getTime()
+        )
+      ) {
         return false;
       }
 
@@ -185,29 +245,124 @@ function Coupons() {
         difference /
         (1000 * 60 * 60 * 24);
 
-      return days >= 0 && days <= 7;
-    }
-  ).length;
+      return (
+        days >= 0 &&
+        days <= 7
+      );
+    }).length;
 
-  const totalUsed = coupons.reduce(
-    (total, coupon) =>
-      total + Number(coupon.usedCount || 0),
-    0
-  );
+  const totalUsed =
+    coupons.reduce(
+      (total, coupon) =>
+        total +
+        Number(
+          coupon.usedCount || 0
+        ),
+      0
+    );
 
   // =========================================================
   // DELETE COUPON
   // =========================================================
 
-  const handleDelete = async (coupon) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete coupon "${coupon.code}"?`
+  const handleDelete = async (
+    coupon
+  ) => {
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            width: "100%",
+            padding: "4px 2px",
+            background: "#ffffff",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "700",
+              color: "#222222",
+              marginBottom: "6px",
+            }}
+          >
+            Delete coupon "{coupon.code}"?
+          </div>
+
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#777777",
+              lineHeight: "1.5",
+              marginBottom: "14px",
+            }}
+          >
+            This action cannot be undone.
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "8px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                background: "#f2f2f2",
+                color: "#444444",
+                padding: "7px 13px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                closeToast();
+                deleteCoupon(coupon);
+              }}
+              style={{
+                border: "none",
+                background: "#dc3545",
+                color: "#ffffff",
+                padding: "7px 13px",
+                borderRadius: "7px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        hideProgressBar: true,
+        className:
+          "rizo-admin-toast",
+      }
     );
+  };
 
-    if (!confirmed) {
-      return;
-    }
+  // =========================================================
+  // DELETE COUPON API
+  // =========================================================
 
+  const deleteCoupon = async (
+    coupon
+  ) => {
     try {
       setError("");
 
@@ -219,16 +374,22 @@ function Coupons() {
       );
 
       const contentType =
-        response.headers.get("content-type") || "";
+        response.headers.get(
+          "content-type"
+        ) || "";
 
       let data;
 
       if (
-        contentType.includes("application/json")
+        contentType.includes(
+          "application/json"
+        )
       ) {
-        data = await response.json();
+        data =
+          await response.json();
       } else {
-        const text = await response.text();
+        const text =
+          await response.text();
 
         throw new Error(
           `Server returned ${response.status}. ${text.slice(
@@ -245,9 +406,18 @@ function Coupons() {
         );
       }
 
-      alert(
+      // =====================================================
+      // SUCCESS TOAST
+      // =====================================================
+
+      toast.success(
         data.message ||
-          "Coupon deleted successfully"
+          "Coupon deleted successfully",
+        {
+          className:
+            "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
 
       await fetchCoupons();
@@ -262,9 +432,18 @@ function Coupons() {
           "Failed to delete coupon"
       );
 
-      alert(
+      // =====================================================
+      // ERROR TOAST
+      // =====================================================
+
+      toast.error(
         error.message ||
-          "Failed to delete coupon"
+          "Failed to delete coupon",
+        {
+          className:
+            "rizo-admin-toast",
+          hideProgressBar: true,
+        }
       );
     }
   };
@@ -309,8 +488,9 @@ function Coupons() {
 
   return (
     <div className="coupons-page">
-
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="coupons-header">
         <div>
@@ -326,7 +506,9 @@ function Coupons() {
           type="button"
           className="add-coupon-btn"
           onClick={() =>
-            navigate("/admin/coupons/add")
+            navigate(
+              "/admin/coupons/add"
+            )
           }
         >
           <i className="bi bi-plus-lg"></i>
@@ -334,11 +516,14 @@ function Coupons() {
         </button>
       </div>
 
-      {/* ERROR */}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
 
       {error && (
         <div className="coupon-error">
           <i className="bi bi-exclamation-circle"></i>
+
           <span>{error}</span>
 
           <button
@@ -350,10 +535,11 @@ function Coupons() {
         </div>
       )}
 
-      {/* SUMMARY CARDS */}
+      {/* =====================================================
+          SUMMARY CARDS
+      ===================================================== */}
 
       <div className="coupon-summary">
-
         <div className="coupon-summary-card">
           <div className="coupon-summary-icon">
             <i className="bi bi-ticket-perforated"></i>
@@ -361,7 +547,9 @@ function Coupons() {
 
           <div>
             <span>Total Coupons</span>
-            <strong>{totalCoupons}</strong>
+            <strong>
+              {totalCoupons}
+            </strong>
           </div>
         </div>
 
@@ -372,7 +560,9 @@ function Coupons() {
 
           <div>
             <span>Active Coupons</span>
-            <strong>{activeCoupons}</strong>
+            <strong>
+              {activeCoupons}
+            </strong>
           </div>
         </div>
 
@@ -383,7 +573,9 @@ function Coupons() {
 
           <div>
             <span>Expiring Soon</span>
-            <strong>{expiringSoon}</strong>
+            <strong>
+              {expiringSoon}
+            </strong>
           </div>
         </div>
 
@@ -394,16 +586,18 @@ function Coupons() {
 
           <div>
             <span>Total Used</span>
-            <strong>{totalUsed}</strong>
+            <strong>
+              {totalUsed}
+            </strong>
           </div>
         </div>
-
       </div>
 
-      {/* FILTER BAR */}
+      {/* =====================================================
+          FILTER BAR
+      ===================================================== */}
 
       <div className="coupon-filter-bar">
-
         <div className="coupon-search">
           <i className="bi bi-search"></i>
 
@@ -429,7 +623,9 @@ function Coupons() {
             name="couponStatus"
             value={statusFilter}
             onChange={(e) =>
-              setStatusFilter(e.target.value)
+              setStatusFilter(
+                e.target.value
+              )
             }
           >
             <option value="all">
@@ -449,23 +645,23 @@ function Coupons() {
             </option>
           </select>
         </div>
-
       </div>
 
-      {/* TABLE */}
+      {/* =====================================================
+          TABLE
+      ===================================================== */}
 
       <div className="coupons-table-card">
-
         <div className="coupons-table-wrapper">
-
           <table className="coupons-table">
-
             <thead>
               <tr>
                 <th>Coupon Code</th>
                 <th>Type</th>
                 <th>Discount</th>
-                <th>Minimum Purchase</th>
+                <th>
+                  Minimum Purchase
+                </th>
                 <th>Usage</th>
                 <th>Expiry Date</th>
                 <th>Status</th>
@@ -474,17 +670,17 @@ function Coupons() {
             </thead>
 
             <tbody>
-
               {coupons.length > 0 ? (
-
                 coupons.map((coupon) => {
-
                   const status =
-                    getCouponStatus(coupon);
+                    getCouponStatus(
+                      coupon
+                    );
 
                   return (
-                    <tr key={coupon._id}>
-
+                    <tr
+                      key={coupon._id}
+                    >
                       {/* CODE */}
 
                       <td>
@@ -511,7 +707,9 @@ function Coupons() {
 
                       <td>
                         <strong className="coupon-discount">
-                          {formatDiscount(coupon)}
+                          {formatDiscount(
+                            coupon
+                          )}
                         </strong>
                       </td>
 
@@ -531,7 +729,8 @@ function Coupons() {
 
                       <td>
                         <span className="coupon-usage">
-                          {coupon.usedCount || 0}
+                          {coupon.usedCount ||
+                            0}
                           /
                           {coupon.usageLimit ||
                             0}
@@ -559,9 +758,7 @@ function Coupons() {
                       {/* ACTIONS */}
 
                       <td>
-
                         <div className="coupon-actions">
-
                           {/* VIEW */}
 
                           <button
@@ -609,17 +806,12 @@ function Coupons() {
                           >
                             <i className="bi bi-trash"></i>
                           </button>
-
                         </div>
-
                       </td>
-
                     </tr>
                   );
                 })
-
               ) : (
-
                 <tr>
                   <td
                     colSpan="8"
@@ -642,17 +834,11 @@ function Coupons() {
                     </div>
                   </td>
                 </tr>
-
               )}
-
             </tbody>
-
           </table>
-
         </div>
-
       </div>
-
     </div>
   );
 }

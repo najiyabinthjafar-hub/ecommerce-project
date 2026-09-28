@@ -1,4 +1,3 @@
-
 /* =========================================
    INSTAGRAM SECTION
 ========================================= */
@@ -7,6 +6,7 @@
   width: 100%;
   background: #ffffff;
   padding: 80px 0 0;
+  margin: 0;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -17,7 +17,7 @@
 
 .instagram-heading {
   text-align: center;
-  margin-bottom: 70px;
+  margin: 0 0 70px;
   padding: 0 20px;
   box-sizing: border-box;
 }
@@ -48,12 +48,16 @@
   height: 330px;
   position: relative;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .instagram-track {
   width: 100%;
   height: 100%;
   position: relative;
+  margin: 0;
+  padding: 0;
 }
 
 /* =========================================
@@ -78,7 +82,7 @@
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: fill;
+  object-fit: cover;
 }
 
 /* =========================================
@@ -152,9 +156,9 @@
 ========================================= */
 
 @media (max-width: 900px) {
-
   .instagram-section {
     padding-top: 60px;
+    margin: 0;
   }
 
   .instagram-heading {
@@ -171,6 +175,7 @@
 
   .instagram-slider {
     height: 260px;
+    margin: 0;
   }
 
   .instagram-image,
@@ -193,9 +198,10 @@
 ========================================= */
 
 @media (max-width: 768px) {
-
   .instagram-section {
     padding-top: 50px;
+    padding-bottom: 0;
+    margin: 0;
   }
 
   .instagram-heading {
@@ -214,6 +220,8 @@
 
   .instagram-slider {
     height: 220px;
+    margin: 0;
+    padding: 0;
   }
 
   .instagram-image {
@@ -240,13 +248,14 @@
 ========================================= */
 
 @media (max-width: 600px) {
-
   .instagram-section {
     padding-top: 45px;
+    padding-bottom: 0;
+    margin: 0;
   }
 
   .instagram-heading {
-    margin-bottom: 35px;
+    margin: 0 0 35px;
     padding: 0 18px;
   }
 
@@ -265,6 +274,8 @@
 
   .instagram-slider {
     height: 180px;
+    margin: 0;
+    padding: 0;
   }
 
   .instagram-image,
@@ -287,13 +298,14 @@
 ========================================= */
 
 @media (max-width: 400px) {
-
   .instagram-section {
     padding-top: 40px;
+    padding-bottom: 0;
+    margin: 0;
   }
 
   .instagram-heading {
-    margin-bottom: 30px;
+    margin: 0 0 30px;
     padding: 0 15px;
   }
 
@@ -307,6 +319,8 @@
 
   .instagram-slider {
     height: 155px;
+    margin: 0;
+    padding: 0;
   }
 
   .instagram-image,
@@ -323,4 +337,3 @@
     height: 130px;
   }
 }
-

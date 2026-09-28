@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+
 import "./Inventory.css";
 
 const PRODUCTS_API = "http://localhost:5000/api/products";
@@ -13,12 +15,10 @@ function Inventory() {
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
 
   const [pagination, setPagination] = useState({
@@ -30,7 +30,6 @@ function Inventory() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockValue, setStockValue] = useState("");
@@ -64,11 +63,6 @@ function Inventory() {
       if (subcategory) {
         params.set("category", subcategory);
       } else if (category) {
-        /*
-          Parent category may contain multiple subcategories.
-          Send all matching category IDs to backend.
-        */
-
         const childCategoryIds = categories
           .filter((cat) => {
             const parentId =
@@ -81,7 +75,10 @@ function Inventory() {
           .map((cat) => cat._id);
 
         if (childCategoryIds.length > 0) {
-          params.set("category", childCategoryIds.join(","));
+          params.set(
+            "category",
+            childCategoryIds.join(",")
+          );
         } else {
           params.set("category", category);
         }
@@ -102,13 +99,10 @@ function Inventory() {
       setPagination({
         currentPage:
           data.pagination?.currentPage || page,
-
         limit:
           data.pagination?.limit || PRODUCTS_PER_PAGE,
-
         totalProducts:
           data.pagination?.totalProducts || 0,
-
         totalPages:
           data.pagination?.totalPages || 0,
       });
@@ -116,7 +110,6 @@ function Inventory() {
       console.error("Products fetch error:", err);
 
       setError("Failed to load inventory");
-
       setProducts([]);
 
       setPagination({
@@ -167,11 +160,6 @@ function Inventory() {
   // =========================================================
 
   useEffect(() => {
-    /*
-      Small debounce for search.
-      Prevents API request on every single keystroke.
-    */
-
     const timer = setTimeout(() => {
       fetchProducts(1);
       setCurrentPage(1);
@@ -234,7 +222,9 @@ function Inventory() {
     }
 
     if (typeof product.category === "object") {
-      return product.category.name || "Uncategorized";
+      return (
+        product.category.name || "Uncategorized"
+      );
     }
 
     const foundCategory = categories.find(
@@ -250,7 +240,9 @@ function Inventory() {
 
   const getProductPrice = (product) => {
     const salePrice = Number(product?.salePrice);
-    const regularPrice = Number(product?.regularPrice);
+    const regularPrice = Number(
+      product?.regularPrice
+    );
 
     if (salePrice > 0) {
       return salePrice;
@@ -304,16 +296,6 @@ function Inventory() {
   // =========================================================
   // INVENTORY STATS
   // =========================================================
-
-  /*
-    NOTE:
-    Since products are now server-side paginated,
-    these stats represent the products returned by
-    the current backend request/page.
-
-    For exact global inventory stats, backend should
-    provide a separate summary endpoint.
-  */
 
   const totalProducts = pagination.totalProducts;
 
@@ -380,7 +362,14 @@ function Inventory() {
       newStock < 0 ||
       !Number.isInteger(newStock)
     ) {
-      alert("Please enter a valid stock quantity.");
+      toast.error(
+        "Please enter a valid stock quantity.",
+        {
+          className: "product-toast",
+          hideProgressBar: true,
+        }
+      );
+
       return;
     }
 
@@ -391,11 +380,9 @@ function Inventory() {
         `${PRODUCTS_API}/${selectedProduct._id}/stock`,
         {
           method: "PUT",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             stock: newStock,
           }),
@@ -410,7 +397,13 @@ function Inventory() {
         );
       }
 
-      alert("Stock updated successfully.");
+      toast.success(
+        "Stock updated successfully.",
+        {
+          className: "product-toast",
+          hideProgressBar: true,
+        }
+      );
 
       setShowModal(false);
       setSelectedProduct(null);
@@ -420,8 +413,12 @@ function Inventory() {
     } catch (err) {
       console.error("Stock update error:", err);
 
-      alert(
-        err.message || "Failed to update stock."
+      toast.error(
+        err.message || "Failed to update stock.",
+        {
+          className: "product-toast",
+          hideProgressBar: true,
+        }
       );
     } finally {
       setUpdating(false);
@@ -488,7 +485,11 @@ function Inventory() {
       pages.push("...");
     }
 
-    const start = Math.max(2, currentPage - 1);
+    const start = Math.max(
+      2,
+      currentPage - 1
+    );
+
     const end = Math.min(
       totalPages - 1,
       currentPage + 1
@@ -513,7 +514,6 @@ function Inventory() {
 
   return (
     <div className="inventory-page">
-
       {/* HEADER */}
 
       <div className="inventory-header">
@@ -529,7 +529,6 @@ function Inventory() {
       {/* STATS */}
 
       <div className="inventory-stats">
-
         <div className="inventory-stat-card">
           <div className="stat-icon">
             <i className="bi bi-box-seam"></i>
@@ -538,9 +537,7 @@ function Inventory() {
           <div className="stat-content">
             <span>Total Products</span>
 
-            <strong>
-              {totalProducts}
-            </strong>
+            <strong>{totalProducts}</strong>
           </div>
         </div>
 
@@ -552,9 +549,7 @@ function Inventory() {
           <div className="stat-content">
             <span>In Stock</span>
 
-            <strong>
-              {inStockProducts}
-            </strong>
+            <strong>{inStockProducts}</strong>
           </div>
         </div>
 
@@ -566,9 +561,7 @@ function Inventory() {
           <div className="stat-content">
             <span>Low Stock</span>
 
-            <strong>
-              {lowStockProducts}
-            </strong>
+            <strong>{lowStockProducts}</strong>
           </div>
         </div>
 
@@ -580,9 +573,7 @@ function Inventory() {
           <div className="stat-content">
             <span>Out of Stock</span>
 
-            <strong>
-              {outOfStockProducts}
-            </strong>
+            <strong>{outOfStockProducts}</strong>
           </div>
         </div>
 
@@ -594,12 +585,9 @@ function Inventory() {
           <div className="stat-content">
             <span>Total Stock Units</span>
 
-            <strong>
-              {totalStockUnits}
-            </strong>
+            <strong>{totalStockUnits}</strong>
           </div>
         </div>
-
       </div>
 
       {/* ERROR */}
@@ -615,17 +603,14 @@ function Inventory() {
       {/* TABLE CARD */}
 
       <div className="inventory-table-container">
-
         {/* HEADER + FILTERS */}
 
         <div className="inventory-table-header">
-
           <div className="inventory-title">
             <h2>Inventory List</h2>
           </div>
 
           <div className="inventory-filter-box">
-
             {/* SEARCH */}
 
             <div className="inventory-search">
@@ -739,10 +724,10 @@ function Inventory() {
                 onClick={clearFilters}
               >
                 <i className="bi bi-x-lg"></i>
+
                 Clear
               </button>
             )}
-
           </div>
         </div>
 
@@ -752,9 +737,7 @@ function Inventory() {
           <div className="inventory-loading">
             <div className="spinner"></div>
 
-            <p>
-              Loading inventory...
-            </p>
+            <p>Loading inventory...</p>
           </div>
         ) : products.length === 0 ? (
           /* EMPTY */
@@ -762,9 +745,7 @@ function Inventory() {
           <div className="inventory-empty">
             <i className="bi bi-box-seam"></i>
 
-            <h3>
-              No products found
-            </h3>
+            <h3>No products found</h3>
 
             <p>
               Try changing your search or filters.
@@ -775,9 +756,7 @@ function Inventory() {
             {/* TABLE */}
 
             <div className="inventory-table-wrapper">
-
               <table className="inventory-table">
-
                 <thead>
                   <tr>
                     <th>PRODUCT</th>
@@ -791,9 +770,7 @@ function Inventory() {
                 </thead>
 
                 <tbody>
-
                   {products.map((product) => {
-
                     const stock =
                       Number(product.stock) || 0;
 
@@ -805,14 +782,11 @@ function Inventory() {
 
                     return (
                       <tr key={product._id}>
-
                         {/* PRODUCT */}
 
                         <td>
                           <div className="inventory-product">
-
                             <div className="inventory-product-image">
-
                               {image ? (
                                 <img
                                   src={image}
@@ -821,21 +795,15 @@ function Inventory() {
                               ) : (
                                 <i className="bi bi-image"></i>
                               )}
-
                             </div>
 
                             <div className="inventory-product-info">
-
                               <strong>
                                 {product.name}
                               </strong>
 
-                              <span>
-                                Product
-                              </span>
-
+                              <span>Product</span>
                             </div>
-
                           </div>
                         </td>
 
@@ -912,11 +880,9 @@ function Inventory() {
                             </span>
                           </button>
                         </td>
-
                       </tr>
                     );
                   })}
-
                 </tbody>
               </table>
             </div>
@@ -925,7 +891,6 @@ function Inventory() {
 
             {totalPages > 1 && (
               <div className="inventory-pagination">
-
                 <button
                   className="pagination-btn"
                   onClick={handlePrevious}
@@ -937,10 +902,8 @@ function Inventory() {
                 </button>
 
                 <div className="pagination-pages">
-
                   {pageNumbers.map(
                     (page, index) => {
-
                       if (page === "...") {
                         return (
                           <span
@@ -969,7 +932,6 @@ function Inventory() {
                       );
                     }
                   )}
-
                 </div>
 
                 <button
@@ -983,13 +945,10 @@ function Inventory() {
 
                   <i className="bi bi-chevron-right"></i>
                 </button>
-
               </div>
             )}
-
           </>
         )}
-
       </div>
 
       {/* UPDATE STOCK MODAL */}
@@ -1005,15 +964,11 @@ function Inventory() {
               e.stopPropagation()
             }
           >
-
             {/* MODAL HEADER */}
 
             <div className="inventory-modal-header">
-
               <div>
-                <h3>
-                  Update Stock
-                </h3>
+                <h3>Update Stock</h3>
 
                 <p>
                   Update inventory quantity
@@ -1027,15 +982,12 @@ function Inventory() {
               >
                 <i className="bi bi-x-lg"></i>
               </button>
-
             </div>
 
             {/* PRODUCT */}
 
             <div className="inventory-modal-product">
-
               <div className="modal-product-image">
-
                 {getProductImage(
                   selectedProduct
                 ) ? (
@@ -1048,11 +1000,9 @@ function Inventory() {
                 ) : (
                   <i className="bi bi-image"></i>
                 )}
-
               </div>
 
               <div className="modal-product-info">
-
                 <strong>
                   {selectedProduct.name}
                 </strong>
@@ -1061,17 +1011,13 @@ function Inventory() {
                   SKU:{" "}
                   {selectedProduct.sku || "—"}
                 </span>
-
               </div>
-
             </div>
 
             {/* FORM */}
 
             <form onSubmit={handleUpdateStock}>
-
               <div className="stock-input-group">
-
                 <label>
                   Stock Quantity
                 </label>
@@ -1090,25 +1036,19 @@ function Inventory() {
                   required
                   disabled={updating}
                 />
-
               </div>
 
               <div className="current-stock-info">
-
-                <span>
-                  Current Stock
-                </span>
+                <span>Current Stock</span>
 
                 <strong>
                   {selectedProduct.stock || 0}
                 </strong>
-
               </div>
 
               {/* ACTIONS */}
 
               <div className="inventory-modal-actions">
-
                 <button
                   type="button"
                   className="cancel-btn"
@@ -1123,7 +1063,6 @@ function Inventory() {
                   className="save-stock-btn"
                   disabled={updating}
                 >
-
                   {updating ? (
                     <>
                       <span className="button-spinner"></span>
@@ -1137,17 +1076,12 @@ function Inventory() {
                       Update Stock
                     </>
                   )}
-
                 </button>
-
               </div>
-
             </form>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

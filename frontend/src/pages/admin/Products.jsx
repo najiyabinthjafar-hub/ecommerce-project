@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./Products.css";
 
 const API_URL = "http://localhost:5000/api/products";
@@ -614,55 +615,98 @@ function Products() {
   const handleDelete = async (
     productId
   ) => {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this product?"
-      );
+    toast.warning(
+      ({ closeToast }) => (
+        <div className="delete-confirm-toast">
+          <div className="delete-confirm-message">
+            <strong>Delete Product?</strong>
+            <span>
+              Are you sure you want to delete this product?
+            </span>
+          </div>
 
-    if (!confirmed) {
-      return;
-    }
+          <div className="delete-confirm-actions">
+            <button
+              type="button"
+              className="delete-cancel-btn"
+              onClick={closeToast}
+            >
+              Cancel
+            </button>
 
-    try {
-      setDeletingId(productId);
+            <button
+              type="button"
+              className="delete-confirm-btn"
+              onClick={async () => {
+                closeToast();
 
-      const response =
-        await fetch(
-          `${API_URL}/${productId}`,
-          {
-            method: "DELETE",
-            headers:
-              getHeaders(),
-          }
-        );
+                try {
+                  setDeletingId(productId);
 
-      const data =
-        await response.json();
+                  const response =
+                    await fetch(
+                      `${API_URL}/${productId}`,
+                      {
+                        method: "DELETE",
+                        headers:
+                          getHeaders(),
+                      }
+                    );
 
-      if (!response.ok) {
-        throw new Error(
-          data?.message ||
-            "Failed to delete product"
-        );
+                  const data =
+                    await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data?.message ||
+                        "Failed to delete product"
+                    );
+                  }
+
+                  await Promise.all([
+                    fetchProducts(),
+                    fetchSummary(),
+                  ]);
+
+                  toast.success(
+                    "Product deleted successfully!",
+                    {
+                      className:
+                        "rizo-admin-toast",
+                    }
+                  );
+                } catch (error) {
+                  console.error(
+                    "Delete product error:",
+                    error
+                  );
+
+                  toast.error(
+                    error.message ||
+                      "Failed to delete product.",
+                    {
+                      className:
+                        "rizo-admin-toast",
+                    }
+                  );
+                } finally {
+                  setDeletingId(null);
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        className:
+          "rizo-admin-toast delete-confirm-toast-wrapper",
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
       }
-
-      await Promise.all([
-        fetchProducts(),
-        fetchSummary(),
-      ]);
-    } catch (error) {
-      console.error(
-        "Delete product error:",
-        error
-      );
-
-      alert(
-        error.message ||
-          "Failed to delete product."
-      );
-    } finally {
-      setDeletingId(null);
-    }
+    );
   };
 
   // =========================================================

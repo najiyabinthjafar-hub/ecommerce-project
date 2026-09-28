@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./Categories.css";
 
 const API_URL = "http://localhost:5000/api/categories";
@@ -62,7 +62,6 @@ function Categories() {
 
   // =========================================================
   // SORT CATEGORIES
-  //
   // MAIN CATEGORIES FIRST
   // NEWEST MAIN CATEGORY FIRST
   // THEN SUBCATEGORIES
@@ -328,6 +327,7 @@ function Categories() {
 
   const openAddMainModal = () => {
     setEditingCategory(null);
+
     setModalType("main");
 
     setFormData({
@@ -344,6 +344,7 @@ function Categories() {
 
   const openAddSubModal = () => {
     setEditingCategory(null);
+
     setModalType("sub");
 
     setFormData({
@@ -420,7 +421,13 @@ function Categories() {
     const trimmedName = formData.name.trim();
 
     if (!trimmedName) {
-      alert("Please enter category name.");
+      toast.error(
+        "Please enter category name.",
+        {
+          hideProgressBar: true,
+        }
+      );
+
       return;
     }
 
@@ -428,9 +435,13 @@ function Categories() {
       modalType === "sub" &&
       !formData.parent
     ) {
-      alert(
-        "Please select a parent category."
+      toast.error(
+        "Please select a parent category.",
+        {
+          hideProgressBar: true,
+        }
       );
+
       return;
     }
 
@@ -479,13 +490,16 @@ function Categories() {
         );
       }
 
-      alert(
+      toast.success(
         data.message ||
           `Category ${
             isEditing
               ? "updated"
               : "created"
-          } successfully`
+          } successfully`,
+        {
+          hideProgressBar: true,
+        }
       );
 
       closeModal();
@@ -493,7 +507,6 @@ function Categories() {
       // Refresh categories
       // sortCategories() automatically
       // puts the newest main category first.
-
       await fetchCategories(
         search,
         status
@@ -504,13 +517,16 @@ function Categories() {
         err
       );
 
-      alert(
+      toast.error(
         err.message ||
           `Failed to ${
             editingCategory
               ? "update"
               : "create"
-          } category`
+          } category`,
+        {
+          hideProgressBar: true,
+        }
       );
     } finally {
       setSubmitting(false);
@@ -522,58 +538,156 @@ function Categories() {
   // =========================================================
 
   const handleDelete = async (category) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${category.name}"?`
-    );
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            background: "#ffffff",
+            padding: "4px 2px",
+            fontFamily:
+              '"Inter", "Segoe UI", Arial, sans-serif',
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              padding: "4px 4px 12px",
+            }}
+          >
+            <strong
+              style={{
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#171717",
+                lineHeight: 1.3,
+              }}
+            >
+              Delete Category?
+            </strong>
 
-    if (!confirmed) {
-      return;
-    }
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: "#777777",
+              }}
+            >
+              Are you sure you want to delete
+              "{category.name}"?
+            </span>
+          </div>
 
-    try {
-      setDeletingId(category._id);
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "8px",
+              padding: "0 4px 3px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                borderRadius: "7px",
+                padding: "7px 14px",
+                background: "#f1f3f5",
+                color: "#333333",
+                fontFamily: "inherit",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
 
-      const response = await fetch(
-        `${API_URL}/${category._id}`,
-        {
-          method: "DELETE",
-          headers: getHeaders(),
-        }
-      );
+            <button
+              type="button"
+              onClick={async () => {
+                closeToast();
 
-      const data = await response.json();
+                try {
+                  setDeletingId(category._id);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to delete category"
-        );
+                  const response = await fetch(
+                    `${API_URL}/${category._id}`,
+                    {
+                      method: "DELETE",
+                      headers: getHeaders(),
+                    }
+                  );
+
+                  const data =
+                    await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data.message ||
+                        "Failed to delete category"
+                    );
+                  }
+
+                  toast.success(
+                    data.message ||
+                      "Category deleted successfully",
+                    {
+                      hideProgressBar: true,
+                    }
+                  );
+
+                  await fetchCategories(
+                    search,
+                    status
+                  );
+
+                  await fetchProducts();
+                } catch (err) {
+                  console.error(
+                    "Delete category error:",
+                    err
+                  );
+
+                  toast.error(
+                    err.message ||
+                      "Failed to delete category",
+                    {
+                      hideProgressBar: true,
+                    }
+                  );
+                } finally {
+                  setDeletingId(null);
+                }
+              }}
+              style={{
+                border: "none",
+                borderRadius: "7px",
+                padding: "7px 14px",
+                background: "#dc3545",
+                color: "#ffffff",
+                fontFamily: "inherit",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        hideProgressBar: true,
       }
-
-      alert(
-        data.message ||
-          "Category deleted successfully"
-      );
-
-      await fetchCategories(
-        search,
-        status
-      );
-
-      await fetchProducts();
-    } catch (err) {
-      console.error(
-        "Delete category error:",
-        err
-      );
-
-      alert(
-        err.message ||
-          "Failed to delete category"
-      );
-    } finally {
-      setDeletingId(null);
-    }
+    );
   };
 
   // =========================================================
@@ -807,7 +921,6 @@ function Categories() {
         </div>
 
         <div className="categories-header-actions">
-
           <button
             className="btn-secondary"
             onClick={
@@ -827,7 +940,6 @@ function Categories() {
             <i className="bi bi-plus-lg"></i>
             Add Category
           </button>
-
         </div>
       </div>
 
@@ -976,7 +1088,6 @@ function Categories() {
 
       {error && (
         <div className="categories-error">
-
           <i className="bi bi-exclamation-circle"></i>
 
           <span>
@@ -993,7 +1104,6 @@ function Categories() {
           >
             Retry
           </button>
-
         </div>
       )}
 
@@ -1004,7 +1114,6 @@ function Categories() {
       <div className="categories-table-card">
 
         <div className="table-card-header">
-
           <div>
             <h2>
               Category List
@@ -1016,7 +1125,6 @@ function Categories() {
                 : `${categories.length} categories found`}
             </p>
           </div>
-
         </div>
 
         <div className="categories-table-wrapper">
@@ -1024,7 +1132,6 @@ function Categories() {
           {loading ||
           productsLoading ? (
             <div className="categories-loading">
-
               <i className="bi bi-arrow-repeat"></i>
 
               <span>
@@ -1032,10 +1139,8 @@ function Categories() {
                   ? "Loading categories..."
                   : "Calculating product counts..."}
               </span>
-
             </div>
           ) : categories.length === 0 ? (
-
             <div className="categories-empty">
 
               <div className="empty-icon">
@@ -1064,9 +1169,7 @@ function Categories() {
               )}
 
             </div>
-
           ) : (
-
             <table className="categories-table">
 
               <thead>
@@ -1082,10 +1185,8 @@ function Categories() {
               </thead>
 
               <tbody>
-
                 {categories.map(
                   (category) => (
-
                     <tr
                       key={
                         category._id
@@ -1098,7 +1199,6 @@ function Categories() {
                         <div className="category-name-cell">
 
                           <div className="category-icon">
-
                             <i
                               className={
                                 category.parent
@@ -1106,11 +1206,9 @@ function Categories() {
                                   : "bi bi-folder"
                               }
                             ></i>
-
                           </div>
 
                           <div>
-
                             <strong>
                               {
                                 category.name
@@ -1124,7 +1222,6 @@ function Categories() {
                                 }
                               </small>
                             )}
-
                           </div>
 
                         </div>
@@ -1152,7 +1249,6 @@ function Categories() {
                       {/* TYPE */}
 
                       <td>
-
                         <span
                           className={`category-type ${
                             category.parent
@@ -1164,46 +1260,38 @@ function Categories() {
                             category
                           )}
                         </span>
-
                       </td>
 
                       {/* PRODUCTS */}
 
                       <td>
-
                         <span className="product-count">
                           {getProductCount(
                             category
                           )}
                         </span>
-
                       </td>
 
                       {/* STATUS */}
 
                       <td>
-
                         <span
                           className={`category-status ${getStatusClass(
                             category.status
                           )}`}
                         >
-
                           <span className="status-dot"></span>
 
                           {category.status ===
                           "active"
                             ? "Active"
                             : "Inactive"}
-
                         </span>
-
                       </td>
 
                       {/* ACTIONS */}
 
                       <td>
-
                         <div className="category-actions">
 
                           {/* VIEW */}
@@ -1249,33 +1337,26 @@ function Categories() {
                               )
                             }
                           >
-
                             {deletingId ===
                             category._id ? (
                               <i className="bi bi-arrow-repeat"></i>
                             ) : (
                               <i className="bi bi-trash3"></i>
                             )}
-
                           </button>
 
                         </div>
-
                       </td>
 
                     </tr>
-
                   )
                 )}
-
               </tbody>
 
             </table>
-
           )}
 
         </div>
-
       </div>
 
       {/* =====================================================
@@ -1283,12 +1364,10 @@ function Categories() {
       ===================================================== */}
 
       {showModal && (
-
         <div
           className="category-modal-overlay"
           onClick={closeModal}
         >
-
           <div
             className="category-modal"
             onClick={(e) =>
@@ -1301,7 +1380,6 @@ function Categories() {
             <div className="category-modal-header">
 
               <div>
-
                 <h2>
                   {editingCategory
                     ? "Edit Category"
@@ -1317,7 +1395,6 @@ function Categories() {
                     ? "Create a new subcategory"
                     : "Create a new main category"}
                 </p>
-
               </div>
 
               <button
@@ -1359,7 +1436,6 @@ function Categories() {
               </div>
 
               {modalType === "sub" && (
-
                 <div className="form-group">
 
                   <label>
@@ -1377,14 +1453,12 @@ function Categories() {
                     }
                     disabled={submitting}
                   >
-
                     <option value="">
                       Select parent category
                     </option>
 
                     {mainCategories.map(
                       (category) => (
-
                         <option
                           key={
                             category._id
@@ -1397,14 +1471,11 @@ function Categories() {
                             category.name
                           }
                         </option>
-
                       )
                     )}
-
                   </select>
 
                 </div>
-
               )}
 
               <div className="category-form-actions">
@@ -1423,7 +1494,6 @@ function Categories() {
                   className="btn-save"
                   disabled={submitting}
                 >
-
                   {submitting ? (
                     <>
                       <i className="bi bi-arrow-repeat"></i>
@@ -1432,12 +1502,12 @@ function Categories() {
                   ) : (
                     <>
                       <i className="bi bi-check-lg"></i>
+
                       {editingCategory
                         ? "Update Category"
                         : "Create Category"}
                     </>
                   )}
-
                 </button>
 
               </div>
@@ -1445,9 +1515,7 @@ function Categories() {
             </form>
 
           </div>
-
         </div>
-
       )}
 
     </div>
@@ -1455,4 +1523,3 @@ function Categories() {
 }
 
 export default Categories;
-

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import "./Login.css";
 import log1 from "../assets/log4.png";
 
@@ -17,16 +17,17 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // ================= NORMAL LOGIN =================
+
   const handleLogin = async (e) => {
     e.preventDefault();
+
     setError("");
 
     if (!email || !password) {
@@ -47,8 +48,16 @@ function Login() {
 
       const { token, user } = response.data;
 
+      if (user?.role === "admin") {
+        throw new Error("Admin account cannot login here.");
+      }
+
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
 
       if (user?._id || user?.id) {
         localStorage.setItem(
@@ -58,14 +67,21 @@ function Login() {
       }
 
       if (rememberMe) {
-        localStorage.setItem("rememberMe", "true");
+        localStorage.setItem(
+          "rememberMe",
+          "true"
+        );
       } else {
-        localStorage.removeItem("rememberMe");
+        localStorage.removeItem(
+          "rememberMe"
+        );
       }
 
-      alert("Login successful!");
+      toast.success("Login successful!");
 
-      navigate("/", { replace: true });
+      navigate("/", {
+        replace: true,
+      });
     } catch (error) {
       console.error(
         "LOGIN ERROR:",
@@ -81,15 +97,129 @@ function Login() {
     }
   };
 
+  // ================= GOOGLE LOGIN =================
+
   const handleGoogleLogin = () => {
     setError("");
     setGoogleLoading(true);
 
-    // Google authentication will be connected
-    // after backend integration is completed.
-    setTimeout(() => {
+    if (!window.google) {
       setGoogleLoading(false);
-    }, 500);
+
+      setError(
+        "Google authentication is not available. Please try again."
+      );
+
+      return;
+    }
+
+    const clientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      setGoogleLoading(false);
+
+      setError(
+        "Google Client ID is not configured."
+      );
+
+      return;
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+
+        callback: async (response) => {
+          try {
+            const idToken =
+              response?.credential;
+
+            if (!idToken) {
+              throw new Error(
+                "Google authentication token not received."
+              );
+            }
+
+            const result =
+              await axios.post(
+                "http://localhost:5000/api/auth/google",
+                {
+                  idToken,
+                }
+              );
+
+            const { token, user } =
+              result.data;
+
+            localStorage.setItem(
+              "token",
+              token
+            );
+
+            localStorage.setItem(
+              "user",
+              JSON.stringify(user)
+            );
+
+            if (user?._id || user?.id) {
+              localStorage.setItem(
+                "userId",
+                user._id || user.id
+              );
+            }
+
+            toast.success(
+              "Google login successful!"
+            );
+
+            navigate("/", {
+              replace: true,
+            });
+          } catch (error) {
+            console.error(
+              "GOOGLE LOGIN ERROR:",
+              error.response?.data ||
+                error.message
+            );
+
+            setError(
+              error.response?.data?.message ||
+                "Google login failed. Please try again."
+            );
+          } finally {
+            setGoogleLoading(false);
+          }
+        },
+      });
+
+      window.google.accounts.id.prompt(
+        (notification) => {
+          if (
+            notification.isNotDisplayed() ||
+            notification.isSkippedMoment()
+          ) {
+            setGoogleLoading(false);
+
+            console.log(
+              "Google prompt not displayed:",
+              notification.getNotDisplayedReason?.()
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error(
+        "GOOGLE INITIALIZATION ERROR:",
+        error
+      );
+
+      setGoogleLoading(false);
+
+      setError(
+        "Unable to start Google login. Please try again."
+      );
+    }
   };
 
   return (
@@ -100,6 +230,7 @@ function Login() {
         <div className="login-layout">
 
           {/* LEFT IMAGE */}
+
           <section className="login-image-section">
             <img
               src={log1}
@@ -121,13 +252,15 @@ function Login() {
               </h2>
 
               <p>
-                Log in to your account and access your
-                orders, wishlist and exclusive offers.
+                Log in to your account and access
+                your orders, wishlist and exclusive
+                offers.
               </p>
             </div>
           </section>
 
           {/* RIGHT LOGIN */}
+
           <section className="login-form-section">
             <div className="login-container">
 
@@ -145,6 +278,7 @@ function Login() {
               >
 
                 {/* EMAIL */}
+
                 <div className="login-field">
                   <label htmlFor="email">
                     EMAIL ADDRESS
@@ -168,6 +302,7 @@ function Login() {
                         height="14"
                         rx="2"
                       />
+
                       <path d="m3 7 9 6 9-6" />
                     </svg>
 
@@ -179,7 +314,9 @@ function Login() {
                       placeholder="Enter your email address"
                       value={email}
                       onChange={(e) =>
-                        setEmail(e.target.value)
+                        setEmail(
+                          e.target.value
+                        )
                       }
                       required
                     />
@@ -187,6 +324,7 @@ function Login() {
                 </div>
 
                 {/* PASSWORD */}
+
                 <div className="login-field">
                   <label htmlFor="password">
                     PASSWORD
@@ -210,6 +348,7 @@ function Login() {
                         height="10"
                         rx="2"
                       />
+
                       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                     </svg>
 
@@ -225,7 +364,9 @@ function Login() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) =>
-                        setPassword(e.target.value)
+                        setPassword(
+                          e.target.value
+                        )
                       }
                       required
                     />
@@ -234,7 +375,9 @@ function Login() {
                       type="button"
                       className="password-eye-btn"
                       onClick={() =>
-                        setShowPassword(!showPassword)
+                        setShowPassword(
+                          !showPassword
+                        )
                       }
                       aria-label={
                         showPassword
@@ -252,8 +395,11 @@ function Login() {
                           strokeWidth="1.5"
                         >
                           <path d="M3 3l18 18" />
+
                           <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+
                           <path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 8.5 4 9.5 6a12 12 0 0 1-3.1 3.7" />
+
                           <path d="M6.1 6.1C3.9 7.4 2.7 9.2 2.5 10c1 2 4.5 6 9.5 6 1 0 1.9-.2 2.7-.5" />
                         </svg>
                       ) : (
@@ -266,6 +412,7 @@ function Login() {
                           strokeWidth="1.5"
                         >
                           <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+
                           <circle
                             cx="12"
                             cy="12"
@@ -278,13 +425,16 @@ function Login() {
                 </div>
 
                 {/* OPTIONS */}
+
                 <div className="login-options">
                   <label className="remember-me">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) =>
-                        setRememberMe(e.target.checked)
+                        setRememberMe(
+                          e.target.checked
+                        )
                       }
                     />
 
@@ -306,6 +456,7 @@ function Login() {
                 </div>
 
                 {/* ERROR */}
+
                 {error && (
                   <p className="login-error">
                     {error}
@@ -313,6 +464,7 @@ function Login() {
                 )}
 
                 {/* LOGIN BUTTON */}
+
                 <button
                   type="submit"
                   className="login-btn"
@@ -324,13 +476,17 @@ function Login() {
                 </button>
 
                 {/* DIVIDER */}
+
                 <div className="login-divider">
                   <span></span>
+
                   <p>OR</p>
+
                   <span></span>
                 </div>
 
                 {/* GOOGLE */}
+
                 <button
                   type="button"
                   className="google-login-btn"
@@ -371,9 +527,11 @@ function Login() {
                       : "Continue with Google"}
                   </span>
                 </button>
+
               </form>
 
               {/* REGISTER */}
+
               <div className="login-register">
                 <span>
                   Don't have an account?
