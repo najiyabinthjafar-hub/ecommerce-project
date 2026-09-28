@@ -1,339 +1,341 @@
 /* =========================================
-   INSTAGRAM SECTION
+INSTAGRAM SECTION
 ========================================= */
 
 .instagram-section {
-  width: 100%;
-  background: #ffffff;
-  padding: 80px 0 0;
-  margin: 0;
-  overflow: hidden;
-  box-sizing: border-box;
+width: 100%;
+background: #ffffff;
+padding: 80px 0 0;
+margin: 0;
+overflow: hidden;
+box-sizing: border-box;
 }
 
 /* =========================================
-   HEADING
+HEADING
 ========================================= */
 
 .instagram-heading {
-  text-align: center;
-  margin: 0 0 70px;
-  padding: 0 20px;
-  box-sizing: border-box;
+text-align: center;
+margin: 0 0 70px;
+padding: 0 20px;
+box-sizing: border-box;
 }
 
 .instagram-heading h2 {
-  margin: 0 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 38px;
-  font-weight: 400;
-  line-height: 1.2;
-  color: #111111;
+margin: 0 0 12px;
+font-family: Georgia, "Times New Roman", serif;
+font-size: 38px;
+font-weight: 400;
+line-height: 1.2;
+color: #111111;
 }
 
 .instagram-heading p {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 13px;
-  line-height: 1.55;
-  color: #888888;
+margin: 0;
+font-family: Arial, Helvetica, sans-serif;
+font-size: 13px;
+line-height: 1.55;
+color: #888888;
 }
 
 /* =========================================
-   HERO STYLE SLIDER
+HERO STYLE SLIDER
 ========================================= */
 
 .instagram-slider {
-  width: 100%;
-  height: 330px;
-  position: relative;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
+width: 100%;
+height: 330px;
+position: relative;
+overflow: hidden;
+margin: 0;
+padding: 0;
 }
 
 .instagram-track {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  margin: 0;
-  padding: 0;
+width: 100%;
+height: 100%;
+position: relative;
+margin: 0;
+padding: 0;
 }
 
 /* =========================================
-   COMMON IMAGE
+COMMON IMAGE
 ========================================= */
 
 .instagram-image {
-  position: absolute;
-  top: 50%;
-  width: 14.285%;
-  height: 250px;
-  transform: translateY(-50%);
-  overflow: hidden;
-  transition:
-    left 0.8s ease-in-out,
-    width 0.8s ease-in-out,
-    height 0.8s ease-in-out;
-  z-index: 2;
+position: absolute;
+top: 50%;
+width: 14.285%;
+height: 250px;
+transform: translateY(-50%);
+overflow: hidden;
+transition:
+left 0.8s ease-in-out,
+width 0.8s ease-in-out,
+height 0.8s ease-in-out;
+z-index: 2;
 }
 
 .instagram-image img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
+width: 100%;
+height: 100%;
+display: block;
+object-fit: cover;
 }
 
 /* =========================================
-   POSITION 1 - SMALL
+POSITION 1 - SMALL
 ========================================= */
 
 .image-0 {
-  left: 0%;
-  height: 250px;
+left: 0%;
+height: 250px;
 }
 
 /* =========================================
-   POSITION 2 - BIG
+POSITION 2 - BIG
 ========================================= */
 
 .image-1 {
-  left: 14.285%;
-  height: 300px;
-  z-index: 5;
+left: 14.285%;
+height: 300px;
+z-index: 5;
 }
 
 /* =========================================
-   POSITION 3 - SMALL
+POSITION 3 - SMALL
 ========================================= */
 
 .image-2 {
-  left: 28.57%;
-  height: 250px;
+left: 28.57%;
+height: 250px;
 }
 
 /* =========================================
-   POSITION 4 - BIG
+POSITION 4 - BIG
 ========================================= */
 
 .image-3 {
-  left: 42.855%;
-  height: 300px;
-  z-index: 5;
+left: 42.855%;
+height: 300px;
+z-index: 5;
 }
 
 /* =========================================
-   POSITION 5 - SMALL
+POSITION 5 - SMALL
 ========================================= */
 
 .image-4 {
-  left: 57.14%;
-  height: 250px;
+left: 57.14%;
+height: 250px;
 }
 
 /* =========================================
-   POSITION 6 - BIG
+POSITION 6 - BIG
 ========================================= */
 
 .image-5 {
-  left: 71.425%;
-  height: 300px;
-  z-index: 5;
+left: 71.425%;
+height: 300px;
+z-index: 5;
 }
 
 /* =========================================
-   POSITION 7 - SMALL
+POSITION 7 - SMALL
 ========================================= */
 
 .image-6 {
-  left: 85.71%;
-  height: 250px;
+left: 85.71%;
+height: 250px;
 }
 
 /* =========================================
-   TABLET
+TABLET
 ========================================= */
 
 @media (max-width: 900px) {
-  .instagram-section {
-    padding-top: 60px;
-    margin: 0;
-  }
+.instagram-section {
+padding-top: 60px;
+padding-bottom: 0;
+margin: 0;
+}
 
-  .instagram-heading {
-    margin-bottom: 50px;
-  }
+.instagram-heading {
+margin-bottom: 50px;
+}
 
-  .instagram-heading h2 {
-    font-size: 32px;
-  }
+.instagram-heading h2 {
+font-size: 32px;
+}
 
-  .instagram-heading p {
-    font-size: 12px;
-  }
+.instagram-heading p {
+font-size: 12px;
+}
 
-  .instagram-slider {
-    height: 260px;
-    margin: 0;
-  }
+.instagram-slider {
+height: 260px;
+margin: 0;
+padding: 0;
+}
 
-  .instagram-image,
-  .image-0,
-  .image-2,
-  .image-4,
-  .image-6 {
-    height: 180px;
-  }
+.instagram-image,
+.image-0,
+.image-2,
+.image-4,
+.image-6 {
+height: 180px;
+}
 
-  .image-1,
-  .image-3,
-  .image-5 {
-    height: 220px;
-  }
+.image-1,
+.image-3,
+.image-5 {
+height: 220px;
+}
 }
 
 /* =========================================
-   SMALL TABLET
+SMALL TABLET
 ========================================= */
 
 @media (max-width: 768px) {
-  .instagram-section {
-    padding-top: 50px;
-    padding-bottom: 0;
-    margin: 0;
-  }
+.instagram-section {
+padding-top: 50px;
+padding-bottom: 0;
+margin: 0;
+}
 
-  .instagram-heading {
-    margin-bottom: 40px;
-    padding: 0 25px;
-  }
+.instagram-heading {
+margin-bottom: 40px;
+padding: 0 25px;
+}
 
-  .instagram-heading h2 {
-    font-size: 29px;
-  }
+.instagram-heading h2 {
+font-size: 29px;
+}
 
-  .instagram-heading p {
-    font-size: 11px;
-    line-height: 1.6;
-  }
+.instagram-heading p {
+font-size: 11px;
+line-height: 1.6;
+}
 
-  .instagram-slider {
-    height: 220px;
-    margin: 0;
-    padding: 0;
-  }
+.instagram-slider {
+height: 190px;
+margin: 0;
+padding: 0;
+}
 
-  .instagram-image {
-    width: 14.285%;
-  }
+.instagram-image {
+width: 14.285%;
+}
 
-  .instagram-image,
-  .image-0,
-  .image-2,
-  .image-4,
-  .image-6 {
-    height: 150px;
-  }
+.instagram-image,
+.image-0,
+.image-2,
+.image-4,
+.image-6 {
+height: 150px;
+}
 
-  .image-1,
-  .image-3,
-  .image-5 {
-    height: 190px;
-  }
+.image-1,
+.image-3,
+.image-5 {
+height: 190px;
+}
 }
 
 /* =========================================
-   MOBILE
+MOBILE
 ========================================= */
 
 @media (max-width: 600px) {
-  .instagram-section {
-    padding-top: 45px;
-    padding-bottom: 0;
-    margin: 0;
-  }
+.instagram-section {
+padding-top: 45px;
+padding-bottom: 0;
+margin: 0;
+}
 
-  .instagram-heading {
-    margin: 0 0 35px;
-    padding: 0 18px;
-  }
+.instagram-heading {
+margin: 0 0 35px;
+padding: 0 18px;
+}
 
-  .instagram-heading h2 {
-    font-size: 27px;
-  }
+.instagram-heading h2 {
+font-size: 27px;
+}
 
-  .instagram-heading p {
-    font-size: 10px;
-    line-height: 1.65;
-  }
+.instagram-heading p {
+font-size: 10px;
+line-height: 1.65;
+}
 
-  .instagram-heading p br {
-    display: none;
-  }
+.instagram-heading p br {
+display: none;
+}
 
-  .instagram-slider {
-    height: 180px;
-    margin: 0;
-    padding: 0;
-  }
+.instagram-slider {
+height: 145px;
+margin: 0;
+padding: 0;
+}
 
-  .instagram-image,
-  .image-0,
-  .image-2,
-  .image-4,
-  .image-6 {
-    height: 120px;
-  }
+.instagram-image,
+.image-0,
+.image-2,
+.image-4,
+.image-6 {
+height: 120px;
+}
 
-  .image-1,
-  .image-3,
-  .image-5 {
-    height: 145px;
-  }
+.image-1,
+.image-3,
+.image-5 {
+height: 145px;
+}
 }
 
 /* =========================================
-   VERY SMALL MOBILE
+VERY SMALL MOBILE
 ========================================= */
 
 @media (max-width: 400px) {
-  .instagram-section {
-    padding-top: 40px;
-    padding-bottom: 0;
-    margin: 0;
-  }
+.instagram-section {
+padding-top: 40px;
+padding-bottom: 0;
+margin: 0;
+}
 
-  .instagram-heading {
-    margin: 0 0 30px;
-    padding: 0 15px;
-  }
+.instagram-heading {
+margin: 0 0 30px;
+padding: 0 15px;
+}
 
-  .instagram-heading h2 {
-    font-size: 23px;
-  }
+.instagram-heading h2 {
+font-size: 23px;
+}
 
-  .instagram-heading p {
-    font-size: 8.5px;
-  }
+.instagram-heading p {
+font-size: 8.5px;
+}
 
-  .instagram-slider {
-    height: 155px;
-    margin: 0;
-    padding: 0;
-  }
+.instagram-slider {
+height: 130px;
+margin: 0;
+padding: 0;
+}
 
-  .instagram-image,
-  .image-0,
-  .image-2,
-  .image-4,
-  .image-6 {
-    height: 105px;
-  }
+.instagram-image,
+.image-0,
+.image-2,
+.image-4,
+.image-6 {
+height: 105px;
+}
 
-  .image-1,
-  .image-3,
-  .image-5 {
-    height: 130px;
-  }
+.image-1,
+.image-3,
+.image-5 {
+height: 130px;
+}
 }

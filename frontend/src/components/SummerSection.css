@@ -1,388 +1,358 @@
 /* =========================
-   SUMMER SECTION
+SUMMER SECTION
 ========================= */
 
 .summer-section {
-  position: relative;
-  width: 100%;
-  height: 360px;
-  display: grid;
-  grid-template-columns: 55% 45%;
-  background: #ffffff;
-  margin: 0;
-  padding: 0;
-  overflow: visible;
-  box-sizing: border-box;
+position: relative;
+width: 100%;
+height: 360px;
+display: grid;
+grid-template-columns: 55% 45%;
+background: #ffffff;
+margin: 0;
+padding: 0;
+overflow: visible;
+box-sizing: border-box;
 }
 
-/* =========================
-   IMAGE
-========================= */
-
 .summer-image {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
+width: 100%;
+height: 100%;
+overflow: hidden;
+position: relative;
 }
 
 .summer-image img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  object-position: center;
-  animation: summerFade 0.7s ease-in-out;
+width: 100%;
+height: 100%;
+display: block;
+object-fit: cover;
+object-position: center;
+animation: summerFade 0.7s ease-in-out;
 }
 
 @keyframes summerFade {
-  from {
-    opacity: 0;
-    transform: scale(1.03);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+from {
+opacity: 0;
+transform: scale(1.03);
 }
 
-/* =========================
-   CONTENT
-========================= */
+to {
+opacity: 1;
+transform: scale(1);
+}
+}
 
 .summer-content {
-  background: #dedede;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: left;
-  padding: 40px;
-  box-sizing: border-box;
+background: #dedede;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+text-align: left;
+padding: 40px;
+box-sizing: border-box;
 }
 
 .summer-content h2 {
-  width: 70%;
-  margin: 0 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 25px;
-  font-weight: 500;
-  color: #333;
+width: 70%;
+margin: 0 0 12px;
+font-family: Georgia, "Times New Roman", serif;
+font-size: 25px;
+font-weight: 500;
+color: #333;
 }
 
 .summer-description {
-  width: 70%;
-  margin: 0;
-  color: #777;
-  font-family: Arial, sans-serif;
-  font-size: 8px;
-  line-height: 1.7;
+width: 70%;
+margin: 0;
+color: #777;
+font-family: Arial, sans-serif;
+font-size: 8px;
+line-height: 1.7;
 }
 
-/* =========================
-   BUTTON
-========================= */
-
 .summer-button {
-  width: 118px;
-  height: 38px;
-  margin-top: 22px;
-  border: none;
-  border-radius: 4px;
-  background: #050505;
-  color: #ffffff;
-  font-size: 8px;
-  cursor: pointer;
-  transition: 0.3s ease;
+width: 118px;
+height: 38px;
+margin-top: 22px;
+border: none;
+border-radius: 4px;
+background: #050505;
+color: #ffffff;
+font-size: 8px;
+cursor: pointer;
+transition: 0.3s ease;
 }
 
 .summer-button:hover {
-  opacity: 0.8;
+opacity: 0.8;
 }
 
 /* =========================
-   CONTROLS
+SUMMER CONTROLS
 ========================= */
 
 .summer-controls {
-  position: absolute;
-  bottom: -55px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
+position: absolute;
+bottom: -55px;
+left: 50%;
+transform: translateX(-50%);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 12px;
+z-index: 10;
 }
 
-/* =========================
-   DOTS
-========================= */
-
 .summer-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
 }
 
 .summer-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #c9c9c9;
-  cursor: pointer;
-  transition: 0.3s ease;
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: #c9c9c9;
+cursor: pointer;
+transition: 0.3s ease;
 }
 
 .summer-dots span.active {
-  width: 7px;
-  height: 7px;
-  background: #222;
+width: 7px;
+height: 7px;
+background: #222;
 }
 
-/* =========================
-   ARROWS
-========================= */
-
 .summer-arrows {
-  display: flex;
-  gap: 8px;
+display: flex;
+gap: 8px;
 }
 
 .summer-arrows button {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #eeeeee;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #555;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: 0.3s ease;
+width: 30px;
+height: 30px;
+border: 1px solid #eeeeee;
+border-radius: 50%;
+background: #ffffff;
+color: #555;
+cursor: pointer;
+font-size: 18px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: 0.3s ease;
 }
 
 .summer-arrows button:hover {
-  background: #f5f5f5;
+background: #f5f5f5;
 }
 
 /* =========================
-   TABLET
+TABLET
 ========================= */
 
 @media (max-width: 1000px) {
-  .summer-section {
-    grid-template-columns: 55% 45%;
-    height: 340px;
-    margin-top: 0;
-    margin-bottom: 50px;
-  }
+.summer-section {
+grid-template-columns: 55% 45%;
+height: 340px;
+margin-top: 0;
+margin-bottom: 50px;
+}
 
-  .summer-content {
-    padding: 30px;
-  }
+.summer-content {
+padding: 30px;
+}
 
-  .summer-content h2,
-  .summer-description {
-    width: 80%;
-  }
+.summer-content h2,
+.summer-description {
+width: 80%;
+}
 
-  .summer-content h2 {
-    font-size: 23px;
-  }
+.summer-content h2 {
+font-size: 23px;
+}
 
-  .summer-description {
-    font-size: 8px;
-  }
+.summer-description {
+font-size: 8px;
+}
 
-  .summer-button {
-    width: 115px;
-    height: 36px;
-  }
+.summer-button {
+width: 115px;
+height: 36px;
+}
 }
 
 /* =========================
-   SMALL TABLET
-========================= */
-
-@media (max-width: 768px) {
-  .summer-section {
-    width: 100%;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    margin-top: 0;
-    margin-bottom: 60px;
-    overflow: visible;
-  }
-
-  /* IMAGE */
-
-  .summer-image {
-    width: 100%;
-    height: 350px;
-  }
-
-  .summer-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-
-  /* CONTENT */
-
-  .summer-content {
-    width: 100%;
-    min-height: 270px;
-    padding: 45px 25px;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .summer-content h2 {
-    width: 90%;
-    font-size: 24px;
-    margin-bottom: 14px;
-  }
-
-  .summer-description {
-    width: 90%;
-    max-width: 420px;
-    font-size: 9px;
-    line-height: 1.7;
-  }
-
-  .summer-button {
-    width: 120px;
-    height: 36px;
-    margin-top: 22px;
-    font-size: 8px;
-  }
-
-  /* CONTROLS */
-
-  .summer-controls {
-    bottom: -62px;
-    gap: 12px;
-  }
-
-  .summer-dots {
-    gap: 8px;
-  }
-
-  .summer-arrows {
-    gap: 8px;
-  }
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 600px) {
-  .summer-section {
-    margin-top: 0;
-    margin-bottom: 55px;
-  }
-
-  .summer-image {
-    height: 300px;
-  }
-
-  .summer-content {
-    min-height: 255px;
-    padding: 40px 20px;
-  }
-
-  .summer-content h2 {
-    width: 92%;
-    font-size: 22px;
-  }
-
-  .summer-description {
-    width: 92%;
-    font-size: 8px;
-    line-height: 1.7;
-  }
-
-  .summer-button {
-    width: 115px;
-    height: 34px;
-    margin-top: 20px;
-    font-size: 8px;
-  }
-
-  .summer-controls {
-    bottom: -58px;
-    gap: 10px;
-  }
-
-  .summer-dots {
-    gap: 7px;
-  }
-
-  .summer-dots span {
-    width: 5px;
-    height: 5px;
-  }
-
-  .summer-dots span.active {
-    width: 6px;
-    height: 6px;
-  }
-
-  .summer-arrows {
-    gap: 7px;
-  }
-
-  .summer-arrows button {
-    width: 28px;
-    height: 28px;
-    font-size: 17px;
-  }
-}
-
-/* =========================
-   VERY SMALL MOBILE
+MOBILE
 ========================= */
 
 @media (max-width: 400px) {
-  .summer-section {
-    margin-top: 0;
-    margin-bottom: 50px;
-  }
+.summer-section {
+width: 100%;
+height: auto;
+display: flex;
+flex-direction: column;
+margin-top: 0;
+margin-bottom: 0;
+padding-bottom: 60px;
+overflow: visible;
+}
 
-  .summer-image {
-    height: 260px;
-  }
+.summer-image {
+width: 100%;
+height: 350px;
+}
 
-  .summer-content {
-    min-height: 235px;
-    padding: 35px 15px;
-  }
+.summer-image img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+object-position: center;
+}
 
-  .summer-content h2 {
-    width: 95%;
-    font-size: 20px;
-  }
+.summer-content {
+width: 100%;
+min-height: 270px;
+padding: 45px 25px;
+align-items: center;
+justify-content: center;
+}
 
-  .summer-description {
-    width: 95%;
-    font-size: 7.5px;
-  }
+.summer-content h2 {
+width: 90%;
+font-size: 24px;
+margin-bottom: 14px;
+}
 
-  .summer-button {
-    width: 110px;
-    height: 32px;
-  }
+.summer-description {
+width: 90%;
+max-width: 420px;
+font-size: 9px;
+line-height: 1.7;
+}
 
-  .summer-controls {
-    bottom: -55px;
-  }
+.summer-controls {
+  bottom: -25px;
+  gap: 16px;
+}
+
+.summer-dots {
+gap: 8px;
+}
+
+.summer-arrows {
+ transform: translateY(-8px);
+}
+}
+
+/* =========================
+SMALL MOBILE
+========================= */
+
+@media (max-width: 600px) {
+.summer-section {
+margin-top: 0;
+margin-bottom: 0;
+padding-bottom: 60px;
+}
+
+.summer-image {
+height: 300px;
+}
+
+.summer-content {
+min-height: 255px;
+padding: 40px 20px;
+}
+
+.summer-content h2 {
+width: 92%;
+font-size: 22px;
+}
+
+.summer-description {
+width: 92%;
+font-size: 8px;
+line-height: 1.7;
+}
+
+.summer-button {
+width: 115px;
+height: 34px;
+margin-top: 20px;
+font-size: 8px;
+}
+
+.summer-controls {
+bottom: -40px;
+gap: 10px;
+}
+
+.summer-dots {
+gap: 7px;
+}
+
+.summer-dots span {
+width: 5px;
+height: 5px;
+}
+
+.summer-dots span.active {
+width: 6px;
+height: 6px;
+}
+
+.summer-arrows {
+gap: 7px;
+}
+
+.summer-arrows button {
+width: 28px;
+height: 28px;
+font-size: 17px;
+}
+}
+
+/* =========================
+VERY SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+.summer-section {
+margin-top: 0;
+margin-bottom: 0;
+padding-bottom: 58px;
+}
+
+.summer-image {
+height: 260px;
+}
+
+.summer-content {
+min-height: 235px;
+padding: 35px 15px;
+}
+
+.summer-content h2 {
+width: 95%;
+font-size: 20px;
+}
+
+.summer-description {
+width: 95%;
+font-size: 7.5px;
+}
+
+.summer-button {
+width: 110px;
+height: 32px;
+}
+
+.summer-controls {
+bottom: -38px;
+}
 }
