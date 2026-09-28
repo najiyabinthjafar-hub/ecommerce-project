@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -8,23 +9,29 @@ import Footer from "../components/Footer";
 import "./Category.css";
 
 const API_URL = "http://localhost:5000/api";
+const WISHLIST_API = "http://localhost:5000/api/wishlist";
 
 function Category() {
   const { slug, subcategorySlug } = useParams();
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [categories, setCategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ================= FILTERS =================
+  /* ================= FILTERS ================= */
+
   const [availability, setAvailability] = useState("all");
   const [priceOrder, setPriceOrder] = useState("default");
   const [sortBy, setSortBy] = useState("newest");
 
-  // ================= PAGINATION =================
+  /* ================= PAGINATION ================= */
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const productsPerPage = 8;
 
   const [pagination, setPagination] = useState({
@@ -34,12 +41,86 @@ function Category() {
     totalPages: 0,
   });
 
-  // ================= RESET PAGE WHEN CATEGORY CHANGES =================
+  /* ================= WISHLIST ================= */
+
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [updatingWishlist, setUpdatingWishlist] = useState(null);
+
+  /* ================= TOKEN ================= */
+
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  const getAuthConfig = () => ({
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
+
+  /* ================= RESET PAGE ================= */
+
   useEffect(() => {
     setCurrentPage(1);
   }, [slug, subcategorySlug]);
 
-  // ================= FETCH CATEGORY + PRODUCTS =================
+  /* ================= FETCH WISHLIST ================= */
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      const token = getToken();
+
+      if (!token) {
+        setWishlistIds([]);
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          WISHLIST_API,
+          getAuthConfig()
+        );
+
+        const wishlistProducts =
+          response.data?.wishlist?.products || [];
+
+        const ids = wishlistProducts.map((item) =>
+          String(item._id || item.id || item)
+        );
+
+        setWishlistIds(ids);
+      } catch (error) {
+        console.error(
+          "CATEGORY WISHLIST FETCH ERROR:",
+          error.response?.data || error.message
+        );
+
+        setWishlistIds([]);
+      }
+    };
+
+    fetchWishlist();
+
+    /* Update if wishlist changes somewhere else */
+    const handleWishlistUpdated = () => {
+      fetchWishlist();
+    };
+
+    window.addEventListener(
+      "wishlistUpdated",
+      handleWishlistUpdated
+    );
+
+    return () => {
+      window.removeEventListener(
+        "wishlistUpdated",
+        handleWishlistUpdated
+      );
+    };
+  }, []);
+
+  /* ================= FETCH CATEGORY + PRODUCTS ================= */
+
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -48,7 +129,8 @@ function Category() {
         setLoading(true);
         setError("");
 
-        // ================= FETCH CATEGORY TREE =================
+        /* ================= FETCH CATEGORY TREE ================= */
+
         const categoryResponse = await axios.get(
           `${API_URL}/categories/tree`
         );
@@ -71,10 +153,12 @@ function Category() {
 
         setCategories(childCategories);
 
-        // ================= FIND CATEGORY IDS =================
+        /* ================= FIND CATEGORY IDS ================= */
+
         let allowedCategoryIds = [];
 
-        // ================= SUBCATEGORY PAGE =================
+        /* ================= SUBCATEGORY PAGE ================= */
+
         if (subcategorySlug) {
           const selectedSubcategory =
             childCategories.find(
@@ -91,37 +175,40 @@ function Category() {
           ];
         }
 
-        // ================= MAIN CATEGORY PAGE =================
+        /* ================= MAIN CATEGORY PAGE ================= */
+
         else {
           allowedCategoryIds = childCategories.map(
             (category) => String(category._id)
           );
         }
 
-        // ================= PRODUCT API PARAMS =================
+        /* ================= PRODUCT API PARAMS ================= */
+
         const params = {
           page: currentPage,
           limit: productsPerPage,
         };
 
-        // ================= CATEGORY FILTER =================
+        /* ================= CATEGORY FILTER ================= */
+
         if (allowedCategoryIds.length > 0) {
           params.category =
             allowedCategoryIds.join(",");
         } else {
-          // If category has no children,
-          // use the main category itself.
           params.category = String(foundCategory._id);
         }
 
-        // ================= AVAILABILITY =================
+        /* ================= AVAILABILITY ================= */
+
         if (availability === "available") {
           params.availability = "in-stock";
         } else if (availability === "soldout") {
           params.availability = "out-of-stock";
         }
 
-        // ================= SORTING =================
+        /* ================= SORTING ================= */
+
         if (priceOrder === "low-high") {
           params.sort = "price-low";
         } else if (priceOrder === "high-low") {
@@ -135,7 +222,8 @@ function Category() {
           params
         );
 
-        // ================= FETCH PRODUCTS =================
+        /* ================= FETCH PRODUCTS ================= */
+
         const productResponse = await axios.get(
           `${API_URL}/products`,
           {
@@ -195,7 +283,8 @@ function Category() {
     currentPage,
   ]);
 
-  // ================= FIX PAGE IF TOTAL PAGES CHANGE =================
+  /* ================= FIX PAGE ================= */
+
   useEffect(() => {
     if (
       pagination.totalPages > 0 &&
@@ -208,16 +297,21 @@ function Category() {
     currentPage,
   ]);
 
-  // ================= FILTER HANDLERS =================
+  /* ================= AVAILABILITY ================= */
+
   const handleAvailabilityChange = (value) => {
     setAvailability(value);
     setCurrentPage(1);
   };
 
+  /* ================= PRICE ================= */
+
   const handlePriceChange = (value) => {
     setPriceOrder(value);
     setCurrentPage(1);
   };
+
+  /* ================= SORT ================= */
 
   const handleSortChange = (value) => {
     setSortBy(value);
@@ -225,7 +319,8 @@ function Category() {
     setCurrentPage(1);
   };
 
-  // ================= PAGINATION =================
+  /* ================= PAGINATION ================= */
+
   const handlePageChange = (page) => {
     if (
       page < 1 ||
@@ -243,7 +338,100 @@ function Category() {
     });
   };
 
-  // ================= LOADING =================
+  /* ================= WISHLIST HANDLER ================= */
+
+  const handleWishlist = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = getToken();
+
+    /* ================= NOT LOGGED IN ================= */
+
+    if (!token) {
+      toast.error("Please login to add products to your wishlist.");
+
+      navigate("/login");
+
+      return;
+    }
+
+    const productId = String(
+      product._id || product.id
+    );
+
+    const isWishlisted =
+      wishlistIds.includes(productId);
+
+    try {
+      setUpdatingWishlist(productId);
+
+      /* ================= REMOVE ================= */
+
+      if (isWishlisted) {
+        const response = await axios.delete(
+          `${WISHLIST_API}/remove/${productId}`,
+          getAuthConfig()
+        );
+
+        setWishlistIds((prev) =>
+          prev.filter(
+            (id) => id !== productId
+          )
+        );
+
+        toast.success(
+          response.data?.message ||
+            "Product removed from wishlist!"
+        );
+
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
+      }
+
+      /* ================= ADD ================= */
+
+      else {
+        const response = await axios.post(
+          `${WISHLIST_API}/add`,
+          {
+            productId,
+          },
+          getAuthConfig()
+        );
+
+        setWishlistIds((prev) => [
+          ...prev,
+          productId,
+        ]);
+
+        toast.success(
+          response.data?.message ||
+            "Product added to wishlist!"
+        );
+
+        window.dispatchEvent(
+          new Event("wishlistUpdated")
+        );
+      }
+    } catch (error) {
+      console.error(
+        "CATEGORY WISHLIST ERROR:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to update wishlist"
+      );
+    } finally {
+      setUpdatingWishlist(null);
+    }
+  };
+
+  /* ================= LOADING ================= */
+
   if (loading) {
     return (
       <>
@@ -260,7 +448,8 @@ function Category() {
     );
   }
 
-  // ================= ERROR =================
+  /* ================= ERROR ================= */
+
   if (error) {
     return (
       <>
@@ -277,23 +466,28 @@ function Category() {
     );
   }
 
-  // ================= SELECTED SUBCATEGORY =================
-  const selectedSubcategory = categories.find(
-    (category) =>
-      category.slug === subcategorySlug
-  );
+  /* ================= SELECTED SUBCATEGORY ================= */
 
-  // ================= PAGE TITLE =================
+  const selectedSubcategory =
+    categories.find(
+      (category) =>
+        category.slug === subcategorySlug
+    );
+
+  /* ================= PAGE TITLE ================= */
+
   const pageTitle = selectedSubcategory
     ? `All Products in ${selectedSubcategory.name}`
     : currentCategory?.name;
 
-  // ================= PAGE DESCRIPTION =================
+  /* ================= PAGE DESCRIPTION ================= */
+
   const pageDescription = selectedSubcategory
     ? `Explore all products in ${selectedSubcategory.name}.`
     : `Explore our ${currentCategory?.name} collection.`;
 
-  // ================= RETURN =================
+  /* ================= RETURN ================= */
+
   return (
     <>
       <Navbar />
@@ -301,6 +495,7 @@ function Category() {
       <main className="category-page">
 
         {/* ================= HEADING ================= */}
+
         <section className="category-page-heading">
           <h1>{pageTitle}</h1>
 
@@ -309,16 +504,20 @@ function Category() {
           </p>
         </section>
 
+
         {/* ================= SUBCATEGORIES ================= */}
+
         {categories.length > 0 && (
           <section className="subcategory-section">
             <div className="subcategory-list">
+
               {categories.map((category) => (
                 <Link
                   key={category._id}
                   to={`/category/${slug}/${category.slug}`}
                   className={`subcategory-item ${
-                    subcategorySlug === category.slug
+                    subcategorySlug ===
+                    category.slug
                       ? "active"
                       : ""
                   }`}
@@ -326,11 +525,14 @@ function Category() {
                   {category.name}
                 </Link>
               ))}
+
             </div>
           </section>
         )}
 
+
         {/* ================= FILTER BAR ================= */}
+
         <section className="category-filter-bar">
 
           <div className="category-filter-left">
@@ -339,7 +541,9 @@ function Category() {
               FILTER
             </span>
 
+
             {/* AVAILABILITY */}
+
             <select
               value={availability}
               onChange={(e) =>
@@ -361,7 +565,9 @@ function Category() {
               </option>
             </select>
 
+
             {/* PRICE */}
+
             <select
               value={priceOrder}
               onChange={(e) =>
@@ -385,11 +591,16 @@ function Category() {
 
           </div>
 
+
           <div className="category-filter-right">
 
             {/* SORT */}
+
             <div className="category-sort-by">
-              <span>SORT BY:</span>
+
+              <span>
+                SORT BY:
+              </span>
 
               <select
                 value={sortBy}
@@ -407,17 +618,23 @@ function Category() {
                   FEATURED
                 </option>
               </select>
+
             </div>
 
+
             {/* PRODUCT COUNT */}
+
             <span className="category-product-count">
               {products.length} PRODUCTS
             </span>
 
           </div>
+
         </section>
 
+
         {/* ================= PRODUCTS ================= */}
+
         <section className="category-page-products">
 
           {products.length > 0 ? (
@@ -458,7 +675,17 @@ function Category() {
                     }${productImage}`;
                 }
 
+                const isWishlisted =
+                  wishlistIds.includes(
+                    String(productId)
+                  );
+
+                const isUpdating =
+                  updatingWishlist ===
+                  String(productId);
+
                 return (
+
                   <Link
                     key={productId}
                     to={`/product/${productId}`}
@@ -467,26 +694,53 @@ function Category() {
 
                     <div className="category-product-image">
 
-                      {/* WISHLIST */}
+                      {/* ================= WISHLIST ================= */}
+
                       <button
                         type="button"
-                        className="category-wishlist-btn"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        aria-label="Add to wishlist"
+                        className={`category-wishlist-btn ${
+                          isWishlisted
+                            ? "active-wishlist"
+                            : ""
+                        }`}
+                        onClick={(e) =>
+                          handleWishlist(
+                            e,
+                            product
+                          )
+                        }
+                        disabled={isUpdating}
+                        title={
+                          isWishlisted
+                            ? "Remove from Wishlist"
+                            : "Add to Wishlist"
+                        }
+                        aria-label={
+                          isWishlisted
+                            ? "Remove from Wishlist"
+                            : "Add to Wishlist"
+                        }
                       >
-                        ♡
+                        {isWishlisted
+                          ? "♥"
+                          : "♡"}
                       </button>
 
-                      {/* PRODUCT IMAGE */}
+
+                      {/* ================= PRODUCT IMAGE ================= */}
+
                       <img
                         src={productImage}
-                        alt={product.name}
+                        alt={
+                          product.name ||
+                          "Product"
+                        }
                       />
 
                     </div>
+
+
+                    {/* ================= PRODUCT INFO ================= */}
 
                     <div className="category-product-info">
 
@@ -519,7 +773,9 @@ function Category() {
 
           )}
 
+
           {/* ================= PAGINATION ================= */}
+
           {pagination.totalPages > 1 && (
 
             <div className="category-pagination">
@@ -530,10 +786,13 @@ function Category() {
                     currentPage - 1
                   )
                 }
-                disabled={currentPage === 1}
+                disabled={
+                  currentPage === 1
+                }
               >
                 ←
               </button>
+
 
               {Array.from(
                 {
@@ -541,10 +800,12 @@ function Category() {
                     pagination.totalPages,
                 },
                 (_, index) => (
+
                   <button
                     key={index}
                     className={
-                      currentPage === index + 1
+                      currentPage ===
+                      index + 1
                         ? "active"
                         : ""
                     }
@@ -556,8 +817,10 @@ function Category() {
                   >
                     {index + 1}
                   </button>
+
                 )
               )}
+
 
               <button
                 onClick={() =>
@@ -574,9 +837,11 @@ function Category() {
               </button>
 
             </div>
+
           )}
 
         </section>
+
       </main>
 
       <Footer />
@@ -585,5 +850,3 @@ function Category() {
 }
 
 export default Category;
-
-

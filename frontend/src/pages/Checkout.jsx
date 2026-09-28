@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -29,15 +30,12 @@ function Checkout() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
-
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState(null);
   const [couponMessage, setCouponMessage] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [billingAddress, setBillingAddress] = useState("same");
-
   const [error, setError] = useState("");
 
   // =========================================================
@@ -114,10 +112,12 @@ function Checkout() {
 
         navigate("/login");
       } else {
-        setError(
+        const message =
           error.response?.data?.message ||
-            "Failed to load cart."
-        );
+          "Failed to load cart.";
+
+        setError(message);
+        toast.error(message);
       }
     } finally {
       setLoading(false);
@@ -218,6 +218,7 @@ function Checkout() {
       }
 
       // Active check
+
       if (
         couponData.active === false ||
         couponData.isActive === false
@@ -228,6 +229,7 @@ function Checkout() {
       }
 
       // Expiry check
+
       const expiryDate =
         couponData.expiryDate ||
         couponData.expiry;
@@ -242,19 +244,23 @@ function Checkout() {
       }
 
       // Minimum purchase
+
       const minimumPurchase = Number(
         couponData.minimumPurchase || 0
       );
 
       if (subtotal < minimumPurchase) {
         setCoupon(null);
+
         setCouponMessage(
           `Minimum purchase should be ₹${minimumPurchase}.`
         );
+
         return;
       }
 
       // Calculate discount
+
       let discountAmount = 0;
 
       const discountType =
@@ -275,6 +281,7 @@ function Checkout() {
       }
 
       // Maximum discount
+
       if (couponData.maxDiscount) {
         discountAmount = Math.min(
           discountAmount,
@@ -290,6 +297,7 @@ function Checkout() {
       }
 
       // Discount cannot exceed subtotal
+
       discountAmount = Math.min(
         discountAmount,
         subtotal
@@ -481,6 +489,7 @@ function Checkout() {
       setError("");
 
       // Load Razorpay
+
       const razorpayLoaded =
         await loadRazorpayScript();
 
@@ -491,6 +500,7 @@ function Checkout() {
       }
 
       // Prepare order data
+
       const orderData =
         getOrderData(form);
 
@@ -630,7 +640,7 @@ function Checkout() {
             if (
               verifyResponse.data.success
             ) {
-              alert(
+              toast.success(
                 "Payment successful! Order placed successfully."
               );
 
@@ -640,9 +650,11 @@ function Checkout() {
 
               navigate("/orders");
             } else {
-              setError(
-                "Payment verification failed."
-              );
+              const message =
+                "Payment verification failed.";
+
+              setError(message);
+              toast.error(message);
             }
           } catch (error) {
             console.error(
@@ -651,11 +663,13 @@ function Checkout() {
                 error.message
             );
 
-            setError(
+            const message =
               error.response?.data?.message ||
-                error.response?.data?.error ||
-                "Payment verification failed."
-            );
+              error.response?.data?.error ||
+              "Payment verification failed.";
+
+            setError(message);
+            toast.error(message);
           } finally {
             setPlacingOrder(false);
           }
@@ -688,9 +702,11 @@ function Checkout() {
 
             setPlacingOrder(false);
 
-            setError(
-              "Payment was cancelled."
-            );
+            const message =
+              "Payment was cancelled.";
+
+            setError(message);
+            toast.error(message);
           },
         },
       };
@@ -708,10 +724,12 @@ function Checkout() {
 
           setPlacingOrder(false);
 
-          setError(
+          const message =
             response.error?.description ||
-              "Payment failed. Please try again."
-          );
+            "Payment failed. Please try again.";
+
+          setError(message);
+          toast.error(message);
         }
       );
 
@@ -723,12 +741,14 @@ function Checkout() {
           error.message
       );
 
-      setError(
+      const message =
         error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to start Razorpay payment."
-      );
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to start Razorpay payment.";
+
+      setError(message);
+      toast.error(message);
 
       setPlacingOrder(false);
     }
@@ -749,16 +769,22 @@ function Checkout() {
     }
 
     if (!userId) {
-      setError(
-        "User information not found. Please login again."
-      );
+      const message =
+        "User information not found. Please login again.";
+
+      setError(message);
+      toast.error(message);
+
       return;
     }
 
     if (cartItems.length === 0) {
-      setError(
-        "No products available to place the order."
-      );
+      const message =
+        "No products available to place the order.";
+
+      setError(message);
+      toast.error(message);
+
       return;
     }
 
@@ -776,9 +802,12 @@ function Checkout() {
     // =======================================================
 
     if (paymentMethod !== "cod") {
-      alert(
-        "Online payment is not available yet. Please select Cash on Delivery."
-      );
+      const message =
+        "Online payment is not available yet. Please select Cash on Delivery.";
+
+      setError(message);
+      toast.error(message);
+
       return;
     }
 
@@ -810,13 +839,13 @@ function Checkout() {
         response.data
       );
 
-      alert(
+      toast.success(
         "Order placed successfully!"
       );
 
       if (!isBuyNow) {
-          setCart(null);
-        }
+        setCart(null);
+      }
 
       navigate("/orders");
     } catch (error) {
@@ -826,12 +855,14 @@ function Checkout() {
           error.message
       );
 
-      setError(
+      const message =
         error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to place order."
-      );
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to place order.";
+
+      setError(message);
+      toast.error(message);
     } finally {
       setPlacingOrder(false);
     }
@@ -942,6 +973,7 @@ function Checkout() {
       <main className="figma-checkout">
 
         {/* ERROR */}
+
         {error && (
           <div className="checkout-error">
             {error}
@@ -949,6 +981,7 @@ function Checkout() {
         )}
 
         {/* CHECKOUT CARD */}
+
         <form
           className="figma-checkout-container"
           onSubmit={handlePlaceOrder}
@@ -961,11 +994,13 @@ function Checkout() {
           <section className="delivery-section">
 
             {/* DELIVERY */}
+
             <h2 className="delivery-title">
               Delivery
             </h2>
 
             {/* COUNTRY */}
+
             <div className="checkout-field">
               <label>
                 Country/region
@@ -982,8 +1017,8 @@ function Checkout() {
             </div>
 
             {/* NAME */}
-            <div className="checkout-row">
 
+            <div className="checkout-row">
               <div className="checkout-field">
                 <input
                   type="text"
@@ -1001,10 +1036,10 @@ function Checkout() {
                   required
                 />
               </div>
-
             </div>
 
             {/* ADDRESS */}
+
             <div className="checkout-field">
               <input
                 type="text"
@@ -1015,6 +1050,7 @@ function Checkout() {
             </div>
 
             {/* APARTMENT */}
+
             <div className="checkout-field">
               <input
                 type="text"
@@ -1024,6 +1060,7 @@ function Checkout() {
             </div>
 
             {/* CITY / STATE / PIN */}
+
             <div className="checkout-location-row">
 
               <div className="checkout-field">
@@ -1077,6 +1114,7 @@ function Checkout() {
             </div>
 
             {/* PHONE */}
+
             <div className="checkout-field">
               <input
                 type="tel"
@@ -1089,8 +1127,8 @@ function Checkout() {
             </div>
 
             {/* SAVE INFO */}
-            <label className="save-info">
 
+            <label className="save-info">
               <input
                 type="checkbox"
                 name="saveInfo"
@@ -1099,7 +1137,6 @@ function Checkout() {
               <span>
                 Save this information for next time
               </span>
-
             </label>
 
             {/* =================================================
@@ -1164,6 +1201,7 @@ function Checkout() {
           <section className="checkout-right">
 
             {/* PRODUCTS */}
+
             <div className="order-summary-products">
 
               {cartItems.map(
@@ -1254,10 +1292,10 @@ function Checkout() {
             </div>
 
             {/* PRICE DETAILS */}
+
             <div className="price-details">
 
               <div className="price-row">
-
                 <span>
                   Subtotal
                 </span>
@@ -1268,7 +1306,6 @@ function Checkout() {
                     "en-IN"
                   )}
                 </span>
-
               </div>
 
               {discount > 0 && (
@@ -1308,10 +1345,10 @@ function Checkout() {
             </div>
 
             {/* TOTAL */}
+
             <div className="figma-total">
 
               <div>
-
                 <h2>
                   Total
                 </h2>
@@ -1319,7 +1356,6 @@ function Checkout() {
                 <small>
                   Including taxes
                 </small>
-
               </div>
 
               <strong>
@@ -1353,6 +1389,7 @@ function Checkout() {
               </p>
 
               {/* COD */}
+
               <label
                 className={`payment-method ${
                   paymentMethod === "cod"
@@ -1374,11 +1411,9 @@ function Checkout() {
                 />
 
                 <div className="payment-method-content">
-
                   <strong>
                     Cash on Delivery
                   </strong>
-
                 </div>
 
                 <span className="payment-icons">
@@ -1397,6 +1432,7 @@ function Checkout() {
               )}
 
               {/* RAZORPAY */}
+
               <label
                 className={`payment-method ${
                   paymentMethod === "razorpay"
@@ -1421,12 +1457,10 @@ function Checkout() {
                 />
 
                 <div className="payment-method-content">
-
                   <strong>
                     Razorpay
                     (UPI, Cards & NetBanking)
                   </strong>
-
                 </div>
 
                 <span className="payment-icons">
@@ -1438,13 +1472,11 @@ function Checkout() {
               {paymentMethod ===
                 "razorpay" && (
                 <div className="payment-info-box">
-
                   <p>
                     You will be redirected to
                     Razorpay secure payment
                     checkout.
                   </p>
-
                 </div>
               )}
 
@@ -1515,6 +1547,7 @@ function Checkout() {
             </div>
 
             {/* PLACE ORDER */}
+
             <button
               type="submit"
               className="figma-pay-button"
@@ -1528,6 +1561,7 @@ function Checkout() {
             </button>
 
             {/* POLICY LINKS */}
+
             <div className="checkout-policy-links">
 
               <Link to="/refund-policy">
@@ -1579,8 +1613,3 @@ function Checkout() {
 }
 
 export default Checkout;
-
-
-
-
-

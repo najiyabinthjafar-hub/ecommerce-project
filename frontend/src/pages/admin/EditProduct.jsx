@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
+
+import { toast } from "react-toastify";
+
 import "./AddProduct.css";
 
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
-const PRODUCT_API_URL = "http://localhost:5000/api/products";
+const CATEGORY_API_URL =
+  "http://localhost:5000/api/categories";
+
+const PRODUCT_API_URL =
+  "http://localhost:5000/api/products";
 
 function EditProduct() {
   const navigate = useNavigate();
+
   const { id } = useParams();
 
   const [product, setProduct] = useState({
@@ -23,18 +31,29 @@ function EditProduct() {
   });
 
   const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [loadingCategories, setLoadingCategories] =
+    useState(true);
+  const [loadingProduct, setLoadingProduct] =
+    useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [existingImages, setExistingImages] = useState([]);
+  const [existingImages, setExistingImages] =
+    useState([]);
+
   const [newImages, setNewImages] = useState([]);
 
   // =========================================================
   // LETTER SIZES
   // =========================================================
 
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  const sizes = [
+    "XS",
+    "S",
+    "M",
+    "L",
+    "XL",
+    "XXL",
+  ];
 
   // =========================================================
   // NUMERIC SIZES
@@ -71,7 +90,10 @@ function EditProduct() {
 
         const data = await response.json();
 
-        const p = data.product || data.data || data;
+        const p =
+          data.product ||
+          data.data ||
+          data;
 
         setProduct({
           sku: p.sku || "",
@@ -84,8 +106,7 @@ function EditProduct() {
             p.regularPrice ?? "",
           salePrice:
             p.salePrice ?? "",
-          stock:
-            p.stock ?? "",
+          stock: p.stock ?? "",
           variants: Array.isArray(p.variants)
             ? p.variants
             : [],
@@ -108,7 +129,7 @@ function EditProduct() {
           error
         );
 
-        alert(
+        toast.error(
           error.message ||
             "Failed to load product."
         );
@@ -141,7 +162,8 @@ function EditProduct() {
           );
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (Array.isArray(data)) {
           setCategories(data);
@@ -162,7 +184,7 @@ function EditProduct() {
           error
         );
 
-        alert(
+        toast.error(
           "Failed to load categories."
         );
       } finally {
@@ -177,9 +199,10 @@ function EditProduct() {
   // MAIN CATEGORIES
   // =========================================================
 
-  const mainCategories = categories.filter(
-    (category) => !category.parent
-  );
+  const mainCategories =
+    categories.filter(
+      (category) => !category.parent
+    );
 
   // =========================================================
   // GET SUBCATEGORIES
@@ -236,10 +259,7 @@ function EditProduct() {
           ? prev.variants.filter(
               (item) => item !== size
             )
-          : [
-              ...prev.variants,
-              size,
-            ],
+          : [...prev.variants, size],
       };
     });
   };
@@ -278,11 +298,12 @@ function EditProduct() {
       5 - totalImages;
 
     if (remainingSlots <= 0) {
-      alert(
+      toast.error(
         "You can have a maximum of 5 images."
       );
 
       e.target.value = "";
+
       return;
     }
 
@@ -296,7 +317,7 @@ function EditProduct() {
       selectedFiles.length >
       remainingSlots
     ) {
-      alert(
+      toast.warning(
         `Only ${remainingSlots} more image(s) can be added.`
       );
     }
@@ -313,9 +334,7 @@ function EditProduct() {
   // REMOVE EXISTING IMAGE
   // =========================================================
 
-  const removeExistingImage = (
-    index
-  ) => {
+  const removeExistingImage = (index) => {
     setExistingImages((prev) =>
       prev.filter(
         (_, imageIndex) =>
@@ -345,13 +364,8 @@ function EditProduct() {
     return name
       .toLowerCase()
       .trim()
-      .replace(
-        /[^a-z0-9]+/g,
-        "-"
-      )
-      .replace(
-        /(^-|-$)/g,
-        "");
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   // =========================================================
@@ -362,32 +376,34 @@ function EditProduct() {
     e.preventDefault();
 
     if (!product.name.trim()) {
-      alert(
+      toast.error(
         "Please enter product name."
       );
+
       return;
     }
 
     if (!product.category) {
-      alert(
+      toast.error(
         "Please select a category."
       );
+
       return;
     }
 
-    if (
-      product.regularPrice === ""
-    ) {
-      alert(
+    if (product.regularPrice === "") {
+      toast.error(
         "Please enter regular price."
       );
+
       return;
     }
 
     if (product.stock === "") {
-      alert(
+      toast.error(
         "Please enter stock."
       );
+
       return;
     }
 
@@ -395,9 +411,10 @@ function EditProduct() {
       existingImages.length === 0 &&
       newImages.length === 0
     ) {
-      alert(
+      toast.error(
         "Please keep at least one product image."
       );
+
       return;
     }
 
@@ -406,9 +423,10 @@ function EditProduct() {
         newImages.length >
       5
     ) {
-      alert(
+      toast.error(
         "You can have a maximum of 5 images."
       );
+
       return;
     }
 
@@ -428,8 +446,7 @@ function EditProduct() {
           product.name
         ),
 
-        category:
-          product.category,
+        category: product.category,
 
         regularPrice: Number(
           product.regularPrice
@@ -446,17 +463,13 @@ function EditProduct() {
           product.stock
         ),
 
-        // Includes:
-        // XS, S, M, L, XL, XXL
-        // 28, 30, 32, 34, 36, 38, 40, 42, 44
         variants:
           product.variants,
 
         description:
           product.description.trim(),
 
-        status:
-          product.status,
+        status: product.status,
 
         isBestSeller:
           product.isBestSeller,
@@ -512,6 +525,7 @@ function EditProduct() {
             `${PRODUCT_API_URL}/${id}/images`,
             {
               method: "POST",
+
               body: imageFormData,
             }
           );
@@ -532,9 +546,7 @@ function EditProduct() {
       // =====================================================
 
       if (
-        Array.isArray(
-          existingImages
-        )
+        Array.isArray(existingImages)
       ) {
         try {
           const imageUpdateResponse =
@@ -570,20 +582,31 @@ function EditProduct() {
         }
       }
 
-      alert(
-        "Product updated successfully!"
+      // =====================================================
+      // SUCCESS TOAST
+      // =====================================================
+
+      toast.success(
+        "Product updated successfully!",
+        {
+          hideProgressBar: true,
+        }
       );
 
-      navigate(
-        "/admin/products"
-      );
+      // Give Toastify a moment to display before navigation
+
+      setTimeout(() => {
+        navigate(
+          "/admin/products"
+        );
+      }, 700);
     } catch (error) {
       console.error(
         "Update product error:",
         error
       );
 
-      alert(
+      toast.error(
         error.message ||
           "Something went wrong while updating the product."
       );
@@ -614,7 +637,8 @@ function EditProduct() {
             style={{
               minHeight: "300px",
               display: "flex",
-              alignItems: "center",
+              alignItems:
+                "center",
               justifyContent:
                 "center",
               color: "#777",
@@ -640,7 +664,9 @@ function EditProduct() {
 
         <div className="add-product-header">
           <div className="add-product-heading">
-            <h1>Edit Product</h1>
+            <h1>
+              Edit Product
+            </h1>
 
             <p>
               Update product details,
@@ -666,7 +692,6 @@ function EditProduct() {
             {/* SKU + NAME */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="sku">
                   SKU
@@ -701,13 +726,11 @@ function EditProduct() {
                   required
                 />
               </div>
-
             </div>
 
             {/* CATEGORY + STOCK */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="category">
                   Category
@@ -732,7 +755,9 @@ function EditProduct() {
 
                   {!loadingCategories &&
                     mainCategories.map(
-                      (mainCategory) => {
+                      (
+                        mainCategory
+                      ) => {
                         const mainCategoryId =
                           mainCategory._id ||
                           mainCategory.id;
@@ -814,13 +839,11 @@ function EditProduct() {
                   required
                 />
               </div>
-
             </div>
 
             {/* PRICES */}
 
             <div className="form-row">
-
               <div className="form-group">
                 <label htmlFor="regularPrice">
                   Regular Price
@@ -863,20 +886,14 @@ function EditProduct() {
                   step="0.01"
                 />
               </div>
-
             </div>
 
-            {/* =================================================
-                SIZES
-            ================================================= */}
+            {/* SIZES */}
 
             <div className="form-group sizes-group">
-
               <label>
                 Available Sizes
               </label>
-
-              {/* LETTER SIZES */}
 
               <small className="size-category-label">
                 Letter Sizes
@@ -906,8 +923,6 @@ function EditProduct() {
                   )
                 )}
               </div>
-
-              {/* NUMERIC SIZES */}
 
               <small className="size-category-label numeric-size-label">
                 Numeric Sizes
@@ -942,13 +957,11 @@ function EditProduct() {
                 Select all sizes available
                 for this product.
               </small>
-
             </div>
 
             {/* BEST SELLER */}
 
             <div className="form-group best-seller-group">
-
               <div className="best-seller-content">
                 <label className="best-seller-title">
                   Best Seller
@@ -961,7 +974,6 @@ function EditProduct() {
               </div>
 
               <label className="best-seller-checkbox">
-
                 <input
                   type="checkbox"
                   checked={
@@ -975,21 +987,18 @@ function EditProduct() {
                 <span>
                   Mark this product as Best Seller
                 </span>
-
               </label>
             </div>
 
             {/* PRODUCT IMAGES */}
 
             <div className="form-group product-image-full">
-
               <label htmlFor="images">
                 Product Images{" "}
                 <span>*</span>
               </label>
 
               <div className="file-upload-box">
-
                 <label
                   htmlFor="images"
                   className="choose-image-btn"
@@ -1008,7 +1017,6 @@ function EditProduct() {
                     handleImageChange
                   }
                 />
-
               </div>
 
               {/* EXISTING IMAGES */}
@@ -1016,7 +1024,6 @@ function EditProduct() {
               {existingImages.length >
                 0 && (
                 <div className="product-image-preview">
-
                   {existingImages.map(
                     (
                       image,
@@ -1037,7 +1044,9 @@ function EditProduct() {
                           key={`${imageUrl}-${index}`}
                         >
                           <img
-                            src={imageUrl}
+                            src={
+                              imageUrl
+                            }
                             alt={`Product ${
                               index + 1
                             }`}
@@ -1063,7 +1072,6 @@ function EditProduct() {
                       );
                     }
                   )}
-
                 </div>
               )}
 
@@ -1072,7 +1080,6 @@ function EditProduct() {
               {newImages.length >
                 0 && (
                 <div className="product-image-preview">
-
                   {newImages.map(
                     (
                       image,
@@ -1112,16 +1119,13 @@ function EditProduct() {
                       </div>
                     )
                   )}
-
                 </div>
               )}
-
             </div>
 
             {/* STATUS */}
 
             <div className="form-group">
-
               <label htmlFor="status">
                 Status
               </label>
@@ -1129,9 +1133,7 @@ function EditProduct() {
               <select
                 id="status"
                 name="status"
-                value={
-                  product.status
-                }
+                value={product.status}
                 onChange={
                   handleChange
                 }
@@ -1144,13 +1146,11 @@ function EditProduct() {
                   Inactive
                 </option>
               </select>
-
             </div>
 
             {/* DESCRIPTION */}
 
             <div className="form-group">
-
               <label htmlFor="description">
                 Description
               </label>
@@ -1167,19 +1167,15 @@ function EditProduct() {
                 placeholder="Enter product description"
                 rows="5"
               ></textarea>
-
             </div>
 
             {/* ACTIONS */}
 
             <div className="form-actions">
-
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={
-                  handleCancel
-                }
+                onClick={handleCancel}
                 disabled={saving}
               >
                 Cancel
@@ -1202,9 +1198,7 @@ function EditProduct() {
                   </>
                 )}
               </button>
-
             </div>
-
           </form>
         </div>
       </div>

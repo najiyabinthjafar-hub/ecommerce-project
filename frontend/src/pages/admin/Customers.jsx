@@ -3,13 +3,11 @@ import React, {
   useEffect,
   useState,
 } from "react";
-
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
 import "./Customers.css";
 
 const API_URL = "http://localhost:5000/api";
-
 const CUSTOMERS_PER_PAGE = 10;
 
 const Customers = () => {
@@ -20,10 +18,8 @@ const Customers = () => {
   // =========================================================
 
   const [customers, setCustomers] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState("");
-
   const [error, setError] = useState("");
 
   // Search / filters
@@ -137,8 +133,7 @@ const Customers = () => {
       try {
         const headers = getHeaders();
 
-        const baseUrl =
-          `${API_URL}/users?page=1&limit=1&sort=newest`;
+        const baseUrl = `${API_URL}/users?page=1&limit=1&sort=newest`;
 
         const [
           totalResponse,
@@ -292,10 +287,8 @@ const Customers = () => {
           )
         );
 
-        /*
-          Keep total card synced with backend response
-          when no filter is active.
-        */
+        // Keep total card synced with backend response
+        // when no filter is active.
         if (
           statusFilter === "all" &&
           !search.trim()
@@ -419,77 +412,203 @@ const Customers = () => {
       ? "unblock"
       : "block";
 
-    const confirmed = window.confirm(
-      `Are you sure you want to ${actionText} ${customer.name || "this customer"}?`
-    );
+    // =====================================================
+    // TOASTIFY CONFIRMATION
+    // =====================================================
 
-    if (!confirmed) {
-      return;
-    }
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            width: "100%",
+            padding: "2px",
+            background: "#ffffff",
+            color: "#222222",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "700",
+              marginBottom: "5px",
+            }}
+          >
+            {isBlocked
+              ? "Unblock Customer?"
+              : "Block Customer?"}
+          </div>
 
-    try {
-      setActionLoading(customer._id);
-      setError("");
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#777777",
+              lineHeight: "1.5",
+              marginBottom: "12px",
+            }}
+          >
+            Are you sure you want to{" "}
+            {actionText}{" "}
+            <strong>
+              {customer.name ||
+                "this customer"}
+            </strong>
+            ?
+          </div>
 
-      const response = await fetch(
-        `${API_URL}/users/${customer._id}/status`,
-        {
-          method: "PATCH",
-          headers: getHeaders(),
-          body: JSON.stringify({
-            status: newStatus,
-          }),
-        }
-      );
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "8px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                background: "#f3f3f3",
+                color: "#444444",
+                borderRadius: "7px",
+                padding: "7px 12px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
 
-      const data =
-        await parseResponse(response);
+            <button
+              type="button"
+              onClick={async () => {
+                closeToast();
 
-      if (!response.ok) {
-        throw new Error(
-          data?.message ||
-            `Failed to ${actionText} customer.`
-        );
+                try {
+                  setActionLoading(
+                    customer._id
+                  );
+                  setError("");
+
+                  const response =
+                    await fetch(
+                      `${API_URL}/users/${customer._id}/status`,
+                      {
+                        method: "PATCH",
+                        headers:
+                          getHeaders(),
+                        body: JSON.stringify({
+                          status:
+                            newStatus,
+                        }),
+                      }
+                    );
+
+                  const data =
+                    await parseResponse(
+                      response
+                    );
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data?.message ||
+                        `Failed to ${actionText} customer.`
+                    );
+                  }
+
+                  // Update current customer in table
+                  setCustomers(
+                    (previousCustomers) =>
+                      previousCustomers.map(
+                        (item) =>
+                          String(
+                            item._id
+                          ) ===
+                          String(
+                            customer._id
+                          )
+                            ? {
+                                ...item,
+                                ...(data?.user ||
+                                  {}),
+                                status:
+                                  newStatus,
+                              }
+                            : item
+                      )
+                  );
+
+                  // Refresh summary cards
+                  await fetchCustomerCounts();
+
+                  // =================================================
+                  // TOASTIFY SUCCESS
+                  // =================================================
+
+                  toast.success(
+                    data?.message ||
+                      `Customer ${
+                        newStatus ===
+                        "blocked"
+                          ? "blocked"
+                          : "unblocked"
+                      } successfully.`,
+                    {
+                      className:
+                        "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+                } catch (error) {
+                  console.error(
+                    "Customer status update error:",
+                    error
+                  );
+
+                  // =================================================
+                  // TOASTIFY ERROR
+                  // =================================================
+
+                  toast.error(
+                    error?.message ||
+                      "Failed to update customer status.",
+                    {
+                      className:
+                        "rizo-admin-toast",
+                      hideProgressBar: true,
+                    }
+                  );
+                } finally {
+                  setActionLoading("");
+                }
+              }}
+              style={{
+                border: "none",
+                background: "#dc3545",
+                color: "#ffffff",
+                borderRadius: "7px",
+                padding: "7px 12px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              {isBlocked
+                ? "Unblock"
+                : "Block"}
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        hideProgressBar: true,
+        className:
+          "rizo-admin-toast",
       }
-
-      // Update current customer in table
-      setCustomers((previousCustomers) =>
-        previousCustomers.map((item) =>
-          String(item._id) ===
-          String(customer._id)
-            ? {
-                ...item,
-                ...(data?.user || {}),
-                status: newStatus,
-              }
-            : item
-        )
-      );
-
-      // Refresh summary cards
-      await fetchCustomerCounts();
-
-      window.alert(
-        data?.message ||
-          `Customer ${
-            newStatus === "blocked"
-              ? "blocked"
-              : "unblocked"
-          } successfully.`
-      );
-    } catch (error) {
-      console.error(
-        "Customer status update error:",
-        error
-      );
-
-      window.alert(
-        error?.message ||
-          "Failed to update customer status."
-      );
-    } finally {
-      setActionLoading("");
-    }
+    );
   };
 
   // =========================================================
@@ -499,16 +618,18 @@ const Customers = () => {
   const handlePreviousPage = () => {
     if (page <= 1) return;
 
-    setPage((previousPage) =>
-      previousPage - 1
+    setPage(
+      (previousPage) =>
+        previousPage - 1
     );
   };
 
   const handleNextPage = () => {
     if (page >= totalPages) return;
 
-    setPage((previousPage) =>
-      previousPage + 1
+    setPage(
+      (previousPage) =>
+        previousPage + 1
     );
   };
 
@@ -529,7 +650,6 @@ const Customers = () => {
 
   const getPageNumbers = () => {
     const pages = [];
-
     const maxVisiblePages = 5;
 
     if (totalPages <= maxVisiblePages) {
@@ -545,7 +665,14 @@ const Customers = () => {
     }
 
     if (page <= 3) {
-      return [1, 2, 3, 4, "...", totalPages];
+      return [
+        1,
+        2,
+        3,
+        4,
+        "...",
+        totalPages,
+      ];
     }
 
     if (page >= totalPages - 2) {
@@ -609,15 +736,12 @@ const Customers = () => {
 
   return (
     <div className="customers-page">
-
       {/* =====================================================
           HEADER
       ===================================================== */}
 
       <div className="customers-page-header">
-
         <div className="customers-heading">
-
           <span className="customers-eyebrow">
             CUSTOMER MANAGEMENT
           </span>
@@ -629,9 +753,7 @@ const Customers = () => {
             account status, and customer
             information.
           </p>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -639,17 +761,14 @@ const Customers = () => {
       ===================================================== */}
 
       <div className="customers-summary-grid">
-
         {/* TOTAL */}
 
         <div className="customer-summary-card total">
-
           <div className="customer-summary-icon">
             <i className="bi bi-people-fill"></i>
           </div>
 
           <div className="customer-summary-content">
-
             <span>
               Total Customers
             </span>
@@ -661,21 +780,17 @@ const Customers = () => {
             <small>
               All registered customers
             </small>
-
           </div>
-
         </div>
 
         {/* ACTIVE */}
 
         <div className="customer-summary-card active">
-
           <div className="customer-summary-icon">
             <i className="bi bi-person-check-fill"></i>
           </div>
 
           <div className="customer-summary-content">
-
             <span>
               Active Customers
             </span>
@@ -687,21 +802,17 @@ const Customers = () => {
             <small>
               Currently active accounts
             </small>
-
           </div>
-
         </div>
 
         {/* BLOCKED */}
 
         <div className="customer-summary-card blocked">
-
           <div className="customer-summary-icon">
             <i className="bi bi-person-x-fill"></i>
           </div>
 
           <div className="customer-summary-content">
-
             <span>
               Blocked Customers
             </span>
@@ -713,11 +824,8 @@ const Customers = () => {
             <small>
               Blocked accounts
             </small>
-
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -725,9 +833,7 @@ const Customers = () => {
       ===================================================== */}
 
       <div className="customers-filter-card">
-
         <div className="customers-filter-header">
-
           <div>
             <h2>Customer List</h2>
 
@@ -735,15 +841,12 @@ const Customers = () => {
               Search and manage your customers.
             </p>
           </div>
-
         </div>
 
         <div className="customers-filters">
-
           {/* SEARCH */}
 
           <div className="customer-search-box">
-
             <i className="bi bi-search"></i>
 
             <input
@@ -766,13 +869,11 @@ const Customers = () => {
                 <i className="bi bi-x"></i>
               </button>
             )}
-
           </div>
 
           {/* STATUS */}
 
           <div className="customer-filter-field">
-
             <label htmlFor="customer-status">
               Status
             </label>
@@ -794,13 +895,11 @@ const Customers = () => {
                 Blocked
               </option>
             </select>
-
           </div>
 
           {/* SORT */}
 
           <div className="customer-filter-field">
-
             <label htmlFor="customer-sort">
               Sort
             </label>
@@ -826,7 +925,6 @@ const Customers = () => {
                 Name Z-A
               </option>
             </select>
-
           </div>
 
           {/* CLEAR */}
@@ -843,9 +941,7 @@ const Customers = () => {
               Clear
             </button>
           )}
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -854,7 +950,6 @@ const Customers = () => {
 
       {error && (
         <div className="customers-error">
-
           <i className="bi bi-exclamation-circle"></i>
 
           <span>{error}</span>
@@ -865,7 +960,6 @@ const Customers = () => {
           >
             Retry
           </button>
-
         </div>
       )}
 
@@ -874,13 +968,9 @@ const Customers = () => {
       ===================================================== */}
 
       <div className="customers-table-card">
-
         <div className="customers-table-wrapper">
-
           <table className="customers-table">
-
             <thead>
-
               <tr>
                 <th>Customer</th>
                 <th>Email</th>
@@ -889,16 +979,14 @@ const Customers = () => {
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
-
             </thead>
 
             <tbody>
-
               {customers.length > 0 ? (
                 customers.map((customer) => {
-
                   const isBlocked =
-                    customer.status === "blocked";
+                    customer.status ===
+                    "blocked";
 
                   const isUpdating =
                     actionLoading ===
@@ -908,13 +996,10 @@ const Customers = () => {
                     <tr
                       key={customer._id}
                     >
-
                       {/* CUSTOMER */}
 
                       <td>
-
                         <div className="customer-table-user">
-
                           <div className="customer-avatar">
                             {getInitials(
                               customer.name
@@ -922,7 +1007,6 @@ const Customers = () => {
                           </div>
 
                           <div className="customer-table-user-info">
-
                             <strong>
                               {customer.name ||
                                 "Unknown Customer"}
@@ -931,11 +1015,8 @@ const Customers = () => {
                             <span>
                               Customer
                             </span>
-
                           </div>
-
                         </div>
-
                       </td>
 
                       {/* EMAIL */}
@@ -969,7 +1050,6 @@ const Customers = () => {
                       {/* STATUS */}
 
                       <td>
-
                         <span
                           className={`customer-status-badge ${
                             isBlocked
@@ -977,23 +1057,18 @@ const Customers = () => {
                               : "active"
                           }`}
                         >
-
                           <span className="status-dot"></span>
 
                           {isBlocked
                             ? "Blocked"
                             : "Active"}
-
                         </span>
-
                       </td>
 
                       {/* ACTIONS */}
 
                       <td>
-
                         <div className="customer-actions">
-
                           {/* VIEW */}
 
                           <button
@@ -1044,24 +1119,18 @@ const Customers = () => {
                               ></i>
                             )}
                           </button>
-
                         </div>
-
                       </td>
-
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-
                   <td
                     colSpan="6"
                     className="customers-empty-cell"
                   >
-
                     <div className="customers-empty">
-
                       <div className="customers-empty-icon">
                         <i className="bi bi-people"></i>
                       </div>
@@ -1087,20 +1156,13 @@ const Customers = () => {
                           Clear Filters
                         </button>
                       )}
-
                     </div>
-
                   </td>
-
                 </tr>
               )}
-
             </tbody>
-
           </table>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -1108,12 +1170,11 @@ const Customers = () => {
       ===================================================== */}
 
       <div className="customers-mobile-list">
-
         {customers.length > 0 ? (
           customers.map((customer) => {
-
             const isBlocked =
-              customer.status === "blocked";
+              customer.status ===
+              "blocked";
 
             const isUpdating =
               actionLoading ===
@@ -1124,13 +1185,10 @@ const Customers = () => {
                 className="customer-mobile-card"
                 key={customer._id}
               >
-
                 {/* TOP */}
 
                 <div className="customer-mobile-top">
-
                   <div className="customer-mobile-user">
-
                     <div className="customer-avatar">
                       {getInitials(
                         customer.name
@@ -1138,7 +1196,6 @@ const Customers = () => {
                     </div>
 
                     <div>
-
                       <strong>
                         {customer.name ||
                           "Unknown Customer"}
@@ -1147,9 +1204,7 @@ const Customers = () => {
                       <span>
                         Customer
                       </span>
-
                     </div>
-
                   </div>
 
                   <span
@@ -1165,15 +1220,12 @@ const Customers = () => {
                       ? "Blocked"
                       : "Active"}
                   </span>
-
                 </div>
 
                 {/* INFO */}
 
                 <div className="customer-mobile-info">
-
                   <div className="customer-mobile-row">
-
                     <span>
                       <i className="bi bi-envelope"></i>
                       Email
@@ -1183,11 +1235,9 @@ const Customers = () => {
                       {customer.email ||
                         "-"}
                     </strong>
-
                   </div>
 
                   <div className="customer-mobile-row">
-
                     <span>
                       <i className="bi bi-telephone"></i>
                       Phone
@@ -1197,11 +1247,9 @@ const Customers = () => {
                       {customer.phone ||
                         "-"}
                     </strong>
-
                   </div>
 
                   <div className="customer-mobile-row">
-
                     <span>
                       <i className="bi bi-calendar3"></i>
                       Joined
@@ -1212,15 +1260,12 @@ const Customers = () => {
                         customer.createdAt
                       )}
                     </strong>
-
                   </div>
-
                 </div>
 
                 {/* ACTIONS */}
 
                 <div className="customer-mobile-actions">
-
                   <button
                     type="button"
                     className="customer-mobile-view-btn"
@@ -1264,15 +1309,12 @@ const Customers = () => {
                       ? "Unblock"
                       : "Block"}
                   </button>
-
                 </div>
-
               </div>
             );
           })
         ) : (
           <div className="customers-mobile-empty">
-
             <div className="customers-empty-icon">
               <i className="bi bi-people"></i>
             </div>
@@ -1285,10 +1327,8 @@ const Customers = () => {
               No customers match your current
               search or filters.
             </p>
-
           </div>
         )}
-
       </div>
 
       {/* =====================================================
@@ -1297,9 +1337,7 @@ const Customers = () => {
 
       {customers.length > 0 && (
         <div className="customers-pagination">
-
           <div className="customers-pagination-info">
-
             Showing{" "}
             <strong>
               {(page - 1) *
@@ -1319,11 +1357,9 @@ const Customers = () => {
               {totalCustomers}
             </strong>{" "}
             customers
-
           </div>
 
           <div className="customers-pagination-controls">
-
             {/* PREVIOUS */}
 
             <button
@@ -1342,7 +1378,6 @@ const Customers = () => {
 
             {getPageNumbers().map(
               (pageNumber, index) => {
-
                 if (
                   pageNumber === "..."
                 ) {
@@ -1392,12 +1427,9 @@ const Customers = () => {
             >
               <i className="bi bi-chevron-right"></i>
             </button>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 };

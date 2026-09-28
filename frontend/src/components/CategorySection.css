@@ -3,7 +3,7 @@
 ============================ */
 
 .category-section {
-  margin-top: 0px;
+  margin-top: 0;
   margin-bottom: 50px;
   width: 100%;
   height: 465px;
@@ -108,9 +108,8 @@
   font-family: "Orbitron", monospace;
   font-size: 16px;
   font-weight: 400;
-  line-height: 1;
   color: #444;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
@@ -119,13 +118,11 @@
   margin-top: 6px;
   font-family: Arial, sans-serif;
   font-size: 8px;
-  font-weight: 400;
   color: #555;
-  line-height: 1;
 }
 
 /* ============================
-   RIGHT SLIDER
+   SLIDER
 ============================ */
 
 .category-slider {
@@ -156,37 +153,25 @@
   height: 100%;
   display: block;
   object-fit: cover;
-  transition: opacity 0.5s ease;
 }
 
 /* ============================
-   FIRST IMAGE
+   IMAGES
 ============================ */
 
 .first-image {
   width: 260px;
   height: 335px;
-  margin-top: 0;
 }
 
-/* ============================
-   SECOND + THIRD IMAGE
-============================ */
-
-.second-image {
-  width: 210px;
-  height: 280px;
-  margin-top: 0;
-}
-
+.second-image,
 .third-image {
   width: 210px;
   height: 280px;
-  margin-top: 0;
 }
 
 /* ============================
-   ARROWS
+   CONTROLS
 ============================ */
 
 .category-controls {
@@ -212,17 +197,12 @@
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  font-weight: 300;
   cursor: pointer;
 }
 
 .slider-arrow:hover {
   background: #f5f5f5;
 }
-
-/* ============================
-   DOTS
-============================ */
 
 .slider-dots {
   position: absolute;
@@ -240,7 +220,6 @@
   display: block;
   border-radius: 50%;
   background: #c9c9c9;
-  cursor: pointer;
 }
 
 .slider-dots span.active {
@@ -254,11 +233,9 @@
 ============================ */
 
 @media (max-width: 1000px) {
-
   .category-section {
     grid-template-columns: 42% 58%;
     transform: scale(1);
-    transform-origin: top left;
   }
 
   .category-content {
@@ -273,7 +250,6 @@
 
   .category-description {
     width: 270px;
-    font-size: 8px;
   }
 
   .first-image {
@@ -308,7 +284,6 @@
 ============================ */
 
 @media (max-width: 768px) {
-
   .category-section {
     width: 100%;
     height: auto;
@@ -316,11 +291,10 @@
     display: flex;
     flex-direction: column;
     padding: 50px 24px 60px;
-    margin-top: 50px;
+    margin-top: 0;
     margin-bottom: 50px;
     transform: none;
     overflow: hidden;
-    box-sizing: border-box;
   }
 
   .category-content {
@@ -331,14 +305,12 @@
 
   .category-content h2 {
     font-size: 24px;
-    margin-bottom: 15px;
   }
 
   .category-description {
     width: 100%;
     max-width: 360px;
     font-size: 9px;
-    line-height: 1.7;
   }
 
   .category-description br {
@@ -349,37 +321,11 @@
     width: 120px;
     height: 34px;
     margin-top: 22px;
-    font-size: 9px;
   }
 
   .countdown-section {
     margin-top: 28px;
   }
-
-  .countdown-section h3 {
-    font-size: 14px;
-    margin-bottom: 12px;
-  }
-
-  .countdown {
-    gap: 8px;
-  }
-
-  .time-box {
-    width: 48px;
-  }
-
-  .time-box strong {
-    width: 48px;
-    height: 42px;
-    font-size: 15px;
-  }
-
-  .time-box span {
-    font-size: 8px;
-  }
-
-  /* SLIDER */
 
   .category-slider {
     width: 100%;
@@ -389,7 +335,6 @@
   }
 
   .visible-images {
-    position: absolute;
     top: 10px;
     left: 0;
     height: 300px;
@@ -407,20 +352,10 @@
     height: 230px;
   }
 
-  /* ARROWS */
-
   .category-controls {
     top: 315px;
     left: 0;
   }
-
-  .slider-arrow {
-    width: 25px;
-    height: 25px;
-    font-size: 16px;
-  }
-
-  /* DOTS */
 
   .slider-dots {
     top: 290px;
@@ -433,11 +368,10 @@
 ============================ */
 
 @media (max-width: 600px) {
-
   .category-section {
     min-height: 700px;
     padding: 45px 18px 50px;
-    margin-top: 45px;
+    margin-top: 0;
     margin-bottom: 45px;
   }
 
@@ -453,37 +387,7 @@
   .explore-btn {
     width: 115px;
     height: 32px;
-    font-size: 8px;
   }
-
-  .countdown-section {
-    margin-top: 24px;
-  }
-
-  .countdown-section h3 {
-    font-size: 12px;
-  }
-
-  .countdown {
-    gap: 7px;
-  }
-
-  .time-box,
-  .time-box strong {
-    width: 44px;
-  }
-
-  .time-box strong {
-    height: 40px;
-    font-size: 14px;
-  }
-
-  .time-box span {
-    font-size: 7px;
-    margin-top: 5px;
-  }
-
-  /* SLIDER */
 
   .category-slider {
     height: 355px;
@@ -507,19 +411,10 @@
     height: 205px;
   }
 
-  /* ARROWS */
-
   .category-controls {
     top: 285px;
     left: 0;
   }
-
-  .slider-arrow {
-    width: 24px;
-    height: 24px;
-  }
-
-  /* DOTS */
 
   .slider-dots {
     top: 265px;
@@ -543,11 +438,11 @@
 ============================ */
 
 @media (max-width: 400px) {
-
   .category-section {
     padding-left: 15px;
     padding-right: 15px;
     min-height: 670px;
+    margin-top: 0;
   }
 
   .category-content h2 {
@@ -556,21 +451,6 @@
 
   .category-description {
     font-size: 7.5px;
-    max-width: 290px;
-  }
-
-  .countdown-section h3 {
-    font-size: 11px;
-  }
-
-  .time-box,
-  .time-box strong {
-    width: 41px;
-  }
-
-  .time-box strong {
-    height: 38px;
-    font-size: 13px;
   }
 
   .category-slider {

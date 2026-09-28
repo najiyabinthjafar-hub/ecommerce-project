@@ -9,7 +9,6 @@
   padding: 0;
   box-sizing: border-box;
   color: #171717;
-
   font-family:
     "Inter",
     -apple-system,
@@ -32,18 +31,15 @@
 
 .contact-page-header h1 {
   margin: 0 0 5px;
-
   font-size: 25px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.4px;
-
   color: #111;
 }
 
 .contact-page-header p {
   margin: 0;
-
   font-size: 13px;
   line-height: 1.5;
   color: #777;
@@ -56,24 +52,18 @@
 .refresh-btn {
   height: 38px;
   padding: 0 15px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   border: 1px solid #dedede;
   border-radius: 7px;
-
   background: #fff;
   color: #222;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
-
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
@@ -101,24 +91,19 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-
   margin-bottom: 18px;
 }
 
 .contact-stat-card {
   min-height: 82px;
   padding: 15px 17px;
-
   display: flex;
   align-items: center;
   gap: 13px;
-
   box-sizing: border-box;
-
   background: #fff;
   border: 1px solid #e7e7e7;
   border-radius: 9px;
-
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -137,13 +122,10 @@
   width: 42px;
   height: 42px;
   flex: 0 0 42px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 8px;
-
   background: #f1f1f1;
   color: #222;
 }
@@ -153,18 +135,17 @@
 }
 
 .pending-icon {
-  background: #f5f1e8;
+  background: #fff7df;
   color: #8a6d1d;
 }
 
 .resolved-icon {
-  background: #edf5ef;
+  background: #edf7ef;
   color: #39704b;
 }
 
 .contact-stat-card > div:last-child {
   min-width: 0;
-
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -174,7 +155,6 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-
   color: #777;
 }
 
@@ -182,7 +162,6 @@
   font-size: 21px;
   font-weight: 700;
   line-height: 1.2;
-
   color: #151515;
 }
 
@@ -194,12 +173,10 @@
 .contact-toolbar {
   width: 100%;
   margin-bottom: 14px;
-
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-
   box-sizing: border-box;
 }
 
@@ -210,43 +187,31 @@
 .contact-search {
   width: 310px;
   flex: 0 0 310px;
-
   position: relative;
 }
 
 .contact-search > i {
   position: absolute;
-
   left: 13px;
   top: 50%;
-
   transform: translateY(-50%);
-
   font-size: 14px;
   color: #888;
-
   pointer-events: none;
 }
 
 .contact-search input {
   width: 100%;
   height: 40px;
-
   padding: 0 13px 0 36px;
-
   border: 1px solid #dedede;
   border-radius: 7px;
-
   outline: none;
-
   background: #fff;
   color: #222;
-
   font-family: inherit;
   font-size: 13px;
-
   box-sizing: border-box;
-
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -258,7 +223,6 @@
 
 .contact-search input:focus {
   border-color: #999;
-
   box-shadow:
     0 0 0 2px rgba(0, 0, 0, 0.04);
 }
@@ -270,22 +234,17 @@
 .contact-filter {
   width: 165px;
   height: 40px;
-
   position: relative;
   flex: 0 0 165px;
 }
 
 .contact-filter > i {
   position: absolute;
-
   left: 12px;
   top: 50%;
-
   transform: translateY(-50%);
-
   font-size: 13px;
   color: #777;
-
   pointer-events: none;
   z-index: 1;
 }
@@ -293,23 +252,16 @@
 .contact-filter select {
   width: 100%;
   height: 40px;
-
   padding: 0 28px 0 33px;
-
   border: 1px solid #dedede;
   border-radius: 7px;
-
   outline: none;
-
   background: #fff;
   color: #333;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
-
   cursor: pointer;
-
   box-sizing: border-box;
 }
 
@@ -323,12 +275,9 @@
 
 .contact-table-card {
   width: 100%;
-
   background: #fff;
-
   border: 1px solid #e5e5e5;
   border-radius: 9px;
-
   overflow: hidden;
 }
 
@@ -338,43 +287,62 @@
 
 .contact-table-header {
   min-height: 67px;
-
   padding: 14px 18px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   box-sizing: border-box;
-
   border-bottom: 1px solid #ededed;
 }
 
 .contact-table-header h2 {
   margin: 0 0 3px;
-
   font-size: 15px;
   font-weight: 700;
   line-height: 1.3;
-
   color: #171717;
 }
 
 .contact-table-header p {
   margin: 0;
-
   font-size: 11px;
   color: #888;
 }
 
 /* =========================================================
    TABLE WRAPPER
-   NO HORIZONTAL SCROLL
+   DESKTOP = NORMAL
+   MOBILE = HORIZONTAL SCROLL
 ========================================================= */
 
 .contact-table-wrapper {
   width: 100%;
-  overflow: hidden;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #cfcfcf transparent;
+}
+
+/* Chrome / Edge / Safari scrollbar */
+
+.contact-table-wrapper::-webkit-scrollbar {
+  height: 7px;
+}
+
+.contact-table-wrapper::-webkit-scrollbar-track {
+  background: #f7f7f7;
+}
+
+.contact-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cfcfcf;
+  border-radius: 10px;
+}
+
+.contact-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #aaaaaa;
 }
 
 /* =========================================================
@@ -383,10 +351,9 @@
 
 .contact-table {
   width: 100%;
-
+  min-width: 900px;
   border-collapse: collapse;
   border-spacing: 0;
-
   table-layout: fixed;
 }
 
@@ -396,24 +363,16 @@
 
 .contact-table th {
   height: 43px;
-
   padding: 0 12px;
-
   background: #fafafa;
   border-bottom: 1px solid #e7e7e7;
-
   color: #777;
-
   font-size: 10px;
   font-weight: 700;
-
   text-align: left;
   text-transform: uppercase;
-
   letter-spacing: 0.4px;
-
   white-space: nowrap;
-
   box-sizing: border-box;
 }
 
@@ -423,18 +382,12 @@
 
 .contact-table td {
   height: 67px;
-
   padding: 8px 12px;
-
   border-bottom: 1px solid #eeeeee;
-
   font-size: 12px;
   color: #333;
-
   vertical-align: middle;
-
   overflow: hidden;
-
   box-sizing: border-box;
 }
 
@@ -487,14 +440,10 @@
 /* =========================================================
    CUSTOMER CELL
 ========================================================= */
-/* =========================================================
-   CUSTOMER CELL
-========================================================= */
 
 .customer-cell {
   width: 100%;
   min-width: 0;
-
   display: flex;
   align-items: center;
   gap: 9px;
@@ -504,15 +453,12 @@
   width: 34px;
   height: 34px;
   flex: 0 0 34px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
   background: #171717;
   color: #fff;
-
   font-size: 12px;
   font-weight: 700;
 }
@@ -520,58 +466,49 @@
 .customer-info {
   min-width: 0;
   flex: 1;
-
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
 }
 
-/* NAME - ONE LINE */
+/* NAME */
+
 .customer-info strong {
   display: block;
-
   width: 100%;
-
   font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
-
   color: #222;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* EMAIL - SECOND LINE */
+/* EMAIL */
+
 .customer-info span {
   display: block;
-
   width: 100%;
-
   font-size: 10px;
   line-height: 1.2;
-
   color: #888;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* ===================================================== */
+
+/* =========================================================
    SUBJECT
-/* ========================================================= */
+========================================================= */
 
 .subject-cell {
   width: 100%;
-
   font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
-
   color: #292929;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -583,16 +520,12 @@
 
 .message-preview {
   width: 100%;
-
   font-size: 11px;
   line-height: 1.45;
-
   color: #777;
-
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-
   overflow: hidden;
 }
 
@@ -610,68 +543,80 @@
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
-
   color: #333;
-
   white-space: nowrap;
 }
 
 .date-cell span {
   font-size: 10px;
   line-height: 1.2;
-
   color: #999;
-
   white-space: nowrap;
 }
 
 /* =========================================================
    STATUS
+   READ = YELLOW
+   REPLIED = GREEN
 ========================================================= */
 
 .message-status {
+  min-width: 70px;
+  height: 26px;
+  padding: 0 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-
-  padding: 5px 8px;
-
+  gap: 6px;
   border-radius: 20px;
-
   font-size: 10px;
-  font-weight: 600;
-
+  font-weight: 650;
   line-height: 1;
-
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
-
   flex: 0 0 6px;
-
   border-radius: 50%;
 }
 
+/* =========================================================
+   READ STATUS
+========================================================= */
+
 .status-pending {
   background: #fff7df;
-  color: #896b1e;
+  border: 1px solid #f0dfaa;
+  color: #8a6d1d;
 }
 
 .status-pending .status-dot {
   background: #c49a28;
 }
 
+.message-status.status-pending {
+  box-shadow: 0 2px 6px rgba(196, 154, 40, 0.08);
+}
+
+/* =========================================================
+   REPLIED STATUS
+========================================================= */
+
 .status-resolved {
-  background: #edf7ef;
-  color: #3c754c;
+  background: #eaf7ee;
+  border: 1px solid #bfe2c8;
+  color: #327344;
 }
 
 .status-resolved .status-dot {
-  background: #4d965f;
+  background: #42a55a;
+}
+
+.message-status.status-resolved {
+  box-shadow: 0 2px 6px rgba(66, 165, 90, 0.08);
 }
 
 /* =========================================================
@@ -682,28 +627,21 @@
   display: flex;
   align-items: center;
   gap: 5px;
-
   white-space: nowrap;
 }
 
 .icon-action {
   width: 30px;
   height: 30px;
-
   flex: 0 0 30px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   border: 1px solid #dedede;
   border-radius: 6px;
-
   background: #fff;
   color: #555;
-
   cursor: pointer;
-
   transition:
     background 0.18s ease,
     color 0.18s ease,
@@ -741,20 +679,16 @@
 
 .contact-loading {
   min-height: 230px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   gap: 10px;
-
   color: #777;
 }
 
 .contact-loading i {
   font-size: 23px;
-
   animation: contact-spin 1s linear infinite;
 }
 
@@ -778,31 +712,23 @@
 
 .contact-empty {
   min-height: 260px;
-
   padding: 35px 20px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   text-align: center;
-
   box-sizing: border-box;
 }
 
 .empty-icon {
   width: 54px;
   height: 54px;
-
   margin-bottom: 13px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
-
   background: #f3f3f3;
   color: #777;
 }
@@ -813,21 +739,16 @@
 
 .contact-empty h3 {
   margin: 0 0 6px;
-
   font-size: 14px;
   font-weight: 650;
-
   color: #333;
 }
 
 .contact-empty p {
   max-width: 380px;
-
   margin: 0;
-
   font-size: 11px;
   line-height: 1.5;
-
   color: #999;
 }
 
@@ -916,6 +837,7 @@
 
 /* =========================================================
    700px
+   MOBILE TABLE = HORIZONTAL SCROLL
 ========================================================= */
 
 @media (max-width: 700px) {
@@ -947,7 +869,6 @@
   .contact-stats {
     grid-template-columns: 1fr;
     gap: 8px;
-
     margin-bottom: 13px;
   }
 
@@ -976,138 +897,141 @@
 
   .contact-toolbar {
     width: 100%;
-
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: flex-end;
-
     gap: 7px;
-
     margin-bottom: 11px;
   }
 
   .contact-search {
     width: 100%;
     max-width: 320px;
-
     flex: none;
   }
 
   .contact-filter {
     width: 180px;
-
     flex: none;
   }
 
   /* =======================================================
      TABLE
+     KEEP ALL COLUMNS
+     HORIZONTAL SCROLL ENABLED
   ======================================================= */
 
   .contact-table-wrapper {
-    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .contact-table {
-    width: 100%;
+    width: 900px;
+    min-width: 900px;
     table-layout: fixed;
   }
 
-  /*
-     Hide MESSAGE on mobile.
-     This keeps all remaining important information visible
-     without horizontal scrolling.
-  */
+  /* =======================================================
+     COLUMN WIDTHS
+  ======================================================= */
+
+  .contact-table th:nth-child(1),
+  .contact-table td:nth-child(1) {
+    width: 27%;
+  }
+
+  .contact-table th:nth-child(2),
+  .contact-table td:nth-child(2) {
+    width: 13%;
+  }
 
   .contact-table th:nth-child(3),
   .contact-table td:nth-child(3) {
-    display: none;
+    width: 23%;
   }
 
-  /* Customer */
-  .contact-table th:nth-child(1),
-  .contact-table td:nth-child(1) {
-    width: 31%;
-  }
-
-  /* Subject */
-  .contact-table th:nth-child(2),
-  .contact-table td:nth-child(2) {
-    width: 25%;
-  }
-
-  /* Date */
   .contact-table th:nth-child(4),
   .contact-table td:nth-child(4) {
-    width: 17%;
+    width: 14%;
   }
 
-  /* Status */
   .contact-table th:nth-child(5),
   .contact-table td:nth-child(5) {
-    width: 15%;
+    width: 12%;
   }
 
-  /* Actions */
   .contact-table th:nth-child(6),
   .contact-table td:nth-child(6) {
-    width: 12%;
+    width: 11%;
   }
 
   .contact-table th {
     height: 38px;
-
-    padding-left: 5px;
-    padding-right: 5px;
-
+    padding-left: 8px;
+    padding-right: 8px;
     font-size: 8px;
     letter-spacing: 0.2px;
   }
 
   .contact-table td {
     height: 61px;
-
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
-  /* Customer */
+  /* =======================================================
+     CUSTOMER
+  ======================================================= */
+
   .customer-cell {
-    gap: 5px;
+    gap: 6px;
   }
 
   .customer-avatar {
     width: 28px;
     height: 28px;
     flex-basis: 28px;
-
     font-size: 10px;
   }
 
   .customer-info strong {
     font-size: 10px;
-
     white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
   }
 
   .customer-info span {
     max-width: 100%;
-
     font-size: 8px;
-
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* Subject */
+  /* =======================================================
+     SUBJECT
+  ======================================================= */
+
   .subject-cell {
     font-size: 10px;
   }
 
-  /* Date */
+  /* =======================================================
+     MESSAGE
+  ======================================================= */
+
+  .message-preview {
+    font-size: 10px;
+  }
+
+  /* =======================================================
+     DATE
+  ======================================================= */
+
   .date-cell {
     gap: 2px;
   }
@@ -1120,13 +1044,16 @@
     font-size: 8px;
   }
 
-  /* Status */
+  /* =======================================================
+     STATUS
+  ======================================================= */
+
   .message-status {
-    min-width: 0;
-
-    padding: 4px 6px;
-
-    font-size: 8px;
+    min-width: 65px;
+    height: 24px;
+    padding: 0 7px;
+    gap: 5px;
+    font-size: 9px;
   }
 
   .status-dot {
@@ -1135,15 +1062,18 @@
     flex-basis: 5px;
   }
 
-  /* Actions */
+  /* =======================================================
+     ACTIONS
+  ======================================================= */
+
   .contact-actions {
-    gap: 3px;
+    gap: 4px;
   }
 
   .icon-action {
-    width: 25px;
-    height: 25px;
-    flex-basis: 25px;
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
   }
 
   .icon-action i {
@@ -1175,7 +1105,10 @@
     height: 35px;
   }
 
-  /* Toolbar */
+  /* =======================================================
+     TOOLBAR
+  ======================================================= */
+
   .contact-toolbar {
     align-items: flex-end;
   }
@@ -1195,7 +1128,10 @@
     height: 37px;
   }
 
-  /* Table header */
+  /* =======================================================
+     TABLE HEADER
+  ======================================================= */
+
   .contact-table-header {
     min-height: 58px;
     padding: 10px 11px;
@@ -1209,23 +1145,41 @@
     font-size: 9px;
   }
 
-  /* Table */
-  .contact-table th,
-  .contact-table td {
-    padding-left: 3px;
-    padding-right: 3px;
+  /* =======================================================
+     TABLE
+     HORIZONTAL SCROLL
+  ======================================================= */
+
+  .contact-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* Customer */
+  .contact-table {
+    width: 900px;
+    min-width: 900px;
+  }
+
+  .contact-table th,
+  .contact-table td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  /* =======================================================
+     CUSTOMER
+  ======================================================= */
+
   .customer-cell {
-    gap: 4px;
+    gap: 5px;
   }
 
   .customer-avatar {
     width: 25px;
     height: 25px;
     flex-basis: 25px;
-
     font-size: 9px;
   }
 
@@ -1237,13 +1191,26 @@
     font-size: 7px;
   }
 
-  /* Subject */
+  /* =======================================================
+     SUBJECT
+  ======================================================= */
+
   .subject-cell {
-    max-width: 70px;
     font-size: 9px;
   }
 
-  /* Date */
+  /* =======================================================
+     MESSAGE
+  ======================================================= */
+
+  .message-preview {
+    font-size: 9px;
+  }
+
+  /* =======================================================
+     DATE
+  ======================================================= */
+
   .date-cell strong {
     font-size: 8px;
   }
@@ -1252,21 +1219,32 @@
     font-size: 7px;
   }
 
-  /* Status */
+  /* =======================================================
+     STATUS
+  ======================================================= */
+
   .message-status {
-    padding: 4px 5px;
-    font-size: 7px;
+    min-width: 62px;
+    height: 23px;
+    padding: 0 6px;
+    gap: 4px;
+    font-size: 8px;
   }
 
   .message-status .status-dot {
-    display: none;
+    width: 5px;
+    height: 5px;
+    flex-basis: 5px;
   }
 
-  /* Actions */
+  /* =======================================================
+     ACTIONS
+  ======================================================= */
+
   .icon-action {
-    width: 24px;
-    height: 24px;
-    flex-basis: 24px;
+    width: 25px;
+    height: 25px;
+    flex-basis: 25px;
   }
 
   .icon-action i {
@@ -1276,6 +1254,7 @@
 
 /* =========================================================
    390px
+   SMALL PHONE
 ========================================================= */
 
 @media (max-width: 390px) {
@@ -1297,7 +1276,10 @@
     height: 33px;
   }
 
-  /* Stats */
+  /* =======================================================
+     STATS
+  ======================================================= */
+
   .contact-stat-card {
     min-height: 61px;
     padding: 9px 11px;
@@ -1321,7 +1303,10 @@
     font-size: 17px;
   }
 
-  /* Search */
+  /* =======================================================
+     SEARCH
+  ======================================================= */
+
   .contact-search input {
     height: 36px;
     font-size: 11px;
@@ -1337,7 +1322,10 @@
     font-size: 11px;
   }
 
-  /* Table */
+  /* =======================================================
+     TABLE HEADER
+  ======================================================= */
+
   .contact-table-header {
     padding: 9px;
   }
@@ -1350,21 +1338,51 @@
     font-size: 8px;
   }
 
+  /* =======================================================
+     TABLE
+     KEEP FULL WIDTH
+     SCROLL HORIZONTALLY
+  ======================================================= */
+
+  .contact-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .contact-table {
+    width: 900px;
+    min-width: 900px;
+  }
+
   .contact-table th {
     height: 36px;
+    padding-left: 6px;
+    padding-right: 6px;
     font-size: 7px;
   }
 
   .contact-table td {
     height: 58px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
-  /* Customer */
+  /* =======================================================
+     CUSTOMER
+  ======================================================= */
+
+  .customer-cell {
+    gap: 5px;
+  }
+
   .customer-avatar {
     width: 23px;
     height: 23px;
     flex-basis: 23px;
-
     font-size: 8px;
   }
 
@@ -1376,12 +1394,31 @@
     font-size: 6.5px;
   }
 
-  /* Subject */
+  /* =======================================================
+     SUBJECT
+  ======================================================= */
+
   .subject-cell {
     font-size: 8px;
   }
 
-  /* Date */
+  /* =======================================================
+     MESSAGE
+  ======================================================= */
+
+  .message-preview {
+    font-size: 8px;
+    line-height: 1.4;
+  }
+
+  /* =======================================================
+     DATE
+  ======================================================= */
+
+  .date-cell {
+    gap: 2px;
+  }
+
   .date-cell strong {
     font-size: 7px;
   }
@@ -1390,21 +1427,37 @@
     font-size: 6.5px;
   }
 
-  /* Status */
+  /* =======================================================
+     STATUS
+  ======================================================= */
+
   .message-status {
-    padding: 3px 4px;
-    font-size: 6.5px;
+    min-width: 60px;
+    height: 23px;
+    padding: 0 6px;
+    gap: 4px;
+    font-size: 7px;
   }
 
-  /* Actions */
+  .message-status .status-dot {
+    display: block;
+    width: 5px;
+    height: 5px;
+    flex-basis: 5px;
+  }
+
+  /* =======================================================
+     ACTIONS
+  ======================================================= */
+
   .contact-actions {
-    gap: 2px;
+    gap: 3px;
   }
 
   .icon-action {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
+    width: 23px;
+    height: 23px;
+    flex-basis: 23px;
   }
 
   .icon-action i {

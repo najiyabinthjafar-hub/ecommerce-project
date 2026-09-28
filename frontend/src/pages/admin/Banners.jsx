@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./Banners.css";
 
 const API_URL = "http://localhost:5000/api/banners";
@@ -18,24 +19,15 @@ function Banners() {
 
   const fetchBanners = async (showLoading = false) => {
     try {
-      // Only show full-page loading during initial load
       if (showLoading) {
         setLoading(true);
       }
-
-      // -----------------------------------------------------
-      // Build backend query
-      // -----------------------------------------------------
 
       const params = new URLSearchParams();
 
       if (search.trim()) {
         params.append("search", search.trim());
       }
-
-      // Backend supports active/inactive.
-      // Expired is calculated on frontend because
-      // backend getAllBanners only filters status.
 
       if (
         statusFilter !== "all" &&
@@ -78,7 +70,13 @@ function Banners() {
     } catch (error) {
       console.error("Error fetching banners:", error);
 
-      alert(error.message);
+      toast.error(
+        error.message || "Failed to fetch banners.",
+        {
+          hideProgressBar: true,
+          className: "rizo-admin-toast",
+        }
+      );
 
       setBanners([]);
     } finally {
@@ -101,9 +99,6 @@ function Banners() {
   // =========================================================
 
   useEffect(() => {
-    // Don't run immediately on first render.
-    // Initial fetch above already handles that.
-
     const timer = setTimeout(() => {
       fetchBanners(false);
     }, 300);
@@ -119,58 +114,172 @@ function Banners() {
     const bannerId = banner._id || banner.id;
 
     if (!bannerId) {
-      alert("Banner ID not found");
+      toast.error("Banner ID not found", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
+
       return;
     }
 
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${banner.title}"?`
+    toast(
+      ({ closeToast }) => (
+        <div
+          style={{
+            width: "100%",
+            background: "#ffffff",
+            fontFamily:
+              '"Inter", "Segoe UI", Arial, sans-serif',
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              padding: "4px 4px 12px",
+            }}
+          >
+            <strong
+              style={{
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#171717",
+                lineHeight: 1.3,
+              }}
+            >
+              Delete Banner?
+            </strong>
+
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: "#777777",
+              }}
+            >
+              Are you sure you want to delete "
+              {banner.title}"?
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "8px",
+              padding: "0 4px 3px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeToast}
+              style={{
+                border: "none",
+                borderRadius: "7px",
+                padding: "7px 14px",
+                background: "#f1f3f5",
+                color: "#333333",
+                fontFamily: "inherit",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                closeToast();
+
+                try {
+                  const response = await fetch(
+                    `${API_URL}/${bannerId}`,
+                    {
+                      method: "DELETE",
+                    }
+                  );
+
+                  const responseText =
+                    await response.text();
+
+                  let data;
+
+                  try {
+                    data = JSON.parse(responseText);
+                  } catch {
+                    throw new Error(
+                      `Server returned non-JSON response (${response.status})`
+                    );
+                  }
+
+                  if (!response.ok) {
+                    throw new Error(
+                      data.message ||
+                        "Failed to delete banner"
+                    );
+                  }
+
+                  toast.success(
+                    data.message ||
+                      "Banner deleted successfully",
+                    {
+                      hideProgressBar: true,
+                      className: "rizo-admin-toast",
+                    }
+                  );
+
+                  // Refresh backend data
+                  // without showing full-page loader
+                  fetchBanners(false);
+                } catch (error) {
+                  console.error(
+                    "Error deleting banner:",
+                    error
+                  );
+
+                  toast.error(
+                    error.message ||
+                      "Failed to delete banner.",
+                    {
+                      hideProgressBar: true,
+                      className: "rizo-admin-toast",
+                    }
+                  );
+                }
+              }}
+              style={{
+                border: "none",
+                borderRadius: "7px",
+                padding: "7px 14px",
+                background: "#dc3545",
+                color: "#ffffff",
+                fontFamily: "inherit",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow:
+                  "0 3px 8px rgba(220, 53, 69, 0.18)",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        className:
+          "rizo-admin-toast delete-confirm-toast-wrapper",
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        hideProgressBar: true,
+      }
     );
-
-    if (!confirmDelete) return;
-
-    try {
-      const response = await fetch(
-        `${API_URL}/${bannerId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const responseText = await response.text();
-
-      let data;
-
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        throw new Error(
-          `Server returned non-JSON response (${response.status})`
-        );
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to delete banner"
-        );
-      }
-
-      alert(
-        data.message ||
-          "Banner deleted successfully"
-      );
-
-      // Refresh backend data
-      // without showing the full-page loader
-      fetchBanners(false);
-    } catch (error) {
-      console.error(
-        "Error deleting banner:",
-        error
-      );
-
-      alert(error.message);
-    }
   };
 
   // =========================================================
@@ -181,13 +290,15 @@ function Banners() {
     const bannerId = banner._id || banner.id;
 
     if (!bannerId) {
-      alert("Banner ID not found");
+      toast.error("Banner ID not found", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
+
       return;
     }
 
-    navigate(
-      `/admin/banners/edit/${bannerId}`
-    );
+    navigate(`/admin/banners/edit/${bannerId}`);
   };
 
   // =========================================================
@@ -198,13 +309,15 @@ function Banners() {
     const bannerId = banner._id || banner.id;
 
     if (!bannerId) {
-      alert("Banner ID not found");
+      toast.error("Banner ID not found", {
+        hideProgressBar: true,
+        className: "rizo-admin-toast",
+      });
+
       return;
     }
 
-    navigate(
-      `/admin/banners/view/${bannerId}`
-    );
+    navigate(`/admin/banners/view/${bannerId}`);
   };
 
   // =========================================================
@@ -214,10 +327,7 @@ function Banners() {
   const getBannerStatus = (banner) => {
     const now = new Date();
 
-    // -------------------------------------------------------
     // Expired
-    // -------------------------------------------------------
-
     if (
       banner.endDate &&
       new Date(banner.endDate).getTime() <
@@ -229,10 +339,7 @@ function Banners() {
       };
     }
 
-    // -------------------------------------------------------
     // Active
-    // -------------------------------------------------------
-
     if (banner.status === "active") {
       return {
         label: "Active",
@@ -240,10 +347,7 @@ function Banners() {
       };
     }
 
-    // -------------------------------------------------------
     // Inactive
-    // -------------------------------------------------------
-
     return {
       label: "Inactive",
       className: "inactive",
@@ -254,14 +358,6 @@ function Banners() {
   // FRONTEND FILTER
   // =========================================================
 
-  // Backend handles:
-  // - Search
-  // - Active
-  // - Inactive
-  //
-  // Frontend only handles Expired because it is calculated
-  // using endDate.
-
   const filteredBanners = banners.filter(
     (banner) => {
       if (statusFilter === "expired") {
@@ -269,8 +365,7 @@ function Banners() {
           getBannerStatus(banner);
 
         return (
-          bannerStatus.className ===
-          "expired"
+          bannerStatus.className === "expired"
         );
       }
 
@@ -379,6 +474,7 @@ function Banners() {
             {/* SEARCH */}
 
             <div className="banner-search">
+
               <i className="bi bi-search"></i>
 
               <input
@@ -402,6 +498,7 @@ function Banners() {
                   <i className="bi bi-x"></i>
                 </button>
               )}
+
             </div>
 
             {/* STATUS FILTER */}
@@ -431,6 +528,7 @@ function Banners() {
                 Expired
               </option>
             </select>
+
           </div>
         </div>
 
@@ -442,9 +540,7 @@ function Banners() {
 
           {filteredBanners.length === 0 ? (
 
-            /* =================================================
-               EMPTY STATE
-            ================================================= */
+            /* EMPTY STATE */
 
             <div className="banners-empty">
 
@@ -468,9 +564,7 @@ function Banners() {
 
           ) : (
 
-            /* =================================================
-               BANNERS TABLE
-            ================================================= */
+            /* BANNERS TABLE */
 
             <table className="banners-table">
 
@@ -542,6 +636,7 @@ function Banners() {
                         {/* TITLE */}
 
                         <td>
+
                           <div className="banner-title-cell">
 
                             <strong>
@@ -558,6 +653,7 @@ function Banners() {
                             )}
 
                           </div>
+
                         </td>
 
                         {/* STATUS */}
@@ -656,7 +752,6 @@ function Banners() {
                 )}
 
               </tbody>
-
             </table>
           )}
 

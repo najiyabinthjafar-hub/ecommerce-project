@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminNotification.css";
 
@@ -90,97 +90,106 @@ function AdminNotification() {
     const minutes = Math.floor(differenceInSeconds / 60);
 
     if (minutes < 60) {
-      return `${minutes} minute${
-        minutes === 1 ? "" : "s"
-      } ago`;
+      return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
     }
 
     const hours = Math.floor(minutes / 60);
 
     if (hours < 24) {
-      return `${hours} hour${
-        hours === 1 ? "" : "s"
-      } ago`;
+      return `${hours} hour${hours === 1 ? "" : "s"} ago`;
     }
 
     const days = Math.floor(hours / 24);
 
     if (days < 7) {
-      return `${days} day${
-        days === 1 ? "" : "s"
-      } ago`;
+      return `${days} day${days === 1 ? "" : "s"} ago`;
     }
 
-    return notificationDate.toLocaleDateString(
-      "en-IN",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }
-    );
+    return notificationDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   // =========================================================
   // FETCH NOTIFICATIONS
   // =========================================================
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (showLoader = false) => {
     try {
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      }
+
       setError("");
 
       const token = getToken();
 
       if (!token) {
         setError("Admin login session not found.");
-        setLoading(false);
         return;
       }
 
-      const response = await fetch(
-        `${API_URL}/notifications`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/notifications`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to fetch notifications"
+          data.message || "Failed to fetch notifications"
         );
       }
 
       setNotifications(data.notifications || []);
     } catch (error) {
-      console.error(
-        "Notification fetch error:",
-        error
-      );
+      console.error("Notification fetch error:", error);
 
-      setError(
-        error.message ||
-          "Failed to load notifications"
-      );
+      if (showLoader) {
+        setError(
+          error.message || "Failed to load notifications"
+        );
+      }
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   // =========================================================
-  // INITIAL LOAD
+  // INITIAL LOAD + AUTO REFRESH
   // =========================================================
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    // Fetch immediately
+    fetchNotifications(true);
+
+    // Check for new notifications every 10 seconds
+    const interval = setInterval(() => {
+      fetchNotifications(false);
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchNotifications]);
+
+  // =========================================================
+  // REFRESH WHEN NOTIFICATION PANEL OPENS
+  // =========================================================
+
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications(true);
+    }
+  }, [showNotifications, fetchNotifications]);
 
   // =========================================================
   // MARK SINGLE NOTIFICATION AS READ
@@ -207,8 +216,7 @@ function AdminNotification() {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to mark notification as read"
+          data.message || "Failed to mark notification as read"
         );
       }
 
@@ -278,9 +286,7 @@ function AdminNotification() {
   // DELETE NOTIFICATION
   // =========================================================
 
-  const handleDeleteNotification = async (
-    notificationId
-  ) => {
+  const handleDeleteNotification = async (notificationId) => {
     try {
       const token = getToken();
 
@@ -301,8 +307,7 @@ function AdminNotification() {
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Failed to delete notification"
+          data.message || "Failed to delete notification"
         );
       }
 
@@ -360,6 +365,7 @@ function AdminNotification() {
 
   return (
     <div className="notification-wrapper">
+
       {/* =====================================================
           NOTIFICATION BUTTON
       ===================================================== */}
@@ -376,9 +382,7 @@ function AdminNotification() {
 
         {unreadCount > 0 && (
           <span className="notification-badge">
-            {unreadCount > 99
-              ? "99+"
-              : unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
@@ -389,6 +393,7 @@ function AdminNotification() {
 
       {showNotifications && (
         <div className="notification-panel">
+
           {/* =================================================
               HEADER
           ================================================= */}
@@ -437,6 +442,7 @@ function AdminNotification() {
           ================================================= */}
 
           <div className="notification-list">
+
             {/* =================================================
                 LOADING
             ================================================= */}
@@ -453,7 +459,9 @@ function AdminNotification() {
                   Please wait...
                 </p>
               </div>
+
             ) : error ? (
+
               /* =================================================
                  ERROR
               ================================================= */
@@ -469,13 +477,15 @@ function AdminNotification() {
 
                 <button
                   className="notification-retry-btn"
-                  onClick={fetchNotifications}
+                  onClick={() => fetchNotifications(true)}
                   type="button"
                 >
                   Try Again
                 </button>
               </div>
+
             ) : notifications.length === 0 ? (
+
               /* =================================================
                  EMPTY
               ================================================= */
@@ -491,7 +501,9 @@ function AdminNotification() {
                   You’re all caught up!
                 </p>
               </div>
+
             ) : (
+
               /* =================================================
                  NOTIFICATIONS
               ================================================= */
@@ -512,6 +524,7 @@ function AdminNotification() {
                     }
                   }}
                 >
+
                   {/* =========================================
                       ICON
                   ========================================= */}
@@ -533,6 +546,7 @@ function AdminNotification() {
                   ========================================= */}
 
                   <div className="notification-content">
+
                     <h4>
                       {notification.title}
                     </h4>
@@ -551,8 +565,7 @@ function AdminNotification() {
                         PRODUCT NOTIFICATION
                     ===================================== */}
 
-                    {notification.type ===
-                      "PRODUCT" && (
+                    {notification.type === "PRODUCT" && (
                       <button
                         className="notification-view-btn"
                         onClick={(event) =>
@@ -564,7 +577,6 @@ function AdminNotification() {
                         type="button"
                       >
                         View Inventory
-
                         <i className="bi bi-arrow-right"></i>
                       </button>
                     )}
@@ -573,8 +585,7 @@ function AdminNotification() {
                         ORDER NOTIFICATION
                     ===================================== */}
 
-                    {notification.type ===
-                      "ORDER" && (
+                    {notification.type === "ORDER" && (
                       <button
                         className="notification-view-btn"
                         onClick={(event) =>
@@ -586,7 +597,6 @@ function AdminNotification() {
                         type="button"
                       >
                         View Orders
-
                         <i className="bi bi-arrow-right"></i>
                       </button>
                     )}
@@ -595,8 +605,7 @@ function AdminNotification() {
                         USER / CUSTOMER NOTIFICATION
                     ===================================== */}
 
-                    {notification.type ===
-                      "USER" && (
+                    {notification.type === "USER" && (
                       <button
                         className="notification-view-btn"
                         onClick={(event) =>
@@ -608,7 +617,6 @@ function AdminNotification() {
                         type="button"
                       >
                         View Customers
-
                         <i className="bi bi-arrow-right"></i>
                       </button>
                     )}
@@ -619,6 +627,7 @@ function AdminNotification() {
                   ========================================= */}
 
                   <div className="notification-item-actions">
+
                     {!notification.isRead && (
                       <span
                         className="notification-unread-dot"

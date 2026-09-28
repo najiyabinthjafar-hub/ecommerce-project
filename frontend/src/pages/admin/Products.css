@@ -1928,4 +1928,151 @@ body,
   max-width: 100%;
   overflow-x: hidden;
 }
+/* =========================================================
+   DELETE CONFIRMATION — CLEAN STYLE
+========================================================= */
 
+.delete-confirm-toast-wrapper {
+  width: 320px !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+  border: 1px solid #eeeeee !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.10) !important;
+  overflow: hidden;
+}
+
+/* Remove default Toastify spacing */
+.delete-confirm-toast-wrapper .Toastify__toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Hide default Toastify icon */
+.delete-confirm-toast-wrapper .Toastify__toast-icon {
+  display: none !important;
+}
+
+/* Hide default close */
+.delete-confirm-toast-wrapper .Toastify__close-button {
+  display: none !important;
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.delete-confirm-toast {
+  width: 100%;
+  padding: 16px;
+  background: #ffffff;
+  box-sizing: border-box;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+/* Message */
+
+.delete-confirm-message {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.delete-confirm-message strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: #181818;
+  line-height: 1.35;
+}
+
+.delete-confirm-message span {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #777777;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.delete-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+}
+
+.delete-confirm-actions button {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 13px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.delete-confirm-actions button:active {
+  transform: scale(0.97);
+}
+
+/* Cancel */
+
+.delete-cancel-btn {
+  background: #f4f4f4;
+  color: #444444;
+}
+
+.delete-cancel-btn:hover {
+  background: #eaeaea;
+}
+
+/* Delete */
+
+.delete-confirm-btn {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+.delete-confirm-btn:hover {
+  background: #c82333;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 576px) {
+  .delete-confirm-toast-wrapper {
+    width: calc(100vw - 32px) !important;
+    max-width: 320px;
+    border-radius: 11px !important;
+  }
+
+  .delete-confirm-toast {
+    padding: 14px;
+  }
+
+  .delete-confirm-message {
+    margin-bottom: 12px;
+  }
+
+  .delete-confirm-message strong {
+    font-size: 13px;
+  }
+
+  .delete-confirm-message span {
+    font-size: 11px;
+  }
+
+  .delete-confirm-actions button {
+    padding: 6px 11px;
+    font-size: 10.5px;
+  }
+}
