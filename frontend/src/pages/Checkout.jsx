@@ -9,6 +9,10 @@ import "./Checkout.css";
 const API_URL = "http://localhost:5000/api";
 
 function Checkout() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
 

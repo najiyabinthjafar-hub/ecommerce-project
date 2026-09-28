@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
 import { toast } from "react-hot-toast";
 
 import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -13,7 +18,9 @@ function Orders() {
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   // =========================
@@ -27,34 +34,46 @@ function Orders() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+
       setError("");
 
       const token = localStorage.getItem("token");
 
       if (!token) {
         navigate("/login");
+
         return;
       }
 
-      const response = await axios.get(`${API_URL}/orders`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        `${API_URL}/orders`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setOrders(response.data.orders || []);
     } catch (err) {
-      console.error("Error fetching orders:", err);
+      console.error(
+        "Error fetching orders:",
+        err
+      );
 
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
+
         localStorage.removeItem("userId");
+
         navigate("/login");
+
         return;
       }
 
       setError(
-        err.response?.data?.message || "Failed to load your orders."
+        err.response?.data?.message ||
+          "Failed to load your orders."
       );
     } finally {
       setLoading(false);
@@ -71,7 +90,9 @@ function Orders() {
     return status
       .toLowerCase()
       .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/\b\w/g, (char) =>
+        char.toUpperCase()
+      );
   };
 
   // =========================
@@ -86,6 +107,10 @@ function Orders() {
       item?.productImage;
 
     if (!image) {
+      return "/images/product-placeholder.jpg";
+    }
+
+    if (typeof image !== "string") {
       return "/images/product-placeholder.jpg";
     }
 
@@ -133,7 +158,11 @@ function Orders() {
   // =========================
 
   const getProductSize = (item) => {
-    return item?.size || item?.selectedSize || "N/A";
+    return (
+      item?.size ||
+      item?.selectedSize ||
+      "N/A"
+    );
   };
 
   // =========================
@@ -149,92 +178,150 @@ function Orders() {
   // =========================
 
   const handleTrackOrder = (order) => {
-    navigate(`/track-order/${order._id}`, {
-      state: {
-        order,
-      },
-    });
+    navigate(
+      `/track-order/${order._id}`,
+      {
+        state: {
+          order,
+        },
+      }
+    );
   };
 
   // =========================
   // CANCEL ORDER
   // =========================
 
-  const handleCancelOrder = async (orderId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
+  const handleCancelOrder = (orderId) => {
+    toast.custom(
+      (t) => (
+        <div className="cancel-toast">
+          <p>
+            Are you sure you want to cancel this order?
+          </p>
 
-    if (!confirmCancel) return;
+          <div className="cancel-toast-buttons">
+            <button
+              className="cancel-toast-no"
+              onClick={() => {
+                toast.dismiss(t.id);
+              }}
+            >
+              NO
+            </button>
 
-    try {
-      setError("");
+            <button
+              className="cancel-toast-yes"
+              onClick={async () => {
+                toast.dismiss(t.id);
 
-      const token = localStorage.getItem("token");
+                try {
+                  setError("");
 
-      if (!token) {
-        navigate("/login");
-        return;
+                  const token =
+                    localStorage.getItem("token");
+
+                  if (!token) {
+                    navigate("/login");
+
+                    return;
+                  }
+
+                  const response =
+                    await axios.put(
+                      `${API_URL}/orders/${orderId}/cancel`,
+                      {},
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                  const updatedOrder =
+                    response.data.order;
+
+                  // Keep existing order object so images/items don't blink
+                  setOrders((previousOrders) =>
+                    previousOrders.map((order) => {
+                      if (
+                        order._id !== orderId
+                      ) {
+                        return order;
+                      }
+
+                      return {
+                        ...order,
+
+                        orderStatus:
+                          updatedOrder?.orderStatus ||
+                          updatedOrder?.status ||
+                          "CANCELLED",
+
+                        status:
+                          updatedOrder?.status ||
+                          updatedOrder?.orderStatus ||
+                          "CANCELLED",
+
+                        paymentStatus:
+                          updatedOrder?.paymentStatus ??
+                          order.paymentStatus,
+
+                        refundStatus:
+                          updatedOrder?.refundStatus ??
+                          order.refundStatus,
+
+                        refundAmount:
+                          updatedOrder?.refundAmount ??
+                          order.refundAmount,
+
+                        refundId:
+                          updatedOrder?.refundId ??
+                          order.refundId,
+
+                        returnStatus:
+                          updatedOrder?.returnStatus ??
+                          order.returnStatus,
+                      };
+                    })
+                  );
+
+                  // SUCCESS TOAST
+                  toast.success(
+                    "Order cancelled successfully.",
+                    {
+                      duration: 2000,
+                      position: "top-center",
+                    }
+                  );
+                } catch (err) {
+                  console.error(
+                    "Cancel order error:",
+                    err
+                  );
+
+                  // ERROR TOAST
+                  toast.error(
+                    err.response?.data?.message ||
+                      "Failed to cancel the order.",
+                    {
+                      duration: 2000,
+                      position: "top-right",
+                    }
+                  );
+                }
+              }}
+            >
+              YES
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+        position: "top-center",
       }
-
-      const response = await axios.put(
-        `${API_URL}/orders/${orderId}/cancel`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const updatedOrder = response.data.order;
-
-      // Keep existing order object so images/items don't blink
-      setOrders((previousOrders) =>
-        previousOrders.map((order) => {
-          if (order._id !== orderId) {
-            return order;
-          }
-
-          return {
-            ...order,
-            orderStatus:
-              updatedOrder?.orderStatus ||
-              updatedOrder?.status ||
-              "CANCELLED",
-
-            status:
-              updatedOrder?.status ||
-              updatedOrder?.orderStatus ||
-              "CANCELLED",
-
-            paymentStatus:
-              updatedOrder?.paymentStatus ?? order.paymentStatus,
-
-            refundStatus:
-              updatedOrder?.refundStatus ?? order.refundStatus,
-
-            refundAmount:
-              updatedOrder?.refundAmount ?? order.refundAmount,
-
-            refundId:
-              updatedOrder?.refundId ?? order.refundId,
-
-            returnStatus:
-              updatedOrder?.returnStatus ?? order.returnStatus,
-          };
-        })
-      );
-
-      toast.success("Order cancelled successfully.");
-    } catch (err) {
-      console.error("Cancel order error:", err);
-
-      toast.error(
-        err.response?.data?.message ||
-          "Failed to cancel the order."
-      );
-    }
+    );
   };
 
   // =========================
@@ -251,7 +338,14 @@ function Orders() {
     }
 
     if (!reason.trim()) {
-      toast.error("Return reason is required.");
+      toast.error(
+        "Return reason is required.",
+        {
+          duration: 2000,
+          position: "top-center",
+        }
+      );
+
       return;
     }
 
@@ -260,6 +354,7 @@ function Orders() {
 
       if (!token) {
         navigate("/login");
+
         return;
       }
 
@@ -275,7 +370,8 @@ function Orders() {
         }
       );
 
-      const updatedOrder = response.data.order;
+      const updatedOrder =
+        response.data.order;
 
       setOrders((previousOrders) =>
         previousOrders.map((order) => {
@@ -285,32 +381,50 @@ function Orders() {
 
           return {
             ...order,
+
             returnStatus:
-              updatedOrder?.returnStatus || "REQUESTED",
+              updatedOrder?.returnStatus ||
+              "REQUESTED",
 
             returnReason:
-              updatedOrder?.returnReason || reason.trim(),
+              updatedOrder?.returnReason ||
+              reason.trim(),
 
             returnRequestedAt:
               updatedOrder?.returnRequestedAt ||
               order.returnRequestedAt,
 
             refundStatus:
-              updatedOrder?.refundStatus ?? order.refundStatus,
+              updatedOrder?.refundStatus ??
+              order.refundStatus,
 
             refundAmount:
-              updatedOrder?.refundAmount ?? order.refundAmount,
+              updatedOrder?.refundAmount ??
+              order.refundAmount,
           };
         })
       );
 
-      toast.success("Return request submitted successfully.");
+      toast.success(
+        "Return request submitted successfully.",
+        {
+          duration: 2000,
+          position: "top-right",
+        }
+      );
     } catch (err) {
-      console.error("Return request error:", err);
+      console.error(
+        "Return request error:",
+        err
+      );
 
       toast.error(
         err.response?.data?.message ||
-          "Failed to submit return request."
+          "Failed to submit return request.",
+        {
+          duration: 2000,
+          position: "top-right",
+        }
       );
     }
   };
@@ -395,8 +509,11 @@ function Orders() {
               ========================= */}
 
               {orders.map((order) => {
-                const items = order.items || [];
-                const firstItem = items[0];
+                const items =
+                  order.items || [];
+
+                const firstItem =
+                  items[0];
 
                 if (!firstItem) {
                   return null;
@@ -407,27 +524,34 @@ function Orders() {
                   order.status ||
                   "PENDING";
 
-                const normalizedStatus = status
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")
-                  .replace(/_/g, "-");
+                const normalizedStatus =
+                  status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")
+                    .replace(/_/g, "-");
 
-                const itemCount = items.length;
+                const itemCount =
+                  items.length;
 
                 const returnStatus =
-                  order.returnStatus || "NONE";
+                  order.returnStatus ||
+                  "NONE";
 
                 const refundStatus =
-                  order.refundStatus || "NOT_APPLICABLE";
+                  order.refundStatus ||
+                  "NOT_APPLICABLE";
 
                 const isCancelled =
-                  status.toUpperCase() === "CANCELLED";
+                  status.toUpperCase() ===
+                  "CANCELLED";
 
                 const isDelivered =
-                  status.toUpperCase() === "DELIVERED";
+                  status.toUpperCase() ===
+                  "DELIVERED";
 
                 const canCancel =
-                  !isCancelled && !isDelivered;
+                  !isCancelled &&
+                  !isDelivered;
 
                 const canRequestReturn =
                   isDelivered &&
@@ -444,13 +568,18 @@ function Orders() {
                     ========================= */}
 
                     <div className="order-product-section">
+
                       <div className="order-product-row">
 
                         {/* PRODUCT IMAGE */}
 
                         <img
-                          src={getProductImage(firstItem)}
-                          alt={getProductName(firstItem)}
+                          src={getProductImage(
+                            firstItem
+                          )}
+                          alt={getProductName(
+                            firstItem
+                          )}
                           className="order-product-img"
                           onError={(e) => {
                             e.currentTarget.src =
@@ -461,42 +590,164 @@ function Orders() {
                         {/* PRODUCT INFORMATION */}
 
                         <div className="order-product-info">
+
                           <h3>
-                            {getProductName(firstItem)}
+                            {getProductName(
+                              firstItem
+                            )}
                           </h3>
 
                           <p className="order-product-price">
                             ₹
                             {Number(
-                              getProductPrice(firstItem)
-                            ).toLocaleString("en-IN")}
+                              getProductPrice(
+                                firstItem
+                              )
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
                           </p>
 
                           <p className="order-product-meta">
-                            Size: {getProductSize(firstItem)}
+                            Size:{" "}
+                            {getProductSize(
+                              firstItem
+                            )}
                             &nbsp; | &nbsp;
-                            Quantity: {getQuantity(firstItem)}
+                            Quantity:{" "}
+                            {getQuantity(
+                              firstItem
+                            )}
                           </p>
 
                           {itemCount > 1 && (
                             <p className="order-product-meta">
-                              + {itemCount - 1} more{" "}
-                              {itemCount - 1 === 1
+                              +{" "}
+                              {itemCount - 1}{" "}
+                              more{" "}
+                              {itemCount - 1 ===
+                              1
                                 ? "item"
                                 : "items"}
                             </p>
                           )}
 
                           <p className="order-product-meta order-product-id">
-                            Order #{order._id?.slice(-8)}
+                            Order #
+                            {order._id?.slice(
+                              -8
+                            )}
                           </p>
+
+                          {/* =========================
+                              BILLING ADDRESS
+                          ========================= */}
+
+                          {order.billingAddress && (
+                            <div className="order-billing-address">
+
+                              <p className="order-product-meta">
+                                <strong>
+                                  Billing Address
+                                </strong>
+                              </p>
+
+                              {order
+                                .billingAddress
+                                .fullName && (
+                                <p className="order-product-meta">
+                                  {
+                                    order
+                                      .billingAddress
+                                      .fullName
+                                  }
+                                </p>
+                              )}
+
+                              {order
+                                .billingAddress
+                                .address && (
+                                <p className="order-product-meta">
+                                  {
+                                    order
+                                      .billingAddress
+                                      .address
+                                  }
+
+                                  {order
+                                    .billingAddress
+                                    .apartment
+                                    ? `, ${order.billingAddress.apartment}`
+                                    : ""}
+                                </p>
+                              )}
+
+                              <p className="order-product-meta">
+                                {
+                                  order
+                                    .billingAddress
+                                    .city
+                                }
+
+                                {order
+                                  .billingAddress
+                                  .city &&
+                                order
+                                  .billingAddress
+                                  .state
+                                  ? ", "
+                                  : ""}
+
+                                {
+                                  order
+                                    .billingAddress
+                                    .state
+                                }
+
+                                {order
+                                  .billingAddress
+                                  .pincode
+                                  ? ` - ${order.billingAddress.pincode}`
+                                  : ""}
+                              </p>
+
+                              {order
+                                .billingAddress
+                                .country && (
+                                <p className="order-product-meta">
+                                  {
+                                    order
+                                      .billingAddress
+                                      .country
+                                  }
+                                </p>
+                              )}
+
+                              {order
+                                .billingAddress
+                                .phone && (
+                                <p className="order-product-meta">
+                                  Phone:{" "}
+                                  {
+                                    order
+                                      .billingAddress
+                                      .phone
+                                  }
+                                </p>
+                              )}
+
+                            </div>
+                          )}
 
                           {/* RETURN STATUS */}
 
-                          {returnStatus !== "NONE" && (
+                          {returnStatus !==
+                            "NONE" && (
                             <p className="order-product-meta">
                               Return:{" "}
-                              {formatStatus(returnStatus)}
+                              {formatStatus(
+                                returnStatus
+                              )}
                             </p>
                           )}
 
@@ -506,20 +757,26 @@ function Orders() {
                             "NOT_APPLICABLE" && (
                             <p className="order-product-meta">
                               Refund:{" "}
-                              {formatStatus(refundStatus)}
+                              {formatStatus(
+                                refundStatus
+                              )}
                             </p>
                           )}
 
                           {/* REFUND AMOUNT */}
 
-                          {order.refundAmount > 0 && (
+                          {order.refundAmount >
+                            0 && (
                             <p className="order-product-meta">
                               Refund Amount: ₹
                               {Number(
                                 order.refundAmount
-                              ).toLocaleString("en-IN")}
+                              ).toLocaleString(
+                                "en-IN"
+                              )}
                             </p>
                           )}
+
                         </div>
                       </div>
                     </div>
@@ -533,7 +790,9 @@ function Orders() {
                       <div
                         className={`order-status ${normalizedStatus}`}
                       >
-                        {formatStatus(status)}
+                        {formatStatus(
+                          status
+                        )}
                       </div>
 
                       {/* TRACK */}
@@ -541,7 +800,9 @@ function Orders() {
                       <button
                         className="order-track-button"
                         onClick={() =>
-                          handleTrackOrder(order)
+                          handleTrackOrder(
+                            order
+                          )
                         }
                       >
                         TRACK YOUR ORDER
@@ -553,7 +814,9 @@ function Orders() {
                         <button
                           className="order-cancel-button"
                           onClick={() =>
-                            handleCancelOrder(order._id)
+                            handleCancelOrder(
+                              order._id
+                            )
                           }
                         >
                           CANCEL ORDER
@@ -566,7 +829,9 @@ function Orders() {
                         <button
                           className="order-return-button"
                           onClick={() =>
-                            handleReturnOrder(order._id)
+                            handleReturnOrder(
+                              order._id
+                            )
                           }
                         >
                           REQUEST RETURN
@@ -575,7 +840,8 @@ function Orders() {
 
                       {/* RETURN REQUESTED */}
 
-                      {returnStatus === "REQUESTED" && (
+                      {returnStatus ===
+                        "REQUESTED" && (
                         <div className="order-refund-message">
                           Return request submitted
                         </div>
@@ -583,7 +849,8 @@ function Orders() {
 
                       {/* RETURN APPROVED */}
 
-                      {returnStatus === "APPROVED" && (
+                      {returnStatus ===
+                        "APPROVED" && (
                         <div className="order-refund-message">
                           Return approved
                         </div>
@@ -591,7 +858,8 @@ function Orders() {
 
                       {/* RETURN REJECTED */}
 
-                      {returnStatus === "REJECTED" && (
+                      {returnStatus ===
+                        "REJECTED" && (
                         <div className="order-refund-message">
                           Return rejected
                         </div>
@@ -601,6 +869,7 @@ function Orders() {
                   </div>
                 );
               })}
+
             </section>
           )}
 
@@ -616,6 +885,7 @@ function Orders() {
               ← BACK
             </button>
           )}
+
         </div>
       </main>
 

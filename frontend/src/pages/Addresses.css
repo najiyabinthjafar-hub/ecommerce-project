@@ -355,7 +355,8 @@
 .address-card {
   width: 100%;
 
-  min-height: 250px;
+  height: 350px;
+  min-height: 350px;
 
   padding: 26px;
 
@@ -589,6 +590,7 @@
   }
 
   .address-card {
+    height: auto;
     min-height: 220px;
 
     padding: 24px;
@@ -684,6 +686,7 @@
   }
 
   .address-card {
+    height: auto;
     min-height: 220px;
 
     padding: 22px;
@@ -791,6 +794,7 @@
   }
 
   .address-card {
+    height: auto;
     min-height: 215px;
 
     padding: 20px;

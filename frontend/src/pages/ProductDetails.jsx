@@ -1,34 +1,21 @@
 import { useEffect, useState } from "react";
-
 import { useParams, useNavigate } from "react-router-dom";
-
-import toast from "react-hot-toast";
-
+import { toast } from "react-hot-toast";
 import Navbar from "../components/Navbar";
-
 import Footer from "../components/Footer";
-
 import "./ProductDetails.css";
 
 function ProductDetails() {
   const { id } = useParams();
-
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
-
   const [relatedProducts, setRelatedProducts] = useState([]);
-
   const [selectedImage, setSelectedImage] = useState("");
-
   const [selectedSize, setSelectedSize] = useState("");
-
   const [quantity, setQuantity] = useState(1);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [addingToCart, setAddingToCart] = useState(false);
 
   // ================= SCROLL TO TOP =================
@@ -47,9 +34,7 @@ function ProductDetails() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-
         setError("");
-
         setRelatedProducts([]);
 
         const response = await fetch(
@@ -68,15 +53,11 @@ function ProductDetails() {
 
         setProduct(fetchedProduct);
 
-        // Product image
-
         if (fetchedProduct.images?.length > 0) {
           setSelectedImage(fetchedProduct.images[0]);
         } else {
           setSelectedImage("");
         }
-
-        // Product variant / size
 
         if (fetchedProduct.variants?.length > 0) {
           setSelectedSize(fetchedProduct.variants[0]);
@@ -87,7 +68,6 @@ function ProductDetails() {
         setQuantity(1);
       } catch (error) {
         console.error("Product API Error:", error);
-
         setError(error.message);
       } finally {
         setLoading(false);
@@ -104,8 +84,25 @@ function ProductDetails() {
 
     const fetchRelatedProducts = async () => {
       try {
+        const currentCategoryId =
+          typeof product.category === "object"
+            ? product.category?._id
+            : product.category;
+
+        if (!currentCategoryId) {
+          setRelatedProducts([]);
+          return;
+        }
+
+        /*
+          Fetch only products from the current category.
+
+          limit=5 because the current product can also be
+          included in the response. After removing the
+          current product, maximum 4 related products remain.
+        */
         const response = await fetch(
-          "http://localhost:5000/api/products?limit=100"
+          `http://localhost:5000/api/products?category=${currentCategoryId}&limit=5`
         );
 
         const data = await response.json();
@@ -119,33 +116,12 @@ function ProductDetails() {
 
         const products = data.products || [];
 
-        const currentCategoryId =
-          typeof product.category === "object"
-            ? product.category?._id
-            : product.category;
-
+        // Same category products only.
+        // Current product is removed.
         const related = products
-          .filter((item) => {
-            // Exclude current product
-
-            if (String(item._id) === String(id)) {
-              return false;
-            }
-
-            const itemCategoryId =
-              typeof item.category === "object"
-                ? item.category?._id
-                : item.category;
-
-            return (
-              String(itemCategoryId) ===
-              String(currentCategoryId)
-            );
-          })
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt || 0) -
-              new Date(a.createdAt || 0)
+          .filter(
+            (item) =>
+              String(item._id) !== String(id)
           )
           .slice(0, 4);
 
@@ -229,7 +205,6 @@ function ProductDetails() {
       toast.error(
         "This product is currently out of stock."
       );
-
       return;
     }
 
@@ -241,7 +216,6 @@ function ProductDetails() {
       );
 
       navigate("/login");
-
       return;
     }
 
@@ -303,7 +277,6 @@ function ProductDetails() {
       toast.error(
         "This product is currently out of stock."
       );
-
       return;
     }
 
@@ -315,7 +288,6 @@ function ProductDetails() {
       );
 
       navigate("/login");
-
       return;
     }
 
@@ -325,8 +297,8 @@ function ProductDetails() {
 
         product: {
           ...product,
-          quantity: quantity,
-          selectedSize: selectedSize,
+          quantity,
+          selectedSize,
         },
       },
     });
@@ -337,7 +309,6 @@ function ProductDetails() {
       <Navbar />
 
       <main className="product-details-page">
-
         {/* MOBILE BACK BUTTON */}
 
         <button
@@ -350,11 +321,9 @@ function ProductDetails() {
         </button>
 
         <div className="product-details-container">
-
-          {/* LEFT - PRODUCT GALLERY */}
+          {/* ================= LEFT - PRODUCT GALLERY ================= */}
 
           <div className="product-gallery">
-
             <div className="product-main-image">
               {selectedImage ? (
                 <img
@@ -393,13 +362,11 @@ function ProductDetails() {
                 )}
               </div>
             )}
-
           </div>
 
-          {/* RIGHT - PRODUCT INFO */}
+          {/* ================= RIGHT - PRODUCT INFO ================= */}
 
           <div className="product-details-info">
-
             <h1>{product.name}</h1>
 
             <div className="product-price">
@@ -417,7 +384,6 @@ function ProductDetails() {
 
             {product.variants?.length > 0 && (
               <div className="size-section">
-
                 <div className="size-label">
                   <span>SIZE</span>
                 </div>
@@ -442,7 +408,6 @@ function ProductDetails() {
                     )
                   )}
                 </div>
-
               </div>
             )}
 
@@ -458,11 +423,9 @@ function ProductDetails() {
 
             {product.stock > 0 && (
               <div className="quantity-section">
-
                 <label>QUANTITY</label>
 
                 <div className="quantity-box">
-
                   <button
                     type="button"
                     onClick={decreaseQuantity}
@@ -478,16 +441,13 @@ function ProductDetails() {
                   >
                     +
                   </button>
-
                 </div>
-
               </div>
             )}
 
             {/* ACTION BUTTONS */}
 
             <div className="product-actions">
-
               <button
                 type="button"
                 className="add-cart-btn"
@@ -515,7 +475,6 @@ function ProductDetails() {
               >
                 BUY IT NOW
               </button>
-
             </div>
 
             {/* DESCRIPTION */}
@@ -523,24 +482,19 @@ function ProductDetails() {
             <p className="product-long-description">
               {product.description}
             </p>
-
           </div>
-
         </div>
 
-        {/* RELATED PRODUCTS */}
+        {/* ================= RELATED PRODUCTS ================= */}
 
         {relatedProducts.length > 0 && (
           <section className="you-may-like">
-
             <h2>
               Find your next favourite
             </h2>
 
             <div className="related-products-grid">
-
               {relatedProducts.map((item) => {
-
                 const relatedPrice =
                   item.salePrice !== null &&
                   item.salePrice !== undefined
@@ -557,9 +511,7 @@ function ProductDetails() {
                       )
                     }
                   >
-
                     <div className="related-image">
-
                       <img
                         src={
                           item.images?.[0] ||
@@ -567,7 +519,6 @@ function ProductDetails() {
                         }
                         alt={item.name}
                       />
-
                     </div>
 
                     <p>{item.name}</p>
@@ -578,16 +529,12 @@ function ProductDetails() {
                         relatedPrice || 0
                       ).toLocaleString("en-IN")}
                     </span>
-
                   </div>
                 );
               })}
-
             </div>
-
           </section>
         )}
-
       </main>
 
       <Footer />
