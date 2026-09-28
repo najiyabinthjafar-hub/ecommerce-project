@@ -1,11 +1,15 @@
 const orderService = require("../services/orderService");
+
 const razorpayService = require("../services/razorpayService");
+
 const { generateInvoicePdf } = require("../services/invoiceService");
 
 // CREATE ORDER
 const createOrder = async (req, res) => {
   console.log("CREATE ORDER CONTROLLER HIT");
+
   console.log("PAYMENT METHOD:", req.body?.paymentMethod);
+
   try {
     const orderData = {
       ...req.body,
@@ -103,6 +107,7 @@ const getAllOrders = async (req, res) => {
     });
   }
 };
+
 const getOrderById = async (req, res) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -132,8 +137,9 @@ const getOrderById = async (req, res) => {
 // UPDATE ORDER STATUS
 const updateOrderStatus = async (req, res) => {
   try {
-    const orderStatus =
-      req.body.orderStatus || req.body.status;
+    const orderStatus = req.body.orderStatus || req.body.status;
+
+    const { courier, trackingNumber, trackingUrl } = req.body;
 
     if (!orderStatus) {
       return res.status(400).json({
@@ -144,7 +150,10 @@ const updateOrderStatus = async (req, res) => {
 
     const order = await orderService.updateOrderStatus(
       req.params.id,
-      orderStatus
+      orderStatus,
+      courier,
+      trackingNumber,
+      trackingUrl
     );
 
     if (!order) {
@@ -169,6 +178,45 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
+
+// UPDATE ORDER TRACKING
+const updateOrderTracking = async (req, res) => {
+  try {
+    const { courier, trackingNumber, trackingUrl } = req.body;
+
+    if (trackingNumber === undefined && trackingUrl === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Tracking number or tracking URL is required",
+      });
+    }
+
+    const order = await orderService.updateOrderTracking(
+      req.params.id,
+      courier,
+      trackingNumber,
+      trackingUrl
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order tracking information updated successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Update order tracking error:", error);
+
+    const statusCode =
+      error.message === "Order not found" ? 404 : 400;
+
+    res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// CREATE RAZORPAY ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
     const { amount, orderId } = req.body;
@@ -228,6 +276,7 @@ const createRazorpayOrder = async (req, res) => {
   }
 };
 
+// VERIFY RAZORPAY PAYMENT
 const verifyRazorpayPayment = async (req, res) => {
   try {
     const {
@@ -250,11 +299,12 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 
     // Step 1: Verify Razorpay signature
-    const isValid = razorpayService.verifyPaymentSignature(
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature
-    );
+    const isValid =
+      razorpayService.verifyPaymentSignature(
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+      );
 
     if (!isValid) {
       return res.status(400).json({
@@ -264,12 +314,13 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 
     // Step 2: Update MongoDB order
-    const order = await orderService.verifyRazorpayPayment(
-      orderId,
-      req.user._id,
-      razorpay_payment_id,
-      razorpay_signature
-    );
+    const order =
+      await orderService.verifyRazorpayPayment(
+        orderId,
+        req.user._id,
+        razorpay_payment_id,
+        razorpay_signature
+      );
 
     if (!order) {
       return res.status(404).json({
@@ -294,6 +345,7 @@ const verifyRazorpayPayment = async (req, res) => {
     });
   }
 };
+
 const requestReturn = async (req, res) => {
   try {
     const order = await orderService.requestReturn(
@@ -316,7 +368,6 @@ const requestReturn = async (req, res) => {
     });
   }
 };
-
 
 // CUSTOMER CANCEL ORDER
 const cancelOrder = async (req, res) => {
@@ -341,6 +392,7 @@ const cancelOrder = async (req, res) => {
     });
   }
 };
+
 // ADMIN APPROVE / REJECT RETURN
 const updateReturnStatus = async (req, res) => {
   try {
@@ -370,6 +422,7 @@ const updateReturnStatus = async (req, res) => {
     });
   }
 };
+
 const getBestSellingProducts = async (req, res) => {
   try {
     const products = await orderService.getBestSellingProducts();
@@ -388,8 +441,8 @@ const getBestSellingProducts = async (req, res) => {
     });
   }
 };
-// ================= DOWNLOAD ORDER INVOICE ==========
 
+// ================= DOWNLOAD ORDER INVOICE ==========
 const downloadInvoice = async (req, res) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -404,7 +457,8 @@ const downloadInvoice = async (req, res) => {
     // Customer can download only their own invoice
     if (
       req.user.role !== "admin" &&
-      String(order.user?._id || order.user) !== String(req.user._id)
+      String(order.user?._id || order.user) !==
+        String(req.user._id)
     ) {
       return res.status(403).json({
         success: false,
@@ -415,6 +469,7 @@ const downloadInvoice = async (req, res) => {
     const invoiceBuffer = await generateInvoicePdf(order);
 
     res.setHeader("Content-Type", "application/pdf");
+
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="invoice-${order._id}.pdf"`
@@ -431,8 +486,7 @@ const downloadInvoice = async (req, res) => {
   }
 };
 
-
-
+// CHECK REFUND STATUS
 const checkRefundStatus = async (req, res, next) => {
   try {
     const order = await orderService.checkRefundStatus(req.params.id);
@@ -447,6 +501,25 @@ const checkRefundStatus = async (req, res, next) => {
   }
 };
 
+// UPDATE PAYMENT STATUS
+const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const { paymentStatus } = req.body;
+
+    const order = await orderService.updateOrderPaymentStatus(
+      req.params.id,
+      paymentStatus
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully",
+      order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   createOrder,
@@ -455,6 +528,7 @@ module.exports = {
   getBestSellingProducts,
   createRazorpayOrder,
   updateOrderStatus,
+  updateOrderTracking,
   cancelOrder,
   getOrderById,
   verifyRazorpayPayment,
@@ -462,8 +536,5 @@ module.exports = {
   updateReturnStatus,
   downloadInvoice,
   checkRefundStatus,
+  updatePaymentStatus,
 };
-
-
-
-

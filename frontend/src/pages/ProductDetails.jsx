@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./ProductDetails.css";
 
 function ProductDetails() {
@@ -96,11 +98,11 @@ function ProductDetails() {
 
         /*
           Fetch only products from the current category.
-
           limit=5 because the current product can also be
           included in the response. After removing the
           current product, maximum 4 related products remain.
         */
+
         const response = await fetch(
           `http://localhost:5000/api/products?category=${currentCategoryId}&limit=5`
         );
@@ -309,6 +311,7 @@ function ProductDetails() {
       <Navbar />
 
       <main className="product-details-page">
+
         {/* MOBILE BACK BUTTON */}
 
         <button
@@ -321,9 +324,11 @@ function ProductDetails() {
         </button>
 
         <div className="product-details-container">
+
           {/* ================= LEFT - PRODUCT GALLERY ================= */}
 
           <div className="product-gallery">
+
             <div className="product-main-image">
               {selectedImage ? (
                 <img
@@ -337,6 +342,7 @@ function ProductDetails() {
 
             {product.images?.length > 0 && (
               <div className="product-thumbnails">
+
                 {product.images.map(
                   (image, index) => (
                     <button
@@ -360,13 +366,16 @@ function ProductDetails() {
                     </button>
                   )
                 )}
+
               </div>
             )}
+
           </div>
 
           {/* ================= RIGHT - PRODUCT INFO ================= */}
 
           <div className="product-details-info">
+
             <h1>{product.name}</h1>
 
             <div className="product-price">
@@ -384,11 +393,13 @@ function ProductDetails() {
 
             {product.variants?.length > 0 && (
               <div className="size-section">
+
                 <div className="size-label">
                   <span>SIZE</span>
                 </div>
 
                 <div className="size-options">
+
                   {product.variants.map(
                     (size) => (
                       <button
@@ -407,7 +418,9 @@ function ProductDetails() {
                       </button>
                     )
                   )}
+
                 </div>
+
               </div>
             )}
 
@@ -423,9 +436,11 @@ function ProductDetails() {
 
             {product.stock > 0 && (
               <div className="quantity-section">
+
                 <label>QUANTITY</label>
 
                 <div className="quantity-box">
+
                   <button
                     type="button"
                     onClick={decreaseQuantity}
@@ -441,13 +456,16 @@ function ProductDetails() {
                   >
                     +
                   </button>
+
                 </div>
+
               </div>
             )}
 
             {/* ACTION BUTTONS */}
 
             <div className="product-actions">
+
               <button
                 type="button"
                 className="add-cart-btn"
@@ -475,6 +493,7 @@ function ProductDetails() {
               >
                 BUY IT NOW
               </button>
+
             </div>
 
             {/* DESCRIPTION */}
@@ -482,19 +501,24 @@ function ProductDetails() {
             <p className="product-long-description">
               {product.description}
             </p>
+
           </div>
+
         </div>
 
         {/* ================= RELATED PRODUCTS ================= */}
 
         {relatedProducts.length > 0 && (
           <section className="you-may-like">
+
             <h2>
               Find your next favourite
             </h2>
 
             <div className="related-products-grid">
+
               {relatedProducts.map((item) => {
+
                 const relatedPrice =
                   item.salePrice !== null &&
                   item.salePrice !== undefined
@@ -511,7 +535,9 @@ function ProductDetails() {
                       )
                     }
                   >
+
                     <div className="related-image">
+
                       <img
                         src={
                           item.images?.[0] ||
@@ -519,6 +545,7 @@ function ProductDetails() {
                         }
                         alt={item.name}
                       />
+
                     </div>
 
                     <p>{item.name}</p>
@@ -529,12 +556,16 @@ function ProductDetails() {
                         relatedPrice || 0
                       ).toLocaleString("en-IN")}
                     </span>
+
                   </div>
                 );
               })}
+
             </div>
+
           </section>
         )}
+
       </main>
 
       <Footer />

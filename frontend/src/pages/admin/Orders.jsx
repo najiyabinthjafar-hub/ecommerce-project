@@ -4,18 +4,25 @@ import React, {
   useMemo,
   useState,
 } from "react";
+
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Orders.css";
 
 const API_URL = "http://localhost:5000/api";
+
 const ORDERS_PER_PAGE = 10;
+
+// =========================================================
+// STATUS LABELS
+// =========================================================
 
 const statusLabels = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
   PROCESSING: "Processing",
   SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
 };
@@ -25,9 +32,14 @@ const statusClassMap = {
   CONFIRMED: "confirmed",
   PROCESSING: "processing",
   SHIPPED: "shipped",
+  OUT_FOR_DELIVERY: "out-for-delivery",
   DELIVERED: "delivered",
   CANCELLED: "cancelled",
 };
+
+// =========================================================
+// PAYMENT STATUS
+// =========================================================
 
 const paymentStatusLabels = {
   PENDING: "Pending",
@@ -41,10 +53,15 @@ const paymentStatusClassMap = {
   FAILED: "failed",
 };
 
+// =========================================================
+// COMPONENT
+// =========================================================
+
 const Orders = () => {
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
@@ -56,9 +73,21 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* =========================================================
-     GET TOKEN
-  ========================================================= */
+  // =========================================================
+  // TRACKING STATE
+  // =========================================================
+
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [trackingUrl, setTrackingUrl] = useState("");
+
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState("");
+  const [trackingMessage, setTrackingMessage] = useState("");
+
+  // =========================================================
+  // GET TOKEN
+  // =========================================================
 
   const getToken = useCallback(() => {
     return (
@@ -69,9 +98,9 @@ const Orders = () => {
     );
   }, []);
 
-  /* =========================================================
-     FETCH ORDERS
-  ========================================================= */
+  // =========================================================
+  // FETCH ORDERS
+  // =========================================================
 
   const fetchOrders = useCallback(
     async (page = currentPage) => {
@@ -103,6 +132,7 @@ const Orders = () => {
             params: {
               page,
               limit: ORDERS_PER_PAGE,
+
               search: search.trim(),
 
               orderStatus:
@@ -180,9 +210,9 @@ const Orders = () => {
     ]
   );
 
-  /* =========================================================
-     FETCH ON CHANGE
-  ========================================================= */
+  // =========================================================
+  // FETCH ON CHANGE
+  // =========================================================
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -198,9 +228,9 @@ const Orders = () => {
     fetchOrders,
   ]);
 
-  /* =========================================================
-     RESET PAGE
-  ========================================================= */
+  // =========================================================
+  // RESET PAGE
+  // =========================================================
 
   useEffect(() => {
     setCurrentPage(1);
@@ -210,9 +240,9 @@ const Orders = () => {
     paymentFilter,
   ]);
 
-  /* =========================================================
-     CUSTOMER HELPERS
-  ========================================================= */
+  // =========================================================
+  // CUSTOMER HELPERS
+  // =========================================================
 
   const getCustomerName = (order) => {
     return (
@@ -228,7 +258,7 @@ const Orders = () => {
     return (
       order?.user?.email ||
       order?.shippingAddress?.email ||
-      "GÇö"
+      "—"
     );
   };
 
@@ -236,13 +266,13 @@ const Orders = () => {
     return (
       order?.user?.phone ||
       order?.shippingAddress?.phone ||
-      "GÇö"
+      "—"
     );
   };
 
-  /* =========================================================
-     STATUS HELPERS
-  ========================================================= */
+  // =========================================================
+  // STATUS HELPERS
+  // =========================================================
 
   const getStatusLabel = (status) => {
     return (
@@ -274,29 +304,29 @@ const Orders = () => {
     );
   };
 
-  /* =========================================================
-     CURRENCY
-  ========================================================= */
+  // =========================================================
+  // CURRENCY
+  // =========================================================
 
   const formatCurrency = (amount) => {
-    return `Gé¦${Number(
+    return `₹${Number(
       amount || 0
     ).toLocaleString("en-IN")}`;
   };
 
-  /* =========================================================
-     DATE
-  ========================================================= */
+  // =========================================================
+  // DATE
+  // =========================================================
 
   const formatDate = (date) => {
     if (!date) {
-      return "GÇö";
+      return "—";
     }
 
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
-      return "GÇö";
+      return "—";
     }
 
     return parsedDate.toLocaleDateString(
@@ -309,9 +339,9 @@ const Orders = () => {
     );
   };
 
-  /* =========================================================
-     ITEM COUNT
-  ========================================================= */
+  // =========================================================
+  // ITEM COUNT
+  // =========================================================
 
   const getItemCount = (order) => {
     if (!Array.isArray(order?.items)) {
@@ -329,13 +359,13 @@ const Orders = () => {
     );
   };
 
-  /* =========================================================
-     ORDER ID
-  ========================================================= */
+  // =========================================================
+  // ORDER ID
+  // =========================================================
 
   const getOrderId = (order) => {
     if (!order?._id) {
-      return "GÇö";
+      return "—";
     }
 
     return `ORD-${String(order._id)
@@ -343,9 +373,9 @@ const Orders = () => {
       .toUpperCase()}`;
   };
 
-  /* =========================================================
-     SUMMARY
-  ========================================================= */
+  // =========================================================
+  // SUMMARY
+  // =========================================================
 
   const summary = useMemo(() => {
     const pending = orders.filter(
@@ -389,9 +419,9 @@ const Orders = () => {
     };
   }, [orders]);
 
-  /* =========================================================
-     FILTER OPTIONS
-  ========================================================= */
+  // =========================================================
+  // FILTER OPTIONS
+  // =========================================================
 
   const statusOptions = [
     {
@@ -413,6 +443,10 @@ const Orders = () => {
     {
       value: "SHIPPED",
       label: "Shipped",
+    },
+    {
+      value: "OUT_FOR_DELIVERY",
+      label: "Out for Delivery",
     },
     {
       value: "DELIVERED",
@@ -443,12 +477,179 @@ const Orders = () => {
     },
   ];
 
-  /* =========================================================
-     PAGINATION
-  ========================================================= */
+  // =========================================================
+  // OPEN TRACKING MODAL
+  // =========================================================
+
+  const handleOpenTracking = (order) => {
+    setTrackingOrder(order);
+
+    setTrackingNumber(
+      order?.trackingNumber || ""
+    );
+
+    setTrackingUrl(
+      order?.trackingUrl || ""
+    );
+
+    setTrackingError("");
+    setTrackingMessage("");
+  };
+
+  // =========================================================
+  // CLOSE TRACKING MODAL
+  // =========================================================
+
+  const handleCloseTracking = () => {
+    if (trackingLoading) {
+      return;
+    }
+
+    setTrackingOrder(null);
+
+    setTrackingNumber("");
+    setTrackingUrl("");
+
+    setTrackingError("");
+    setTrackingMessage("");
+  };
+
+  // =========================================================
+  // SAVE TRACKING
+  // =========================================================
+
+  const handleSaveTracking = async () => {
+    if (!trackingOrder?._id) {
+      return;
+    }
+
+    const trimmedTrackingNumber =
+      trackingNumber.trim();
+
+    const trimmedTrackingUrl =
+      trackingUrl.trim();
+
+    // -------------------------------------------------------
+    // VALIDATION
+    // -------------------------------------------------------
+
+    if (!trimmedTrackingNumber) {
+      setTrackingError(
+        "Please enter the tracking / AWB number."
+      );
+
+      return;
+    }
+
+    try {
+      setTrackingLoading(true);
+      setTrackingError("");
+      setTrackingMessage("");
+
+      const token = getToken();
+
+      if (!token) {
+        setTrackingError(
+          "Authentication required. Please login again."
+        );
+
+        return;
+      }
+
+      // -----------------------------------------------------
+      // UPDATE TRACKING
+      // Backend:
+      // PATCH /api/orders/:id/tracking
+      // -----------------------------------------------------
+
+      const response = await axios.patch(
+        `${API_URL}/orders/${trackingOrder._id}/tracking`,
+        {
+          trackingNumber:
+            trimmedTrackingNumber,
+
+          trackingUrl:
+            trimmedTrackingUrl,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const updatedOrder =
+        response.data?.order;
+
+      if (!updatedOrder) {
+        throw new Error(
+          "Tracking information was not returned by the server."
+        );
+      }
+
+      // -----------------------------------------------------
+      // UPDATE CURRENT TABLE WITHOUT REFETCH
+      // -----------------------------------------------------
+
+      setOrders((previousOrders) =>
+        previousOrders.map((order) =>
+          order._id === trackingOrder._id
+            ? {
+                ...order,
+                ...updatedOrder,
+              }
+            : order
+        )
+      );
+
+      // -----------------------------------------------------
+      // UPDATE MODAL
+      // -----------------------------------------------------
+
+      setTrackingOrder((previousOrder) => ({
+        ...previousOrder,
+        ...updatedOrder,
+      }));
+
+      setTrackingNumber(
+        updatedOrder.trackingNumber || ""
+      );
+
+      setTrackingUrl(
+        updatedOrder.trackingUrl || ""
+      );
+
+      setTrackingMessage(
+        "Tracking information saved successfully."
+      );
+
+      setTimeout(() => {
+        setTrackingMessage("");
+      }, 2500);
+    } catch (err) {
+      console.error(
+        "Save tracking error:",
+        err
+      );
+
+      setTrackingError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to save tracking information."
+      );
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  // =========================================================
+  // PAGINATION
+  // =========================================================
 
   const pageNumbers = useMemo(() => {
     const pages = [];
+
     const maxVisiblePages = 5;
 
     let startPage = Math.max(
@@ -513,9 +714,9 @@ const Orders = () => {
     fetchOrders(currentPage);
   };
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
@@ -529,14 +730,16 @@ const Orders = () => {
     );
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="admin-orders-page">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="orders-header">
         <div>
@@ -548,7 +751,9 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* SUMMARY */}
+      {/* =====================================================
+          SUMMARY
+      ===================================================== */}
 
       <div className="orders-summary">
 
@@ -610,7 +815,9 @@ const Orders = () => {
 
       </div>
 
-      {/* TOOLBAR */}
+      {/* =====================================================
+          TOOLBAR
+      ===================================================== */}
 
       <div className="orders-toolbar">
 
@@ -688,7 +895,9 @@ const Orders = () => {
 
       </div>
 
-      {/* ERROR */}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
 
       {error && (
         <div className="orders-error">
@@ -707,7 +916,9 @@ const Orders = () => {
         </div>
       )}
 
-      {/* TABLE */}
+      {/* =====================================================
+          TABLE
+      ===================================================== */}
 
       <div className="orders-table-card">
 
@@ -756,10 +967,21 @@ const Orders = () => {
                   const customerPhone =
                     getCustomerPhone(order);
 
+                  const hasTracking =
+                    Boolean(
+                      order?.trackingNumber ||
+                        order?.trackingUrl
+                    );
+
+                  const canAddTracking =
+                    currentStatus === "SHIPPED";
+
                   return (
                     <tr key={order?._id}>
 
-                      {/* ORDER ID */}
+                      {/* =================================================
+                          ORDER ID
+                      ================================================= */}
 
                       <td>
                         <span className="order-id">
@@ -767,7 +989,9 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* CUSTOMER */}
+                      {/* =================================================
+                          CUSTOMER
+                      ================================================= */}
 
                       <td>
                         <div className="customer-cell">
@@ -786,7 +1010,7 @@ const Orders = () => {
 
                             <span>
                               {customerEmail !==
-                              "GÇö"
+                              "—"
                                 ? customerEmail
                                 : customerPhone}
                             </span>
@@ -796,7 +1020,9 @@ const Orders = () => {
                         </div>
                       </td>
 
-                      {/* DATE */}
+                      {/* =================================================
+                          DATE
+                      ================================================= */}
 
                       <td>
                         <span className="order-date">
@@ -807,7 +1033,9 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* ITEMS */}
+                      {/* =================================================
+                          ITEMS
+                      ================================================= */}
 
                       <td>
                         <span className="item-count">
@@ -815,7 +1043,9 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* TOTAL */}
+                      {/* =================================================
+                          TOTAL
+                      ================================================= */}
 
                       <td>
                         <strong className="order-total">
@@ -828,7 +1058,9 @@ const Orders = () => {
                         </strong>
                       </td>
 
-                      {/* PAYMENT */}
+                      {/* =================================================
+                          PAYMENT
+                      ================================================= */}
 
                       <td>
                         <span
@@ -844,7 +1076,9 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* ORDER STATUS */}
+                      {/* =================================================
+                          ORDER STATUS
+                      ================================================= */}
 
                       <td>
                         <span
@@ -860,22 +1094,60 @@ const Orders = () => {
                         </span>
                       </td>
 
-                      {/* ACTION */}
+                      {/* =================================================
+                          ACTION
+                      ================================================= */}
 
                       <td>
-                        <button
-                          type="button"
-                          className="view-order-btn"
-                          onClick={() =>
-                            navigate(
-                              `/admin/orders/${order?._id}`
-                            )
-                          }
-                          title="View Order"
-                          aria-label="View Order"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
+                        <div className="order-actions">
+
+                          {/* VIEW */}
+
+                          <button
+                            type="button"
+                            className="view-order-btn"
+                            onClick={() =>
+                              navigate(
+                                `/admin/orders/${order?._id}`
+                              )
+                            }
+                            title="View Order"
+                            aria-label="View Order"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+
+                          {/* TRACKING */}
+
+                          {canAddTracking && (
+                            <button
+                              type="button"
+                              className={`tracking-order-btn ${
+                                hasTracking
+                                  ? "has-tracking"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                handleOpenTracking(
+                                  order
+                                )
+                              }
+                              title={
+                                hasTracking
+                                  ? "Edit Tracking"
+                                  : "Add Tracking"
+                              }
+                              aria-label={
+                                hasTracking
+                                  ? "Edit Tracking"
+                                  : "Add Tracking"
+                              }
+                            >
+                              <i className="bi bi-truck"></i>
+                            </button>
+                          )}
+
+                        </div>
                       </td>
 
                     </tr>
@@ -885,6 +1157,7 @@ const Orders = () => {
               ) : (
 
                 <tr>
+
                   <td
                     colSpan="8"
                     className="orders-empty"
@@ -907,8 +1180,8 @@ const Orders = () => {
 
                     </div>
                   </td>
-                </tr>
 
+                </tr>
               )}
 
             </tbody>
@@ -917,23 +1190,41 @@ const Orders = () => {
 
         </div>
 
-        {/* FOOTER */}
+        {/* =====================================================
+            FOOTER
+        ===================================================== */}
 
         {totalOrders > 0 && (
           <div className="orders-table-footer">
+
             <span>
               Showing{" "}
-              <strong>{startItem}</strong>
+
+              <strong>
+                {startItem}
+              </strong>
+
               {" - "}
-              <strong>{endItem}</strong>
+
+              <strong>
+                {endItem}
+              </strong>
+
               {" "}of{" "}
-              <strong>{totalOrders}</strong>
+
+              <strong>
+                {totalOrders}
+              </strong>
+
               {" "}orders
             </span>
+
           </div>
         )}
 
-        {/* PAGINATION */}
+        {/* =====================================================
+            PAGINATION
+        ===================================================== */}
 
         {totalPages > 1 && (
           <div className="orders-pagination">
@@ -946,7 +1237,9 @@ const Orders = () => {
                   currentPage - 1
                 )
               }
-              disabled={currentPage === 1}
+              disabled={
+                currentPage === 1
+              }
             >
               <i className="bi bi-chevron-left"></i>
 
@@ -1002,6 +1295,257 @@ const Orders = () => {
         )}
 
       </div>
+
+      {/* =====================================================
+          TRACKING MODAL
+      ===================================================== */}
+
+      {trackingOrder && (
+        <div
+          className="tracking-modal-overlay"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              handleCloseTracking();
+            }
+          }}
+        >
+
+          <div className="tracking-modal">
+
+            {/* =================================================
+                MODAL HEADER
+            ================================================= */}
+
+            <div className="tracking-modal-header">
+
+              <div>
+
+                <span className="tracking-modal-eyebrow">
+                  ORDER TRACKING
+                </span>
+
+                <h2>
+                  {getOrderId(
+                    trackingOrder
+                  )}
+                </h2>
+
+              </div>
+
+              <button
+                type="button"
+                className="tracking-modal-close"
+                onClick={
+                  handleCloseTracking
+                }
+                disabled={
+                  trackingLoading
+                }
+                aria-label="Close"
+              >
+                <i className="bi bi-x"></i>
+              </button>
+
+            </div>
+
+            {/* =================================================
+                MODAL BODY
+            ================================================= */}
+
+            <div className="tracking-modal-body">
+
+              {/* ORDER SUMMARY */}
+
+              <div className="tracking-order-summary">
+
+                <div className="tracking-icon">
+                  <i className="bi bi-truck"></i>
+                </div>
+
+                <div>
+
+                  <strong>
+                    {getCustomerName(
+                      trackingOrder
+                    )}
+                  </strong>
+
+                  <span>
+                    Status:{" "}
+                    {getStatusLabel(
+                      String(
+                        trackingOrder?.orderStatus ||
+                          ""
+                      ).toUpperCase()
+                    )}
+                  </span>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  TRACKING NUMBER
+              ================================================= */}
+
+              <div className="tracking-form-group">
+
+                <label htmlFor="tracking-number">
+                  Tracking Number
+                </label>
+
+                <div className="tracking-input-wrapper">
+
+                  <i className="bi bi-upc-scan"></i>
+
+                  <input
+                    id="tracking-number"
+                    type="text"
+                    placeholder="Enter tracking / AWB number"
+                    value={trackingNumber}
+                    onChange={(event) =>
+                      setTrackingNumber(
+                        event.target.value
+                      )
+                    }
+                    disabled={
+                      trackingLoading
+                    }
+                  />
+
+                </div>
+
+                <small>
+                  Enter the tracking number
+                  provided for this shipment.
+                </small>
+
+              </div>
+
+              {/* =================================================
+                  TRACKING URL
+              ================================================= */}
+
+              <div className="tracking-form-group">
+
+                <label htmlFor="tracking-url">
+                  Tracking URL
+                </label>
+
+                <div className="tracking-input-wrapper">
+
+                  <i className="bi bi-link-45deg"></i>
+
+                  <input
+                    id="tracking-url"
+                    type="url"
+                    placeholder="https://courier.com/track/..."
+                    value={trackingUrl}
+                    onChange={(event) =>
+                      setTrackingUrl(
+                        event.target.value
+                      )
+                    }
+                    disabled={
+                      trackingLoading
+                    }
+                  />
+
+                </div>
+
+                <small>
+                  Optional tracking page URL.
+                </small>
+
+              </div>
+
+              {/* =================================================
+                  SUCCESS
+              ================================================= */}
+
+              {trackingMessage && (
+                <div className="tracking-success-message">
+
+                  <i className="bi bi-check-circle-fill"></i>
+
+                  <span>
+                    {trackingMessage}
+                  </span>
+
+                </div>
+              )}
+
+              {/* =================================================
+                  ERROR
+              ================================================= */}
+
+              {trackingError && (
+                <div className="tracking-error-message">
+
+                  <i className="bi bi-exclamation-circle-fill"></i>
+
+                  <span>
+                    {trackingError}
+                  </span>
+
+                </div>
+              )}
+
+            </div>
+
+            {/* =================================================
+                MODAL FOOTER
+            ================================================= */}
+
+            <div className="tracking-modal-footer">
+
+              <button
+                type="button"
+                className="tracking-cancel-btn"
+                onClick={
+                  handleCloseTracking
+                }
+                disabled={
+                  trackingLoading
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="tracking-save-btn"
+                onClick={
+                  handleSaveTracking
+                }
+                disabled={
+                  trackingLoading
+                }
+              >
+
+                {trackingLoading ? (
+                  <>
+                    <span className="tracking-btn-spinner"></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check2"></i>
+                    Save Tracking
+                  </>
+                )}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );

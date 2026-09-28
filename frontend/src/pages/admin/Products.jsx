@@ -1,6 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { toast } from "react-toastify";
+
 import "./Products.css";
 
 const API_URL = "http://localhost:5000/api/products";
@@ -19,6 +28,14 @@ function Products() {
   const [categories, setCategories] = useState([]);
 
   const [search, setSearch] = useState("");
+
+  // Search suggestions
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSearchSuggestions, setShowSearchSuggestions] =
+    useState(false);
+
+  const searchWrapperRef = useRef(null);
+
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [availability, setAvailability] = useState("");
@@ -106,9 +123,7 @@ function Products() {
   };
 
   const mainCategories = useMemo(() => {
-    return categories.filter(
-      (cat) => !getParentId(cat)
-    );
+    return categories.filter((cat) => !getParentId(cat));
   }, [categories]);
 
   const subcategories = useMemo(() => {
@@ -118,8 +133,7 @@ function Products() {
 
     return categories.filter(
       (cat) =>
-        String(getParentId(cat)) ===
-        String(category)
+        String(getParentId(cat)) === String(category)
     );
   }, [categories, category]);
 
@@ -133,21 +147,15 @@ function Products() {
 
           if (
             catParentId &&
-            String(catParentId) ===
-              String(currentId)
+            String(catParentId) === String(currentId)
           ) {
             const childId = getCategoryId(cat);
 
             if (
               childId &&
-              !result.includes(
-                String(childId)
-              )
+              !result.includes(String(childId))
             ) {
-              result.push(
-                String(childId)
-              );
-
+              result.push(String(childId));
               findChildren(childId);
             }
           }
@@ -177,13 +185,8 @@ function Products() {
   };
 
   const getEffectivePrice = (product) => {
-    const salePrice = Number(
-      product?.salePrice
-    );
-
-    const regularPrice = Number(
-      product?.regularPrice
-    );
+    const salePrice = Number(product?.salePrice);
+    const regularPrice = Number(product?.regularPrice);
 
     if (salePrice > 0) {
       return salePrice;
@@ -193,9 +196,7 @@ function Products() {
   };
 
   const formatPrice = (price) => {
-    return `₹${Number(
-      price || 0
-    ).toLocaleString("en-IN")}`;
+    return `₹${Number(price || 0).toLocaleString("en-IN")}`;
   };
 
   const getProductStatus = (product) => {
@@ -206,9 +207,7 @@ function Products() {
       };
     }
 
-    const stock = Number(
-      product?.stock ?? 0
-    );
+    const stock = Number(product?.stock ?? 0);
 
     if (stock === 0) {
       return {
@@ -231,142 +230,221 @@ function Products() {
   };
 
   // =========================================================
-  // FETCH CATEGORIES
+  // SEARCH SUGGESTIONS
   // =========================================================
 
-  const fetchCategories = useCallback(
-    async () => {
+  useEffect(() => {
+    const query = search.trim();
+
+    if (!query) {
+      setSearchSuggestions([]);
+      setShowSearchSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
       try {
         const response = await fetch(
-          CATEGORY_API_URL,
+          `${API_URL}/search-suggestions?search=${encodeURIComponent(
+            query
+          )}`,
           {
             headers: getHeaders(),
           }
         );
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              "Failed to fetch categories"
+        console.log("SEARCH SUGGESTIONS:", data);
+
+        if (response.ok && data.success) {
+          const suggestions = Array.isArray(
+            data.suggestions
+          )
+            ? data.suggestions
+            : [];
+
+          setSearchSuggestions(suggestions);
+
+          setShowSearchSuggestions(
+            suggestions.length > 0
           );
+        } else {
+          setSearchSuggestions([]);
+          setShowSearchSuggestions(false);
         }
-
-        const categoryList =
-          Array.isArray(data)
-            ? data
-            : data.categories ||
-              data.data ||
-              [];
-
-        setCategories(categoryList);
       } catch (error) {
         console.error(
-          "Category fetch error:",
+          "Search suggestion error:",
           error
         );
+
+        setSearchSuggestions([]);
+        setShowSearchSuggestions(false);
       }
-    },
-    []
-  );
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // =========================================================
+  // CLOSE SEARCH SUGGESTIONS ON OUTSIDE CLICK
+  // =========================================================
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(event.target)
+      ) {
+        setShowSearchSuggestions(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+    };
+  }, []);
+
+  // =========================================================
+  // SELECT SEARCH SUGGESTION
+  // =========================================================
+
+  const handleSuggestionClick = (product) => {
+    setSearch(product.name || "");
+    setShowSearchSuggestions(false);
+    setSearchSuggestions([]);
+    setCurrentPage(1);
+  };
+
+  // =========================================================
+  // FETCH CATEGORIES
+  // =========================================================
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch(
+        CATEGORY_API_URL,
+        {
+          headers: getHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            "Failed to fetch categories"
+        );
+      }
+
+      const categoryList = Array.isArray(data)
+        ? data
+        : data.categories ||
+          data.data ||
+          [];
+
+      setCategories(categoryList);
+    } catch (error) {
+      console.error(
+        "Category fetch error:",
+        error
+      );
+    }
+  }, []);
 
   // =========================================================
   // FETCH PRODUCT SUMMARY
   // =========================================================
 
-  const fetchSummary = useCallback(
-    async () => {
-      try {
-        const headers = getHeaders();
+  const fetchSummary = useCallback(async () => {
+    try {
+      const headers = getHeaders();
 
-        const [
-          totalResponse,
-          activeResponse,
-          lowStockResponse,
-          outOfStockResponse,
-        ] = await Promise.all([
-          fetch(
-            `${API_URL}?limit=1`,
-            {
-              headers,
-            }
-          ),
+      const [
+        totalResponse,
+        activeResponse,
+        lowStockResponse,
+        outOfStockResponse,
+      ] = await Promise.all([
+        fetch(`${API_URL}?limit=1`, {
+          headers,
+        }),
 
-          fetch(
-            `${API_URL}/active`,
-            {
-              headers,
-            }
-          ),
+        fetch(`${API_URL}/active`, {
+          headers,
+        }),
 
-          fetch(
-            `${API_URL}?availability=low-stock&limit=1`,
-            {
-              headers,
-            }
-          ),
+        fetch(
+          `${API_URL}?availability=low-stock&limit=1`,
+          {
+            headers,
+          }
+        ),
 
-          fetch(
-            `${API_URL}?availability=out-of-stock&limit=1`,
-            {
-              headers,
-            }
-          ),
-        ]);
+        fetch(
+          `${API_URL}?availability=out-of-stock&limit=1`,
+          {
+            headers,
+          }
+        ),
+      ]);
 
-        const [
-          totalData,
-          activeData,
-          lowStockData,
-          outOfStockData,
-        ] = await Promise.all([
-          totalResponse.json(),
-          activeResponse.json(),
-          lowStockResponse.json(),
-          outOfStockResponse.json(),
-        ]);
+      const [
+        totalData,
+        activeData,
+        lowStockData,
+        outOfStockData,
+      ] = await Promise.all([
+        totalResponse.json(),
+        activeResponse.json(),
+        lowStockResponse.json(),
+        outOfStockResponse.json(),
+      ]);
 
-        setSummary({
-          total:
-            Number(
-              totalData?.pagination
-                ?.totalProducts
-            ) || 0,
+      setSummary({
+        total:
+          Number(
+            totalData?.pagination
+              ?.totalProducts
+          ) || 0,
 
-          active:
-            Array.isArray(
-              activeData?.products
-            )
-              ? activeData.products.length
-              : Array.isArray(
-                  activeData
-                )
-              ? activeData.length
-              : 0,
+        active: Array.isArray(
+          activeData?.products
+        )
+          ? activeData.products.length
+          : Array.isArray(activeData)
+          ? activeData.length
+          : 0,
 
-          lowStock:
-            Number(
-              lowStockData?.pagination
-                ?.totalProducts
-            ) || 0,
+        lowStock:
+          Number(
+            lowStockData?.pagination
+              ?.totalProducts
+          ) || 0,
 
-          outOfStock:
-            Number(
-              outOfStockData?.pagination
-                ?.totalProducts
-            ) || 0,
-        });
-      } catch (error) {
-        console.error(
-          "Product summary error:",
-          error
-        );
-      }
-    },
-    []
-  );
+        outOfStock:
+          Number(
+            outOfStockData?.pagination
+              ?.totalProducts
+          ) || 0,
+      });
+    } catch (error) {
+      console.error(
+        "Product summary error:",
+        error
+      );
+    }
+  }, []);
 
   // =========================================================
   // FETCH PRODUCTS
@@ -432,13 +510,15 @@ function Products() {
         if (availability) {
           /*
             /api/products supports:
-              in-stock
-              low-stock
-              out-of-stock
+
+            in-stock
+            low-stock
+            out-of-stock
 
             /api/products/best-sellers supports:
-              in-stock
-              out-of-stock
+
+            in-stock
+            out-of-stock
 
             Therefore low-stock is not sent when
             Best Sellers is selected.
@@ -480,14 +560,12 @@ function Products() {
           endpoint = `${API_URL}/best-sellers`;
         }
 
-        const response =
-          await fetch(
-            `${endpoint}?${params.toString()}`,
-            {
-              headers:
-                getHeaders(),
-            }
-          );
+        const response = await fetch(
+          `${endpoint}?${params.toString()}`,
+          {
+            headers: getHeaders(),
+          }
+        );
 
         const data =
           await response.json();
@@ -500,9 +578,7 @@ function Products() {
         }
 
         const productList =
-          Array.isArray(
-            data?.products
-          )
+          Array.isArray(data?.products)
             ? data.products
             : [];
 
@@ -593,17 +669,13 @@ function Products() {
   // CATEGORY CHANGE
   // =========================================================
 
-  const handleCategoryChange = (
-    value
-  ) => {
+  const handleCategoryChange = (value) => {
     setCategory(value);
     setSubcategory("");
     setCurrentPage(1);
   };
 
-  const handleSubcategoryChange = (
-    value
-  ) => {
+  const handleSubcategoryChange = (value) => {
     setSubcategory(value);
     setCurrentPage(1);
   };
@@ -612,16 +684,18 @@ function Products() {
   // DELETE PRODUCT
   // =========================================================
 
-  const handleDelete = async (
-    productId
-  ) => {
-    toast.warning(
+  const handleDelete = async (productId) => {
+    toast(
       ({ closeToast }) => (
         <div className="delete-confirm-toast">
           <div className="delete-confirm-message">
-            <strong>Delete Product?</strong>
+            <strong>
+              Delete Product?
+            </strong>
+
             <span>
-              Are you sure you want to delete this product?
+              Are you sure you want to
+              delete this product?
             </span>
           </div>
 
@@ -673,6 +747,7 @@ function Products() {
                     {
                       className:
                         "rizo-admin-toast",
+                      hideProgressBar: true,
                     }
                   );
                 } catch (error) {
@@ -687,6 +762,7 @@ function Products() {
                     {
                       className:
                         "rizo-admin-toast",
+                      hideProgressBar: true,
                     }
                   );
                 } finally {
@@ -715,6 +791,9 @@ function Products() {
 
   const handleResetFilters = () => {
     setSearch("");
+    setSearchSuggestions([]);
+    setShowSearchSuggestions(false);
+
     setCategory("");
     setSubcategory("");
     setAvailability("");
@@ -747,60 +826,59 @@ function Products() {
     setCurrentPage(page);
   };
 
-  const paginationItems =
-    useMemo(() => {
-      const pages = [];
+  const paginationItems = useMemo(() => {
+    const pages = [];
 
-      if (totalPages <= 7) {
-        for (
-          let i = 1;
-          i <= totalPages;
-          i++
-        ) {
-          pages.push(i);
-        }
-
-        return pages;
-      }
-
-      pages.push(1);
-
-      if (currentPage > 4) {
-        pages.push("...");
-      }
-
-      const start = Math.max(
-        2,
-        currentPage - 1
-      );
-
-      const end = Math.min(
-        totalPages - 1,
-        currentPage + 1
-      );
-
+    if (totalPages <= 7) {
       for (
-        let i = start;
-        i <= end;
+        let i = 1;
+        i <= totalPages;
         i++
       ) {
         pages.push(i);
       }
 
-      if (
-        currentPage <
-        totalPages - 3
-      ) {
-        pages.push("...");
-      }
-
-      pages.push(totalPages);
-
       return pages;
-    }, [
-      currentPage,
-      totalPages,
-    ]);
+    }
+
+    pages.push(1);
+
+    if (currentPage > 4) {
+      pages.push("...");
+    }
+
+    const start = Math.max(
+      2,
+      currentPage - 1
+    );
+
+    const end = Math.min(
+      totalPages - 1,
+      currentPage + 1
+    );
+
+    for (
+      let i = start;
+      i <= end;
+      i++
+    ) {
+      pages.push(i);
+    }
+
+    if (
+      currentPage <
+      totalPages - 3
+    ) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
+  }, [
+    currentPage,
+    totalPages,
+  ]);
 
   // =========================================================
   // RENDER
@@ -808,6 +886,7 @@ function Products() {
 
   return (
     <div className="products-page">
+
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -841,7 +920,9 @@ function Products() {
       ===================================================== */}
 
       <div className="product-summary-grid">
+
         {/* TOTAL */}
+
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-products">
             <i className="bi bi-box-seam"></i>
@@ -859,6 +940,7 @@ function Products() {
         </div>
 
         {/* ACTIVE */}
+
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-active">
             <i className="bi bi-check-circle"></i>
@@ -876,6 +958,7 @@ function Products() {
         </div>
 
         {/* LOW STOCK */}
+
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-low">
             <i className="bi bi-exclamation-triangle"></i>
@@ -893,6 +976,7 @@ function Products() {
         </div>
 
         {/* OUT OF STOCK */}
+
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-out">
             <i className="bi bi-x-circle"></i>
@@ -915,23 +999,72 @@ function Products() {
       ===================================================== */}
 
       <div className="products-filter-card">
+
         {/* SEARCH */}
-        <div className="filter-search">
+
+        <div
+          className="filter-search"
+          ref={searchWrapperRef}
+        >
           <i className="bi bi-search"></i>
 
           <input
             type="text"
             placeholder="Search products, SKU..."
             value={search}
-            onChange={(event) =>
+            onChange={(event) => {
               setSearch(
                 event.target.value
-              )
-            }
+              );
+            }}
+            onFocus={() => {
+              if (
+                searchSuggestions.length >
+                0
+              ) {
+                setShowSearchSuggestions(
+                  true
+                );
+              }
+            }}
           />
+
+          {/* SEARCH SUGGESTIONS */}
+
+          {showSearchSuggestions &&
+            searchSuggestions.length >
+              0 && (
+              <div className="search-suggestions-dropdown">
+                {searchSuggestions.map(
+                  (product) => (
+                    <button
+                      type="button"
+                      key={product._id}
+                      className="search-suggestion-item"
+                      onClick={() =>
+                        handleSuggestionClick(
+                          product
+                        )
+                      }
+                    >
+                      <span className="suggestion-product-name">
+                        {product.name}
+                      </span>
+
+                      <span className="suggestion-product-sku">
+                        SKU:{" "}
+                        {product.sku ||
+                          "N/A"}
+                      </span>
+                    </button>
+                  )
+                )}
+              </div>
+            )}
         </div>
 
         {/* CATEGORY */}
+
         <div className="filter-control">
           <select
             value={category}
@@ -966,6 +1099,7 @@ function Products() {
         </div>
 
         {/* SUBCATEGORY */}
+
         <div className="filter-control">
           <select
             value={subcategory}
@@ -1005,6 +1139,7 @@ function Products() {
         </div>
 
         {/* AVAILABILITY */}
+
         <div className="filter-control">
           <select
             value={availability}
@@ -1033,6 +1168,7 @@ function Products() {
         </div>
 
         {/* PRODUCT TYPE */}
+
         <div className="filter-control">
           <select
             value={bestSeller}
@@ -1053,6 +1189,7 @@ function Products() {
         </div>
 
         {/* SORT */}
+
         <div className="filter-control">
           <select
             value={sort}
@@ -1077,14 +1214,11 @@ function Products() {
             <option value="price-high">
               Price: High to Low
             </option>
-
-            <option value="featured">
-              Featured
-            </option>
           </select>
         </div>
 
         {/* CLEAR */}
+
         {hasFilters && (
           <button
             type="button"
@@ -1151,6 +1285,7 @@ function Products() {
       ===================================================== */}
 
       <div className="products-table-card">
+
         {loading ? (
           <div className="products-loading">
             <div className="products-spinner"></div>
@@ -1162,6 +1297,7 @@ function Products() {
         ) : products.length ===
           0 ? (
           <div className="products-empty">
+
             <div className="empty-icon">
               <i className="bi bi-box"></i>
             </div>
@@ -1189,6 +1325,7 @@ function Products() {
         ) : (
           <div className="products-table-wrapper">
             <table className="products-table">
+
               <thead>
                 <tr>
                   <th>
@@ -1248,12 +1385,12 @@ function Products() {
                           productId
                         }
                       >
-                        {/* =====================================
-                            PRODUCT
-                        ===================================== */}
+
+                        {/* PRODUCT */}
 
                         <td>
                           <div className="product-info">
+
                             <div className="product-image">
                               {image ? (
                                 <img
@@ -1294,12 +1431,11 @@ function Products() {
                                   "N/A"}
                               </span>
                             </div>
+
                           </div>
                         </td>
 
-                        {/* =====================================
-                            CATEGORY
-                        ===================================== */}
+                        {/* CATEGORY */}
 
                         <td>
                           <span className="category-name">
@@ -1309,12 +1445,11 @@ function Products() {
                           </span>
                         </td>
 
-                        {/* =====================================
-                            PRICE
-                        ===================================== */}
+                        {/* PRICE */}
 
                         <td>
                           <div className="price-cell">
+
                             <strong>
                               {formatPrice(
                                 price
@@ -1337,12 +1472,11 @@ function Products() {
                                   )}
                                 </span>
                               )}
+
                           </div>
                         </td>
 
-                        {/* =====================================
-                            STOCK
-                        ===================================== */}
+                        {/* STOCK */}
 
                         <td>
                           <span
@@ -1354,8 +1488,7 @@ function Products() {
                                 ? "stock-zero"
                                 : Number(
                                     product.stock
-                                  ) <=
-                                    10
+                                  ) <= 10
                                 ? "stock-low"
                                 : "stock-good"
                             }`}
@@ -1367,9 +1500,7 @@ function Products() {
                           </span>
                         </td>
 
-                        {/* =====================================
-                            STATUS
-                        ===================================== */}
+                        {/* STATUS */}
 
                         <td>
                           <span
@@ -1383,15 +1514,12 @@ function Products() {
                           </span>
                         </td>
 
-                        {/* =====================================
-                            BEST SELLER
-                        ===================================== */}
+                        {/* BEST SELLER */}
 
                         <td>
                           {product.isBestSeller ? (
                             <span className="best-seller-badge">
                               <i className="bi bi-star-fill"></i>
-
                               BEST SELLER
                             </span>
                           ) : (
@@ -1401,13 +1529,13 @@ function Products() {
                           )}
                         </td>
 
-                        {/* =====================================
-                            ACTIONS
-                        ===================================== */}
+                        {/* ACTIONS */}
 
                         <td>
                           <div className="product-actions">
+
                             {/* VIEW */}
+
                             <button
                               type="button"
                               className="action-btn view-btn"
@@ -1422,6 +1550,7 @@ function Products() {
                             </button>
 
                             {/* EDIT */}
+
                             <button
                               type="button"
                               className="action-btn edit-btn"
@@ -1436,6 +1565,7 @@ function Products() {
                             </button>
 
                             {/* DELETE */}
+
                             <button
                               type="button"
                               className="action-btn delete-btn"
@@ -1457,13 +1587,16 @@ function Products() {
                                 <i className="bi bi-trash3"></i>
                               )}
                             </button>
+
                           </div>
                         </td>
+
                       </tr>
                     );
                   }
                 )}
               </tbody>
+
             </table>
           </div>
         )}
@@ -1477,7 +1610,9 @@ function Products() {
         products.length > 0 &&
         totalPages > 1 && (
           <div className="products-pagination">
+
             {/* PREVIOUS */}
+
             <button
               type="button"
               className="pagination-arrow"
@@ -1494,6 +1629,7 @@ function Products() {
             </button>
 
             {/* PAGE NUMBERS */}
+
             <div className="pagination-pages">
               {paginationItems.map(
                 (
@@ -1530,6 +1666,7 @@ function Products() {
             </div>
 
             {/* NEXT */}
+
             <button
               type="button"
               className="pagination-arrow"
@@ -1545,6 +1682,7 @@ function Products() {
             >
               <i className="bi bi-chevron-right"></i>
             </button>
+
           </div>
         )}
     </div>

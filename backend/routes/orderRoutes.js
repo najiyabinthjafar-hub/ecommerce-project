@@ -18,12 +18,20 @@ router.get("/test", (req, res) => {
 });
 
 // CREATE ORDER
-router.post("/", protect, orderController.createOrder);
+router.post(
+  "/",
+  protect,
+  orderController.createOrder
+);
+
+// RAZORPAY CREATE ORDER
 router.post(
   "/razorpay/create-order",
   protect,
   orderController.createRazorpayOrder
 );
+
+// RAZORPAY VERIFY PAYMENT
 router.post(
   "/razorpay/verify",
   protect,
@@ -42,6 +50,14 @@ router.get(
   "/",
   protect,
   orderController.getOrders
+);
+
+// UPDATE PAYMENT STATUS - ADMIN ONLY
+router.put(
+  "/:id/payment-status",
+  protect,
+  adminOnly,
+  orderController.updatePaymentStatus
 );
 
 // ALL ORDERS - ADMIN ONLY
@@ -74,7 +90,13 @@ router.put(
   orderController.updateOrderStatus
 );
 
-
+// UPDATE ORDER TRACKING - ADMIN ONLY
+router.patch(
+  "/:id/tracking",
+  protect,
+  adminOnly,
+  orderController.updateOrderTracking
+);
 
 // CUSTOMER CANCEL ORDER
 router.put(
@@ -82,11 +104,21 @@ router.put(
   protect,
   orderController.cancelOrder
 );
+
 // CUSTOMER REQUEST RETURN
-router.post("/:id/return", protect, orderController.requestReturn);
+router.post(
+  "/:id/return",
+  protect,
+  orderController.requestReturn
+);
 
 // ADMIN APPROVE / REJECT RETURN
-router.put("/:id/return-status", protect, adminOnly, orderController.updateReturnStatus);
+router.put(
+  "/:id/return-status",
+  protect,
+  adminOnly,
+  orderController.updateReturnStatus
+);
 
 // CHECK RAZORPAY REFUND STATUS - ADMIN ONLY
 router.get(
@@ -97,8 +129,3 @@ router.get(
 );
 
 module.exports = router;
-
-
-
-
-
