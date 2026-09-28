@@ -103,11 +103,20 @@ router.post(
 );
 
 // ADMIN APPROVE / REJECT RETURN
-router.put(
-  "/:id/return-status",
+router.put("/:id/return-status", protect, adminOnly, orderController.updateReturnStatus);
+
+// CHECK RAZORPAY REFUND STATUS - ADMIN ONLY
+router.get(
+  "/:id/refund-status",
   protect,
   adminOnly,
-  orderController.updateReturnStatus
+  orderController.checkRefundStatus
 );
+
+module.exports = router;
+
+
+
+
 
 module.exports = router;
