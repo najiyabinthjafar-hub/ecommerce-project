@@ -58,8 +58,34 @@ const createRefund = async (paymentId, amount) => {
   }
 };
 
+const getRefund = async (refundId) => {
+  try {
+    const refund = await razorpay.refunds.fetch(refundId);
+
+    console.log("Razorpay refund status:", refund);
+
+    return refund;
+  } catch (error) {
+    console.error(
+      "Razorpay get refund error:",
+      JSON.stringify(error, null, 2)
+    );
+
+    const razorpayError = error.error || {};
+
+    const message =
+      razorpayError.description ||
+      error.description ||
+      error.message ||
+      "Unable to fetch refund";
+
+    throw new Error(message);
+  }
+};
+
 module.exports = {
   createRazorpayOrder,
   verifyPaymentSignature,
   createRefund,
+  getRefund ,
 };
