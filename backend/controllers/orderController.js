@@ -6,9 +6,7 @@ const {
 
 // CREATE ORDER
 const createOrder = async (req, res) => {
-  console.log(
-    "CREATE ORDER CONTROLLER HIT"
-  );
+  console.log("CREATE ORDER CONTROLLER HIT");
 
   console.log(
     "PAYMENT METHOD:",
@@ -22,14 +20,11 @@ const createOrder = async (req, res) => {
     };
 
     const order =
-      await orderService.createOrder(
-        orderData
-      );
+      await orderService.createOrder(orderData);
 
     res.status(201).json({
       success: true,
-      message:
-        "Order created successfully",
+      message: "Order created successfully",
       order,
     });
   } catch (error) {
@@ -40,8 +35,7 @@ const createOrder = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message:
-        "Failed to create order",
+      message: "Failed to create order",
       error: error.message,
     });
   }
@@ -214,6 +208,7 @@ const updateOrderStatus = async (
       req.body.status;
 
     const {
+      courier,
       trackingNumber,
       trackingUrl,
     } = req.body;
@@ -230,6 +225,7 @@ const updateOrderStatus = async (
       await orderService.updateOrderStatus(
         req.params.id,
         orderStatus,
+        courier,
         trackingNumber,
         trackingUrl
       );
@@ -270,6 +266,7 @@ const updateOrderTracking = async (
 ) => {
   try {
     const {
+      courier,
       trackingNumber,
       trackingUrl,
     } = req.body;
@@ -288,6 +285,7 @@ const updateOrderTracking = async (
     const order =
       await orderService.updateOrderTracking(
         req.params.id,
+        courier,
         trackingNumber,
         trackingUrl
       );

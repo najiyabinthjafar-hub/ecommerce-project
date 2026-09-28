@@ -702,7 +702,8 @@ const updateOrderStatus = async (
   orderId,
   orderStatus,
   trackingNumber,
-  trackingUrl
+  trackingUrl,
+  courier
 ) => {
   const existingOrder =
     await Order.findById(
@@ -777,6 +778,18 @@ const updateOrderStatus = async (
           trackingUrl
         ).trim();
     }
+
+    // Courier can be added/updated
+    // when the order is shipped.
+
+    if (
+      courier !== undefined
+    ) {
+      updateData.courier =
+        String(
+          courier
+        ).trim();
+    }
   }
 
   const order =
@@ -811,7 +824,8 @@ const updateOrderStatus = async (
 const updateOrderTracking = async (
   orderId,
   trackingNumber,
-  trackingUrl
+  trackingUrl,
+  courier
 ) => {
   const existingOrder =
     await Order.findById(
@@ -839,10 +853,11 @@ const updateOrderTracking = async (
   if (
     trackingNumber ===
       undefined &&
-    trackingUrl === undefined
+    trackingUrl === undefined &&
+    courier === undefined
   ) {
     throw new Error(
-      "Tracking number or tracking URL is required"
+      "Tracking number, tracking URL, or courier is required"
     );
   }
 
@@ -864,6 +879,18 @@ const updateOrderTracking = async (
     updateData.trackingUrl =
       String(
         trackingUrl
+      ).trim();
+  }
+
+  // Courier can be added/updated
+  // without changing existing tracking fields.
+
+  if (
+    courier !== undefined
+  ) {
+    updateData.courier =
+      String(
+        courier
       ).trim();
   }
 
