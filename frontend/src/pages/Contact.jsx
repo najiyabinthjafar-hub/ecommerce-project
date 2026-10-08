@@ -42,7 +42,7 @@ function Contact() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/contacts",
+        "https://ecommerce-project-aopf.onrender.com/api/contacts",
         {
           method: "POST",
           headers: {

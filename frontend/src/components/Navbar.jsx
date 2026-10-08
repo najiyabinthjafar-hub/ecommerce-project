@@ -10,7 +10,7 @@ import {
 import logo from "../assets/logo.png";
 import "./Navbar.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function Navbar() {
   const [showSearch, setShowSearch] = useState(false);

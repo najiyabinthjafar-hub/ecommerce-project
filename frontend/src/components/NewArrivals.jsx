@@ -19,7 +19,7 @@ function NewArrivals() {
 
         // Fetch categories first
         const categoryResponse = await fetch(
-          "http://localhost:5000/api/categories/tree"
+          "https://ecommerce-project-aopf.onrender.com/api/categories/tree"
         );
 
         const categoryData = await categoryResponse.json();
@@ -82,7 +82,7 @@ function NewArrivals() {
         params.append("category", categoryIds.join(","));
 
         const productResponse = await fetch(
-          `http://localhost:5000/api/products?${params.toString()}`
+          `https://ecommerce-project-aopf.onrender.com/api/products?${params.toString()}`
         );
 
         const productData = await productResponse.json();

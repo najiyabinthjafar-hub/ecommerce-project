@@ -7,7 +7,7 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function Dashboard() {
   const navigate = useNavigate();

@@ -10,7 +10,7 @@ import ProductCard from "../components/ProductCard";
 
 import "./NewArrivalsPage.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function NewArrivalsPage() {
   const location = useLocation();

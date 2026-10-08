@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./OrderTracking.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 const OrderTracking = () => {
   const location = useLocation();

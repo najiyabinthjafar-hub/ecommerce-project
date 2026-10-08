@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 import "./ProductCard.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function ProductCard({ product, loading = false }) {
   const navigate = useNavigate();

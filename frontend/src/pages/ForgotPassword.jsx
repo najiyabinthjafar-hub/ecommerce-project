@@ -30,7 +30,7 @@ function ForgotPassword() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/forgot-password",
+        "https://ecommerce-project-aopf.onrender.com/api/auth/forgot-password",
         {
           email: email.trim(),
         }

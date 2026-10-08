@@ -4,13 +4,13 @@ import { toast } from "react-toastify";
 import "./AddCoupon.css";
 
 const COUPON_API_URL =
-  "http://localhost:5000/api/coupons/create";
+  "https://ecommerce-project-aopf.onrender.com/api/coupons/create";
 
 const CATEGORY_API_URL =
-  "http://localhost:5000/api/categories";
+  "https://ecommerce-project-aopf.onrender.com/api/categories";
 
 const PRODUCT_API_URL =
-  "http://localhost:5000/api/products";
+  "https://ecommerce-project-aopf.onrender.com/api/products";
 
 function AddCoupon() {
   const navigate = useNavigate();

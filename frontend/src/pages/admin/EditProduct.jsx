@@ -7,10 +7,10 @@ import { toast } from "react-toastify";
 import "./AddProduct.css";
 
 const CATEGORY_API_URL =
-  "http://localhost:5000/api/categories";
+  "https://ecommerce-project-aopf.onrender.com/api/categories";
 
 const PRODUCT_API_URL =
-  "http://localhost:5000/api/products";
+  "https://ecommerce-project-aopf.onrender.com/api/products";
 
 function EditProduct() {
   const navigate = useNavigate();

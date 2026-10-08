@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 
 import "./ChangePassword.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function ChangePassword() {
   const navigate = useNavigate();

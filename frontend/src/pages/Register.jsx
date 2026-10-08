@@ -55,7 +55,7 @@ function Register() {
       const fullName = `${formData.firstName} ${formData.lastName}`;
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        "https://ecommerce-project-aopf.onrender.com/api/auth/register",
         {
           method: "POST",
           headers: {

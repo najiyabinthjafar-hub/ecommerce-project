@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ViewCategories.css";
 
-const API_URL = "http://localhost:5000/api/categories";
-const PRODUCT_API_URL = "http://localhost:5000/api/products";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api/categories";
+const PRODUCT_API_URL = "https://ecommerce-project-aopf.onrender.com/api/products";
 
 function ViewCategories() {
   const navigate = useNavigate();

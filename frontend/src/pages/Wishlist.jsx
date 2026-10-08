@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 
 import "./Wishlist.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api";
 
 function Wishlist() {
   const navigate = useNavigate();

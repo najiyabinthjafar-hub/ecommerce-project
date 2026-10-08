@@ -38,7 +38,7 @@ function PersonalInformation() {
         setError("");
 
         const response = await fetch(
-          "http://localhost:5000/api/users/profile",
+          "https://ecommerce-project-aopf.onrender.com/api/users/profile",
           {
             method: "GET",
             headers: {
@@ -123,7 +123,7 @@ function PersonalInformation() {
       setSaving(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/users/profile",
+        "https://ecommerce-project-aopf.onrender.com/api/users/profile",
         {
           method: "PUT",
           headers: {

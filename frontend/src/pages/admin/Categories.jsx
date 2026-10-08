@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./Categories.css";
 
-const API_URL = "http://localhost:5000/api/categories";
-const PRODUCT_API_URL = "http://localhost:5000/api/products";
+const API_URL = "https://ecommerce-project-aopf.onrender.com/api/categories";
+const PRODUCT_API_URL = "https://ecommerce-project-aopf.onrender.com/api/products";
 
 function Categories() {
   const navigate = useNavigate();
