@@ -1,55 +1,37 @@
+
 require("dotenv").config();
 
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ================= TEST EMAIL CONNECTION =================
-
-const verifyEmailConnection = async () => {
-  try {
-    await transporter.verify();
-
-    console.log("Email server is ready");
-    console.log("Sender email:", process.env.EMAIL_USER);
-  } catch (error) {
-    console.error("Email server connection failed:");
-    console.error(error.message);
+const getSender = () => {
+  if (!process.env.EMAIL_FROM) {
+    throw new Error(
+      "EMAIL_FROM is missing. Configure a verified sender email in Render."
+    );
   }
+
+  return process.env.EMAIL_FROM;
 };
 
 // ================= SEND REGISTRATION OTP =================
 
 const sendOtpEmail = async (email, otp) => {
   try {
-    console.log("=================================");
-    console.log("Sending registration OTP");
-    console.log("From:", process.env.EMAIL_USER);
-    console.log("To:", email);
-    console.log("OTP:", otp);
-    console.log("=================================");
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
+    const { data, error } = await resend.emails.send({
+      from: getSender(),
+      to: [email],
       subject: "E-Commerce Email Verification OTP",
       text: `Your verification OTP is ${otp}. It will expire in 10 minutes.`,
     });
 
+    if (error) throw new Error(error.message);
+
     console.log("Registration OTP email sent successfully");
-    console.log("Message ID:", info.messageId);
-
-    return info;
+    return data;
   } catch (error) {
-    console.error("Registration OTP email failed:");
-    console.error(error.message);
-
+    console.error("Registration OTP email failed:", error.message);
     throw new Error("Failed to send OTP email");
   }
 };
@@ -58,56 +40,32 @@ const sendOtpEmail = async (email, otp) => {
 
 const sendResetOtpEmail = async (email, otp) => {
   try {
-    console.log("=================================");
-    console.log("Sending password reset OTP");
-    console.log("From:", process.env.EMAIL_USER);
-    console.log("To:", email);
-    console.log("OTP:", otp);
-    console.log("=================================");
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
+    const { data, error } = await resend.emails.send({
+      from: getSender(),
+      to: [email],
       subject: "E-Commerce Password Reset OTP",
       text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`,
     });
 
+    if (error) throw new Error(error.message);
+
     console.log("Password reset OTP email sent successfully");
-    console.log("Message ID:", info.messageId);
-
-    return info;
+    return data;
   } catch (error) {
-    console.error("Password reset OTP email failed:");
-    console.error(error.message);
-
+    console.error("Password reset OTP email failed:", error.message);
     throw new Error("Failed to send password reset OTP email");
   }
 };
 
 // ================= SEND CONTACT MESSAGE =================
 
-const sendContactEmail = async ({
-  name,
-  email,
-  phone,
-  comment,
-}) => {
+const sendContactEmail = async ({ name, email, phone, comment }) => {
   try {
-    console.log("=================================");
-    console.log("Sending contact message email");
-    console.log("From:", process.env.EMAIL_USER);
-    console.log("Customer:", email);
-    console.log("=================================");
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-
-      to: process.env.EMAIL_USER,
-
+    const { data, error } = await resend.emails.send({
+      from: getSender(),
+      to: [process.env.EMAIL_USER],
       replyTo: email,
-
       subject: "New Contact Form Message - E-Commerce",
-
       text: `
 New Contact Form Message
 
@@ -118,19 +76,16 @@ Phone: ${phone}
 Comment:
 ${comment}
 
---------------------------------
 This message was submitted from the E-Commerce website Contact page.
       `,
     });
 
+    if (error) throw new Error(error.message);
+
     console.log("Contact email sent successfully");
-    console.log("Message ID:", info.messageId);
-
-    return info;
+    return data;
   } catch (error) {
-    console.error("Contact email failed:");
-    console.error(error.message);
-
+    console.error("Contact email failed:", error.message);
     throw new Error("Failed to send contact email");
   }
 };
@@ -148,23 +103,14 @@ const sendOrderConfirmationEmail = async ({
     }
 
     const customerName =
-      user.name ||
-      order.shippingAddress?.fullName ||
-      "Customer";
+      user.name || order.shippingAddress?.fullName || "Customer";
 
     const orderId = order._id?.toString() || "N/A";
     const finalAmount = Number(order.finalAmount || 0);
 
-    console.log("=================================");
-    console.log("Sending order confirmation email");
-    console.log("From:", process.env.EMAIL_USER);
-    console.log("To:", user.email);
-    console.log("Order ID:", orderId);
-    console.log("=================================");
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: user.email,
+    const emailPayload = {
+      from: getSender(),
+      to: [user.email],
       subject: `Order Confirmation - #${orderId}`,
       text: `
 Hello ${customerName},
@@ -183,36 +129,32 @@ Your invoice is attached to this email as a PDF.
 
 Thank you for choosing Rizo Fashion!
       `,
-      attachments: invoiceBuffer
-        ? [
-            {
-              filename: `invoice-${orderId}.pdf`,
-              content: invoiceBuffer,
-              contentType: "application/pdf",
-            },
-          ]
-        : [],
-    });
+    };
+
+    if (invoiceBuffer) {
+      emailPayload.attachments = [
+        {
+          filename: `invoice-${orderId}.pdf`,
+          content: Buffer.from(invoiceBuffer).toString("base64"),
+        },
+      ];
+    }
+
+    const { data, error } = await resend.emails.send(emailPayload);
+
+    if (error) throw new Error(error.message);
 
     console.log("Order confirmation email sent successfully");
-    console.log("Message ID:", info.messageId);
-
-    return info;
+    return data;
   } catch (error) {
-    console.error("Order confirmation email failed:");
-    console.error(error.message);
-
+    console.error("Order confirmation email failed:", error.message);
     throw error;
   }
 };
 
-
 // ================= SEND NEW ORDER ADMIN EMAIL =================
 
-const sendNewOrderAdminEmail = async ({
-  order,
-  customer,
-}) => {
+const sendNewOrderAdminEmail = async ({ order, customer }) => {
   try {
     const adminEmail = process.env.EMAIL_USER;
 
@@ -222,16 +164,14 @@ const sendNewOrderAdminEmail = async ({
 
     const orderId = order._id?.toString() || "N/A";
     const customerName =
-      customer?.name ||
-      order.shippingAddress?.fullName ||
-      "Customer";
+      customer?.name || order.shippingAddress?.fullName || "Customer";
 
     const customerEmail = customer?.email || "N/A";
     const finalAmount = Number(order.finalAmount || 0);
 
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: adminEmail,
+    const { data, error } = await resend.emails.send({
+      from: getSender(),
+      to: [adminEmail],
       subject: `New Order Received - #${orderId}`,
       text: `
 New Order Received
@@ -250,24 +190,20 @@ Please log in to the admin panel to view the complete order details.
       `,
     });
 
+    if (error) throw new Error(error.message);
+
     console.log("New order admin email sent successfully");
-    console.log("Message ID:", info.messageId);
-
-    return info;
+    return data;
   } catch (error) {
-    console.error("New order admin email failed:");
-    console.error(error.message);
-
+    console.error("New order admin email failed:", error.message);
     throw error;
   }
 };
 
 module.exports = {
-  verifyEmailConnection,
   sendOtpEmail,
   sendResetOtpEmail,
   sendContactEmail,
   sendOrderConfirmationEmail,
   sendNewOrderAdminEmail,
 };
-
