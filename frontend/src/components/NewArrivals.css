@@ -435,31 +435,39 @@
     margin-top: 35px;
   }
 }
+ 
 
-/* =========================================
-   NEW ARRIVALS - PRICE RIGHT SIDE
-========================================= */
+/* HOME PAGE - NEW ARRIVALS IMAGE FIX */
 
-.products-grid .product-card .product-info {
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
+.new-arrivals .products-grid .home-new-arrival-card .product-image-wrapper {
   width: 100% !important;
-  box-sizing: border-box;
+  height: 245px !important;
+  aspect-ratio: auto !important;
+  position: relative !important;
+  overflow: hidden !important;
+  background: #f5f5f5 !important;
+  border-radius: 18px !important;
+}
+
+.new-arrivals .products-grid .home-new-arrival-card .product-image-wrapper img.product-image {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  display: block !important;
+  margin: 0 !important;
+}
+
+/* Keep product name and price directly below image */
+.new-arrivals .products-grid .home-new-arrival-card .product-info {
+  position: static !important;
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
   padding: 13px 3px 0 !important;
-  text-align: left;
-}
-
-.products-grid .product-card .product-info h3 {
   margin: 0 !important;
-  text-align: left !important;
-  width: auto !important;
-}
-
-.products-grid .product-card .product-info .product-price {
-  margin: 0 !important;
-  margin-left: auto !important;
-  text-align: right !important;
-  width: auto !important;
-  flex-shrink: 0;
+  overflow: visible !important;
 }

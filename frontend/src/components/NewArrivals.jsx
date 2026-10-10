@@ -19,19 +19,16 @@ function NewArrivals() {
 
         // Fetch categories first
         const categoryResponse = await fetch(
-          "https://ecommerce-project-aopf.onrender.com/api/categories/tree"
+          "https://ecommerce-project-aopf.onrender.com/api/categories/tree",
         );
 
         const categoryData = await categoryResponse.json();
 
         if (!categoryResponse.ok) {
-          throw new Error(
-            categoryData.message || "Failed to fetch categories"
-          );
+          throw new Error(categoryData.message || "Failed to fetch categories");
         }
 
         const categories = categoryData.categories || [];
-
         setCategoryTree(categories);
 
         // Find selected main category
@@ -61,36 +58,27 @@ function NewArrivals() {
         }
 
         // Get child category IDs
-        const childCategoryIds = (
-          selectedCategory.children || []
-        ).map((category) => String(category._id));
+        const childCategoryIds = (selectedCategory.children || []).map(
+          (category) => String(category._id),
+        );
 
         // Include parent category also
-        const categoryIds = [
-          String(selectedCategory._id),
-          ...childCategoryIds,
-        ];
+        const categoryIds = [String(selectedCategory._id), ...childCategoryIds];
 
         // Backend filtering
         const params = new URLSearchParams();
-
-        // Keep limit 8
         params.append("limit", "8");
         params.append("sort", "newest");
-
-        // Send category filter to backend
         params.append("category", categoryIds.join(","));
 
         const productResponse = await fetch(
-          `https://ecommerce-project-aopf.onrender.com/api/products?${params.toString()}`
+          `https://ecommerce-project-aopf.onrender.com/api/products?${params.toString()}`,
         );
 
         const productData = await productResponse.json();
 
         if (!productResponse.ok) {
-          throw new Error(
-            productData.message || "Failed to fetch products"
-          );
+          throw new Error(productData.message || "Failed to fetch products");
         }
 
         setProducts(productData.products || []);
@@ -108,16 +96,13 @@ function NewArrivals() {
 
   const filteredProducts = products
     .filter((product) => product.status === "active")
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt) - new Date(a.createdAt)
-    )
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 4);
 
   const handleViewMore = () => {
     navigate("/new-arrivals", {
       state: {
-        activeFashion: activeFashion,
+        activeFashion,
       },
     });
 
@@ -159,16 +144,10 @@ function NewArrivals() {
         </div>
       </div>
 
-      {loading && (
-        <p className="new-arrivals-message">
-          Loading products...
-        </p>
-      )}
+      {loading && <p className="new-arrivals-message">Loading products...</p>}
 
       {!loading && error && (
-        <p className="new-arrivals-message">
-          Error: {error}
-        </p>
+        <p className="new-arrivals-message">Error: {error}</p>
       )}
 
       {!loading && !error && (
@@ -176,24 +155,18 @@ function NewArrivals() {
           <div className="products-grid">
             {filteredProducts.length > 0 ? (
               filteredProducts.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                />
+                <div className="home-new-arrival-card" key={product._id}>
+                  <ProductCard product={product} />
+                </div>
               ))
             ) : (
-              <p className="new-arrivals-message">
-                No products found.
-              </p>
+              <p className="new-arrivals-message">No products found.</p>
             )}
           </div>
 
           {filteredProducts.length > 0 && (
             <div className="view-more-wrapper">
-              <button
-                className="view-more-btn"
-                onClick={handleViewMore}
-              >
+              <button className="view-more-btn" onClick={handleViewMore}>
                 View More
               </button>
             </div>

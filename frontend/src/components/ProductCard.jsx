@@ -247,12 +247,13 @@ function ProductCard({ product, loading = false }) {
 
       <Link to={`/product/${productId}`} className="product-link">
         <div className="product-image-wrapper">
-          <img
-            src={productImage}
-            alt={product?.name || "Product"}
-            className="product-image"
-            onError={handleImageError}
-          />
+         <img
+  src={productImage}
+  alt={product?.name || "Product"}
+  className="product-image"
+  onError={handleImageError}
+/>
+          
         </div>
 
         <div className="product-info">
