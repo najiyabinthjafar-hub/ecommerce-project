@@ -59,14 +59,8 @@ function Dashboard() {
   // =========================================================
 
   const getToken = useCallback(() => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("adminToken") ||
-      sessionStorage.getItem("token") ||
-      ""
-    );
-  }, []);
+  return localStorage.getItem("adminToken") || "";
+}, []);
 
   // =========================================================
   // HEADERS

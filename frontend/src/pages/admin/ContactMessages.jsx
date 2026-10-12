@@ -20,8 +20,8 @@ const ContactMessages = () => {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const getToken = () => {
-    return localStorage.getItem("token");
-  };
+  return localStorage.getItem("adminToken");
+};
 
   // =========================================================
   // FETCH CONTACT MESSAGES

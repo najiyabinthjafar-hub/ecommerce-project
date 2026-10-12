@@ -89,14 +89,11 @@ const Orders = () => {
   // GET TOKEN
   // =======================================================
 
-  const getToken = useCallback(() => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("adminToken") ||
-      ""
-    );
-  }, []);
+  
+const getToken = useCallback(() => {
+  return localStorage.getItem("adminToken") || "";
+}, []);
+
 
   // =======================================================
   // FETCH ORDERS

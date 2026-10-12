@@ -57,12 +57,8 @@ function AdminProfile() {
   // =========================================================
 
   const getToken = () => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("accessToken")
-    );
-  };
+  return localStorage.getItem("adminToken");
+};
 
   // =========================================================
   // FETCH ADMIN PROFILE

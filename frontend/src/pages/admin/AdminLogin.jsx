@@ -28,32 +28,23 @@ function AdminLogin() {
             email,
             password,
           }),
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Invalid email or password"
-        );
+        throw new Error(data.message || "Invalid email or password");
       }
 
       // Check admin role
       if (data.user?.role !== "admin") {
-        throw new Error(
-          "You are not authorized as an admin"
-        );
+        throw new Error("You are not authorized as an admin");
       }
 
-      // Save JWT token
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("adminToken", data.token);
 
-      // Save user details
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      );
+      localStorage.setItem("adminUser", JSON.stringify(data.user));
 
       // Navigate to admin dashboard
       navigate("/admin/dashboard", {
@@ -69,14 +60,9 @@ function AdminLogin() {
   return (
     <div className="admin-login-page">
       <div className="admin-login-card">
-
         {/* Logo */}
         <div className="login-brand">
-          <img
-            src={logo}
-            alt="RIZO Logo"
-            className="rizo-logo"
-          />
+          <img src={logo} alt="RIZO Logo" className="rizo-logo" />
           <h1>RIZO</h1>
           <p>Admin Panel</p>
         </div>
@@ -89,7 +75,6 @@ function AdminLogin() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
-
           <div className="login-group">
             <label>Email Address</label>
 
@@ -97,9 +82,7 @@ function AdminLogin() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -111,44 +94,29 @@ function AdminLogin() {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
           {/* Error Message */}
-          {error && (
-            <p className="login-error">
-              {error}
-            </p>
-          )}
+          {error && <p className="login-error">{error}</p>}
 
           {/* Forgot Password */}
           <div className="login-options">
             <button
               type="button"
               className="forgot-password"
-              onClick={() =>
-                navigate("/admin/forgot-password")
-              }
+              onClick={() => navigate("/admin/forgot-password")}
             >
               Forgot Password?
             </button>
           </div>
 
           {/* Login Button */}
-          <button
-            type="submit"
-            className="admin-login-btn"
-            disabled={loading}
-          >
-            {loading
-              ? "Logging in..."
-              : "Login"}
+          <button type="submit" className="admin-login-btn" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
-
         </form>
       </div>
     </div>

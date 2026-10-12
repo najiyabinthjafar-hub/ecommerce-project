@@ -36,14 +36,8 @@ const CustomerDetails = () => {
   // =========================================================
 
   const getToken = useCallback(() => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("adminToken") ||
-      sessionStorage.getItem("token") ||
-      sessionStorage.getItem("adminToken") ||
-      ""
-    );
-  }, []);
+  return localStorage.getItem("adminToken") || "";
+}, []);
 
   // =========================================================
   // FETCH CUSTOMER ORDERS

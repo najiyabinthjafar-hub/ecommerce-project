@@ -17,12 +17,8 @@ function AdminNotification() {
   // =========================================================
 
   const getToken = () => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("accessToken")
-    );
-  };
+  return localStorage.getItem("adminToken");
+};
 
   // =========================================================
   // NOTIFICATION ICON

@@ -62,14 +62,10 @@ function Products() {
   // AUTH HELPERS
   // =========================================================
 
-  const getToken = () => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("adminToken") ||
-      ""
-    );
-  };
+  
+const getToken = useCallback(() => {
+  return localStorage.getItem("adminToken") || "";
+}, []);
 
   const getHeaders = () => {
     const token = getToken();

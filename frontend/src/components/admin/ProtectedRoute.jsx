@@ -2,16 +2,14 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 
 function ProtectedRoute() {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const token = localStorage.getItem("adminToken");
+  const user = JSON.parse(
+    localStorage.getItem("adminUser") || "null"
+  );
 
-  if (!token) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  if (!user || user.role !== "admin") {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  if (!token || !user || user.role !== "admin") {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
 
     return <Navigate to="/admin/login" replace />;
   }

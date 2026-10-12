@@ -41,12 +41,8 @@ const Customers = () => {
   // =========================================================
 
   const getToken = () => {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("adminToken") ||
-      ""
-    );
-  };
+  return localStorage.getItem("adminToken") || "";
+};
 
   // =========================================================
   // HEADERS

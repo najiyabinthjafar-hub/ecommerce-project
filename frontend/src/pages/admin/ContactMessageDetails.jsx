@@ -16,11 +16,8 @@ function ContactMessageDetails() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("accessToken");
-
+  const token = localStorage.getItem("adminToken");
+  
   // =========================================================
   // GET CONTACT MESSAGE
   // =========================================================
