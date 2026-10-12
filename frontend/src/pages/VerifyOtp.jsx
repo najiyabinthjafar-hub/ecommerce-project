@@ -45,7 +45,6 @@ function VerifyOtp() {
   // ================= FORMAT TIME =================
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
-
     const remainingSeconds = seconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(
@@ -70,7 +69,7 @@ function VerifyOtp() {
       return;
     }
 
-    if (!otp) {
+    if (!otp.trim()) {
       setError("Please enter the OTP");
       return;
     }
@@ -82,11 +81,9 @@ function VerifyOtp() {
         "https://ecommerce-project-aopf.onrender.com/api/auth/verify-otp",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email,
             otp,
@@ -123,21 +120,18 @@ function VerifyOtp() {
       }
 
       // ================= SUCCESS TOAST =================
-      setMessage(
-        data.message || "Email verified successfully!"
-      );
+      setMessage("Email verified successfully");
 
       // Remove registration email
       localStorage.removeItem("registerEmail");
 
-      // ================= GO TO HOME =================
+      // Navigate after the toast has time to display
       setTimeout(() => {
         navigate("/", { replace: true });
-      }, 1500);
+      }, 2500);
     } catch (error) {
       console.error("OTP Verification Error:", error);
-
-      setError(error.message);
+      setError(error.message || "OTP verification failed");
     } finally {
       setLoading(false);
     }
@@ -160,11 +154,9 @@ function VerifyOtp() {
         "https://ecommerce-project-aopf.onrender.com/api/auth/resend-otp",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email,
           }),
@@ -180,9 +172,7 @@ function VerifyOtp() {
       }
 
       // ================= SUCCESS TOAST =================
-      setMessage(
-        data.message || "New OTP sent successfully"
-      );
+      setMessage(data.message || "New OTP sent successfully");
 
       // Restart timer
       setTimeLeft(60);
@@ -191,8 +181,7 @@ function VerifyOtp() {
       setOtp("");
     } catch (error) {
       console.error("Resend OTP Error:", error);
-
-      setError(error.message);
+      setError(error.message || "Failed to resend OTP");
     } finally {
       setLoading(false);
     }
@@ -202,8 +191,7 @@ function VerifyOtp() {
     <>
       <Navbar />
 
-      {/* ================= TOAST ================= */}
-
+      {/* ================= SUCCESS TOAST ================= */}
       {message && (
         <div className="verify-toast verify-toast-success">
           <span className="verify-toast-icon">✓</span>
@@ -220,6 +208,7 @@ function VerifyOtp() {
         </div>
       )}
 
+      {/* ================= ERROR TOAST ================= */}
       {error && (
         <div className="verify-toast verify-toast-error">
           <span className="verify-toast-icon">!</span>
@@ -238,9 +227,7 @@ function VerifyOtp() {
 
       <main className="verify-otp-page">
         <section className="verify-otp-container">
-
           {/* ================= HEADER ================= */}
-
           <div className="verify-otp-header">
             <p>EMAIL VERIFICATION</p>
 
@@ -253,22 +240,16 @@ function VerifyOtp() {
           </div>
 
           {/* ================= EMAIL ================= */}
-
           {email && (
-            <p className="otp-email">
-              {email}
-            </p>
+            <p className="otp-email">{email}</p>
           )}
 
           {/* ================= TIMER ================= */}
-
           <div className="otp-timer">
             {timeLeft > 0 ? (
               <>
                 OTP expires in{" "}
-                <strong>
-                  {formatTime(timeLeft)}
-                </strong>
+                <strong>{formatTime(timeLeft)}</strong>
               </>
             ) : (
               <strong>OTP EXPIRED</strong>
@@ -276,30 +257,25 @@ function VerifyOtp() {
           </div>
 
           {/* ================= OTP FORM ================= */}
-
           <form
             className="verify-otp-form"
             onSubmit={handleVerifyOtp}
           >
             <div className="verify-otp-field">
-              <label htmlFor="otp">
-                ENTER OTP
-              </label>
+              <label htmlFor="otp">ENTER OTP</label>
 
               <input
                 id="otp"
                 name="otp"
                 type="text"
                 inputMode="numeric"
-                maxLength="6"
+                maxLength={6}
                 placeholder="Enter OTP"
                 value={otp}
                 onChange={(e) =>
-                  setOtp(
-                    e.target.value.replace(/\D/g, "")
-                  )
+                  setOtp(e.target.value.replace(/\D/g, ""))
                 }
-                disabled={timeLeft <= 0}
+                disabled={loading || timeLeft <= 0}
                 required
               />
             </div>
@@ -307,9 +283,7 @@ function VerifyOtp() {
             <button
               type="submit"
               className="verify-otp-btn"
-              disabled={
-                loading || timeLeft <= 0
-              }
+              disabled={loading || timeLeft <= 0}
             >
               {loading
                 ? "VERIFYING..."
@@ -320,29 +294,21 @@ function VerifyOtp() {
           </form>
 
           {/* ================= RESEND OTP ================= */}
-
           <div className="resend-otp">
-            <span>
-              Didn't receive the OTP?
-            </span>
+            <span>Didn't receive the OTP?</span>
 
             <button
               type="button"
               onClick={handleResendOtp}
               disabled={loading}
             >
-              {loading
-                ? "SENDING..."
-                : "RESEND OTP"}
+              {loading ? "SENDING..." : "RESEND OTP"}
             </button>
           </div>
 
           {/* ================= BACK TO LOGIN ================= */}
-
           <div className="back-login">
-            <Link to="/login">
-              BACK TO LOGIN
-            </Link>
+            <Link to="/login">BACK TO LOGIN</Link>
           </div>
         </section>
       </main>
